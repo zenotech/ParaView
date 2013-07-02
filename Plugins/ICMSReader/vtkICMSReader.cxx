@@ -6,8 +6,11 @@
 #include "vtkInformation.h"
 #include "vtkDataObject.h"
 #include "vtkSmartPointer.h"
-#include "vtkVertexGlyphFilter.h"
- 
+#include "vtkMultiBlockDataSet.h"
+#include "vtkStructuredGrid.h"
+#include "vtkDataArray.h"
+#include "vtkDoubleArray.h"
+
 #include <sstream>
 
 vtkStandardNewMacro(vtkICMSReader);
@@ -29,86 +32,140 @@ int vtkICMSReader::RequestData(
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
  
   // get the ouptut
-   vtkPolyData *output = vtkPolyData::SafeDownCast(
-            outInfo->Get(vtkDataObject::DATA_OBJECT()));
+  //vtkPolyData *output = vtkPolyData::SafeDownCast(
+  //         outInfo->Get(vtkDataObject::DATA_OBJECT()));
+  vtkMultiBlockDataSet* mb = vtkMultiBlockDataSet::SafeDownCast(
+           outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-  vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
 
   // Open file
   std::ifstream in(FileName);
 
-  std::string title;
-  std::getline(in,title);
-  // Check for empty file
-  if(in.eof())
-    return 0;
+  std::vector<vtkSmartPointer<vtkPolyData> > polyDataVec;
+  std::vector<vtkSmartPointer<vtkStructuredGrid> > structuredVec;
 
-  int np, nf, numVar;
-  in >> np >> nf >> numVar;
-
-  std::string line;
-  std::getline(in,line); // read end of line
-  std::getline(in,line); // read variable list
-
-  // Check for unstructured ICMS
-  if(np > 0)
-    return 0;
-
-  np *= -1;
-
-  polydata->Allocate(nf);
-
-  vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-  points->SetNumberOfPoints(np);
-
-  float xyz[3];
-  for(int i=0; i<np; i++)
+  int numBlocks = 0;
+  while(1)
   {
-    in >> xyz[0]  >> xyz[1]  >> xyz[2];
-    getline( in, line );  // read end of line
-    points->InsertPoint(i, xyz[0], xyz[1], xyz[2]);
-  }
+    std::string title;
+    std::getline(in,title);
+    // Check for empty file
+    if(in.eof())
+      break;
 
-  polydata->SetPoints(points);
- 
-  std::vector<int> faceNodes;
-  //faceNodes.reserve( 10 );
-  vtkIdType cellList[100];
+    int np, nf, numVar;
+    in >> np >> nf >> numVar;
 
-  for(int i=0; i<nf; i++)
-  {
-    //faceNodes.clear();
-    getline(in, line);  // read end of line
-    //util::IoUtils::removeTrailingWhiteSpace(line);
-    std::stringstream istr(  line );
+    std::string line;
+    std::getline(in,line); // read end of line
+    std::getline(in,line); // read variable list
 
-    int numPts = 0;
+    // Check for unstructured ICMS
+    if(np < 0)
+    {
 
-    while(!istr.eof()){
-      int node = 0;
-      istr >> node;
-      if(node == 0)
-        break;
+      np *= -1;
 
-      //faceNodes.push_back(node-1);
-      cellList[numPts] = node-1;
-      numPts++;
+      vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
 
+      polydata->Allocate(nf);
+
+      vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+      points->SetNumberOfPoints(np);
+
+      float xyz[3];
+      for(int i=0; i<np; i++)
+      {
+        in >> xyz[0]  >> xyz[1]  >> xyz[2];
+        getline( in, line );  // read end of line
+        points->InsertPoint(i, xyz[0], xyz[1], xyz[2]);
+      }
+
+      polydata->SetPoints(points);
+
+      //std::vector<int> faceNodes;
+      //faceNodes.reserve( 10 );
+      vtkIdType cellList[100];
+
+      for(int i=0; i<nf; i++)
+      {
+        //faceNodes.clear();
+        getline(in, line);  // read end of line
+        //util::IoUtils::removeTrailingWhiteSpace(line);
+        std::stringstream istr(  line );
+
+        int numPts = 0;
+
+        while(!istr.eof()){
+          int node = 0;
+          istr >> node;
+          if(node == 0)
+            break;
+
+          //faceNodes.push_back(node-1);
+          cellList[numPts] = node-1;
+          numPts++;
+
+        }
+        int vtkCellType = VTK_EMPTY_CELL;
+        if (numPts == 3)
+          vtkCellType = VTK_TRIANGLE;
+        else if (numPts == 4)
+          vtkCellType = VTK_QUAD;
+        else
+          vtkCellType = VTK_POLYGON;
+
+        polydata->InsertNextCell(vtkCellType, numPts, cellList);
+
+      }
+      polyDataVec.push_back(polydata);
+      numBlocks++;
     }
-    int vtkCellType = VTK_EMPTY_CELL;
-    if (numPts == 3)
-      vtkCellType = VTK_TRIANGLE;
-    else if (numPts == 4)
-      vtkCellType = VTK_QUAD;
     else
-      vtkCellType = VTK_POLYGON;
+    {
+      vtkSmartPointer<vtkStructuredGrid> structuredData = vtkSmartPointer<vtkStructuredGrid>::New();
 
-    polydata->InsertNextCell(vtkCellType, numPts, cellList);
+      vtkSmartPointer<vtkDataArray> pointArray = vtkSmartPointer<vtkDoubleArray>::New();
 
+      int nj = np;
+      int ni = nf;
+
+      structuredData->SetDimensions(ni,nj,1);
+
+      pointArray->SetNumberOfComponents(3);
+      pointArray->SetNumberOfTuples( ni*nj );
+
+      vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+      points->SetData(pointArray);
+
+      structuredData->SetPoints(points);
+
+      double xyz[3];
+      for(int i=0; i<ni*nj; i++)
+      {
+        in >> xyz[0] >> xyz[1] >> xyz[2];
+        getline( in, line );  // read end of line
+        //pointArray->InsertNextTuple(xyz);
+        pointArray->InsertTuple(i,xyz);
+      }
+      structuredVec.push_back(structuredData);
+      numBlocks++;
+    }
   }
 
-  output->ShallowCopy(polydata);
+  //output->ShallowCopy(polydata);
  
+  if(numBlocks == 0)
+    return 0;
+
+  mb->SetNumberOfBlocks(numBlocks);
+  for(int i=0;i<numBlocks;++i)
+  {
+    if(polyDataVec.size())
+      mb->SetBlock(i, polyDataVec[i]);
+    else
+      mb->SetBlock(i, structuredVec[i]);
+  }
   return 1;
 }
  
