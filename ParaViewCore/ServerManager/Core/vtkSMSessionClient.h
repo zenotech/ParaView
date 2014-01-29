@@ -124,6 +124,12 @@ public:
   // and 2 render-server nodes, then this method will return 3.
   virtual int GetNumberOfProcesses(vtkTypeUInt32 servers);
 
+  // Description:
+  // Returns whether or not MPI is initialized on the specified server/s. If
+  // more than 1 server is identified it will return true only if all of the
+  // servers have MPI initialized.
+  virtual bool IsMPIInitialized(vtkTypeUInt32 servers);
+
   //---------------------------------------------------------------------------
   // API for Collaboration management
   //---------------------------------------------------------------------------
@@ -222,6 +228,11 @@ protected:
   // Return true if the event was handle locally.
   virtual bool OnWrongTagEvent( vtkObject* caller, unsigned long eventid,
                                 void* calldata);
+
+  // Description:
+  // Callback when any vtkMultiProcessController subclass fires a ErrorEvent.
+  virtual void OnConnectionLost( vtkObject* caller, unsigned long eventid,
+                                 void* calldata);
 
 private:
   vtkSMSessionClient(const vtkSMSessionClient&); // Not implemented

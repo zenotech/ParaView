@@ -106,9 +106,22 @@ protected:
   // Overridden to restore this->Servers flag state.
   virtual int LoadXMLState(vtkPVXMLElement* element, vtkSMProxyLocator* locator);
 
+  // Description:
+  // Links properties such that when inputProperty's checked or unchecked values
+  // are changed, the outputProperty's corresponding values are also changed.
+  // Since this is commonly needed for representations, I'm adding this here. We
+  // may move this API to vtkSMProxy is it seems appropriate.
+  void LinkProperty(
+    vtkSMProperty* inputProperty, vtkSMProperty* outputProperty);
+
 private:
   vtkSMRepresentationProxy(const vtkSMRepresentationProxy&); // Not implemented
   void operator=(const vtkSMRepresentationProxy&); // Not implemented
+  
+  // Description:
+  // HACK: Returns true for lookuptable, piecewise function proxies which are
+  // not expected to modify data pipeline.
+  bool SkipDependency(vtkSMProxy* producer);
 
   bool RepresentedDataInformationValid;
   vtkPVDataInformation* RepresentedDataInformation;

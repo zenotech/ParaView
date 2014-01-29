@@ -1434,8 +1434,7 @@
                          default_values="1"
                          name="ModeShape"
                          number_of_elements="1">
-        <IntRangeDomain foo="1"
-                        name="range">
+        <IntRangeDomain name="range">
           <RequiredProperties>
             <Property function="Range"
                       name="TimeStepRangeInfo" />
@@ -1458,7 +1457,6 @@
                             element_types="2 0"
                             information_property="EdgeBlockArrayInfo"
                             name="EdgeBlocks"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1480,7 +1478,6 @@
                             element_types="2 0"
                             information_property="FaceBlockArrayInfo"
                             name="FaceBlocks"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1560,7 +1557,6 @@
                             element_types="2 0"
                             information_property="PointVariablesInfo"
                             name="PointVariables"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1580,7 +1576,6 @@
                             element_types="2 0"
                             information_property="EdgeVariablesInfo"
                             name="EdgeVariables"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1602,7 +1597,6 @@
                             element_types="2 0"
                             information_property="FaceVariablesInfo"
                             name="FaceVariables"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1624,7 +1618,6 @@
                             element_types="2 0"
                             information_property="ElementVariablesInfo"
                             name="ElementVariables"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1645,7 +1638,6 @@
                             element_types="2 0"
                             information_property="NodeMapInfo"
                             name="NodeMapArrayStatus"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1670,7 +1662,6 @@
                             element_types="2 0"
                             information_property="EdgeMapInfo"
                             name="EdgeMapArrayStatus"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1693,7 +1684,6 @@
                             element_types="2 0"
                             information_property="FaceMapInfo"
                             name="FaceMapArrayStatus"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1716,7 +1706,6 @@
                             element_types="2 0"
                             information_property="ElementMapInfo"
                             name="ElementMapArrayStatus"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1741,7 +1730,6 @@
                             element_types="2 0"
                             information_property="NodeSetInfo"
                             name="NodeSetArrayStatus"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1766,7 +1754,6 @@
                             element_types="2 0"
                             information_property="SideSetInfo"
                             name="SideSetArrayStatus"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1793,7 +1780,6 @@
                             element_types="2 0"
                             information_property="FaceSetInfo"
                             name="FaceSetArrayStatus"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1818,7 +1804,6 @@
                             element_types="2 0"
                             information_property="EdgeSetInfo"
                             name="EdgeSetArrayStatus"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1843,7 +1828,6 @@
                             element_types="2 0"
                             information_property="ElementSetInfo"
                             name="ElementSetArrayStatus"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1868,7 +1852,6 @@
                             element_types="2 0"
                             information_property="ElementSetResultArrayInfo"
                             name="ElementSetResultArrayStatus"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1893,7 +1876,6 @@
                             element_types="2 0"
                             information_property="SideSetResultArrayInfo"
                             name="SideSetResultArrayStatus"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1920,7 +1902,6 @@
                             element_types="2 0"
                             information_property="FaceSetResultArrayInfo"
                             name="FaceSetResultArrayStatus"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1945,7 +1926,6 @@
                             element_types="2 0"
                             information_property="EdgeSetResultArrayInfo"
                             name="EdgeSetResultArrayStatus"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -1970,7 +1950,6 @@
                             element_types="2 0"
                             information_property="NodeSetResultArrayInfo"
                             name="NodeSetResultArrayStatus"
-                            number_of_elements="2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArraySelectionDomain name="array_list">
@@ -2407,51 +2386,9 @@
       </Hints>
     </SourceProxy>
     <!-- End PNetCDFPOPReaderCore -->
-    <SourceProxy class="vtkPCosmoReader"
-                 label="COSMO Reader"
-                 name="CosmoReaderCore">
-      <StringVectorProperty animateable="0"
-                            command="SetFileName"
-                            name="FileName"
-                            number_of_elements="1"
-                            panel_visibility="never">
-        <FileListDomain name="files" />
-        <Documentation>This property specifies the file name for the COSMO
-        reader.</Documentation>
-      </StringVectorProperty>
-      <IntVectorProperty command="SetCosmoFormat"
-                         default_values="1"
-                         label="Cosmo Format"
-                         name="CosmoFormat"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation>If checked, the data will be read as the LANL Cosmo
-        format. If unchecked, the data will be read as Gadget-2
-        format.</Documentation>
-      </IntVectorProperty>
-      <DoubleVectorProperty command="SetRL"
-                            default_values="100"
-                            label="rL (physical box side length)"
-                            name="RL"
-                            number_of_elements="1">
-        <DoubleRangeDomain min="0"
-                           name="range" />
-        <Documentation>The box side length is used to wrap particles around if
-        they exceed rL (or less than 0) in any dimension.</Documentation>
-      </DoubleVectorProperty>
-      <DoubleVectorProperty command="SetOverlap"
-                            default_values="5"
-                            label="overlap (shared point/ghost cell gap distance)"
-                            name="Overlap"
-                            number_of_elements="1">
-        <DoubleRangeDomain min="0"
-                           name="range" />
-        <Documentation>The space (in rL units) to extend processor particle
-        ownership for ghost particles/cells. It is needed for correct halo
-        calculation when halos cross processor boundaries in parallel
-        computation.</Documentation>
-      </DoubleVectorProperty>
-    </SourceProxy>
+
+
+    <!-- ============================================================= -->
     <SourceProxy class="vtkPNGReader"
                  label="PNG Reader"
                  name="PNGReader">
@@ -2693,8 +2630,8 @@
                          number_of_elements="1">
         <BooleanDomain name="bool" />
         <Documentation>When this options is enabled, the reader will try to
-	automatically figure out various settings for a binary file. The other
-	options are ignored. Does not work for text (ascii) files.</Documentation>
+  automatically figure out various settings for a binary file. The other
+  options are ignored. Does not work for text (ascii) files.</Documentation>
       </IntVectorProperty>
       <IntVectorProperty command="SetBinaryFile"
                          default_values="1"
@@ -2750,7 +2687,7 @@
                          number_of_elements="1">
         <BooleanDomain name="bool" />
         <Documentation>This property specifies whether floating points values
-	are in double precision.</Documentation>
+  are in double precision.</Documentation>
       </IntVectorProperty>
       <IntVectorProperty command="SetByteOrder"
                          default_values="0"
@@ -4090,6 +4027,10 @@
                      file (extension .spcth). The case file lists all the
                      binary files containing the dataset. This reader produces
                      hierarchical datasets.</Documentation>
+      <OutputPort index="0"
+                  name="Volume Data" />
+      <OutputPort index="1"
+                  name="Markers" />
       <StringVectorProperty command="SetCellArrayStatus"
                             element_types="2 0"
                             information_property="CellArrayInfo"
@@ -4180,7 +4121,7 @@
         generated that stores the coordinates of any tracers.</Documentation>
       </IntVectorProperty>
       <IntVectorProperty command="SetGenerateMarkers"
-                         default_values="0"
+                         default_values="1"
                          name="GenerateMarkers"
                          number_of_elements="1"
                          panel_visibility="advanced">
@@ -5531,50 +5472,6 @@
       </Hints>
       <!-- End TIFFReader -->
     </SourceProxy>
-    <SourceProxy class="vtkSESAMEReader"
-                 label="SESAME Reader"
-                 name="SESAMEReader">
-      <Documentation long_help="Reads SESAME data files, producing rectilinear grids."
-                     short_help="Read SESAME data files.">The SESAME reader
-                     reads SESAME data files, and outputs rectilinear grids.
-                     The expected file extension is .sesame.</Documentation>
-      <StringVectorProperty animateable="0"
-                            command="SetFileName"
-                            name="FileName"
-                            number_of_elements="1"
-                            panel_visibility="never">
-        <FileListDomain name="files" />
-        <Documentation>This property specifies the file name for the SESAME
-        reader.</Documentation>
-      </StringVectorProperty>
-      <IntVectorProperty command="SetTable"
-                         default_values="-1"
-                         name="TableId"
-                         number_of_elements="1">
-        <EnumerationDomain name="enum">
-          <RequiredProperties>
-            <Property function="Enumeration"
-                      name="TableIds" />
-          </RequiredProperties>
-        </EnumerationDomain>
-        <Documentation>This proeprty indicates which table to
-        read.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="GetTableIdsAsArray"
-                         information_only="1"
-                         name="TableIds">
-        <IntArrayInformationHelper />
-      </IntVectorProperty>
-      <StringVectorProperty information_only="1"
-                            name="TableArrayInfo">
-        <ArraySelectionInformationHelper attribute_name="Table" />
-      </StringVectorProperty>
-      <Hints>
-        <ReaderFactory extensions="sesame"
-                       file_description="SESAME" />
-      </Hints>
-      <!-- End SESAMEReader -->
-    </SourceProxy>
     <!-- Beginning of OpenFOAM Reader -->
     <SourceProxy class="vtkPOpenFOAMReader"
                  name="OpenFOAMReader">
@@ -6513,7 +6410,7 @@
         </ExposedProperties>
       </SubProxy>
       <Hints>
-        <ReaderFactory extensions="tec TEC Tec tp TP"
+        <ReaderFactory extensions="tec TEC Tec tp TP dat"
                        file_description="Tecplot Files" />
       </Hints>
       <!-- End TecplotReader -->
@@ -6899,7 +6796,7 @@
     <SourceProxy class="vtkFileSeriesReader"
                  file_name_method="SetFileName"
                  label="Parallel NetCDF POP reader"
-                 multiprocess_support="multiple_processes"
+                 mpi_required="true"
                  name="PNetCDFPOPReader"
                  si_class="vtkSIFileSeriesReaderProxy">
       <Documentation long_help="Reads rectilinear grid data from a NetCDF POP file in parallel."
@@ -6947,55 +6844,8 @@
     </SourceProxy>
     <!-- End PNetCDFPOPReader -->
 #endif
-    <SourceProxy class="vtkFileSeriesReader"
-                 file_name_method="SetFileName"
-                 label="COSMO Reader"
-                 name="CosmoReader"
-                 si_class="vtkSIFileSeriesReaderProxy">
-      <Documentation long_help="Reads a cosmology file into a vtkUnstructuredGrid."
-                     short_help="Read a cosmology file.">The Cosmology reader
-                     reads a binary file of particle location, velocity, and id
-                     creating a vtkUnstructuredGrid. The default file extension
-                     is .cosmo. Reads LANL Cosmo format or Gadget
-                     format.</Documentation>
-      <SubProxy>
-        <Proxy name="Reader"
-               proxygroup="internal_sources"
-               proxyname="CosmoReaderCore"></Proxy>
-        <ExposedProperties>
-          <Property name="CosmoFormat" />
-          <Property name="RL" />
-          <Property name="Overlap" />
-        </ExposedProperties>
-      </SubProxy>
-      <StringVectorProperty command="GetCurrentFileName"
-                            information_only="1"
-                            name="FileNameInfo">
-        <SimpleStringInformationHelper />
-      </StringVectorProperty>
-      <StringVectorProperty animateable="0"
-                            clean_command="RemoveAllFileNames"
-                            command="AddFileName"
-                            information_property="FileNameInfo"
-                            name="FileName"
-                            number_of_elements="1"
-                            panel_visibility="never"
-                            repeat_command="1">
-        <FileListDomain name="files" />
-        <Documentation>The list of files to be read by the
-        reader.</Documentation>
-      </StringVectorProperty>
-      <DoubleVectorProperty information_only="1"
-                            name="TimestepValues"
-                            repeatable="1">
-        <TimeStepsInformationHelper />
-        <Documentation>Available timestep values.</Documentation>
-      </DoubleVectorProperty>
-      <Hints>
-        <ReaderFactory extensions="cosmo gadget2"
-                       file_description="Cosmology files" />
-      </Hints>
-    </SourceProxy>
+
+
     <SourceProxy class="vtkMPASReader"
                  label="NetCDF MPAS reader"
                  name="MPASReader">
@@ -7214,8 +7064,8 @@
                proxyname="P3DReaderCore"></Proxy>
         <ExposedProperties>
           <Property name="FileName" />
-	  <Property name="FunctionFileName"/>
-	  <Property name="AutoDetectFormat"/>
+          <Property name="FunctionFileName"/>
+          <Property name="AutoDetectFormat"/>
           <Property name="BinaryFile" />
           <Property name="MultiGrid" />
           <Property name="HasByteCount" />

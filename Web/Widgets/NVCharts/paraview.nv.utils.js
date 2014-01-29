@@ -3,16 +3,16 @@
  *
  * This module provides utility functions use for charting/plotting data.
  *
- * @class paraview.ui.nv.utils
+ * @class vtkWeb.helper
  */
 (function(GLOBAL, $) {
     // ----------------------------------------------------------------------
-    // Init paraview module if needed
+    // Init vtkWeb module if needed
     // ----------------------------------------------------------------------
-    if (GLOBAL.hasOwnProperty("paraview")) {
-        module = GLOBAL.paraview || {};
+    if (GLOBAL.hasOwnProperty("vtkWeb")) {
+        module = GLOBAL.vtkWeb || {};
     } else {
-        GLOBAL.paraview = module;
+        GLOBAL.vtkWeb = module;
     }
 
     // converts marshalled plot data into a JavaScript object that the
@@ -67,7 +67,7 @@
     }
 
     /**
-     * @member paraview.ui.nv.utils
+     * @member vtkWeb.helper
      * @method processPlotData
      * @param {Object} data
      * Object representing a vtkTable.

@@ -85,12 +85,23 @@ namespace
     paths_to_search.push_back(app_dir + "/../lib/");
     paths_to_search.push_back(app_dir + "/plugins/" + plugin);
 #if defined(__APPLE__)
+    // paths for app
     paths_to_search.push_back(app_dir + "/../Plugins");
     paths_to_search.push_back(app_dir + "/../../..");
     paths_to_search.push_back(app_dir + "/../../../../lib");
+
+    // paths when doing an unix style install.
+    paths_to_search.push_back(app_dir +"/../lib/paraview-" PARAVIEW_VERSION);
 #endif
     // On windows configuration files are in the parent directory
     paths_to_search.push_back(app_dir + "/../");
+
+    // Add test plugin path into the search path.
+    std::string test_plugin_dir ( options->GetTestPluginPath());
+    if ( !test_plugin_dir.empty() )
+      {
+      paths_to_search.push_back( test_plugin_dir );
+      }
 
     std::string name = plugin;
     std::string filename = name;
@@ -187,6 +198,7 @@ vtkPVPluginTracker* vtkPVPluginTracker::GetInstance()
     bool debug_plugin = vtksys::SystemTools::GetEnv("PV_PLUGIN_DEBUG") != NULL;
     vtkPVPluginTrackerDebugMacro("Locate and load distributed plugin list.");
 
+#ifdef BUILD_SHARED_LIBS
     // Locate ".plugins" file and process it.
     // This will setup the distributed-list of plugins. Also it will load any
     // auto-load plugins.
@@ -200,6 +212,10 @@ vtkPVPluginTracker* vtkPVPluginTracker::GetInstance()
       vtkPVPluginTrackerDebugMacro(
         "Could not find .plugins file for distributed plugins");
       }
+#else
+    vtkPVPluginTrackerDebugMacro(
+      "Static build. Skipping .plugins processing.");
+#endif
     }
 
   return Instance;

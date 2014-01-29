@@ -12,6 +12,9 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+// .NAME vtkSMDoubleMapProperty - a map property storing double values
+// .SECTION Description
+// vtkSMDoubleMapProperty stores a map of vtkIdType keys to double values.
 
 #ifndef __vtkSMDoubleMapProperty_h
 #define __vtkSMDoubleMapProperty_h
@@ -71,7 +74,7 @@ public:
 
   // Description:
   // Returns the number of elements.
-  vtkIdType GetNumberOfElements();
+  virtual vtkIdType GetNumberOfElements();
 
   // Description:
   // Clears all of the elements from the property.
@@ -82,6 +85,10 @@ public:
   vtkSMDoubleMapPropertyIterator* NewIterator();
 
   void* GetMapPointer();
+
+  // Description:
+  // Copy all property values.
+  virtual void Copy(vtkSMProperty* src);
 
 protected:
   vtkSMDoubleMapProperty();
@@ -98,6 +105,7 @@ protected:
 
   virtual void SaveStateValues(vtkPVXMLElement* propertyElement);
   virtual int LoadState(vtkPVXMLElement* element, vtkSMProxyLocator* loader);
+  virtual void ResetToDefaultInternal();
 
 private:
   vtkSMDoubleMapProperty(const vtkSMDoubleMapProperty&); // Not implemented

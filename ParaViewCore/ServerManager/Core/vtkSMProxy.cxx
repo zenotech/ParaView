@@ -1184,8 +1184,11 @@ void vtkSMProxy::PostUpdateData()
     }
   if (this->NeedsUpdate)
     {
-    this->InvokeEvent(vtkCommand::UpdateDataEvent, 0);
+    // this->NeedsUpdate must be set to false before firing this event otherwise
+    // if the event handler results in other view updates, we end up
+    // unnecessarily thinking that this proxy needs update.
     this->NeedsUpdate = false;
+    this->InvokeEvent(vtkCommand::UpdateDataEvent, 0);
     }
 }
 
@@ -1407,7 +1410,8 @@ vtkSMPropertyGroup* vtkSMProxy::NewPropertyGroup(vtkPVXMLElement* groupElem)
       }
     else
       {
-      group->AddProperty(property);
+      group->AddProperty(
+        elem->GetAttribute("function"), property);
       }
     }
 
@@ -2115,7 +2119,6 @@ void vtkSMProxy::LoadState( const vtkSMMessage* message,
 
   // Manage properties
   vtkSMProxyInternals::PropertyInfoMap::iterator it;
-  std::vector< vtkSmartPointer<vtkSMProperty> > touchedProperties;
   for (int i=0; i < message->ExtensionSize(ProxyState::property); ++i)
     {
     const ProxyState_Property *prop_message =
@@ -2140,16 +2143,13 @@ void vtkSMProxy::LoadState( const vtkSMMessage* message,
         }
 
       it->second.Property->ReadFrom(message, i, locator);
-      touchedProperties.push_back(it->second.Property.GetPointer());
       }
     }
 
-  // Make sure all dependent domains are updated. UpdateInformation()
-  // might have produced new information that invalidates the domains.
-  for (int i=0, nb=static_cast<int>(touchedProperties.size()); i < nb; i++)
-    {
-    touchedProperties[i]->UpdateDependentDomains();
-    }
+  // We don't need to do anything special to update domains that may have
+  // changed as a consequence of the information properties being updated since
+  // the vtkSMProperty automatically called vtkSMProperty::UpdateDomains() when
+  // the property changes.
 
   // Manage annotation
   if(message->GetExtension(ProxyState::has_annotation))
@@ -2441,24 +2441,3 @@ void vtkSMProxy::UpdateAndPushAnnotationState()
     this->PushState(&localAnnotationState);
     }
 }
-
-//---------------------------------------------------------------------------
-//                          Deprecated API
-//---------------------------------------------------------------------------
-#ifndef VTK_LEGACY_REMOVE
-void vtkSMProxy::SetServers(vtkTypeUInt32 server)
-{
-  this->SetLocation(server);
-}
-vtkTypeUInt32 vtkSMProxy::GetServers()
-{
-  return this->GetLocation();
-}
-void vtkSMProxy::SetConnectionID(vtkTypeUInt32 vtkNotUsed(id))
-{
-}
-vtkTypeUInt32 vtkSMProxy::GetConnectionID()
-{
-  return 0;
-}
-#endif

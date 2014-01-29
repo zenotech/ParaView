@@ -55,8 +55,10 @@ pqPropertyWidget::pqPropertyWidget(vtkSMProxy *smProxy, QWidget *parentObject)
   this->connect(&this->Links, SIGNAL(qtWidgetChanged()),
                 this, SIGNAL(changeAvailable()));
 
-  this->connect(&this->Links, SIGNAL(qtWidgetChanged()),
-                this, SLOT(onChangeAvailable()));
+  // This has to be a QueuedConnection otherwise changeFinished() gets fired
+  // before changeAvailable() is handled by pqProxyWidget and see BUG #13029.
+  this->connect(this, SIGNAL(changeAvailable()),
+                this, SLOT(onChangeAvailable()), Qt::QueuedConnection);
 
   this->connect(this, SIGNAL(changeFinished()),
     this, SLOT(onChangeFinished()));
@@ -172,6 +174,18 @@ void pqPropertyWidget::addPropertyLink(QObject *qobject,
 }
 
 //-----------------------------------------------------------------------------
+void pqPropertyWidget::addPropertyLink(QObject *qobject,
+                                       const char *qproperty,
+                                       const char *qsignal,
+                                       vtkSMProxy* smproxy,
+                                       vtkSMProperty *smproperty,
+                                       int smindex)
+{
+  this->Links.addPropertyLink(qobject, qproperty, qsignal,
+    smproxy, smproperty, smindex);
+}
+
+//-----------------------------------------------------------------------------
 void pqPropertyWidget::setAutoUpdateVTKObjects(bool autoUpdate)
 {
   this->AutoUpdateVTKObjects = autoUpdate;
@@ -181,15 +195,6 @@ void pqPropertyWidget::setAutoUpdateVTKObjects(bool autoUpdate)
 void pqPropertyWidget::setUseUncheckedProperties(bool useUnchecked)
 {
   this->Links.setUseUncheckedProperties(useUnchecked);
-}
-
-//-----------------------------------------------------------------------------
-void pqPropertyWidget::updateDependentDomains()
-{
-  if(this->Property)
-    {
-    this->Property->UpdateDependentDomains();
-    }
 }
 
 //-----------------------------------------------------------------------------

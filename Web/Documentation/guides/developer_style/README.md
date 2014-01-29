@@ -3,29 +3,31 @@
 
 ## Introduction
 
-This document is based on PEP-0008. This document gives coding conventions for
-the Python and JavaScript code comprising the ParaViewWeb distribution. This
+This document is based on PEP-0008. It provides coding conventions for
+the Python and JavaScript codes that comprise the ParaViewWeb distribution. This
 document blatantly copies structure and text from the "Style Guide for Python
 Code" (PEP-0008).
 
-## Code lay-out
+## Code layout
 
 ### Indentation
 
 Use 4 spaces per indentation level.
 
 JavaScript:
+
     function foo() {
         // some code
         ....
     }
 
 Python:
+
     def foo():
         # some code
         pass
 
-Comments should be indented to align with the code being commented as shown
+Comments should be indented to align with the code with which they correspond, as shown
 above.
 
 ### Tabs or Spaces?
@@ -34,8 +36,8 @@ Never use tabs. Always use 4 spaces instead of a tab.
 
 ### Maximum Line Length
 
-It is preferred to limit line length to 79 characters. However in some cases for
-better readability, it is acceptable to have lines longer than 79 character.
+It is preferred to limit line length to 79 characters. However, for
+better readability in certain cases, it is acceptable to have lines longer than 79 characters.
 
 ## Whitespaces in Expressions and Statements
 
@@ -43,25 +45,28 @@ better readability, it is acceptable to have lines longer than 79 character.
 
 Avoid extraneous whitespaces in the following situations:
 
--- Immediately inside parenthesis, brackets or braces:
+Immediately inside parenthesis, brackets, or braces:
+
     Yes: spam(ham[1], {eggs: 2})
     No:  spam( ham[ 1 ], { eggs: 2 } )
 
--- Immediately before a comma, semicolon, or colon:
+Immediately before a comma, semicolon, or colon:
+
     Yes: if x == 4: print x, y; x, y = y, x
     No:  if x == 4: print x , y ; x , y = y , x
 
--- Immediately before the open parenthesis that starts the argument list of a
-function call.
+Immediately before the open parenthesis that starts the argument list of a function call:
+
     Yes: spam(1)
     No:  spam (1)
 
--- Immediately before the open parenthesis that starts an indexing or slicing:
+Immediately before the open parenthesis that starts an indexing or slicing:
+
     Yes: dict["key"] = list[index]
     No:  dict ["key"] = list [index]
 
--- More than one space around an assignment (or other) operator to align it with
-another.
+An assignment (or other) operator has more than one space adjacent to it to align it with another operator:
+
     Yes:
         var x = 1;
         var yesterday = 2;
@@ -70,8 +75,8 @@ another.
         var yesterday = 2;
 
 
-Use a space after between a statement and a subsequent parenthesis, but not
-between a function name and a subsequent parenthesis.
+A function name is followed by a parenthesis. A space should be added between a statement and a subsequent parenthesis, according to the examples below:
+
     Yes:
         if (foo == 12) { }
         for (var cc=0; cc < 12; cc++) { }
@@ -80,11 +85,12 @@ between a function name and a subsequent parenthesis.
         if(foo==12) { }
         for(var cc=0; ....)
         spam (12);
-        
+
 ## Blocks (JavaScript)
 
-if/else/for/while/try always have braces and always go on
-multiple lines. Braces should always be used on blocks.
+if/else/for/while/try always have braces and always go on multiple lines.
+Braces should always be used on blocks.
+
     Yes:
         if (foo === 12) {
             blah();
@@ -96,7 +102,8 @@ multiple lines. Braces should always be used on blocks.
         if (foo == 12) blah();
 
 
-Don't put statements on the same line as a conditional.
+Do not put statements on the same line as a conditional.
+
     Yes:
         if (foo === 12) {
             return;
@@ -105,6 +112,7 @@ Don't put statements on the same line as a conditional.
         if (foo === 12) return;
 
 else/else if/catch go on the same line as the brace.
+
     if (blah) {
         baz();
     } else if (boo) {
@@ -117,8 +125,8 @@ else/else if/catch go on the same line as the brace.
 
 ### Names to Avoid
 
-Never use the characters 'l' (lowercase letter el), 'O' (uppercase letter oh),
-or 'I' (uppercase letter eye) as single character variable names.
+Never use the characters 'l' (lowercase letter [el]), 'O' (uppercase letter [oh]),
+or 'I' (uppercase letter [eye]) as single character variable names.
 In some fonts, these characters are indistinguishable from the numerals one and
 zero. When tempted to use 'l', use 'L' instead.
 
@@ -130,7 +138,7 @@ module name if it improves readability.
 ### Class Names
 
 Class names use the _CapWords_ convention. Classes for
-internal use have a leading underscore in addition. This is true when referring
+internal use also have a leading underscore. This is true when referring
 to dynamically constructed Object instances as well.
 
 ### Constants

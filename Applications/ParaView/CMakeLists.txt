@@ -4,8 +4,7 @@ QT4_WRAP_CPP(MOC_BUILT_SOURCES
   ParaViewMainWindow.h)
 
 QT4_WRAP_UI(UI_BUILT_SOURCES
-  ParaViewMainWindow.ui
-)
+  ParaViewMainWindow.ui)
 
 set (QT_USE_QTNETWORK TRUE)
 include(${QT_USE_FILE})
@@ -28,9 +27,7 @@ set(ParaView_SOURCE_FILES
 # GUI-xmls.  We process those here.
 set (application_gui_xmls
        "${CMAKE_CURRENT_SOURCE_DIR}/ParaViewSources.xml"
-       "${CMAKE_CURRENT_SOURCE_DIR}/ParaViewFilters.xml"
-       "${CMAKE_CURRENT_SOURCE_DIR}/ParaViewReaders.xml"
-       "${CMAKE_CURRENT_SOURCE_DIR}/ParaViewWriters.xml")
+       "${CMAKE_CURRENT_SOURCE_DIR}/ParaViewFilters.xml")
 foreach (module IN LISTS VTK_MODULES_ENABLED)
   get_property(gui_xml GLOBAL PROPERTY ${module}_PARAVIEW_GUI_XMLS)
   if (gui_xml)
@@ -87,10 +84,11 @@ if (BUILD_TESTING)
 endif (BUILD_TESTING)
 
 #------------------------------------------------------------------------------
-# For Macs, we add install rule to package everything that's built into a single
-# App. Look at the explanation of MACOSX_APP_INSTALL_PREFIX in the top-level
-# CMakeLists.txt file for details.
-if (APPLE)
+if (APPLE AND NOT PARAVIEW_DO_UNIX_STYLE_INSTALLS)
+  # For Macs, we add install rule to package everything that's built into a single
+  # App. Look at the explanation of MACOSX_APP_INSTALL_PREFIX in the top-level
+  # CMakeLists.txt file for details.
+
   # add install rules to generate the App bundle.
   install(CODE "
    include(\"${ParaView_CMAKE_DIR}/ParaViewBrandingInstallApp.cmake\")
@@ -100,7 +98,8 @@ if (APPLE)
      \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${VTK_INSTALL_RUNTIME_DIR}/paraview.app/Contents/MacOS/paraview
      \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${VTK_INSTALL_RUNTIME_DIR}/paraview.app
      \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${VTK_INSTALL_LIBRARY_DIR}
-     \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${PV_INSTALL_PLUGIN_DIR})
+     \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${PV_INSTALL_PLUGIN_DIR}
+     \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${VTK_INSTALL_DATA_DIR})
 
    # Place the App at the requested location.
    file(INSTALL DESTINATION \"${MACOSX_APP_INSTALL_PREFIX}\"
@@ -109,4 +108,15 @@ if (APPLE)
         USE_SOURCE_PERMISSIONS)
    "
    COMPONENT Runtime)
+elseif (APPLE AND PARAVIEW_DO_UNIX_STYLE_INSTALLS)
+  # This is a unix style install on OsX. Purge the bundle.
+  install(CODE
+    "
+      include(\"${ParaView_CMAKE_DIR}/ParaViewBrandingInstallApp.cmake\")
+      convert_bundle_to_executable(
+          \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${VTK_INSTALL_RUNTIME_DIR}/paraview.app/Contents/MacOS/paraview
+          \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${VTK_INSTALL_RUNTIME_DIR}/paraview.app
+          \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${VTK_INSTALL_RUNTIME_DIR})
+    "
+    COMPONENT Runtime)
 endif()

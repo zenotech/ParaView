@@ -6,6 +6,7 @@
 set(_vtk_mpi_modules
   vtkParallelMPI
   vtkFiltersParallelImaging
+  vtkRenderingParallelLIC
   vtkIOMPIImage
   vtkFiltersParallelMPI
   # Note: Not in ParaViewXXX.xml but required by a test.
@@ -20,6 +21,15 @@ set(_vtk_mpi_modules
   #  vtkStreamTracer (Parallel)
   )
 
+# Add CosmoTools VTK extensions if enabled.
+if (UNIX AND PARAVIEW_ENABLE_COSMOTOOLS)
+  list(APPEND _vtk_mpi_modules
+    vtkPVVTKExtensionsCosmoTools
+    # Needed for:
+    #  vtkPVVTKExtensionsCosmoTools
+    )
+endif()
+
 set(_vtk_modules
   # VTK modules which ParaView has a explicity compile
   # time dependency on
@@ -30,7 +40,7 @@ set(_vtk_modules
   vtkRenderingVolumeOpenGL
   vtkRenderingOpenGL
   vtkRenderingLOD
-  vtkRenderingHybridOpenGL
+  vtkRenderingLIC
   vtkRenderingContext2D
   vtkRenderingAnnotation
   vtkInteractionStyle
@@ -61,9 +71,6 @@ set(_vtk_modules
   # Modules that are required a runtime generated from:
   #
   # ParaViewFilters.xml
-  # ParaViewReaders.xml
-  # ParaViewSources.xml
-  # ParaViewWriters.xml
   #
 
   vtkCommonExecutionModel
@@ -320,11 +327,6 @@ set(_vtk_modules
   # Needed for:
   #  vtkVectorText
 
-  vtkFiltersCosmo
-  # Note: Not in ParaViewXXX.xml but required by a test.
-  # Needed for:
-  #  vtkPCosmoReader
-
   vtkIOParallelLSDyna
   # Note: Not in ParaViewXXX.xml but required by a test.
   # Needed for:
@@ -333,9 +335,9 @@ set(_vtk_modules
   vtkDomainsChemistry
   # Needed for:
   #  vtkMoleculeRepresentation
-  
+
   vtkPVServerManagerDefault
-  # Needed by plugins 
+  # Needed by plugins
   )
 
 if (PARAVIEW_USE_MPI)
@@ -346,7 +348,7 @@ if (PARAVIEW_USE_VISITBRIDGE)
   list (APPEND _vtk_modules vtkIOVisItBridge)
 endif()
 
-if (PARAVIEW_ENABLE_PYTHON)
+if (PARAVIEW_ENABLE_PYTHON AND PARAVIEW_ENABLE_MATPLOTLIB)
   list (APPEND _vtk_modules vtkRenderingMatplotlib)
 endif()
 
@@ -356,7 +358,7 @@ endif()
 set(PARAVIEW_ENABLE_VTK_MODULES_AS_NEEDED TRUE
     CACHE BOOL "Turn off to avoid ParaView depending on all used VTK modules.")
 mark_as_advanced(PARAVIEW_ENABLE_VTK_MODULES_AS_NEEDED)
-    
+
 if (PARAVIEW_ENABLE_VTK_MODULES_AS_NEEDED)
   set (PARAVIEW_DEFAULT_VTK_MODULES ${_vtk_modules})
 else ()

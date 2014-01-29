@@ -1,5 +1,4 @@
-
-project(hybrid C CXX Fortran)
+enable_language(C CXX Fortran)
 
 if(NOT MPI_INCLUDE_PATH)
   find_package(MPI REQUIRED)
@@ -9,6 +8,17 @@ include_directories(
   ${MPI_INCLUDE_PATH}
   ${Nektar_SOURCE_DIR}/include
   )
+
+# check the endianness of the system and set the define macro accordingly.
+# this behavior should be repeated in the full Nektar code.
+include(TestBigEndian)
+TEST_BIG_ENDIAN(CMAKE_WORDS_BIGENDIAN)
+
+if(CMAKE_WORDS_BIGENDIAN)
+  add_definitions(-DBTYPE="ieee_big_endian")
+else()
+  add_definitions(-DBTYPE="ieee_little_endian")
+endif()
 
 if(WIN32)
   add_definitions(-D_USE_MATH_DEFINES)
@@ -82,6 +92,7 @@ set(hybrid_sources
   src/FelisaF.F
   )
 
-add_library(hybrid STATIC ${hybrid_sources})
+
+vtk_module_library(hybrid STATIC ${hybrid_sources})
 
 set_target_properties(hybrid PROPERTIES LINKER_LANGUAGE C)

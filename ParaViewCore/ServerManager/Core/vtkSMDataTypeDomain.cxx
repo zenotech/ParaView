@@ -40,20 +40,7 @@ struct vtkSMDataTypeDomainInternals
 //*****************************************************************************
 namespace vtkSMDataTypeDomainCache
 {
-  static int ReferenceCount = 0;
   static std::map<std::string, vtkSmartPointer<vtkDataObject> > DataObjectMap;
-  static void AddReference()
-    {
-    ReferenceCount++;
-    }
-  static void RemoveReference()
-    {
-    ReferenceCount--;
-    if (ReferenceCount==0)
-      {
-      DataObjectMap.clear();
-      }
-    }
 
   // Only instanciate classes once and use cache after...
   static vtkDataObject* GetDataObjectOfType(const char* classname)
@@ -76,6 +63,10 @@ namespace vtkSMDataTypeDomainCache
     else if (strcmp(classname, "vtkCompositeDataSet") == 0)
       {
       classname = "vtkHierarchicalDataSet";
+      }
+    else if (strcmp(classname, "vtkUnstructuredGridBase") == 0)
+      {
+      classname = "vtkUnstructuredGrid";
       }
 
     std::map<std::string, vtkSmartPointer<vtkDataObject> >::iterator it;
@@ -109,14 +100,12 @@ vtkSMDataTypeDomain::vtkSMDataTypeDomain()
 {
   this->DTInternals = new vtkSMDataTypeDomainInternals;
   this->CompositeDataSupported = 1;
-  vtkSMDataTypeDomainCache::AddReference();
 }
 
 //---------------------------------------------------------------------------
 vtkSMDataTypeDomain::~vtkSMDataTypeDomain()
 {
   delete this->DTInternals;
-  vtkSMDataTypeDomainCache::RemoveReference();
 }
 
 //---------------------------------------------------------------------------
@@ -153,7 +142,7 @@ int vtkSMDataTypeDomain::IsInDomain(vtkSMProperty* property)
       {
       vtkSMProxy* proxy = pp->GetUncheckedProxy(i);
       int portno = ip? ip->GetUncheckedOutputPortForConnection(i) : 0;
-      if (!this->IsInDomain( 
+      if (!this->IsInDomain(
             vtkSMSourceProxy::SafeDownCast(proxy), portno ) )
         {
         return 0;
@@ -201,13 +190,20 @@ int vtkSMDataTypeDomain::IsInDomain(vtkSMSourceProxy* proxy,
     vtkSMDataTypeDomainCache::GetDataObjectOfType(info->GetDataClassName());
   if (!dobj)
     {
+    const char *classname = info->GetDataClassName();
+    if (classname && classname[0] != '\0')
+      {
+      vtkWarningMacro("Unable to create instance of class '"
+                      << classname << "'.");
+      }
     return 0;
     }
 
   for (unsigned int i=0; i<numTypes; i++)
     {
-    // Unfortunately, vtkDataSet and vtkPointSet have to be handled
-    // specially. These classes are abstract and can not be instantiated.
+    // Unfortunately, vtkDataSet, vtkPointSet, and vtkUnstructuredGridBase have
+    // to be handled specially. These classes are abstract and can not be
+    // instantiated.
     if (strcmp(info->GetDataClassName(), "vtkDataSet") == 0)
       {
       if (strcmp(this->GetDataType(i), "vtkDataSet") == 0)
@@ -223,6 +219,19 @@ int vtkSMDataTypeDomain::IsInDomain(vtkSMSourceProxy* proxy,
       {
       if ( (strcmp(this->GetDataType(i), "vtkPointSet") == 0) ||
            (strcmp(this->GetDataType(i), "vtkDataSet") == 0))
+        {
+        return 1;
+        }
+      else
+        {
+        continue;
+        }
+      }
+    if (strcmp(info->GetDataClassName(), "vtkUnstructuredGridBase") == 0)
+      {
+      if ((strcmp(this->GetDataType(i), "vtkPointSet") == 0) ||
+          (strcmp(this->GetDataType(i), "vtkDataSet") == 0) ||
+          (strcmp(this->GetDataType(i), "vtkUnstructuredGridBase") == 0))
         {
         return 1;
         }

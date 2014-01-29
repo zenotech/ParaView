@@ -58,6 +58,7 @@ class PQCOMPONENTS_EXPORT pqProxyWidget : public QWidget
   typedef QWidget Superclass;
 public:
   pqProxyWidget(vtkSMProxy* proxy, QWidget *parent=0, Qt::WindowFlags flags=0);
+  pqProxyWidget(vtkSMProxy* proxy, const QStringList &properties, QWidget *parent=0, Qt::WindowFlags flags=0);
   virtual ~pqProxyWidget();
 
   /// Returns the proxy this panel shows.
@@ -69,6 +70,11 @@ public:
   void setApplyChangesImmediately(bool value);
   bool applyChangesImmediately() const
     { return this->ApplyChangesImmediately; }
+
+  /// Returns a new widget that has the label and a h-line separator. This is
+  /// used on the pqProxyWidget to separate groups. Other widgets can use it for
+  /// the same purpose, as needed.
+  static QWidget* newGroupLabelWidget(const QString& label, QWidget* parentWidget);
 
 signals:
   /// This signal is fired as soon as the user starts editing in the widget. The
@@ -106,10 +112,10 @@ protected:
 
 private:
   /// create all widgets
-  void createWidgets();
+  void createWidgets(const QStringList &properties = QStringList());
 
   /// create individual property widgets.
-  void createPropertyWidgets();
+  void createPropertyWidgets(const QStringList &properties = QStringList());
 
   /// create 3D widgets, if any.
   void create3DWidgets();

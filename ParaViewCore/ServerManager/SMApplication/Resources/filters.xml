@@ -84,6 +84,26 @@
         char etc.</Documentation>
         <BooleanDomain name="bool" />
       </IntVectorProperty>
+      <IntVectorProperty command="SetPassCellArrays"
+                         default_values="0"
+                         name="PassCellArrays"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <Documentation>
+        When set the input's cell data arrays are shallow copied to the output.
+        </Documentation>
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <IntVectorProperty command="SetPassPointArrays"
+                         default_values="0"
+                         name="PassPointArrays"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <Documentation>
+        When set the input's point data arrays are shallow copied to the output.
+        </Documentation>
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
       <!-- End ProbeLine -->
     </SourceProxy>
     <!-- End of internal_filters -->
@@ -148,13 +168,15 @@
                             default_values="0.5 0.5 0.5"
                             label="Center"
                             name="Center"
-                            number_of_elements="3"></DoubleVectorProperty>
+                            number_of_elements="3"
+                            panel_visibility="never"></DoubleVectorProperty>
       <DoubleVectorProperty animateable="1"
                             command="SetNormal"
                             default_values="0 0 1"
                             label="Normal"
                             name="Normal"
-                            number_of_elements="3"></DoubleVectorProperty>
+                            number_of_elements="3"
+                            panel_visibility="never"></DoubleVectorProperty>
       <Hints>
         <PropertyGroup label="Slice Widget"
                        type="Plane">
@@ -615,6 +637,7 @@
       <!-- End IntegrateFlowThroughSurface -->
     </SourceProxy>
     <!-- ==================================================================== -->
+#ifdef PARAVIEW_USE_MPI
     <SourceProxy class="vtkAllToNRedistributePolyData"
                  label="All to N"
                  multiprocess_support="multiple_processes"
@@ -671,6 +694,7 @@
       </InputProperty>
       <!-- End Balance -->
     </SourceProxy>
+#endif
     <!-- ==================================================================== -->
     <SourceProxy class="vtkMergeArrays"
                  label="Append Attributes"
@@ -1512,6 +1536,7 @@ found and the point will be rejected.</Documentation>
       <!-- End DecimatePro -->
     </SourceProxy>
     <!-- ==================================================================== -->
+#ifdef PARAVIEW_USE_MPI
     <SourceProxy class="vtkDistributedDataFilter"
                  label="D3"
                  multiprocess_support="multiple_processes"
@@ -1568,6 +1593,7 @@ found and the point will be rejected.</Documentation>
       </IntVectorProperty>
       <!-- End D3 -->
     </SourceProxy>
+#endif
     <!-- ==================================================================== -->
     <SourceProxy class="vtkElevationFilter"
                  label="Elevation"
@@ -1611,7 +1637,8 @@ found and the point will be rejected.</Documentation>
                             default_values="0 0 0"
                             label="Low Point"
                             name="LowPoint"
-                            number_of_elements="3">
+                            number_of_elements="3"
+                            panel_visibility="never">
         <BoundsDomain default_mode="min"
                       mode="normal"
                       name="range">
@@ -1628,7 +1655,8 @@ found and the point will be rejected.</Documentation>
                             default_values="0 0 1"
                             label="High Point"
                             name="HighPoint"
-                            number_of_elements="3">
+                            number_of_elements="3"
+                            panel_visibility="never">
         <BoundsDomain default_mode="max"
                       mode="normal"
                       name="range">
@@ -1641,7 +1669,7 @@ found and the point will be rejected.</Documentation>
         vector (large scalar values).</Documentation>
       </DoubleVectorProperty>
       <Hints>
-        <PropertyGroup label="Elevation Widget"
+        <PropertyGroup label="Elevation"
                        type="Line">
           <Property function="Point1WorldPosition"
                     name="LowPoint" />
@@ -1690,91 +1718,26 @@ found and the point will be rejected.</Documentation>
                  name="None" />
           <Proxy group="implicit_functions"
                  name="Plane" />
-          <Proxy group="implicit_functions"
-                 name="Box" />
-          <Proxy group="implicit_functions"
-                 name="Sphere" />
         </ProxyListDomain>
         <Documentation>This property specifies whether to clip the dataset, and
         if so, it also specifies the parameters of the plane with which to
         clip.</Documentation>
       </ProxyProperty>
-      <StringVectorProperty clean_command="RemoveDoubleVolumeArrayNames"
-                            command="AddDoubleVolumeArrayName"
-                            label="Double Volume Arrays"
-                            name="AddDoubleVolumeArrayName"
+      <StringVectorProperty clean_command="RemoveVolumeArrayNames"
+                            command="AddVolumeArrayName"
+                            label="Volume Arrays"
+                            name="VolumeArrays"
                             number_of_elements_per_command="1"
                             repeat_command="1">
         <Documentation>This property specifies the name(s) of the volume
         fraction array(s) for generating parts.</Documentation>
         <ArrayListDomain attribute_type="Scalars"
-                         data_type="VTK_DOUBLE"
                          name="array_list">
           <RequiredProperties>
             <Property function="Input"
                       name="Input" />
           </RequiredProperties>
         </ArrayListDomain>
-        <Hints>
-          <!-- This overrides the GUI's default mechanism to
-            not set the default value for this property
-            using the domain when the proxy is created -->
-          <NoDefault />
-          <PropertyWidgetDecorator type="CTHArraySelectionDecorator">
-            <Property name="AddFloatVolumeArrayName" />
-            <Property name="AddUnsignedCharVolumeArrayName" />
-          </PropertyWidgetDecorator>
-        </Hints>
-      </StringVectorProperty>
-      <StringVectorProperty clean_command="RemoveFloatVolumeArrayNames"
-                            command="AddFloatVolumeArrayName"
-                            label="Float Volume Arrays"
-                            name="AddFloatVolumeArrayName"
-                            number_of_elements_per_command="1"
-                            repeat_command="1">
-        <Documentation>This property specifies the name(s) of the volume
-        fraction array(s) for generating parts.</Documentation>
-        <ArrayListDomain attribute_type="Scalars"
-                         data_type="VTK_FLOAT"
-                         name="array_list">
-          <RequiredProperties>
-            <Property function="Input"
-                      name="Input" />
-          </RequiredProperties>
-        </ArrayListDomain>
-        <Hints>
-          <!-- This overrides the GUI's default mechanism to
-            not set the default value for this property
-            using the domain when the proxy is created -->
-          <NoDefault />
-          <PropertyWidgetDecorator type="CTHArraySelectionDecorator">
-            <Property name="AddDoubleVolumeArrayName" />
-            <Property name="AddUnsignedCharVolumeArrayName" />
-          </PropertyWidgetDecorator>
-        </Hints>
-      </StringVectorProperty>
-      <StringVectorProperty clean_command="RemoveUnsignedCharVolumeArrayNames"
-                            command="AddUnsignedCharVolumeArrayName"
-                            label="Unsigned Character Volume Arrays"
-                            name="AddUnsignedCharVolumeArrayName"
-                            number_of_elements_per_command="1"
-                            repeat_command="1">
-        <Documentation>This property specifies the name(s) of the volume
-        fraction array(s) for generating parts.</Documentation>
-        <ArrayListDomain attribute_type="Scalars"
-                         data_type="VTK_UNSIGNED_CHAR"
-                         name="array_list">
-          <RequiredProperties>
-            <Property function="Input"
-                      name="Input" />
-          </RequiredProperties>
-        </ArrayListDomain>
-        <Hints>
-          <PropertyWidgetDecorator type="CTHArraySelectionDecorator">
-            <Property name="AddDoubleVolumeArrayName" />
-            <Property name="AddFloatVolumeArrayName" />
-          </PropertyWidgetDecorator>
-        </Hints>
       </StringVectorProperty>
       <DoubleVectorProperty command="SetVolumeFractionSurfaceValue"
                             default_values="0.1"
@@ -1787,6 +1750,40 @@ found and the point will be rejected.</Documentation>
         <Documentation>The value of this property is the volume fraction value
         for the surface.</Documentation>
       </DoubleVectorProperty>
+      <IntVectorProperty name="CapSurfaces"
+                         command="SetCapping"
+                         number_of_elements="1"
+                         default_values="1"
+                         panel_visibility="advanced" >
+        <BooleanDomain name="bool" />
+        <Documentation>
+          When enabled, volume surfaces are capped to produce visually closed
+          surface.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty name="RemoveGhostCells"
+                         command="SetRemoveGhostCells"
+                         number_of_elements="1"
+                         default_values="1"
+                         panel_visibility="advanced" >
+        <BooleanDomain name="bool" />
+        <Documentation>
+          When set to false, the output surfaces will not hide contours
+          extracted from ghost cells. This results in overlapping contours but
+          overcomes holes.  Default is set to true.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty name="GenerateTriangles"
+                         command="SetGenerateTriangles"
+                         number_of_elements="1"
+                         default_values="0"
+                         panel_visibility="advanced" >
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Triangulate results. When set to false, the internal cut and contour filters
+          are told not to triangulate results if possible.
+        </Documentation>
+      </IntVectorProperty>
       <!-- End CTHPart -->
     </SourceProxy>
     <!-- ==================================================================== -->
@@ -1965,6 +1962,28 @@ found and the point will be rejected.</Documentation>
         <Documentation>The value of this property determines whether the
         results of this computation should be used as point coordinates or as a
         new array.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetResultNormals"
+                         default_values="0"
+                         name="ResultNormals"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <BooleanDomain name="bool" />
+        <Documentation>Set whether to output results as point/cell
+        normals. Outputing as normals is only valid with vector
+        results. Point or cell normals are selected using
+        AttributeMode.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetResultTCoords"
+                         default_values="0"
+                         name="ResultTCoords"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <BooleanDomain name="bool" />
+        <Documentation>Set whether to output results as point/cell
+        texture coordinates.  Point or cell texture coordinates are
+        selected using AttributeMode. 2-component texture coordinates
+        cannot be generated at this time.</Documentation>
       </IntVectorProperty>
       <StringVectorProperty command="SetResultArrayName"
                             default_values="Result"
@@ -2726,6 +2745,127 @@ found and the point will be rejected.</Documentation>
         blocks.</Documentation>
       </IntVectorProperty>
       <!-- End AMR Dual Contour -->
+    </SourceProxy>
+    <!-- ==================================================================== -->
+    <SourceProxy class="vtkPVAMRFragmentIntegration"
+                 label="AMR Fragment Integration"
+                 name="AMRFragmentIntegration">
+      <Documentation short_help="Fragment Integration"></Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <Documentation>This property specifies the volume input of the
+        filter.</Documentation>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkNonOverlappingAMR" />
+        </DataTypeDomain>
+        <InputArrayDomain attribute_type="cell"
+                          name="input_array"
+                          number_of_components="1" />
+      </InputProperty>
+      <StringVectorProperty clean_command="ClearInputVolumeArrayToProcess"
+                            command="AddInputVolumeArrayToProcess"
+                            name="SelectMaterialArrays"
+                            number_of_elements="1"
+                            repeat_command="1">
+        <ArrayListDomain attribute_type="Scalars"
+                         data_type="VTK_UNSIGNED_CHAR VTK_INT"
+                         name="array_list">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Hints>
+          <NoDefault />
+        </Hints>
+        <Documentation>This property specifies the cell arrays from which the
+        analysis will determine fragments</Documentation>
+      </StringVectorProperty>
+      <StringVectorProperty clean_command="ClearInputMassArrayToProcess"
+                            command="AddInputMassArrayToProcess"
+                            name="SelectMassArrays"
+                            number_of_elements="1"
+                            repeat_command="1">
+        <ArrayListDomain attribute_type="Scalars"
+                         data_type="VTK_DOUBLE VTK_FLOAT"
+                         name="array_list">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Hints>
+          <NoDefault />
+        </Hints>
+        <Documentation>This property specifies the cell arrays from which the
+        analysis will determine fragment mass</Documentation>
+      </StringVectorProperty>
+      <!-- End AMR Fragment Integration -->
+    </SourceProxy>
+    <!-- ==================================================================== -->
+    <SourceProxy class="vtkAMRConnectivity"
+                 label="AMR Connectivity"
+                 name="AMRConnectivity">
+      <Documentation short_help="Fragment Identification"></Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <Documentation>This property specifies the volume input of the
+        filter.</Documentation>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkNonOverlappingAMR" />
+        </DataTypeDomain>
+        <InputArrayDomain attribute_type="cell"
+                          name="input_array"
+                          number_of_components="1" />
+      </InputProperty>
+      <StringVectorProperty clean_command="ClearInputVolumeArrayToProcess"
+                            command="AddInputVolumeArrayToProcess"
+                            name="SelectMaterialArrays"
+                            number_of_elements="1"
+                            repeat_command="1">
+        <ArrayListDomain attribute_type="Scalars"
+                         data_type="VTK_UNSIGNED_CHAR VTK_INT"
+                         name="array_list">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Hints>
+          <NoDefault />
+        </Hints>
+        <Documentation>This property specifies the cell arrays from which the
+        analysis will determine fragments</Documentation>
+      </StringVectorProperty>
+      <DoubleVectorProperty command="SetVolumeFractionSurfaceValue"
+                            default_values="0.1"
+                            label="Volume Fraction Value"
+                            name="VolumeFractionSurfaceValue"
+                            number_of_elements="1">
+        <DoubleRangeDomain max="1.0"
+                           min="0.0"
+                           name="scalar_range" />
+        <!--<RequiredProperties>
+            <Property name="Input" function="Input"/>
+            <Property name="AddInputCellArrayToProcess" function="ArraySelection"/>
+          </RequiredProperties>
+        </ArrayRangeDomain>-->
+        <Documentation>This property specifies the values at which to compute
+        the isosurface.</Documentation>
+      </DoubleVectorProperty>
+      <IntVectorProperty command="SetResolveBlocks"
+                         default_values="1"
+                         name="Resolve Blocks"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Resolve the fragments between blocks.</Documentation>
+      </IntVectorProperty>
+      <!-- End AMR Fragment Integration -->
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkCTHSimpleSurface"
@@ -3777,6 +3917,116 @@ found and the point will be rejected.</Documentation>
       <!-- End QuadricClustering -->
     </SourceProxy>
     <!-- ==================================================================== -->
+    <SourceProxy class="vtkRandomAttributeGenerator"
+                 label="Random Attributes"
+                 name="RandomAttributeGenerator">
+      <Documentation long_help=
+                     "This filter creates a new random attribute
+                      array and sets it as the default array."
+                     short_help="Creates random data attributes.">
+        The Random Attributes filter creates random attributes
+        including scalars and vectors. These attributes can be
+        generated as point data or cell data. The generation of each
+        component is normalized between a user-specified minimum and
+        maximum value.
+
+        This filter provides that capability to specify the data type
+        of the attributes and the range for each of the components.
+      </Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+        </DataTypeDomain>
+        <Documentation>This property specifies the input to the Random Scalars
+        filter.</Documentation>
+      </InputProperty>
+      <IntVectorProperty
+          name="DataType"
+          command="SetDataType"
+          number_of_elements="1"
+          default_values="3">
+        <EnumerationDomain name="enum">
+          <Entry value="1" text="Bit"/>
+          <Entry value="2" text="Char"/>
+          <Entry value="3" text="UnsignedChar"/>
+          <Entry value="4" text="Short"/>
+          <Entry value="5" text="UnsignedShort"/>
+          <Entry value="6" text="Int"/>
+          <Entry value="7" text="UnsignedInt"/>
+          <Entry value="8" text="Long"/>
+          <Entry value="9" text="UnsignedLong"/>
+          <Entry value="10" text="Float"/>
+          <Entry value="11" text="Double"/>
+        </EnumerationDomain>
+        <Documentation>
+          Specify the type of array to create (all components of this
+          array are of this type). This holds true for all arrays that
+          are created.
+        </Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty command="SetComponentRange"
+                            default_values="0 255"
+                            name="ComponentRange"
+                            number_of_elements="2">
+        <Documentation>Set the range values (minimum and maximum) for
+        each component. This applies to all data that is
+        generated.</Documentation>
+      </DoubleVectorProperty>
+
+      <IntVectorProperty
+          name="AttributesConstantPerBlock"
+          command="SetAttributesConstantPerBlock"
+          number_of_elements="1"
+          default_values="0">
+        <BooleanDomain name="bool"/>
+        <Documentation>Indicate that the generated attributes are
+        constant within a block. This can be used to highlight
+        blocks in a composite dataset.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty
+          name="GeneratePointScalars"
+          command="SetGeneratePointScalars"
+          number_of_elements="1"
+          default_values="0">
+        <BooleanDomain name="bool"/>
+        <Documentation>Indicate that point scalars are to be
+        generated.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty
+          name="GeneratePointVectors"
+          command="SetGeneratePointVectors"
+          number_of_elements="1"
+          default_values="0">
+        <BooleanDomain name="bool"/>
+        <Documentation>Indicate that point vectors are to be
+        generated.</Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+          name="GenerateCellScalars"
+          command="SetGenerateCellScalars"
+          number_of_elements="1"
+          default_values="0">
+        <BooleanDomain name="bool"/>
+        <Documentation>Indicate that point scalars are to be
+        generated.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty
+          name="GenerateCellVectors"
+          command="SetGenerateCellVectors"
+          number_of_elements="1"
+          default_values="1">
+        <BooleanDomain name="bool"/>
+        <Documentation>Indicate that point vectors are to be
+        generated.</Documentation>
+      </IntVectorProperty>
+    </SourceProxy>
+    <!-- ==================================================================== -->
     <SourceProxy class="vtkBrownianPoints"
                  label="Random Vectors"
                  name="BrownianPoints">
@@ -4490,6 +4740,230 @@ found and the point will be rejected.</Documentation>
       </IntVectorProperty>
       <!-- End Subdivide -->
     </SourceProxy>
+
+    <!-- ==================================================================== -->
+    <SourceProxy name="TensorGlyph" class="vtkTensorGlyph" label="Tensor Glyph">
+
+      <Documentation
+        long_help="This filter generates an ellipsoid, cuboid, cylinder or superquadric glyph at
+                   each point of the input data set. The glyphs are oriented and scaled according
+                   to eigenvalues and eigenvectors of tensor point data of the input data set."
+        short_help="This filter generates an ellipsoid, cuboid, cylinder or superquadric glyph at each
+                   point of the input data set. The glyphs are oriented and scaled according to eigenvalues
+                   and eigenvectors of tensor point data of the input data set.">
+
+        The Tensor Glyph filter generates an ellipsoid, cuboid, cylinder or superquadric glyph at every point in
+        the input data set. The glyphs are oriented and scaled according to eigenvalues and eigenvectors of tensor
+        point data of the input data set. The Tensor Glyph filter operates on any type of data set. Its output is
+        polygonal.
+      </Documentation>
+
+    <InputProperty
+        name="Input"
+        command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkDataSet" />
+      </DataTypeDomain>
+      <InputArrayDomain name="input_array1" attribute_type="point"
+            number_of_components="9" />
+      <InputArrayDomain name="input_array2" attribute_type="point"
+            number_of_components="1" optional="1" />
+      <Documentation>
+        This property specifies the input to the Glyph filter.
+      </Documentation>
+    </InputProperty>
+
+    <StringVectorProperty
+        name="SelectInputTensors"
+        command="SetInputArrayToProcess"
+        number_of_elements="5"
+        element_types="0 0 0 0 2"
+        label="Tensors"
+        >
+      <ArrayListDomain name="array_list" attribute_type="Tensors"
+          input_domain_name="input_array1">
+        <RequiredProperties>
+          <Property name="Input" function="Input" />
+        </RequiredProperties>
+      </ArrayListDomain>
+      <Documentation>
+              This property indicates the name of the tensor array on which to operate. The indicated array's
+              eigenvalues and eigenvectors are used for scaling and orienting the glyphs.
+      </Documentation>
+    </StringVectorProperty>
+
+    <InputProperty
+        name="Source"
+        command="SetSourceConnection"
+        label="Glyph Type">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources" />
+        <Group name="glyph_sources" />
+      </ProxyGroupDomain>
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkPolyData" />
+      </DataTypeDomain>
+      <ProxyListDomain name="proxy_list">
+        <Proxy group="sources" name="SphereSource" />
+        <Proxy group="sources" name="CylinderSource" />
+        <Proxy group="sources" name="CubeSource" />
+        <Proxy group="sources" name="SuperquadricSource" />
+      </ProxyListDomain>
+      <Documentation>
+        This property determines which type of glyph will be placed at the points in the input dataset.
+      </Documentation>
+    </InputProperty>
+
+    <IntVectorProperty
+        name="ExtractEigenvalues"
+        command="SetExtractEigenvalues"
+        number_of_elements="1"
+        default_values="1"
+        >
+      <BooleanDomain name="bool" />
+      <Documentation>
+        Toggle whether to extract eigenvalues from tensor. If false, eigenvalues/eigenvectors are not extracted and
+        the columns of the tensor are taken as the eigenvectors (the norm of column, always positive, is the eigenvalue).
+        If true, the glyph is scaled and oriented according to eigenvalues and eigenvectors; additionally, eigenvalues
+        are provided as new data array.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="ColorGlyphs"
+        command="SetColorGlyphs"
+        number_of_elements="1"
+        default_values="1"
+        >
+      <BooleanDomain name="bool" />
+      <Documentation>
+        This property determines whether or not to color the glyphes.
+      </Documentation>
+    </IntVectorProperty>
+
+    <StringVectorProperty
+        name="SelectInputScalars"
+        command="SetInputArrayToProcess"
+        number_of_elements="5"
+        element_types="0 0 0 0 2"
+        default_values="1"
+        label="Scalars"
+        >
+           <!-- default_values=1 is important to set here and not in Tensors
+                previously. Omitting the setting here would mess up changed
+                tensor input being recognized as tensor input and not as
+                scalar input and vice versa. -->
+      <ArrayListDomain name="array_list" attribute_type="Scalars"
+          input_domain_name="input_array2">
+        <RequiredProperties>
+          <Property name="Input" function="Input" />
+        </RequiredProperties>
+      </ArrayListDomain>
+      <Documentation>
+        This property indicates the name of the scalar array to use for coloring
+      </Documentation>
+    </StringVectorProperty>
+
+    <IntVectorProperty
+        name="ColorMode"
+        command="SetColorMode"
+        number_of_elements="1"
+        default_values="0"
+        label="Color by"
+        >
+            <EnumerationDomain name="enum">
+              <Entry value="0" text="input scalars" />
+              <Entry value="1" text="eigenvalues" />
+            </EnumerationDomain>
+      <Documentation>
+        This property determines whether input scalars or computed eigenvalues at the point should be used
+        to color the glyphs. If ThreeGlyphs is set and the eigenvalues are chosen for coloring then each glyph
+        is colored by the corresponding eigenvalue and if not set the color corresponding to the largest
+        eigenvalue is chosen.
+      </Documentation>
+   </IntVectorProperty>
+
+    <!-- Disabled as vtkTensorGlyph.cxx does not respect this parameter currently. -->
+    <!--
+    <IntVectorProperty
+        name="Scaling"
+        command="SetScaling"
+        number_of_elements="1"
+        default_values="1"
+        >
+      <BooleanDomain name="bool" />
+      <Documentation>
+        This property determines whether or not to scale glyphs with eigenvalues.
+      </Documentation>
+    </IntVectorProperty>
+    -->
+
+    <DoubleVectorProperty
+        name="ScaleFactor"
+        command="SetScaleFactor"
+        number_of_elements="1"
+        default_values="1"
+        >
+      <Documentation>
+        This property specifies the scale factor to scale every glyph by.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <IntVectorProperty
+        name="LimitScalingByEigenvalues"
+        command="SetClampScaling"
+        number_of_elements="1"
+        default_values="0"
+        >
+      <BooleanDomain name="bool" />
+      <Documentation>
+        This property determines whether scaling of glyphs by ScaleFactor times eigenvalue should be limited.
+        This is useful to prevent uncontrolled scaling near singularities.
+      </Documentation>
+    </IntVectorProperty>
+
+    <DoubleVectorProperty
+        name="MaxScaleFactor"
+        command="SetMaxScaleFactor"
+        number_of_elements="1"
+        default_values="10"
+        >
+      <Documentation>
+        If scaling by eigenvalues should be limited, this value sets an upper limit for scale factor times
+        eigenvalue.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <IntVectorProperty
+        name="Symmetric"
+        command="SetSymmetric"
+        number_of_elements="1"
+        default_values="0"
+        >
+      <BooleanDomain name="bool" />
+      <Documentation>
+        This property determines whether or not to draw a mirror of each glyph.
+      </Documentation>
+    </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ThreeGlyphs"
+        command="SetThreeGlyphs"
+        number_of_elements="1"
+        default_values="0"
+        >
+      <BooleanDomain name="bool" />
+      <Documentation>
+        Toggle whether to produce three glyphs, each of which oriented along an eigenvector and scaled according
+        to the corresponding eigenvector.
+      </Documentation>
+          </IntVectorProperty>
+    </SourceProxy>
+
     <!-- ==================================================================== -->
     <SourceProxy class="vtkTessellatorFilter"
                  label="Tessellate"
@@ -5581,14 +6055,14 @@ found and the point will be rejected.</Documentation>
                          number_of_elements="1">
         <BooleanDomain name="bool" />
         <Documentation>
-	  If off, the vertex scalars are treated as a discrete set. If on, they
-	  are treated as a continuous interval over the minimum and maximum. One
-	  important "on" use case: When setting lower and upper threshold
-	  equal to some value and turning AllScalars off, the results are
-	  cells containing the iso-surface for that value.  WARNING: Whether on
-	  or off, for higher order input, the filter will not give accurate
-	  results.
-	</Documentation>
+          If off, the vertex scalars are treated as a discrete set. If on, they
+          are treated as a continuous interval over the minimum and maximum. One
+          important "on" use case: When setting lower and upper threshold
+          equal to some value and turning AllScalars off, the results are
+          cells containing the iso-surface for that value.  WARNING: Whether on
+          or off, for higher order input, the filter will not give accurate
+          results.
+        </Documentation>
       </IntVectorProperty>
       <Hints>
         <Visibility replace_input="2" />
@@ -5800,7 +6274,8 @@ found and the point will be rejected.</Documentation>
       <!-- incremental point locator begin -->
       <ProxyProperty command="SetLocator"
                      label="Point Merge Method"
-                     name="Locator">
+                     name="Locator"
+                     panel_visibility="advanced" >
         <ProxyGroupDomain name="groups">
           <Group name="incremental_point_locators" />
         </ProxyGroupDomain>
@@ -6470,14 +6945,14 @@ found and the point will be rejected.</Documentation>
                      short_help="Sample data values at the points of a dataset.">
                      Probe is a filter that computes point attributes at
                      specified point positions. The filter has two inputs: the
-                     Input and Source. The Input geometric structure is passed
+                     Input and Source.  The 'Source' geometric structure is passed
                      through the filter. The point attributes are computed at
-                     the Input point positions by interpolating into the source
-                     data. For example, we can compute data values on a plane
-                     (plane specified as Input) from a volume (Source). The
-                     cell data of the source data is copied to the output based
-                     on in which source cell each input point is. If an array
-                     of the same name exists both in source's point and cell
+                     the 'Source' point positions by interpolating into the
+                     'Input' data. For example, we can compute data values on a plane
+                     (plane specified as Source) from a volume (Input). The
+                     cell data of the Input data is copied to the output based
+                     on in which Input cell each Source point is. If an array
+                     of the same name exists both in Input's point and cell
                      data, only the one from the point data is
                      probed.</Documentation>
       <InputProperty command="SetSourceConnection"
@@ -6492,7 +6967,7 @@ found and the point will be rejected.</Documentation>
         </DataTypeDomain>
         <InputArrayDomain name="input_array" />
         <Documentation>This property specifies the dataset from which to obtain
-        probe values.</Documentation>
+        probe values. The data attributes come from this dataset.</Documentation>
       </InputProperty>
       <InputProperty command="SetInputConnection"
                      name="Source">
@@ -6504,8 +6979,29 @@ found and the point will be rejected.</Documentation>
           <DataType value="vtkDataSet" />
         </DataTypeDomain>
         <Documentation>This property specifies the dataset whose geometry will
-        be used in determining positions to probe.</Documentation>
+        be used in determining positions to probe. The mesh comes from this
+        dataset.</Documentation>
       </InputProperty>
+      <IntVectorProperty command="SetPassCellArrays"
+                         default_values="0"
+                         name="PassCellArrays"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <Documentation>
+        When set the input's cell data arrays are shallow copied to the output.
+        </Documentation>
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <IntVectorProperty command="SetPassPointArrays"
+                         default_values="0"
+                         name="PassPointArrays"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <Documentation>
+        When set the input's point data arrays are shallow copied to the output.
+        </Documentation>
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
       <Hints>
         <Visibility replace_input="0" />
       </Hints>
@@ -6672,7 +7168,8 @@ found and the point will be rejected.</Documentation>
                             label="Maximum Streamline Length"
                             name="MaximumPropagation"
                             number_of_elements="1">
-        <BoundsDomain mode="scaled_extent"
+        <BoundsDomain default_mode="max"
+                      mode="scaled_extent"
                       name="bounds"
                       scale_factor="1.0">
           <RequiredProperties>
@@ -7328,6 +7825,26 @@ found and the point will be rejected.</Documentation>
         vector field integration should begin. Usually a point/radius or a line
         with a given resolution.</Documentation>
       </InputProperty>
+      <IntVectorProperty command="SetStaticSeeds"
+                         default_values="0"
+                         name="StaticSeeds"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>If the input seeds are not changing, then this
+        can be set to 1 to avoid having to do a repeated grid search
+        that would return the exact same result.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetStaticMesh"
+                         default_values="0"
+                         name="StaticMesh"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>If the input grid is not changing, then this
+        can be set to 1 to avoid having to create cell locators for
+        each update.
+        </Documentation>
+      </IntVectorProperty>
       <!--
      <DoubleVectorProperty
         name="TimeStepResolution"
@@ -7495,6 +8012,26 @@ found and the point will be rejected.</Documentation>
         will be redundant as the particles will be reinjected whenever the
         source changes anyway</Documentation>
       </IntVectorProperty>
+      <IntVectorProperty command="SetStaticSeeds"
+                         default_values="0"
+                         name="StaticSeeds"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>If the input seeds are not changing, then this
+        can be set to 1 to avoid having to do a repeated grid search
+        that would return the exact same result.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetStaticMesh"
+                         default_values="0"
+                         name="StaticMesh"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>If the input grid is not changing, then this
+        can be set to 1 to avoid having to create cell locators for
+        each update.
+        </Documentation>
+      </IntVectorProperty>
       <StringVectorProperty animateable="0"
                             command="SetInputArrayToProcess"
                             element_types="0 0 0 0 2"
@@ -7568,6 +8105,26 @@ found and the point will be rejected.</Documentation>
         <Documentation>Specify which is the Input of the StreamTracer
         filter.</Documentation>
       </InputProperty>
+      <IntVectorProperty command="SetStaticSeeds"
+                         default_values="0"
+                         name="StaticSeeds"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>If the input seeds are not changing, then this
+        can be set to 1 to avoid having to do a repeated grid search
+        that would return the exact same result.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetStaticMesh"
+                         default_values="0"
+                         name="StaticMesh"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>If the input grid is not changing, then this
+        can be set to 1 to avoid having to create cell locators for
+        each update.
+        </Documentation>
+      </IntVectorProperty>
       <InputProperty clean_command="RemoveAllSources"
                      command="AddSourceConnection"
                      label="Seed Source"
@@ -7653,127 +8210,119 @@ found and the point will be rejected.</Documentation>
      - Leo 12/30/2012  -->
 
     <SourceProxy name="ParticlePathLines"
-	      class="vtkTemporalPathLineFilter"
-	      label="Temporal Particles To Pathlines">
+        class="vtkTemporalPathLineFilter"
+        label="Temporal Particles To Pathlines">
       <Documentation
-	 long_help="Creates polylines representing pathlines of animating particles"
-	 short_help="Particle Pathlines">
-	Particle Pathlines takes any dataset as input, it extracts the
-	point locations of all cells over time to build up a polyline
-	trail.  The point number (index) is used as the 'key' if the points
-	are randomly changing their respective order in the points list,
-	then you should specify a scalar that represents the unique
-	ID. This is intended to handle the output of a filter such as the
-	TemporalStreamTracer.
+        long_help="Creates polylines representing pathlines of animating particles"
+        short_help="Particle Pathlines">
+        Particle Pathlines takes any dataset as input, it extracts the
+        point locations of all cells over time to build up a polyline
+        trail.  The point number (index) is used as the 'key' if the points
+        are randomly changing their respective order in the points list,
+        then you should specify a scalar that represents the unique
+        ID. This is intended to handle the output of a filter such as the
+        TemporalStreamTracer.
       </Documentation>
 
       <OutputPort name="Pathlines" index="0" />
       <OutputPort name="Particles" index="1" />
 
-      <InputProperty
-	 name="Input"
-	 command="SetInputConnection">
-	<ProxyGroupDomain name="groups">
-	  <Group name="sources"/>
-	  <Group name="filters"/>
-	</ProxyGroupDomain>
-	<DataTypeDomain name="input_type">
-	  <DataType value="vtkPointSet"/>
-	</DataTypeDomain>
-	<InputArrayDomain name="input_array" attribute_type="point"
-			  optional="1"/>
-	<Documentation>
-	  The input cells to create pathlines for.
-	</Documentation>
+      <InputProperty name="Input" command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkPointSet"/>
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array" attribute_type="point"
+              optional="1"/>
+        <Documentation>
+          The input cells to create pathlines for.
+        </Documentation>
       </InputProperty>
 
-      <InputProperty
-	 name="Selection"
-	 command="SetSelectionConnection">
-	<ProxyGroupDomain name="groups">
-	  <Group name="sources"/>
-	  <Group name="filters"/>
-	</ProxyGroupDomain>
-	<DataTypeDomain name="input_type">
-	  <DataType value="vtkDataSet"/>
-	</DataTypeDomain>
-	<Hints>
-	  <Optional />
-	</Hints>
-	<Documentation>
-	  Set a second input, which is a selection. Particles with the same
-	  Id in the selection as the primary input will be chosen for
-	  pathlines Note that you must have the same IdChannelArray in the
-	  selection as the input
-	</Documentation>
+      <InputProperty name="Selection" command="SetSelectionConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet"/>
+        </DataTypeDomain>
+        <Hints>
+          <Optional />
+        </Hints>
+        <Documentation>
+          Set a second input, which is a selection. Particles with the same
+          Id in the selection as the primary input will be chosen for
+          pathlines Note that you must have the same IdChannelArray in the
+          selection as the input
+        </Documentation>
       </InputProperty>
 
-      <IntVectorProperty
-	  name="MaskPoints"
-	  command="SetMaskPoints"
-	  number_of_elements="1"
-	  default_values="100" >
-	<Documentation>
-	  Set the number of particles to track as a ratio of the input.
-	  Example: setting MaskPoints to 10 will track every 10th point.
-	</Documentation>
+      <IntVectorProperty name="MaskPoints"
+                         command="SetMaskPoints"
+                         number_of_elements="1"
+                         default_values="100" >
+        <Documentation>
+          Set the number of particles to track as a ratio of the input.
+          Example: setting MaskPoints to 10 will track every 10th point.
+        </Documentation>
       </IntVectorProperty>
 
-      <IntVectorProperty
-	  name="MaxTrackLength"
-	  command="SetMaxTrackLength"
-	  number_of_elements="1"
-	  default_values="25" >
-	<Documentation>
-	  If the Particles being traced animate for a long time, the trails
-	  or traces will become long and stringy. Setting the
-	  MaxTraceTimeLength will limit how much of the trace is
-	  displayed. Tracks longer then the Max will disappear and the
-	  trace will apppear like a snake of fixed length which progresses
-	  as the particle moves.  This length is given with respect to
-	  timesteps.
-	</Documentation>
+      <IntVectorProperty name="MaxTrackLength"
+                         command="SetMaxTrackLength"
+                         number_of_elements="1"
+                         default_values="25" >
+        <Documentation>
+          If the Particles being traced animate for a long time, the trails
+          or traces will become long and stringy. Setting the
+          MaxTraceTimeLength will limit how much of the trace is
+          displayed. Tracks longer then the Max will disappear and the
+          trace will apppear like a snake of fixed length which progresses
+          as the particle moves.  This length is given with respect to
+          timesteps.
+        </Documentation>
       </IntVectorProperty>
 
-      <DoubleVectorProperty
-	 name="MaxStepDistance"
-	 command="SetMaxStepDistance"
-	 number_of_elements="3"
-	 animateable="1"
-	 default_values="1.0 1.0 1.0" >
-	<DoubleRangeDomain name="range"/>
-	<Documentation>
-	  If a particle disappears from one end of a simulation and
-	  reappears on the other side, the track left will be
-	  unrepresentative.  Set a MaxStepDistance{x,y,z} which acts as a
-	  threshold above which if a step occurs larger than the value (for
-	  the dimension), the track will be dropped and restarted after the
-	  step. (ie the part before the wrap around will be dropped and the
-	  newer part kept).
-	</Documentation>
+      <DoubleVectorProperty name="MaxStepDistance"
+                            command="SetMaxStepDistance"
+                            number_of_elements="3"
+                            animateable="1"
+                            default_values="1.0 1.0 1.0" >
+          <DoubleRangeDomain name="range"/>
+          <Documentation>
+            If a particle disappears from one end of a simulation and
+            reappears on the other side, the track left will be
+            unrepresentative.  Set a MaxStepDistance{x,y,z} which acts as a
+            threshold above which if a step occurs larger than the value (for
+            the dimension), the track will be dropped and restarted after the
+            step. (ie the part before the wrap around will be dropped and the
+            newer part kept).
+          </Documentation>
       </DoubleVectorProperty>
 
-      <StringVectorProperty
-	  name="IdChannelArray"
-	  command="SetIdChannelArray"
-	  number_of_elements="1"
-	  default_values="Global or Local IDs"
-	  animateable="0">
-	  <ArrayListDomain
-	    name="array_list" attribute_type="Scalars"
-	    none_string="Global or Local IDs">
-	    <RequiredProperties>
-	      <Property name="Input" function="Input"/>
-	    </RequiredProperties>
-	  </ArrayListDomain>
-	<Documentation>
-	  Specify the name of a scalar array which will be used to fetch
-	  the index of each point. This is necessary only if the particles
-	  change position (Id order) on each time step. The Id can be used
-	  to identify particles at each step and hence track them properly.
-	  If this array is set to "Global or Local IDs", the global point
-	  ids are used if they exist or the point index is otherwise.
-	</Documentation>
+      <StringVectorProperty name="IdChannelArray"
+                            command="SetIdChannelArray"
+                            number_of_elements="1"
+                            default_values="Global or Local IDs"
+                            animateable="0">
+            <ArrayListDomain
+              name="array_list" attribute_type="Scalars"
+              none_string="Global or Local IDs">
+              <RequiredProperties>
+                <Property name="Input" function="Input"/>
+              </RequiredProperties>
+            </ArrayListDomain>
+          <Documentation>
+            Specify the name of a scalar array which will be used to fetch
+            the index of each point. This is necessary only if the particles
+            change position (Id order) on each time step. The Id can be used
+            to identify particles at each step and hence track them properly.
+            If this array is set to "Global or Local IDs", the global point
+            ids are used if they exist or the point index is otherwise.
+          </Documentation>
       </StringVectorProperty>
 
    </SourceProxy>
@@ -10246,7 +10795,7 @@ found and the point will be rejected.</Documentation>
       </IntVectorProperty>
     </SourceProxy>
     <!-- ==================================================================== -->
-    <SourceProxy class="vtkPTableToStructuredGrid"
+    <SourceProxy class="vtkTableToStructuredGrid"
                  label="Table To Structured Grid"
                  name="TableToStructuredGrid">
       <Documentation long_help="Converts to table to structured grid."
@@ -11438,198 +11987,7 @@ found and the point will be rejected.</Documentation>
       </Hints>
     </SourceProxy>
     <!-- PCAStatistics -->
-    <SourceProxy class="vtkPCosmoHaloFinder"
-                 label="FOF/SOD Halo Finder"
-                 name="HaloFinder">
-      <InputProperty command="SetInputConnection"
-                     name="Input">
-        <ProxyGroupDomain name="groups">
-          <Group name="sources" />
-          <Group name="filters" />
-        </ProxyGroupDomain>
-        <DataTypeDomain name="input_type">
-          <DataType value="vtkUnstructuredGrid" />
-        </DataTypeDomain>
-        <Documentation>This property specifies the input of the
-        filter.</Documentation>
-      </InputProperty>
-      <DoubleVectorProperty command="SetRL"
-                            default_values="100"
-                            label="rL (physical box side length)"
-                            name="RL"
-                            number_of_elements="1">
-        <DoubleRangeDomain min="0"
-                           name="range" />
-        <Documentation>The box side length used to wrap particles around if
-        they exceed rL (or less than 0) in any dimension (only positive
-        positions are allowed in the input, or they are wrapped
-        around).</Documentation>
-      </DoubleVectorProperty>
-      <DoubleVectorProperty command="SetOverlap"
-                            default_values="5"
-                            label="overlap (shared point/ghost cell gap distance)"
-                            name="Overlap"
-                            number_of_elements="1">
-        <DoubleRangeDomain min="0"
-                           name="range" />
-        <Documentation>The space (in rL units) to extend processor particle
-        ownership for ghost particles/cells. Needed for correct halo
-        calculation when halos cross processor boundaries in parallel
-        computation.</Documentation>
-      </DoubleVectorProperty>
-      <IntVectorProperty command="SetNP"
-                         default_values="256"
-                         label="np (number of seeded particles in one dimension, i.e., total particles = np^3)"
-                         name="NP"
-                         number_of_elements="1">
-        <IntRangeDomain min="0"
-                        name="range" />
-        <Documentation>Number of seeded particles in one dimension. Therefore,
-        total simulation particles is np^3 (cubed).</Documentation>
-      </IntVectorProperty>
-      <DoubleVectorProperty command="SetBB"
-                            default_values="0.20"
-                            label="bb (linking length)"
-                            name="BB"
-                            number_of_elements="1">
-        <DoubleRangeDomain min="0"
-                           name="range" />
-        <Documentation>Linking length measured in units of interparticle
-        spacing and is dimensionless. Used to link particles into halos for the
-        friends-of-friends (FOF) algorithm.</Documentation>
-      </DoubleVectorProperty>
-      <IntVectorProperty command="SetPMin"
-                         default_values="100"
-                         label="pmin (minimum particle threshold for an FOF halo)"
-                         name="PMin"
-                         number_of_elements="1">
-        <IntRangeDomain min="1"
-                        name="range" />
-        <Documentation>Minimum number of particles (threshold) needed before a
-        group is called a friends-of-friends (FOF) halo.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetCopyHaloDataToParticles"
-                         default_values="0"
-                         label="Copy FOF halo catalog to original particles"
-                         name="CopyHaloDataToParticles"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation>If checked, the friends-of-friends (FOF) halo catalog
-        information will be copied to the original particles as
-        well.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetComputeMostBoundParticle"
-                         default_values="0"
-                         label="Compute the most bound particle"
-                         name="ComputeMostBoundParticle"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation>If checked, the most bound particle for an FOF halo will
-        be calculated. WARNING: This can be very slow.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetComputeMostConnectedParticle"
-                         default_values="0"
-                         label="Compute the most connected particle"
-                         name="ComputeMostConnectedParticle"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation>If checked, the most connected particle for an FOF halo
-        will be calculated. WARNING: This can be very slow.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetComputeSOD"
-                         default_values="0"
-                         label="Compute spherical overdensity (SOD) halos"
-                         name="ComputeSOD"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation>If checked, spherical overdensity (SOD) halos will be
-        calculated in addition to friends-of-friends (FOF)
-        halos.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetSODCenterType"
-                         default_values="0"
-                         label="initial SOD center"
-                         name="SODCenterType"
-                         number_of_elements="1">
-        <EnumerationDomain name="sod_center_type">
-          <Entry text="Center of mass"
-                 value="0" />
-          <Entry text="Average position"
-                 value="1" />
-          <Entry text="Most bound particle"
-                 value="2" />
-          <Entry text="Most connected particle"
-                 value="3" />
-        </EnumerationDomain>
-        <Documentation>The initial friends-of-friends (FOF) center used for
-        calculating a spherical overdensity (SOD) halo. WARNING: Using MBP or
-        MCP can be very slow.</Documentation>
-      </IntVectorProperty>
-      <DoubleVectorProperty command="SetRhoC"
-                            default_values="2.77536627e11"
-                            label="rho_c"
-                            name="RhoC"
-                            number_of_elements="1">
-        <DoubleRangeDomain name="range" />
-        <Documentation>rho_c (critical density) for SOD halo
-        finding.</Documentation>
-      </DoubleVectorProperty>
-      <DoubleVectorProperty command="SetSODMass"
-                            default_values="1.0e14"
-                            label="initial SOD mass"
-                            name="SODMass"
-                            number_of_elements="1">
-        <DoubleRangeDomain min="0"
-                           name="range" />
-        <Documentation>The initial SOD mass.</Documentation>
-      </DoubleVectorProperty>
-      <DoubleVectorProperty command="SetMinRadiusFactor"
-                            default_values="0.5"
-                            label="minimum radius factor"
-                            name="MinRadiusFactor"
-                            number_of_elements="1">
-        <DoubleRangeDomain min="0"
-                           name="range" />
-        <Documentation>Minimum radius factor for SOD finding.</Documentation>
-      </DoubleVectorProperty>
-      <DoubleVectorProperty command="SetMaxRadiusFactor"
-                            default_values="2.0"
-                            label="maximum radius factor"
-                            name="MaxRadiusFactor"
-                            number_of_elements="1">
-        <DoubleRangeDomain min="0"
-                           name="range" />
-        <Documentation>Maximum radius factor for SOD finding.</Documentation>
-      </DoubleVectorProperty>
-      <IntVectorProperty command="SetSODBins"
-                         default_values="20"
-                         label="number of bins"
-                         name="SODBins"
-                         number_of_elements="1">
-        <IntRangeDomain min="1"
-                        name="range" />
-        <Documentation>Number of bins for SOD finding.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetMinFOFSize"
-                         default_values="1000"
-                         label="minimum FOF size"
-                         name="MinFOFSize"
-                         number_of_elements="1">
-        <IntRangeDomain min="0"
-                        name="range" />
-        <Documentation>Minimum FOF halo size to calculate an SOD
-        halo.</Documentation>
-      </IntVectorProperty>
-      <DoubleVectorProperty command="SetMinFOFMass"
-                            default_values="5.0e12"
-                            label="minimum FOF mass"
-                            name="MinFOFMass"
-                            number_of_elements="1">
-        <DoubleRangeDomain name="range" />
-        <Documentation>Minimum FOF mass to calculate an SOD
-        halo.</Documentation>
-      </DoubleVectorProperty>
-    </SourceProxy>
+
     <!-- ==================================================================== -->
     <SourceProxy class="vtkMaterialInterfaceFilter"
                  label="Material Interface Filter"

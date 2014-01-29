@@ -68,10 +68,55 @@
                             name="ArrayName"
                             number_of_elements="1"></StringVectorProperty>
     </Proxy>
-    <Proxy class="vtkDiscretizableColorTransferFunction"
-           name="PVLookupTable"
-           post_push="Build"
-           processes="dataserver|renderserver|client">
+
+    <TransferFunctionProxy class="vtkDiscretizableColorTransferFunction"
+                           name="PVLookupTable"
+                           post_push="Build"
+                           processes="dataserver|renderserver|client">
+      <IntVectorProperty name="IndexedLookup"
+                         command="SetIndexedLookup"
+                         default_values="0"
+                         number_of_elements="1"
+                         label="Interpret Values As Categories">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          When enabled, the color transfer function switches to indexed-lookup
+          (categorical colors) mode.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="EnableOpacityMapping"
+                         command="SetEnableOpacityMapping"
+                         number_of_elements="1"
+                         default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          When enabled, the opacity transfer function is used for
+          rendering, if applicable.
+        </Documentation>
+      </IntVectorProperty>
+
+      <ProxyProperty name="ScalarOpacityFunction"
+                     command="SetScalarOpacityFunction">
+      </ProxyProperty>
+
+      <DoubleVectorProperty clean_command="RemoveAllPoints"
+                            command="AddRGBPoint"
+                            name="RGBPoints"
+                            number_of_elements_per_command="4"
+                            repeat_command="1">
+        <Documentation>
+          Specify the control points that form the color-transfer-function. These are
+          a list of 4-tuples of the form (x, r, g, b) where x is the data value,
+          and r,g,b are three color components in the range [0,1].
+        </Documentation>
+      </DoubleVectorProperty>
+      <IntVectorProperty command="SetUseLogScale"
+                         default_values="0"
+                         name="UseLogScale"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
       <IntVectorProperty default_values="0"
                          name="LockScalarRange"
                          number_of_elements="1">
@@ -80,122 +125,150 @@
           hence the absence of "command" -->
         <BooleanDomain name="bool" />
       </IntVectorProperty>
-      <DoubleVectorProperty default_values="0"
-                            name="ScalarRangeInitialized"
-                            number_of_elements="1">
-        <!-- This is used to keep track of whether the
-        user initialized the scalar range -->
-        <BooleanDomain name="bool" />
-      </DoubleVectorProperty>
-      <DoubleVectorProperty animateable="0"
-                            clean_command="RemoveAllPoints"
-                            command="AddRGBPoint"
-                            name="RGBPoints"
-                            number_of_elements_per_command="4"
-                            repeat_command="1"></DoubleVectorProperty>
-      <IntVectorProperty animateable="0"
-                         command="SetColorSpace"
+      <IntVectorProperty command="SetColorSpace"
                          default_values="0"
                          name="ColorSpace"
                          number_of_elements="1">
         <EnumerationDomain name="enum">
-          <Entry text="RGB"
-                 value="0" />
-          <Entry text="HSV"
-                 value="1" />
-          <Entry text="Lab"
-                 value="2" />
-          <Entry text="Diverging"
-                 value="3" />
+          <Entry text="RGB" value="0" />
+          <Entry text="HSV" value="1" />
+          <Entry text="Lab" value="2" />
+          <Entry text="Diverging" value="3" />
         </EnumerationDomain>
+        <Documentation>
+          The color space used for interpolation: RGB, HSV, Lab (CIELAB), or
+          Diverging. In HSV mode, if HSVWrap is on, it will take the shortest
+          path in Hue (going back through 0 if that is the shortest way around
+          the hue circle) whereas if HSVWrap is off it will not go through 0
+          (in order the match the current functionality of vtkLookupTable).
+          Diverging is a special mode where colors will pass through white when
+          interpolating between two saturated colors.
+        </Documentation>
       </IntVectorProperty>
-      <IntVectorProperty animateable="0"
-                         command="SetHSVWrap"
-                         default_values="0"
-                         name="HSVWrap"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-      </IntVectorProperty>
-      <DoubleVectorProperty animateable="0"
-                            command="SetNanColor"
+      <DoubleVectorProperty command="SetNanColor"
                             default_values="0.5 0 0"
                             name="NanColor"
-                            number_of_elements="3"></DoubleVectorProperty>
+                            number_of_elements="3"
+                            panel_widget="color_selector" >
+        <Documentation>
+          Set the color to use when NaN (not-a-number) is encountered.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <IntVectorProperty command="SetDiscretize"
+                         default_values="1"
+                         name="Discretize"
+                         number_of_elements="1"
+                         panel_visibility="advanced" >
+        <BooleanDomain name="bool" />
+        <Documentation>
+          When set, the color transfer function will comprise of discrete colors
+          with number of discrete colors specified using NumberOfTableValues.
+        </Documentation>
+      </IntVectorProperty>
       <IntVectorProperty command="SetNumberOfValues"
                          default_values="256"
                          name="NumberOfTableValues"
-                         number_of_elements="1">
-        <IntRangeDomain min="1"
-                        name="range" />
+                         number_of_elements="1"
+                         panel_visibility="advanced" >
+        <IntRangeDomain min="1" max="1024" name="range" />
+        <Documentation>
+          When Discretize is set, this specifies the number of discrete colors
+          that must be present in the transfer function.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="EnableWidgetDecorator">
+            <Property name="Discretize" function="boolean" index="0" />
+          </PropertyWidgetDecorator>
+        </Hints>
       </IntVectorProperty>
-      <IntVectorProperty animateable="0"
-                         command="SetDiscretize"
-                         default_values="1"
-                         name="Discretize"
-                         number_of_elements="1">
+
+      <DoubleVectorProperty default_values="0"
+                            name="ScalarRangeInitialized"
+                            number_of_elements="1"
+                            panel_visibility="never" >
+        <!-- This is used to keep track of whether the
+        user initialized the scalar range -->
+        <BooleanDomain name="bool" />
+      </DoubleVectorProperty>
+      <IntVectorProperty command="SetHSVWrap"
+                         default_values="0"
+                         name="HSVWrap"
+                         number_of_elements="1"
+                         panel_visibility="never" >
+        <!-- FIXME: need to add "Wrapped HSV" as a color-space type instead -->
         <BooleanDomain name="bool" />
       </IntVectorProperty>
-      <Property command="Build"
-                name="Build"></Property>
+      <Property command="Build" name="Build" panel_visibility="never" />
       <IntVectorProperty command="SetVectorComponent"
                          default_values="0"
                          name="VectorComponent"
-                         number_of_elements="1">
-        <IntRangeDomain max="0"
-                        min="0"
-                        name="range" />
+                         number_of_elements="1"
+                         panel_visibility="never" >
+        <IntRangeDomain name="range" />
       </IntVectorProperty>
       <IntVectorProperty command="SetVectorMode"
                          default_values="1"
                          name="VectorMode"
-                         number_of_elements="1">
+                         number_of_elements="1"
+                         panel_visibility="never" >
         <EnumerationDomain name="enum">
-          <Entry text="Magnitude"
-                 value="0" />
-          <Entry text="Component"
-                 value="1" />
+          <Entry text="Magnitude" value="0" />
+          <Entry text="Component" value="1" />
         </EnumerationDomain>
       </IntVectorProperty>
-      <IntVectorProperty command="SetUseLogScale"
-                         default_values="0"
-                         name="UseLogScale"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-      </IntVectorProperty>
       <IntVectorProperty command="SetAllowDuplicateScalars"
-                         default_values="0"
+                         default_values="1"
                          name="AllowDuplicateScalars"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-      </IntVectorProperty>
-
-      <ProxyProperty name="ScalarOpacityFunction"
-        command="SetScalarOpacityFunction">
-      </ProxyProperty>
-
-      <IntVectorProperty name="EnableOpacityMapping"
-        command="SetEnableOpacityMapping"
-        number_of_elements="1"
-        default_values="0">
+                         number_of_elements="1"
+                         panel_visibility="never" >
         <BooleanDomain name="bool" />
       </IntVectorProperty>
 
       <StringVectorProperty name="Annotations"
-        clean_command="ResetAnnotations"
-        command="SetAnnotation"
-        element_types="2 2"
-        number_of_elements_per_command="2"
-        repeat_command="1" />
+                            clean_command="ResetAnnotations"
+                            command="SetAnnotation"
+                            element_types="2 2"
+                            number_of_elements_per_command="2"
+                            repeat_command="1">
+        <Documentation>
+          Specify annotations.
+        </Documentation>
+      </StringVectorProperty>
 
-      <IntVectorProperty name="IndexedLookup"
-        command="SetIndexedLookup"
-        default_values="0"
-        number_of_elements="1">
-        <BooleanDomain name="bool" />
-      </IntVectorProperty>
+      <DoubleVectorProperty name="IndexedColors"
+                            command="SetIndexedColor"
+                            number_of_elements_per_command="3"
+                            repeat_command="1"
+                            set_number_command="SetNumberOfIndexedColors"
+                            use_index="1">
+        <Documentation>
+          Colors used when using IndexedLookup is true.
+        </Documentation>
+      </DoubleVectorProperty>
 
+      <PropertyGroup label="Mapping Data" panel_widget="ColorOpacityEditor">
+        <Property name="EnableOpacityMapping" function="EnableOpacityMapping" />
+        <Property name="RGBPoints" function="XRGBPoints" />
+        <Property name="ScalarOpacityFunction" function="ScalarOpacityFunction" />
+        <Property name="UseLogScale" function="UseLogScale" />
+        <Property name="LockScalarRange" function="LockScalarRange" />
+      </PropertyGroup>
+
+      <PropertyGroup label="Color Mapping Parameters">
+        <Property name="ColorSpace" />
+        <Property name="NanColor" />
+        <Property name="Discretize" />
+        <Property name="NumberOfTableValues" />
+	<Property name="LockScalarRange" function="LockScalarRange" />
+      </PropertyGroup>
+
+      <PropertyGroup label="Annotations" panel_widget="AnnotationsEditor">
+        <Property name="Annotations" />
+        <Property name="IndexedColors" />
+      </PropertyGroup>
       <!-- End of PVLookupTable -->
-    </Proxy>
+    </TransferFunctionProxy>
   </ProxyGroup>
   <ProxyGroup name="parametric_functions">
     <Proxy class="vtkParametricSpline"
@@ -408,17 +481,6 @@
                             default_values="0.0"
                             name="Offset"
                             number_of_elements="1">
-        <BoundsDomain mode="oriented_magnitude"
-                      name="range">
-          <RequiredProperties>
-            <Property function="Origin"
-                      name="Origin" />
-            <Property function="Normal"
-                      name="Normal" />
-            <Property function="Input"
-                      name="Input" />
-          </RequiredProperties>
-        </BoundsDomain>
       </DoubleVectorProperty>
       <Hints>
         <!-- Hints are metadata associated with the proxy.
@@ -735,10 +797,9 @@
                          name="Mode"
                          number_of_elements="1">
         <EnumerationDomain name="enum">
-          <Entry text="Interpolate Camera"
-                 value="0" />
-          <Entry text="Path-based"
-                 value="1" />
+          <Entry text="Interpolate Camera" value="0" />
+          <Entry text="Path-based" value="1" />
+          <Entry text="Follow-data" value="2" />
         </EnumerationDomain>
       </IntVectorProperty>
       <ProxyProperty command="AddKeyFrame"
@@ -751,7 +812,12 @@
       </ProxyProperty>
       <IntVectorProperty command="GetLastAddedKeyFrameIndex"
                          information_only="1"
-                         name="LastAddedKeyFrameIndex"></IntVectorProperty>
+                         name="LastAddedKeyFrameIndex">
+      </IntVectorProperty>
+      <ProxyProperty name="DataSource"
+                     argument_type="SMProxy"
+                     command="SetDataSourceProxy">
+      </ProxyProperty>
       <!-- End of CameraAnimationCue -->
     </Proxy>
     <Proxy base_proxygroup="animation"
@@ -1132,7 +1198,7 @@
     <!-- end of keyframes -->
   </ProxyGroup>
   <ProxyGroup name="piecewise_functions">
-    <Proxy class="vtkPiecewiseFunction"
+    <TransferFunctionProxy class="vtkPiecewiseFunction"
            name="PiecewiseFunction"
            processes="client|renderserver|dataserver">
       <DoubleVectorProperty animateable="0"
@@ -1143,12 +1209,19 @@
                             number_of_elements="4"
                             number_of_elements_per_command="4"
                             repeat_command="1"></DoubleVectorProperty>
-    </Proxy>
+      <IntVectorProperty command="SetAllowDuplicateScalars"
+                         default_values="1"
+                         name="AllowDuplicateScalars"
+                         number_of_elements="1"
+                         panel_visibility="never" >
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+    </TransferFunctionProxy>
   </ProxyGroup>
   <ProxyGroup name="transfer_functions">
-    <Proxy class="vtkColorTransferFunction"
-           name="ColorTransferFunction"
-           processes="client|renderserver|dataserver">
+    <TransferFunctionProxy class="vtkColorTransferFunction"
+                           name="ColorTransferFunction"
+                           processes="client|renderserver|dataserver">
       <DoubleVectorProperty animateable="0"
                             clean_command="RemoveAllPoints"
                             command="AddRGBPoint"
@@ -1178,7 +1251,7 @@
                          number_of_elements="1">
         <BooleanDomain name="bool" />
       </IntVectorProperty>
-    </Proxy>
+    </TransferFunctionProxy>
   </ProxyGroup>
   <ProxyGroup name="annotations">
     <Proxy class="vtkCubeAxesActor2D"
@@ -1275,7 +1348,13 @@
                             command="SetLabelFormat"
                             default_values="%-#6.3g"
                             name="LabelFormat"
-                            number_of_elements="1"></StringVectorProperty>
+                            number_of_elements="1">
+        <Hints>
+          <PropertyWidgetDecorator type="EnableWidgetDecorator">
+            <Property name="AutomaticLabelFormat" function="boolean_invert" index="0" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </StringVectorProperty>
       <IntVectorProperty command="SetNumberOfLabels"
                          default_values="5"
                          name="NumberOfLabels"
@@ -1301,7 +1380,13 @@
                             command="SetNanAnnotation"
                             default_values="NaN"
                             name="NanAnnotation"
-                            number_of_elements="1"></StringVectorProperty>
+                            number_of_elements="1">
+        <Hints>
+          <PropertyWidgetDecorator type="EnableWidgetDecorator">
+            <Property name="DrawNanAnnotation" function="boolean" index="0" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </StringVectorProperty>
       <IntVectorProperty animateable="0"
                          command="SetTextPosition"
                          default_values="1"
@@ -1789,7 +1874,17 @@
     <DirectoryProxy class="vtkDirectory"
                     name="Directory"
                     processes="client|dataserver|renderserver">
-                    </DirectoryProxy>
+    </DirectoryProxy>
+    <DirectoryProxy class="vtkDirectory"
+                    si_class="vtkSIDirectoryProxy"
+                    name="ListDirectory"
+                    processes="dataserver">
+
+      <!-- Fake properties that will be filled by the vtkSIDirectoryProxy
+           class in the pull request -->
+      <StringVectorProperty name="FileList"      information_only="1"/>
+      <StringVectorProperty name="DirectoryList" information_only="1"/>
+    </DirectoryProxy>
     <Proxy class="vtkPVFileInformationHelper"
            name="FileInformationHelper">
       <StringVectorProperty command="SetPath"
@@ -2304,8 +2399,11 @@
       </StringVectorProperty>
       <!-- End of POVExporter -->
     </RenderViewExporterProxy>
+
+    <!-- GL2PS exporter, shared options between render and context views: -->
     <GL2PSExporterProxy class="not-used"
-                             name="GL2PSExporterBase">
+                        viewtype="none"
+                        name="GL2PSExporterBase">
       <Documentation>Base API definition for all GL2PS vector graphic exporters.
       </Documentation>
       <StringVectorProperty command="SetFileName"
@@ -2320,21 +2418,6 @@
                             default_values="ParaView GL2PS Export"
                             number_of_elements="1">
       </StringVectorProperty>
-      <IntVectorProperty command="SetSort"
-                         default_values="1"
-                         name="SetSort"
-                         label="GL2PS depth sort method"
-                         number_of_elements="1">
-        <EnumerationDomain name="enum">
-          <Entry text="No sorting (fastest, poor)"
-                 value="0" />
-          <Entry text="Simple sorting (fast, good)"
-                 value="1" />
-          <Entry text="BSP sorting (slow, best)"
-                 value="2" />
-        </EnumerationDomain>
-        <Documentation>Method of sorting 3D primitives.</Documentation>
-      </IntVectorProperty>
       <IntVectorProperty command="SetCompress"
                          default_values="0"
                          name="SetCompress"
@@ -2346,6 +2429,7 @@
                          default_values="1"
                          name="SetDrawBackground"
                          label="Draw background"
+                         panel_visibility="advanced"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
       </IntVectorProperty>
@@ -2353,8 +2437,56 @@
                          default_values="1"
                          name="SetOcclusionCull"
                          label="Cull hidden primitives"
+                         panel_visibility="advanced"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <DoubleVectorProperty command="SetLineWidthFactor"
+                            default_values="0.714"
+                            name="LineWidthFactor"
+                            label="Line width scaling factor"
+                            panel_visibility="advanced"
+                            number_of_elements="1">
+        <DoubleRangeDomain max="10"
+                           min="0"
+                           name="range" />
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetPointSizeFactor"
+                            default_values="0.714"
+                            name="PointSizeFactor"
+                            label="Point size scaling factor"
+                            panel_visibility="advanced"
+                            number_of_elements="1">
+        <DoubleRangeDomain max="10"
+                           min="0"
+                           name="range" />
+      </DoubleVectorProperty>
+      <!-- End of "GL2PSExporterBase" -->
+    </GL2PSExporterProxy>
+
+    <!-- GL2PS exporter, additional render view options added: -->
+    <GL2PSExporterProxy base_proxygroup="exporters"
+                        base_proxyname="GL2PSExporterBase"
+                        class="not-used"
+                        viewtype="none"
+                        name="GL2PSRenderViewExporterBase">
+      <Documentation>Base API definition for all GL2PS render view exporters.
+      </Documentation>
+      <IntVectorProperty command="SetSort"
+                         default_values="1"
+                         name="SetSort"
+                         label="GL2PS depth sort method"
+                         panel_visibility="advanced"
+                         number_of_elements="1">
+        <EnumerationDomain name="enum">
+          <Entry text="No sorting (fastest, poor)"
+                 value="0" />
+          <Entry text="Simple sorting (fast, good)"
+                 value="1" />
+          <Entry text="BSP sorting (slow, best)"
+                 value="2" />
+        </EnumerationDomain>
+        <Documentation>Method of sorting 3D primitives.</Documentation>
       </IntVectorProperty>
       <IntVectorProperty command="SetWrite3DPropsAsRasterImage"
                          default_values="1"
@@ -2369,36 +2501,62 @@
                          default_values="1"
                          name="ExcludeCubeAxesActorsFromRasterization"
                          label="Don't rasterize cube axes"
+                         panel_visibility="advanced"
                          number_of_elements="1">
         <Documentation>If rasterizing 3D geometry, setting this option will
         export all cube axes actors as vector graphics.</Documentation>
         <BooleanDomain name="bool" />
       </IntVectorProperty>
-      <DoubleVectorProperty command="SetLineWidthFactor"
-                            default_values="0.714"
-                            name="LineWidthFactor"
-                            label="Line width scaling factor"
-                            number_of_elements="1">
-        <DoubleRangeDomain max="10"
-                           min="0"
-                           name="range" />
-      </DoubleVectorProperty>
-      <DoubleVectorProperty command="SetPointSizeFactor"
-                            default_values="0.714"
-                            name="PointSizeFactor"
-                            label="Point size scaling factor"
-                            number_of_elements="1">
-        <DoubleRangeDomain max="10"
-                           min="0"
-                           name="range" />
-      </DoubleVectorProperty>
-      <!-- End of "GL2PSExporterBase" -->
+      <!-- End of "GL2PSRenderViewExporterBase" -->
     </GL2PSExporterProxy>
+
+    <!-- GL2PS exporter, additional context view options added: -->
     <GL2PSExporterProxy base_proxygroup="exporters"
-                             base_proxyname="GL2PSExporterBase"
-                             class="vtkPVGL2PSExporter"
-                             file_extension="ps"
-                             name="GL2PSExporterPS">
+                        base_proxyname="GL2PSExporterBase"
+                        class="not-used"
+                        viewtype="none"
+                        name="GL2PSContextViewExporterBase">
+      <Documentation>Base API definition for all GL2PS context view exporters.
+      </Documentation>
+      <!-- No sorting, preserve painter order: -->
+      <IntVectorProperty command="SetSort"
+                         default_values="0"
+                         name="SetSort"
+                         label="GL2PS depth sort method"
+                         panel_visibility="never"
+                         number_of_elements="1">
+        <Documentation>Method of sorting 3D primitives.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetWrite3DPropsAsRasterImage"
+                         default_values="0"
+                         name="Write3DPropsAsRasterImage"
+                         label="Rasterize 3D geometry"
+                         panel_visibility="never"
+                         number_of_elements="1">
+        <Documentation>Export all 3D geometry as a rasterized image behind 2D
+        geometry, which is still rendered as vector graphics.</Documentation>
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <IntVectorProperty command="SetExcludeCubeAxesActorsFromRasterization"
+                         default_values="1"
+                         name="ExcludeCubeAxesActorsFromRasterization"
+                         label="Don't rasterize cube axes"
+                         panel_visibility="never"
+                         number_of_elements="1">
+        <Documentation>If rasterizing 3D geometry, setting this option will
+        export all cube axes actors as vector graphics.</Documentation>
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <!-- End of "GL2PSContextViewExporterBase" -->
+    </GL2PSExporterProxy>
+
+    <!-- Actual render view GL2PS exporter proxies -->
+    <GL2PSExporterProxy base_proxygroup="exporters"
+                        base_proxyname="GL2PSRenderViewExporterBase"
+                        class="vtkPVGL2PSExporter"
+                        file_extension="ps"
+                        viewtype="renderview"
+                        name="GL2PSRenderViewExporterPS">
       <Documentation long_help="Export PostScript (PS) Files"
                      short_help="PS Files">vtkPVGL2PSExporter is a render
                      window exporter which writes out the renderered scene into
@@ -2414,6 +2572,7 @@
                          default_values="1"
                          name="SetPS3Shading"
                          label="Use shfill shading operator"
+                         panel_visibility="advanced"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
       </IntVectorProperty>
@@ -2425,13 +2584,14 @@
         <Documentation>Set the output file format: 0: PostScript, 1:
         Encapsulated PostScript, 2: PDF, 3: TeX, 4: SVG</Documentation>
       </IntVectorProperty>
-      <!-- End of GL2PSExporterPS -->
+      <!-- End of GL2PSRenderViewExporterPS -->
     </GL2PSExporterProxy>
     <GL2PSExporterProxy base_proxygroup="exporters"
-                             base_proxyname="GL2PSExporterBase"
-                             class="vtkPVGL2PSExporter"
-                             file_extension="eps"
-                             name="GL2PSExporterEPS">
+                        base_proxyname="GL2PSRenderViewExporterBase"
+                        class="vtkPVGL2PSExporter"
+                        file_extension="eps"
+                        viewtype="renderview"
+                        name="GL2PSRenderViewExporterEPS">
       <Documentation long_help="Export Encapsulated PostScript (EPS) Files"
                      short_help="EPS Files">vtkPVGL2PSExporter is a render
                      window exporter which writes out the renderered scene into
@@ -2451,13 +2611,14 @@
         <Documentation>Set the output file format: 0: PostScript, 1:
         Encapsulated PostScript, 2: PDF, 3: TeX, 4: SVG</Documentation>
       </IntVectorProperty>
-      <!-- End of GL2PSExporterEPS -->
+      <!-- End of GL2PSRenderViewExporterEPS -->
     </GL2PSExporterProxy>
     <GL2PSExporterProxy base_proxygroup="exporters"
-                             base_proxyname="GL2PSExporterBase"
-                             class="vtkPVGL2PSExporter"
-                             file_extension="pdf"
-                             name="GL2PSExporterPDF">
+                        base_proxyname="GL2PSRenderViewExporterBase"
+                        class="vtkPVGL2PSExporter"
+                        file_extension="pdf"
+                        viewtype="renderview"
+                        name="GL2PSRenderViewExporterPDF">
       <Documentation long_help="Export Portable Document Format (PDF) Files"
                      short_help="PDF Files">vtkPVGL2PSExporter is a render
                      window exporter which writes out the renderered scene into
@@ -2466,6 +2627,7 @@
                          default_values="1"
                          name="SetTextAsPath"
                          label="Render text as paths"
+                         panel_visibility="advanced"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
       </IntVectorProperty>
@@ -2477,13 +2639,14 @@
         <Documentation>Set the output file format: 0: PostScript, 1:
         Encapsulated PostScript, 2: PDF, 3: TeX, 4: SVG</Documentation>
       </IntVectorProperty>
-      <!-- End of GL2PSExporterPDF -->
+      <!-- End of GL2PSRenderViewExporterPDF -->
     </GL2PSExporterProxy>
     <GL2PSExporterProxy base_proxygroup="exporters"
-                             base_proxyname="GL2PSExporterBase"
-                             class="vtkPVGL2PSExporter"
-                             file_extension="svg"
-                             name="GL2PSExporterSVG">
+                        base_proxyname="GL2PSRenderViewExporterBase"
+                        class="vtkPVGL2PSExporter"
+                        file_extension="svg"
+                        viewtype="renderview"
+                        name="GL2PSRenderViewExporterSVG">
       <Documentation long_help="Export Scalable Vector Graphics (SVG) Files"
                      short_help="SVG Files">vtkPVGL2PSExporter is a render
                      window exporter which writes out the renderered scene into
@@ -2503,7 +2666,126 @@
         <Documentation>Set the output file format: 0: PostScript, 1:
         Encapsulated PostScript, 2: PDF, 3: TeX, 4: SVG</Documentation>
       </IntVectorProperty>
-      <!-- End of GL2PSExporterSVG -->
+      <!-- End of GL2PSRenderViewExporterSVG -->
+    </GL2PSExporterProxy>
+
+    <!-- Actual context view GL2PS exporter proxies -->
+    <GL2PSExporterProxy base_proxygroup="exporters"
+                        base_proxyname="GL2PSContextViewExporterBase"
+                        class="vtkPVGL2PSExporter"
+                        file_extension="ps"
+                        viewtype="contextview"
+                        name="GL2PSContextViewExporterPS">
+      <Documentation long_help="Export PostScript (PS) Files"
+                     short_help="PS Files">vtkPVGL2PSExporter is a render
+                     window exporter which writes out the renderered scene into
+                     a variety of vector graphics formats.</Documentation>
+      <IntVectorProperty command="SetTextAsPath"
+                         default_values="0"
+                         name="SetTextAsPath"
+                         label="Render text as paths"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <IntVectorProperty command="SetPS3Shading"
+                         default_values="1"
+                         name="SetPS3Shading"
+                         label="Use shfill shading operator"
+                         panel_visibility="advanced"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <IntVectorProperty command="SetFileFormat"
+                         default_values="0"
+                         name="FileFormat"
+                         panel_visibility="never"
+                         number_of_elements="1">
+        <Documentation>Set the output file format: 0: PostScript, 1:
+        Encapsulated PostScript, 2: PDF, 3: TeX, 4: SVG</Documentation>
+      </IntVectorProperty>
+      <!-- End of GL2PSContextViewExporterPS -->
+    </GL2PSExporterProxy>
+    <GL2PSExporterProxy base_proxygroup="exporters"
+                        base_proxyname="GL2PSContextViewExporterBase"
+                        class="vtkPVGL2PSExporter"
+                        file_extension="eps"
+                        viewtype="contextview"
+                        name="GL2PSContextViewExporterEPS">
+      <Documentation long_help="Export Encapsulated PostScript (EPS) Files"
+                     short_help="EPS Files">vtkPVGL2PSExporter is a render
+                     window exporter which writes out the renderered scene into
+                     a variety of vector graphics formats.</Documentation>
+      <IntVectorProperty command="SetTextAsPath"
+                         default_values="0"
+                         name="SetTextAsPath"
+                         label="Render text as paths"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <IntVectorProperty command="SetFileFormat"
+                         default_values="1"
+                         name="FileFormat"
+                         panel_visibility="never"
+                         number_of_elements="1">
+        <Documentation>Set the output file format: 0: PostScript, 1:
+        Encapsulated PostScript, 2: PDF, 3: TeX, 4: SVG</Documentation>
+      </IntVectorProperty>
+      <!-- End of GL2PSContextViewExporterEPS -->
+    </GL2PSExporterProxy>
+    <GL2PSExporterProxy base_proxygroup="exporters"
+                        base_proxyname="GL2PSContextViewExporterBase"
+                        class="vtkPVGL2PSExporter"
+                        file_extension="pdf"
+                        viewtype="contextview"
+                        name="GL2PSContextViewExporterPDF">
+      <Documentation long_help="Export Portable Document Format (PDF) Files"
+                     short_help="PDF Files">vtkPVGL2PSExporter is a render
+                     window exporter which writes out the renderered scene into
+                     a variety of vector graphics formats.</Documentation>
+      <IntVectorProperty command="SetTextAsPath"
+                         default_values="1"
+                         name="SetTextAsPath"
+                         label="Render text as paths"
+                         panel_visibility="advanced"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <IntVectorProperty command="SetFileFormat"
+                         default_values="2"
+                         name="FileFormat"
+                         panel_visibility="never"
+                         number_of_elements="1">
+        <Documentation>Set the output file format: 0: PostScript, 1:
+        Encapsulated PostScript, 2: PDF, 3: TeX, 4: SVG</Documentation>
+      </IntVectorProperty>
+      <!-- End of GL2PSContextViewExporterPDF -->
+    </GL2PSExporterProxy>
+    <GL2PSExporterProxy base_proxygroup="exporters"
+                        base_proxyname="GL2PSContextViewExporterBase"
+                        class="vtkPVGL2PSExporter"
+                        file_extension="svg"
+                        viewtype="contextview"
+                        name="GL2PSContextViewExporterSVG">
+      <Documentation long_help="Export Scalable Vector Graphics (SVG) Files"
+                     short_help="SVG Files">vtkPVGL2PSExporter is a render
+                     window exporter which writes out the renderered scene into
+                     a variety of vector graphics formats.</Documentation>
+      <IntVectorProperty command="SetTextAsPath"
+                         default_values="0"
+                         name="SetTextAsPath"
+                         label="Render text as paths"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <IntVectorProperty command="SetFileFormat"
+                         default_values="4"
+                         name="FileFormat"
+                         panel_visibility="never"
+                         number_of_elements="1">
+        <Documentation>Set the output file format: 0: PostScript, 1:
+        Encapsulated PostScript, 2: PDF, 3: TeX, 4: SVG</Documentation>
+      </IntVectorProperty>
+      <!-- End of GL2PSContextViewExporterSVG -->
     </GL2PSExporterProxy>
 
     <RenderViewExporterProxy name="WebGLExporter" class="vtkPVWebGLExporter"

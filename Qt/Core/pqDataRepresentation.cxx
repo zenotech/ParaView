@@ -173,10 +173,6 @@ void pqDataRepresentation::setDefaultPropertyValues()
   // this used to call proxy->UpdatePipeline(), however that's totally
   // unnecessary. It gets called already e.g. by pqDisplayPolicy or by
   // vtkSMRenderViewProxy::CreateDefaultRepresentation etc.
-  vtkSMRepresentationProxy* proxy = vtkSMRepresentationProxy::SafeDownCast(
-    this->getProxy());
-  proxy->GetProperty("Input")->UpdateDependentDomains();
-
   this->Superclass::setDefaultPropertyValues();
 }
 

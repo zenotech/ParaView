@@ -26,7 +26,10 @@
 #cmakedefine VISIT_BUILD_READER_Mili
 
 #cmakedefine PARAVIEW_ENABLE_PYTHON
+#cmakedefine PARAVIEW_FREEZE_PYTHON
 #cmakedefine PARAVIEW_BUILD_ARCHITECTURE "@PARAVIEW_BUILD_ARCHITECTURE@"
+
+#cmakedefine PARAVIEW_ENABLE_MATPLOTLIB
 
 // Added for AutoMPI
 #cmakedefine VTK_MPIRUN_EXE "@MPIEXEC@"
@@ -64,6 +67,9 @@
 
 // defined when SSEND must be used for communication by default.
 #cmakedefine PARAVIEW_USE_MPI_SSEND
+
+// defined when client processes must init MPI by default.
+#cmakedefine PARAVIEW_INITIALIZE_MPI_ON_CLIENT
 
 // defined when qt support is enabled
 #cmakedefine PARAVIEW_ENABLE_QT_SUPPORT

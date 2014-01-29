@@ -374,6 +374,7 @@ void pqPQLookupTableManager::setLUTDefaultState(vtkSMProxy* lutProxy)
   // Setup default LUT to go from Cool to Warm.
   QList<QVariant> values;
   values << 0.0 << 0.230 << 0.299 << 0.754
+         << 0.5 << 0.865 << 0.865 << 0.865
          << 1.0 << 0.706 << 0.016 << 0.150;
   pqSMAdaptor::setMultipleElementProperty(
     lutProxy->GetProperty("RGBPoints"), values);
@@ -412,13 +413,13 @@ pqScalarsToColors* pqPQLookupTableManager::createLookupTable(pqServer* server,
   lutProxy->Delete();
   this->setLUTDefaultState(lutProxy);
 
-  if (number_of_components >= 1)
-    {
-    vtkSMIntRangeDomain* componentsDomain =
-      vtkSMIntRangeDomain::SafeDownCast(
-        lutProxy->GetProperty("VectorComponent")->GetDomain("range"));
-    componentsDomain->AddMaximum(0, (number_of_components-1));
-    }
+  //if (number_of_components >= 1)
+  //  {
+  //  vtkSMIntRangeDomain* componentsDomain =
+  //    vtkSMIntRangeDomain::SafeDownCast(
+  //      lutProxy->GetProperty("VectorComponent")->GetDomain("range"));
+  //  componentsDomain->AddMaximum(0, (number_of_components-1));
+  //  }
   pqInternal::Key key(
     server->GetConnectionID(), arrayname, number_of_components);
   if (!this->Internal->LookupTables.contains(key))

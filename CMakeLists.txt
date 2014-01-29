@@ -76,13 +76,9 @@ set (ParaView_CMAKE_DIR "${ParaView_SOURCE_DIR}/CMake")
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ParaView_CMAKE_DIR})
 
 # Use the new version of the variable names for output of build process.
-# These are consistent with what VTK sets.
+# Make sure these are consistent with what VTK sets.
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-if(UNIX)
-  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-else()
-  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-endif()
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
 include(Utilities/Git/Git.cmake)
@@ -95,11 +91,11 @@ include(CMakeDependentOption)
 #------------------------------------------------------------------------------
 # Determine ParaView Source Version
 set (PARAVIEW_VERSION_MAJOR 4)
-set (PARAVIEW_VERSION_MINOR 0)
+set (PARAVIEW_VERSION_MINOR 1)
 set (PARAVIEW_VERSION_PATCH 0)
-set (PARAVIEW_VERSION_PATCH_EXTRA "RC3")
-set (PARAVIEW_VERSION "4.0")
-set (PARAVIEW_VERSION_FULL "4.0.0")
+set (PARAVIEW_VERSION_PATCH_EXTRA)
+set (PARAVIEW_VERSION "4.1")
+set (PARAVIEW_VERSION_FULL "4.1.0")
 
 determine_version(${ParaView_SOURCE_DIR} ${GIT_EXECUTABLE} "PARAVIEW")
 
@@ -118,6 +114,15 @@ if(NOT VTK_INSTALL_RUNTIME_DIR)
 endif()
 if(NOT VTK_INSTALL_LIBRARY_DIR)
   set(VTK_INSTALL_LIBRARY_DIR lib/paraview-${PARAVIEW_VERSION})
+endif()
+# ParaView installs the vtk python modules specifically to appropriate locations.
+if(NOT VTK_INSTALL_PYTHON_MODULE_DIR)
+  set (VTK_INSTALL_PYTHON_MODULE_DIR "${VTK_INSTALL_LIBRARY_DIR}/site-packages" CACHE
+    INTERNAL "Directory where python modules will be installed")
+endif()
+if(NOT VTK_BUILD_PYTHON_MODULE_DIR)
+  set (VTK_BUILD_PYTHON_MODULE_DIR "${CMAKE_BINARY_DIR}/lib/site-packages" CACHE
+    INTERNAL "Directory where python modules will be installed")
 endif()
 if(NOT VTK_INSTALL_ARCHIVE_DIR)
   set(VTK_INSTALL_ARCHIVE_DIR lib/paraview-${PARAVIEW_VERSION})
@@ -167,16 +172,12 @@ if(NOT PV_INSTALL_PLUGIN_DIR)
   endif()
 endif()
 
-#set (VTK_INSTALL_NO_LIBRARIES TRUE)
-#set (VTK_INSTALL_NO_DEVELOPMENT TRUE)
-
 # Disable installing of the Qt Designer plugin. There's no need for it in
 # ParaView install rules.
 set (VTK_INSTALL_NO_QT_PLUGIN TRUE)
 
-# ParaView install the vtk python modules specifically to appropriate locations.
-set (VTK_INSTALL_NO_PYTHON TRUE)
-set (VTK_INSTALL_PYTHON_USING_CMAKE TRUE)
+# Disable installing of the vtkpython executables.
+set (VTK_INSTALL_NO_PYTHON_EXES TRUE)
 
 # for temporary backwards compatibility.
 set (PV_INSTALL_BIN_DIR ${VTK_INSTALL_RUNTIME_DIR})
@@ -220,14 +221,34 @@ cmake_dependent_option(PARAVIEW_USE_MPI_SSEND
 cmake_dependent_option(PARAVIEW_USE_ICE_T
   "Enable IceT (needed for parallel rendering)" ON
   "PARAVIEW_USE_MPI" OFF)
+cmake_dependent_option(PARAVIEW_INITIALIZE_MPI_ON_CLIENT
+  "Initialize MPI on client-processes by default. Can be overridden using command line arguments"
+  OFF
+  "PARAVIEW_USE_MPI" OFF)
+
 mark_as_advanced(PARAVIEW_USE_ICE_T
-  PARAVIEW_USE_MPI_SSEND)
+  PARAVIEW_USE_MPI_SSEND
+  PARAVIEW_INITIALIZE_MPI_ON_CLIENT)
 
 cmake_dependent_option(PARAVIEW_ENABLE_QT_SUPPORT
   "Build ParaView with Qt support (without GUI)" OFF
   "NOT PARAVIEW_BUILD_QT_GUI" ON)
 
 option(PARAVIEW_ENABLE_PYTHON "Enable/Disable Python scripting support" OFF)
+cmake_dependent_option(PARAVIEW_USE_UNIFIED_BINDINGS "If enabled, Python bindings will back the ClientServer wrapping implementation" OFF
+  PARAVIEW_ENABLE_PYTHON OFF)
+option(PARAVIEW_ENABLE_MATPLOTLIB "Enable/Disable Python scripting support" ON)
+mark_as_advanced(PARAVIEW_ENABLE_MATPLOTLIB)
+
+# If building on Unix with MPI enabled, we will present another option to
+# enable building of CosmoTools VTK extensions. This option is by default
+# OFF and set to OFF if ParaView is not built with MPI.
+if (UNIX)
+  cmake_dependent_option(PARAVIEW_ENABLE_COSMOTOOLS
+    "Build ParaView with CosmoTools VTK Extensions" OFF
+    "PARAVIEW_USE_MPI" OFF)
+  mark_as_advanced(PARAVIEW_ENABLE_COSMOTOOLS)
+endif()
 
 # Is this a 32 bit or 64bit build. Display this in about dialog.
 if ("${CMAKE_SIZEOF_VOID_P}" EQUAL 8)
@@ -242,6 +263,34 @@ FIND_PATH(PARAVIEW_DATA_ROOT ParaViewData.readme
   $ENV{PARAVIEW_DATA_ROOT})
 
 if (APPLE)
+  option(PARAVIEW_DO_UNIX_STYLE_INSTALLS
+    "When enabled, install will result in unix-style install rather than an OsX app"
+    OFF)
+  mark_as_advanced(PARAVIEW_DO_UNIX_STYLE_INSTALLS)
+endif()
+if (APPLE AND PARAVIEW_DO_UNIX_STYLE_INSTALLS)
+  # We are doing a unix-style install i.e. everything will be installed in
+  # CMAKE_INSTALL_PREFIX/bin and CMAKE_INSTALL_PREFIX/lib etc. as on other unix
+  # platforms. We still need to setup CMAKE_INSTALL_NAME_DIR correctly so that
+  # the binaries point to appropriate location for the libraries.
+
+  # 1. Make CMAKE_INSTALL_PREFIX publicly accessible, if it was hidden in
+  #    previous pass
+  get_property(is_internal CACHE CMAKE_INSTALL_PREFIX PROPERTY TYPE)
+  if (is_internal STREQUAL "INTERNAL")
+    set (CMAKE_INSTALL_PREFIX ${CACHED_CMAKE_INSTALL_PREFIX} CACHE PATH "Install prefix" FORCE)
+  else()
+    set (CMAKE_INSTALL_PREFIX ${CACHED_CMAKE_INSTALL_PREFIX} CACHE PATH "Install prefix")
+  endif()
+  unset(MACOSX_APP_INSTALL_PREFIX CACHE)
+
+  # Set CMAKE_INSTALL_NAME_DIR to point to the libraries directory relative to
+  # the executable.
+  set(CMAKE_INSTALL_NAME_DIR "@executable_path/../${VTK_INSTALL_LIBRARY_DIR}")
+
+  # ensure that we don't build forwarding executables on apple.
+  set(VTK_BUILD_FORWARDING_EXECUTABLES FALSE)
+elseif (APPLE AND NOT PARAVIEW_DO_UNIX_STYLE_INSTALLS)
   # If building on apple, we will set cmake rules for ParaView such that "make
   # install" will result in creation of an application bundle by default.
   # The trick we play is as such:
@@ -268,6 +317,15 @@ if (APPLE)
   # distributable to others since it does not include Qt, or other external
   # dependencies. For a distributable pacakage, refer to ParaView Super-build
   # instructions.
+
+  # Try to preserve user-specified CMAKE_INSTALL_PREFIX if any.
+  get_property(is_internal CACHE CMAKE_INSTALL_PREFIX PROPERTY TYPE)
+  if (NOT is_internal STREQUAL "INTERNAL")
+    # CMAKE_INSTALL_PREFIX is not internal yet, so it must be avialable to the
+    # user, so save it.
+    set (CACHED_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}" CACHE INTERNAL "")
+  endif()
+
   set (CMAKE_INSTALL_PREFIX
     ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/__macos_install
     CACHE INTERNAL "" FORCE)
@@ -330,6 +388,12 @@ else()
 endif()
 mark_as_advanced(Module_vtkPVCatalystTestDriver)
 
+# Add ability to freeze Python modules.
+cmake_dependent_option(PARAVIEW_FREEZE_PYTHON
+  "Freeze Python packages/modules into the application." OFF
+  "PARAVIEW_ENABLE_PYTHON;NOT WIN32" OFF)
+mark_as_advanced(PARAVIEW_FREEZE_PYTHON)
+
 #------------------------------------------------------------------------------
 
 
@@ -388,6 +452,20 @@ set (VTK_Group_ParaViewQt ${PARAVIEW_BUILD_QT_GUI} CACHE BOOL "" FORCE)
 set (VTK_Group_ParaViewPython ${PARAVIEW_ENABLE_PYTHON} CACHE BOOL "" FORCE)
 
 #------------------------------------------------------------------------------
+# Test to check install tree
+#------------------------------------------------------------------------------
+if (BUILD_TESTING AND PARAVIEW_INSTALL_DEVELOPMENT_FILES)
+  add_test( NAME pv.TestDevelopmentInstall
+    COMMAND ${CMAKE_COMMAND}
+    -DPARAVIEW_BINARY_DIR:PATH=${CMAKE_BINARY_DIR}
+    -DPARAVIEW_INSTALL_DIR:PATH=${CMAKE_INSTALL_PREFIX}
+    -DPARAVIEW_SOURCE_DIR:PATH=${CMAKE_SOURCE_DIR}
+    -DPARAVIEW_TEST_DIR:PATH=${PARAVIEW_TEST_DIR}
+    -DPARAVIEW_VERSION:STRING=${PARAVIEW_VERSION}
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/CMake/ParaViewTestInstall.cmake)
+  set_tests_properties(pv.TestDevelopmentInstall PROPERTIES LABELS "PARAVIEW")
+endif()
+#------------------------------------------------------------------------------
 
 include_directories(${ParaView_BINARY_DIR})
 
@@ -439,8 +517,6 @@ else()
     CACHE INTERNAL "Should VTK Python wrapping be built?" FORCE)
 
   # Turn Cosmo and VPIC MPI build flags based on value of PARAVIEW_USE_MPI
-  set(VTK_COSMO_USE_MPI ${PARAVIEW_USE_MPI} CACHE BOOL "" FORCE)
-  mark_as_advanced(VTK_COSMOS_USE_MPI)
   set(VTK_VPIC_USE_MPI ${PARAVIEW_USE_MPI} CACHE BOOL "" FORCE)
   mark_as_advanced(VTK_VPIC_USE_MPI)
 
@@ -472,20 +548,23 @@ list (APPEND PARAVIEW_MODULE_ROOTS
              CoProcessing/TestDriver)
 
 add_custom_target(ParaViewDoc)
-add_custom_command(
-     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/www.stamp
-     COMMAND ${CMAKE_COMMAND} -E make_directory "${PARAVIEW_WWW_DIR}")
-
-install(DIRECTORY "${PARAVIEW_WWW_DIR}"
-    DESTINATION ${VTK_INSTALL_LIBRARY_DIR}
-    COMPONENT Runtime)
 
 if (PARAVIEW_ENABLE_WEB)
   list (APPEND PARAVIEW_MODULE_ROOTS Web)
 
+  set (vtkWeb_WWW_DEST ${PARAVIEW_WWW_DIR})
+
   if (PARAVIEW_BUILD_WEB_DOCUMENTATION)
     list (APPEND ParaViewModulesDirs Web/Documentation)
   endif()
+
+  # Setup install rules for Web Applications
+  install(
+     DIRECTORY "${PARAVIEW_WWW_DIR}"
+     DESTINATION "${VTK_INSTALL_DATA_DIR}"
+     USE_SOURCE_PERMISSIONS
+     COMPONENT Runtime
+  )
 endif()
 
 include(ParaViewModuleTop)
@@ -504,7 +583,9 @@ mark_as_advanced(
   VTK_Group_Qt
   VTK_Group_Rendering
   VTK_Group_StandAlone
+  VTK_Group_Tk
   VTK_Group_Views
+  VTK_Group_Web
   VTK_USE_TK
   VTK_WRAP_JAVA
   VTK_WRAP_TCL)

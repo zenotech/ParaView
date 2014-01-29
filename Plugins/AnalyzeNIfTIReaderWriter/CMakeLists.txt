@@ -12,10 +12,9 @@ IF (ParaView_SOURCE_DIR)
     ${MPI_INCLUDE_PATH}
   )
 
-# fixme: I am not sure this is needed after modularization.
-IF(VTK_USE_SYSTEM_ZLIB)
-  INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIR})
-ENDIF(VTK_USE_SYSTEM_ZLIB)
+vtk_module_load(vtkzlib)
+
+INCLUDE_DIRECTORIES(${vtkzlib_INCLUDE_DIRS})
 
 ELSE (ParaView_SOURCE_DIR)
   FIND_PACKAGE(ParaView REQUIRED)
@@ -30,6 +29,6 @@ ADD_PARAVIEW_PLUGIN(AnalyzeNIfTIIO "1.0"
                          vtknifti1_io.cxx
                          vtkznzlib.cxx
   SERVER_MANAGER_XML     AnalyzeNIfTISM.xml
-  GUI_RESOURCE_FILES     AnalyzeNIfTIReaders.xml
-                         AnalyzeNIfTIWriters.xml
-  )
+  REQUIRED_ON_SERVER)
+
+target_link_libraries(AnalyzeNIfTIIO LINK_PRIVATE ${vtkzlib_LIBRARIES})

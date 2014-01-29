@@ -9,7 +9,7 @@ vtk_module_test_executable(TestMultipleSessions
 #------------------------------------------------------------------------------
 set(test_srcs
   ParaViewCoreServerManagerPrintSelf
-  TestComparativeAnimationCueProxy 
+  TestComparativeAnimationCueProxy
   TestXMLSaveLoadState
   TestProxyAnnotation
   )
@@ -41,10 +41,11 @@ if (PARAVIEW_DATA_ROOT)
     ExtractGrid
     TestPHT
     SPCTH2)
- 
+
   foreach (tfile ${TEST_STATES})
     add_test(NAME ${tfile}-ServerManager
       COMMAND ServerManagerStateLoader
+        --enable-bt
         -D=${PARAVIEW_DATA_ROOT}
         -T=${ParaView_BINARY_DIR}/Testing/Temporary
         -V=${PARAVIEW_DATA_ROOT}/Baseline/${tfile}.png
@@ -73,7 +74,7 @@ if (PARAVIEW_ENABLE_QT_SUPPORT)
     vtk_module_test_executable(${name} ${name}.cxx ${${name}_MOC_SOURCES})
     add_test(NAME pvunit.${name}
              COMMAND ${name})
-    target_link_libraries(${name} ${QT_LIBRARIES})
+    target_link_libraries(${name} LINK_PRIVATE ${QT_LIBRARIES})
     set_tests_properties(pvunit.${name} PROPERTIES LABELS "PARAVIEW")
   endforeach()
 endif()

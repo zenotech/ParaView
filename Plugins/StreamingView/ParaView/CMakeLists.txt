@@ -78,8 +78,6 @@ add_paraview_plugin(
     vtkSMStreamingViewProxy.cxx
   SERVER_MANAGER_XML
     StreamingView.xml
-  GUI_RESOURCE_FILES
-    StreamingReaders.xml
   GUI_INTERFACES
     ${VIEW1_IFACE}
     ${VIEW1_OPTIONS_IFACE}
@@ -105,4 +103,4 @@ add_paraview_plugin(
     pqStreamingControls.cxx
 )
 
-TARGET_LINK_LIBRARIES (StreamingView vtkStreaming)
+target_link_libraries(StreamingView LINK_PRIVATE vtkStreaming)

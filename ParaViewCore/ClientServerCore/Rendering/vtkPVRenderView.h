@@ -218,6 +218,13 @@ public:
   static vtkInformationIntegerKey* USE_OUTLINE_FOR_LOD();
 
   // Description:
+  // Representation can publish this key in their REQUEST_INFORMATION()
+  // pass to indicate that the representation needs to disable
+  // IceT's empty image optimization. This is typically only needed
+  // if a painter will make use of MPI global collective communications.
+  static vtkInformationIntegerKey* RENDER_EMPTY_IMAGES();
+
+  // Description:
   // Representation can publish this key in their REQUEST_INFORMATION() pass to
   // indicate that the representation needs ordered compositing.
   static vtkInformationIntegerKey* NEED_ORDERED_COMPOSITING();
@@ -324,12 +331,8 @@ public:
     vtkPVDataRepresentation* repr, vtkDataObject* data);
   static vtkAlgorithmOutput* GetPieceProducerLOD(vtkInformation* info,
     vtkPVDataRepresentation* repr);
-  static void SetDeliverToAllProcesses(
-    vtkInformation* info, vtkPVDataRepresentation* repr, bool clone);
-  static void SetDeliverLODToAllProcesses(
-    vtkInformation* info, vtkPVDataRepresentation* repr, bool clone);
   static void MarkAsRedistributable(
-    vtkInformation* info, vtkPVDataRepresentation* repr);
+    vtkInformation* info, vtkPVDataRepresentation* repr, bool value=true);
   static void SetGeometryBounds(vtkInformation* info,
     double bounds[6], vtkMatrix4x4* transform = NULL);
   static void SetStreamable(
@@ -338,6 +341,25 @@ public:
     vtkInformation* info, vtkPVDataRepresentation* repr, vtkDataObject* piece);
   static vtkDataObject* GetCurrentStreamedPiece(
     vtkInformation* info, vtkPVDataRepresentation* repr);
+
+  // Description:
+  // Requests the view to deliver the pieces produced by the \c repr to all
+  // processes after a gather to the root node to merge the datasets generated
+  // by each process.
+  static void SetDeliverToAllProcesses(
+    vtkInformation* info, vtkPVDataRepresentation* repr, bool clone);
+
+  // Description:
+  // Requests the view to deliver the data to the client always. This is
+  // essential for representation that render in the non-composited views e.g.
+  // the text-source representation. If SetDeliverToAllProcesses() is true, this
+  // is redundant. \c gather_before_delivery can be used to indicate if the data
+  // on the server-nodes must be gathered to the root node before shipping to
+  // the client. If \c gather_before_delivery is false, only the data from the
+  // root node will be sent to the client without any parallel communication.
+  static void SetDeliverToClientAndRenderingProcesses(
+    vtkInformation* info, vtkPVDataRepresentation* repr,
+    bool deliver_to_client, bool gather_before_delivery);
 
   // Description:
   // Pass the structured-meta-data for determining rendering order for ordered
@@ -497,6 +519,11 @@ public:
   bool GetUseOrderedCompositing();
 
   // Description:
+  // Returns true when the compositor should not use the empty
+  // images optimization.
+  bool GetRenderEmptyImages();
+
+  // Description:
   // Provides access to the time when Update() was last called.
   unsigned long GetUpdateTimeStamp()
     { return this->UpdateTimeStamp; }
@@ -507,6 +534,12 @@ public:
   // for the quad view so internal views could use the decision that were made
   // in the main view.
   void CopyViewUpdateOptions(vtkPVRenderView* otherView);
+
+  // Description:
+  // Add props directly to the view.
+  void AddPropToRenderer(vtkProp* prop);
+  void RemovePropFromRenderer(vtkProp* prop);
+
 //BTX
 protected:
   vtkPVRenderView();
@@ -627,6 +660,7 @@ protected:
   bool UseOffscreenRenderingForScreenshots;
   bool UseInteractiveRenderingForSceenshots;
   bool NeedsOrderedCompositing;
+  bool RenderEmptyImages;
 
   double LODResolution;
   bool UseLightKit;

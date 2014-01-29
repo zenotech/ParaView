@@ -503,19 +503,19 @@
         </EnumerationDomain>
       </IntVectorProperty>
       <IntVectorProperty command="SetStereoCapableWindow"
-                         default_values="1"
+                         default_values="none"
                          name="StereoCapableWindow"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
       </IntVectorProperty>
       <IntVectorProperty command="SetStereoRender"
-                         default_values="0"
+                         default_values="none"
                          name="StereoRender"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
       </IntVectorProperty>
       <IntVectorProperty command="SetStereoType"
-                         default_values="2"
+                         default_values="none"
                          name="StereoType"
                          number_of_elements="1">
         <EnumerationDomain name="enum">
@@ -896,6 +896,22 @@
                         min="0"
                         name="range" />
       </IntVectorProperty>
+      <IntVectorProperty command="SetUseOffscreenRenderingForScreenshots"
+                         default_values="0"
+                         name="UseOffscreenRenderingForScreenshots"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Set whether offscreen rendering should be used during
+        CaptureWindow calls.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetUseOffscreenRendering"
+                         default_values="0"
+                         ignore_synchronization="1"
+                         name="UseOffscreenRendering"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Set whether to use offscreen rendering.</Documentation>
+      </IntVectorProperty>
     </ContextViewProxy>
     <!-- ================================================================== -->
     <ContextViewProxy base_proxygroup="views"
@@ -925,6 +941,22 @@
                       representation_name="ParallelCoordinatesRepresentation">
       <Documentation>This is the proxy for parallel coordinates chart
       view.</Documentation>
+      <IntVectorProperty command="SetUseOffscreenRenderingForScreenshots"
+                         default_values="0"
+                         name="UseOffscreenRenderingForScreenshots"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Set whether offscreen rendering should be used during
+        CaptureWindow calls.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetUseOffscreenRendering"
+                         default_values="0"
+                         ignore_synchronization="1"
+                         name="UseOffscreenRendering"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Set whether to use offscreen rendering.</Documentation>
+      </IntVectorProperty>
     </ContextViewProxy>
     <!-- ================================================================== -->
     <PlotMatrixViewProxy base_proxygroup="views"
@@ -935,6 +967,22 @@
                          representation_name="PlotMatrixRepresentation">
       <Documentation>This is the proxy for the plot matrix
       view.</Documentation>
+      <IntVectorProperty command="SetUseOffscreenRenderingForScreenshots"
+                         default_values="0"
+                         name="UseOffscreenRenderingForScreenshots"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Set whether offscreen rendering should be used during
+        CaptureWindow calls.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetUseOffscreenRendering"
+                         default_values="0"
+                         ignore_synchronization="1"
+                         name="UseOffscreenRendering"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Set whether to use offscreen rendering.</Documentation>
+      </IntVectorProperty>
     </PlotMatrixViewProxy>
     <!-- ================================================================== -->
     <ViewProxy base_proxygroup="views"
@@ -1335,84 +1383,36 @@
           <Exception name="PointSize" />
         </ShareProperties>
         <ExposedProperties>
-          <Property exposed_name="SelectionCellLabelBold"
-                    name="CellLabelBold"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionCellLabelColor"
-                    name="CellLabelColor"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionCellLabelFontFamily"
-                    name="CellLabelFontFamily"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionCellLabelFontSize"
-                    name="CellLabelFontSize"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionCellLabelFormat"
-                    name="CellLabelFormat"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionCellLabelItalic"
-                    name="CellLabelItalic"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionCellLabelJustification"
-                    name="CellLabelJustification"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionCellLabelOpacity"
-                    name="CellLabelOpacity"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionCellLabelShadow"
-                    name="CellLabelShadow"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionCellLabelVisibility"
-                    name="CellLabelVisibility"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionColor"
-                    name="Color"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionLineWidth"
-                    name="LineWidth"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionOpacity"
-                    name="Opacity"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionPointLabelBold"
-                    name="PointLabelBold"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionPointLabelColor"
-                    name="PointLabelColor"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionPointLabelFontFamily"
-                    name="PointLabelFontFamily"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionPointLabelFontSize"
-                    name="PointLabelFontSize"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionPointLabelFormat"
-                    name="PointLabelFormat"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionPointLabelItalic"
-                    name="PointLabelItalic"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionPointLabelJustification"
-                    name="PointLabelJustification"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionPointLabelOpacity"
-                    name="PointLabelOpacity"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionPointLabelShadow"
-                    name="PointLabelShadow"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionPointLabelVisibility"
-                    name="PointLabelVisibility"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionPointSize"
-                    name="PointSize"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionRepresentation"
-                    name="Representation"
-                    panel_visibility="never" />
-          <Property exposed_name="SelectionUseOutline"
-                    name="UseOutline"
-                    panel_visibility="never" />
+          <Property exposed_name="SelectionColor" name="Color" panel_visibility="never" />
+          <Property exposed_name="SelectionOpacity" name="Opacity" panel_visibility="never" />
+          <Property exposed_name="SelectionUseOutline" name="UseOutline" panel_visibility="never" />
+          <Property exposed_name="SelectionRepresentation" name="Representation" panel_visibility="never" />
+          <Property exposed_name="SelectionPointSize" name="PointSize" panel_visibility="never" />
+          <Property exposed_name="SelectionLineWidth" name="LineWidth" panel_visibility="never" />
+	  <Property exposed_name="SelectionCellLabelVisibility" name="CellLabelVisibility" panel_visibility="never"/>
+          <PropertyGroup label="Cell Label Font" panel_visibility="never" panel_widget="FontEditor">
+	    <Property exposed_name="SelectionCellLabelBold" name="CellLabelBold" function="Bold"/>
+	    <Property exposed_name="SelectionCellLabelColor" name="CellLabelColor" function="Color"/>
+	    <Property exposed_name="SelectionCellLabelFontFamily" name="CellLabelFontFamily" function="Family"/>
+	    <Property exposed_name="SelectionCellLabelFontSize" name="CellLabelFontSize" function="Size"/>
+	    <Property exposed_name="SelectionCellLabelFormat" name="CellLabelFormat" />
+	    <Property exposed_name="SelectionCellLabelItalic" name="CellLabelItalic" function="Italics"/>
+	    <Property exposed_name="SelectionCellLabelJustification" name="CellLabelJustification" />
+	    <Property exposed_name="SelectionCellLabelOpacity" name="CellLabelOpacity" function="Opacity"/>
+	    <Property exposed_name="SelectionCellLabelShadow" name="CellLabelShadow" function="Shadow"/>
+          </PropertyGroup>
+          <Property exposed_name="SelectionPointLabelVisibility" name="PointLabelVisibility" panel_visibility="never"/>
+          <PropertyGroup label="Point Label Font" panel_visibility="never" panel_widget="FontEditor">
+            <Property exposed_name="SelectionPointLabelBold" name="PointLabelBold" function="Bold"/>
+            <Property exposed_name="SelectionPointLabelColor" name="PointLabelColor" function="Color"/>
+            <Property exposed_name="SelectionPointLabelFontFamily" name="PointLabelFontFamily" function="Family"/>
+            <Property exposed_name="SelectionPointLabelFontSize" name="PointLabelFontSize" function="Size"/>
+            <Property exposed_name="SelectionPointLabelFormat" name="PointLabelFormat"/>
+            <Property exposed_name="SelectionPointLabelItalic" name="PointLabelItalic" function="Italics"/>
+            <Property exposed_name="SelectionPointLabelJustification" name="PointLabelJustification"/>
+            <Property exposed_name="SelectionPointLabelOpacity" name="PointLabelOpacity" function="Opacity"/>
+            <Property exposed_name="SelectionPointLabelShadow" name="PointLabelShadow" function="Shadow"/>
+          </PropertyGroup>
         </ExposedProperties>
       </SubProxy>
     </PVRepresentationProxy>
@@ -1446,6 +1446,54 @@
       <!-- End of GeometryRepresentation -->
     </PVRepresentationProxy>
     <!-- ================================================================== -->
+    <PVRepresentationProxy base_proxygroup="internal_representations"
+                           base_proxyname="PVRepresentationBase"
+                           class="vtkPVCompositeRepresentation"
+                           name="UnstructuredGridBaseRepresentation"
+                           processes="client|renderserver|dataserver">
+      <Documentation>This representation is used to show unstructured grid as
+      Surface/Outline/Points/Wireframe/Volume</Documentation>
+      <!-- this adds to what is already defined in PVRepresentationBase -->
+      <RepresentationType subproxy="VolumeRepresentation"
+                          text="Volume" />
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <DataTypeDomain composite_data_supported="1"
+                        name="input_type">
+          <DataType value="vtkUnstructuredGridBase" />
+        </DataTypeDomain>
+        <InputArrayDomain attribute_type="cell"
+                          name="input_array_cell"
+                          optional="1"></InputArrayDomain>
+        <InputArrayDomain attribute_type="point"
+                          name="input_array_point"
+                          optional="1"></InputArrayDomain>
+        <Documentation>Set the input to the representation.</Documentation>
+      </InputProperty>
+      <SubProxy>
+        <Proxy name="VolumeRepresentation"
+               proxygroup="representations"
+               proxyname="UnstructuredGridVolumeRepresentation" />
+        <ShareProperties subproxy="SurfaceRepresentation">
+          <Exception name="Input" />
+          <Exception name="Visibility" />
+        </ShareProperties>
+        <ExposedProperties>
+          <Property name="ScalarOpacityFunction"
+                    panel_visibility="never" />
+          <Property name="ScalarOpacityUnitDistance"
+                    panel_visibility="never" />
+          <Property name="ExtractedBlockIndex"
+                    panel_visibility="never" />
+          <Property name="SelectMapper"
+                    panel_visibility="advanced"
+                    panel_visibility_default_for_representation="volume" />
+        </ExposedProperties>
+      </SubProxy>
+      <!-- End of UnstructuredGridBaseRepresentation -->
+    </PVRepresentationProxy>
+    <!-- ================================================================== -->
+
     <PVRepresentationProxy base_proxygroup="internal_representations"
                            base_proxyname="PVRepresentationBase"
                            class="vtkPVCompositeRepresentation"
@@ -1682,7 +1730,7 @@
                      name="Input">
         <DataTypeDomain composite_data_supported="1"
                         name="input_type">
-          <DataType value="vtkUnstructuredGrid" />
+          <DataType value="vtkUnstructuredGridBase" />
         </DataTypeDomain>
         <Documentation>Set the input to the representation.</Documentation>
       </InputProperty>
@@ -1807,15 +1855,13 @@
         </EnumerationDomain>
       </IntVectorProperty>
       <ProxyProperty command="SetColor"
-                     name="LookupTable"
-                     skip_dependency="1">
+                     name="LookupTable" >
         <ProxyGroupDomain name="groups">
           <Group name="transfer_functions" />
         </ProxyGroupDomain>
       </ProxyProperty>
       <ProxyProperty command="SetScalarOpacity"
-                     name="ScalarOpacityFunction"
-                     skip_dependency="1">
+                     name="ScalarOpacityFunction" >
         <ProxyGroupDomain name="groups">
           <Group name="piecewise_functions" />
         </ProxyGroupDomain>
@@ -2010,8 +2056,7 @@
         </EnumerationDomain>
       </IntVectorProperty>
       <ProxyProperty command="SetColor"
-                     name="LookupTable"
-                     skip_dependency="1">
+                     name="LookupTable" >
         <ProxyGroupDomain name="groups">
           <Group name="transfer_functions" />
         </ProxyGroupDomain>
@@ -2064,8 +2109,7 @@
         unsigned char RGBA data array.</Documentation>
       </IntVectorProperty>
       <ProxyProperty command="SetScalarOpacity"
-                     name="ScalarOpacityFunction"
-                     skip_dependency="1">
+                     name="ScalarOpacityFunction" >
         <ProxyGroupDomain name="groups">
           <Group name="piecewise_functions" />
         </ProxyGroupDomain>
@@ -2233,8 +2277,7 @@
         as colors.</Documentation>
       </IntVectorProperty>
       <ProxyProperty command="SetLookupTable"
-                     name="LookupTable"
-                     skip_dependency="1">
+                     name="LookupTable" >
         <Documentation>Set the lookup table to use for scalar
         mapping.</Documentation>
         <ProxyGroupDomain name="groups">
@@ -2541,8 +2584,7 @@
         </ProxyGroupDomain>
       </ProxyProperty>
       <ProxyProperty command="SetLookupTable"
-                     name="LookupTable"
-                     skip_dependency="1">
+                     name="LookupTable">
         <Documentation>Set the lookup-table to use to map data array to colors.
         Lookuptable is only used with MapScalars to ON.</Documentation>
         <ProxyGroupDomain name="groups">
@@ -2564,6 +2606,12 @@
                          name="InterpolateScalarsBeforeMapping"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
+        <Documentation>When set to true (default), texture coordinates
+        are sent to and interpolated by the graphics card. This is
+        equivalent with interpolating scalars and then mapping them to
+        obtain colors between points. Otherwise, colors are sent to
+        and interpolated by the graphics card.
+        </Documentation>
       </IntVectorProperty>
       <IntVectorProperty command="SetStatic"
                          default_values="0"
@@ -4278,6 +4326,47 @@
     </Proxy>
 
     <!-- ================================================================== -->
+    <RepresentationProxy name="PythonRepresentation"
+			 class="vtkPythonRepresentation"
+			 processes="client|dataserver|renderserver">
+      <InputProperty command="SetInputConnection" name="Input"/>
+      <IntVectorProperty command="SetVisibility"
+                         default_values="1"
+                         name="Visibility"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Visibility of the representation.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetForceUseCache"
+                         default_values="0"
+                         is_internal="1"
+                         name="ForceUseCache"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Typically UseCache and CacheKey are updated by the View
+        and representations cache based on what the view tells it. However in
+        some cases we may want to force a representation to cache irrespective
+        of the view (e.g. comparative views). In which case these ivars can up
+        set. If ForcedCacheKey is true, it overrides UseCache and CacheKey.
+        Instead, ForcedCacheKey is used.</Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty command="SetForcedCacheKey"
+                            default_values="none"
+                            is_internal="1"
+                            name="ForcedCacheKey"
+                            number_of_elements="1">
+        <DoubleRangeDomain name="range" />
+        <Documentation>Typically UseCache and CacheKey are updated by the View
+        and representations cache based on what the view tells it. However in
+        some cases we may want to force a representation to cache irrespective
+        of the view (e.g. comparative views). In which case these ivars can up
+        set. If ForcedCacheKey is true, it overrides UseCache and CacheKey.
+        Instead, ForcedCacheKey is used.</Documentation>
+      </DoubleVectorProperty>
+    </RepresentationProxy>
+
+
+    <!-- ================================================================== -->
 
     <RepresentationProxy name="SliceFriendRepresentation"
                          class="vtkSliceFriendGeometryRepresentation"
@@ -4559,84 +4648,36 @@
         <Exception name="PointSize" />
       </ShareProperties>
       <ExposedProperties>
-        <Property exposed_name="SelectionCellLabelBold"
-                  name="CellLabelBold"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionCellLabelColor"
-                  name="CellLabelColor"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionCellLabelFontFamily"
-                  name="CellLabelFontFamily"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionCellLabelFontSize"
-                  name="CellLabelFontSize"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionCellLabelFormat"
-                  name="CellLabelFormat"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionCellLabelItalic"
-                  name="CellLabelItalic"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionCellLabelJustification"
-                  name="CellLabelJustification"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionCellLabelOpacity"
-                  name="CellLabelOpacity"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionCellLabelShadow"
-                  name="CellLabelShadow"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionCellLabelVisibility"
-                  name="CellLabelVisibility"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionColor"
-                  name="Color"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionLineWidth"
-                  name="LineWidth"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionOpacity"
-                  name="Opacity"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionPointLabelBold"
-                  name="PointLabelBold"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionPointLabelColor"
-                  name="PointLabelColor"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionPointLabelFontFamily"
-                  name="PointLabelFontFamily"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionPointLabelFontSize"
-                  name="PointLabelFontSize"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionPointLabelFormat"
-                  name="PointLabelFormat"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionPointLabelItalic"
-                  name="PointLabelItalic"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionPointLabelJustification"
-                  name="PointLabelJustification"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionPointLabelOpacity"
-                  name="PointLabelOpacity"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionPointLabelShadow"
-                  name="PointLabelShadow"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionPointLabelVisibility"
-                  name="PointLabelVisibility"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionPointSize"
-                  name="PointSize"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionRepresentation"
-                  name="Representation"
-                  panel_visibility="never" />
-        <Property exposed_name="SelectionUseOutline"
-                  name="UseOutline"
-                  panel_visibility="never" />
+        <Property exposed_name="SelectionColor" name="Color" panel_visibility="never" />
+        <Property exposed_name="SelectionOpacity" name="Opacity" panel_visibility="never" />
+        <Property exposed_name="SelectionUseOutline" name="UseOutline" panel_visibility="never" />
+        <Property exposed_name="SelectionRepresentation" name="Representation" panel_visibility="never" />
+        <Property exposed_name="SelectionPointSize" name="PointSize" panel_visibility="never" />
+        <Property exposed_name="SelectionLineWidth" name="LineWidth" panel_visibility="never" />
+        <PropertyGroup label="Cell Label Font" panel_visibility="never" panel_widget="FontEditor">
+	  <Property exposed_name="SelectionCellLabelBold" name="CellLabelBold" />
+	  <Property exposed_name="SelectionCellLabelColor" name="CellLabelColor" />
+	  <Property exposed_name="SelectionCellLabelFontFamily" name="CellLabelFontFamily" function="Family"/>
+	  <Property exposed_name="SelectionCellLabelFontSize" name="CellLabelFontSize" />
+	  <Property exposed_name="SelectionCellLabelFormat" name="CellLabelFormat" />
+	  <Property exposed_name="SelectionCellLabelItalic" name="CellLabelItalic" />
+	  <Property exposed_name="SelectionCellLabelJustification" name="CellLabelJustification" />
+	  <Property exposed_name="SelectionCellLabelOpacity" name="CellLabelOpacity" />
+	  <Property exposed_name="SelectionCellLabelShadow" name="CellLabelShadow" />
+	  <Property exposed_name="SelectionCellLabelVisibility" name="CellLabelVisibility" />
+        </PropertyGroup>
+        <PropertyGroup label="Point Label Font" panel_visibility="never" panel_widget="FontEditor">
+          <Property exposed_name="SelectionPointLabelBold" name="PointLabelBold"/>
+          <Property exposed_name="SelectionPointLabelColor" name="PointLabelColor"/>
+          <Property exposed_name="SelectionPointLabelFontFamily" name="PointLabelFontFamily"/>
+          <Property exposed_name="SelectionPointLabelFontSize" name="PointLabelFontSize"/>
+          <Property exposed_name="SelectionPointLabelFormat" name="PointLabelFormat"/>
+          <Property exposed_name="SelectionPointLabelItalic" name="PointLabelItalic"/>
+          <Property exposed_name="SelectionPointLabelJustification" name="PointLabelJustification"/>
+          <Property exposed_name="SelectionPointLabelOpacity" name="PointLabelOpacity"/>
+          <Property exposed_name="SelectionPointLabelShadow" name="PointLabelShadow"/>
+          <Property exposed_name="SelectionPtintLabelVisibility" name="PointLabelVisibility"/>
+        </PropertyGroup>
       </ExposedProperties>
     </SubProxy>
     </PVRepresentationProxy>
@@ -4741,6 +4782,8 @@
                proxygroup="views"
                proxyname="RenderView"></Proxy>
         <ExposedProperties>
+          <Property name="HiddenRepresentations" />
+          <Property name="HiddenProps" />
           <Property name="LODThreshold" />
           <Property name="LODResolution" />
           <Property name="ResetCamera" />
@@ -4942,7 +4985,67 @@
                               number_of_elements="3"
                               default_values="0 0 0"/>
 
+         <IntVectorProperty command="SetShowOutline"
+                            default_values="1"
+                            name="ShowOutline"
+                            number_of_elements="1">
+         </IntVectorProperty>
+
      </MultiSliceViewProxy>
+     <!-- ================================================================== -->
+     <PythonViewProxy name="PythonView" class="vtkPythonView"
+        processes="client|dataserver|renderserver"
+	base_proxygroup="views"
+	base_proxyname="ViewBase"
+	representation_name="PythonRepresentation">
+       <StringVectorProperty command="SetScript"
+			     name="Script"
+			     number_of_elements="1"
+			     panel_visibility="default">
+	 <Hints>
+	   <Widget type="multi_line" />
+	 </Hints>
+	 <Documentation>This property contains the text of a Python program used
+	 to generate a plot.</Documentation>
+       </StringVectorProperty>
+       <IntVectorProperty command="GetNumberOfVisibleDataObjects"
+			  name="NumberOfVisibleDataObjects"
+			  number_of_elements="1"
+			  default_values="1"
+			  information_only="1"
+			  panel_visibility="never">
+	 <SimpleIntInformationHelper/>
+       </IntVectorProperty>
+      <IntVectorProperty command="SetForceUseCache"
+                         default_values="0"
+                         is_internal="1"
+                         name="ForceUseCache"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Typically UseCache and CacheKey are updated by the View
+        and representations cache based on what the view tells it. However in
+        some cases we may want to force a representation to cache irrespective
+        of the view (e.g. comparative views). In which case these ivars can up
+        set. If ForcedCacheKey is true, it overrides UseCache and CacheKey.
+        Instead, ForcedCacheKey is used.</Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty command="SetForcedCacheKey"
+                            default_values="none"
+                            is_internal="1"
+                            name="ForcedCacheKey"
+                            number_of_elements="1">
+        <DoubleRangeDomain name="range" />
+        <Documentation>Typically UseCache and CacheKey are updated by the View
+        and representations cache based on what the view tells it. However in
+        some cases we may want to force a representation to cache irrespective
+        of the view (e.g. comparative views). In which case these ivars can up
+        set. If ForcedCacheKey is true, it overrides UseCache and CacheKey.
+        Instead, ForcedCacheKey is used.</Documentation>
+      </DoubleVectorProperty>
+
+
+     </PythonViewProxy>
+
      <!-- ================================================================== -->
   </ProxyGroup>
 

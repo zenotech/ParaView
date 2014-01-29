@@ -31,18 +31,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ========================================================================*/
 #include "pqDataQueryReaction.h"
 
-#include "pqActiveObjects.h"
 #include "pqCoreUtilities.h"
-#include "pqFiltersMenuReaction.h"
+#include "pqFindDataDialog.h"
 #include "pqHelpReaction.h"
-#include "pqPVApplicationCore.h"
-#include "pqQueryDialog.h"
-#include "pqSelectionManager.h"
-#include "pqServerManagerModel.h"
 #include "vtkPVConfig.h"
 
-#include <QEventLoop>
 #include <QMessageBox>
+
+static QPointer<pqFindDataDialog> pqFindDataSingleton;
 
 //-----------------------------------------------------------------------------
 pqDataQueryReaction::pqDataQueryReaction(QAction* parentObject)
@@ -56,18 +52,6 @@ pqDataQueryReaction::~pqDataQueryReaction()
 }
 
 //-----------------------------------------------------------------------------
-void pqDataQueryReaction::onExtractSelection()
-{
-  pqFiltersMenuReaction::createFilter("filters", "ExtractSelection");
-}
-
-//-----------------------------------------------------------------------------
-void pqDataQueryReaction::onExtractSelectionOverTime()
-{
-  pqFiltersMenuReaction::createFilter("filters", "ExtractSelectionOverTime");
-}
-
-//-----------------------------------------------------------------------------
 void pqDataQueryReaction::showHelp()
 {
   pqHelpReaction::showHelp("qthelp://paraview.org/paraview/Book/Book_Chapter6.html");
@@ -77,31 +61,15 @@ void pqDataQueryReaction::showHelp()
 void pqDataQueryReaction::showQueryDialog()
 {
 #ifdef PARAVIEW_ENABLE_PYTHON
-  pqQueryDialog dialog(
-    pqActiveObjects::instance().activePort(),
-    pqCoreUtilities::mainWidget());
-
-  // We want to make the query the active application wide selection, so we
-  // hookup the query action to selection manager so that the application
-  // realizes a new selection has been made.
-  pqSelectionManager* selManager =
-    pqPVApplicationCore::instance()->selectionManager();
-  if (selManager)
+  if (pqFindDataSingleton.isNull())
     {
-    QObject::connect(&dialog, SIGNAL(selected(pqOutputPort*)),
-      selManager, SLOT(select(pqOutputPort*)));
+    pqFindDataDialog* dialog = new pqFindDataDialog(pqCoreUtilities::mainWidget());
+    this->connect(dialog, SIGNAL(helpRequested()), SLOT(showHelp()));
+    pqFindDataSingleton = dialog;
     }
-  dialog.show();
-  QEventLoop loop;
-  QObject::connect(&dialog, SIGNAL(finished(int)),
-                   &loop,   SLOT(quit()));
-  QObject::connect(&dialog, SIGNAL(extractSelection()),
-                   this,    SLOT(onExtractSelection()));
-  QObject::connect(&dialog, SIGNAL(extractSelectionOverTime()),
-                   this,    SLOT(onExtractSelectionOverTime()));
-  QObject::connect(&dialog, SIGNAL(helpRequested()),
-                   this,    SLOT(showHelp()));
-  loop.exec();
+
+  pqFindDataSingleton->show();
+  pqFindDataSingleton->raise();
 #else
   QMessageBox::warning(0,
                        "Selection Not Supported",

@@ -25,6 +25,7 @@
 #include "vtkProcessModule.h"
 #include "vtkPVConfig.h"
 #include "vtkPVMultiClientsInformation.h"
+#include "vtkPVOptions.h"
 #include "vtkPVServerInformation.h"
 #include "vtkPVSessionServer.h"
 #include "vtkReservedRemoteObjectIds.h"
@@ -156,10 +157,17 @@ bool vtkSMSessionClient::Connect(const char* url)
   vtksys::RegularExpression pvrenderserver_reverse (
     "^cdsrsrc://(([^:]+)?(:([0-9]+))?/([^:]+)?(:([0-9]+))?)?");
 
+  vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
+  vtkPVOptions* options = pm->GetOptions();
+
   vtksys_ios::ostringstream handshake;
   handshake << "handshake=paraview." << PARAVIEW_VERSION;
-  // Add connect-id if needed (or maybe we extract that from url as well
-  // (just like vtkNetworkAccessManager).
+  // Add connect-id if needed. The connect-id is added to the handshake that
+  // must match on client and server processes.
+  if (options->GetConnectID() != 0)
+    {
+    handshake << ".connect_id." << options->GetConnectID();
+    }
 
   std::string data_server_url;
   std::string render_server_url;
@@ -224,8 +232,7 @@ bool vtkSMSessionClient::Connect(const char* url)
     }
 
   bool need_rcontroller = render_server_url.size() > 0;
-  vtkNetworkAccessManager* nam =
-    vtkProcessModule::GetProcessModule()->GetNetworkAccessManager();
+  vtkNetworkAccessManager* nam = pm->GetNetworkAccessManager();
   vtkMultiProcessController* dcontroller =
     nam->NewConnection(data_server_url.c_str());
   vtkMultiProcessController* rcontroller = need_rcontroller?
@@ -259,6 +266,8 @@ bool vtkSMSessionClient::Connect(const char* url)
     this->SetDataServerController(dcontroller);
     dcontroller->GetCommunicator()->AddObserver(
         vtkCommand::WrongTagEvent, this, &vtkSMSessionClient::OnWrongTagEvent);
+    dcontroller->GetCommunicator()->AddObserver(
+        vtkCommand::ErrorEvent, this, &vtkSMSessionClient::OnConnectionLost);
     dcontroller->AddRMICallback( &RMICallback, this,
                                  vtkPVSessionServer::SERVER_NOTIFICATION_MESSAGE_RMI);
     dcontroller->Delete();
@@ -268,6 +277,8 @@ bool vtkSMSessionClient::Connect(const char* url)
     this->SetRenderServerController(rcontroller);
     rcontroller->GetCommunicator()->AddObserver(
         vtkCommand::WrongTagEvent, this, &vtkSMSessionClient::OnWrongTagEvent);
+    rcontroller->GetCommunicator()->AddObserver(
+        vtkCommand::ErrorEvent, this, &vtkSMSessionClient::OnConnectionLost);
     rcontroller->Delete();
     }
 
@@ -401,6 +412,44 @@ int vtkSMSessionClient::GetNumberOfProcesses(vtkTypeUInt32 servers)
     }
 
   return num_procs;
+}
+
+//----------------------------------------------------------------------------
+bool vtkSMSessionClient::IsMPIInitialized(vtkTypeUInt32 servers)
+{
+  // keep track to make sure that we checked something before returning true
+  bool checked = false;
+  if (servers & vtkPVSession::CLIENT)
+    {
+    if (this->Superclass::IsMPIInitialized(servers) == false)
+      {
+      return false;
+      }
+    checked = true;
+    }
+  if (servers & vtkPVSession::DATA_SERVER ||
+    servers & vtkPVSession::DATA_SERVER_ROOT)
+    {
+    if (this->DataServerInformation->IsMPIInitialized() == false)
+      {
+      return false;
+      }
+    checked = true;
+    }
+  if (servers & vtkPVSession::RENDER_SERVER ||
+    servers & vtkPVSession::RENDER_SERVER_ROOT)
+    {
+    if (this->RenderServerInformation->IsMPIInitialized() == false)
+      {
+      return false;
+      }
+    checked = true;
+    }
+  if(checked == false)
+    {
+    vtkWarningMacro("Did not check any servers for MPI.");
+    }
+  return checked;
 }
 
 //----------------------------------------------------------------------------
@@ -877,9 +926,12 @@ void vtkSMSessionClient::RegisterSIObject(vtkSMMessage* message)
     stream.GetRawData(raw_message);
     for (int cc=0; cc < num_controllers; cc++)
       {
-      controllers[cc]->TriggerRMIOnAllChildren(
-        &raw_message[0], static_cast<int>(raw_message.size()),
-        vtkPVSessionServer::CLIENT_SERVER_MESSAGE_RMI);
+      if(controllers[cc] != NULL)
+        {
+        controllers[cc]->TriggerRMIOnAllChildren(
+              &raw_message[0], static_cast<int>(raw_message.size()),
+            vtkPVSessionServer::CLIENT_SERVER_MESSAGE_RMI);
+        }
       }
     }
 
@@ -969,6 +1021,15 @@ bool vtkSMSessionClient::OnWrongTagEvent( vtkObject* obj, unsigned long event,
   this->Superclass::OnWrongTagEvent(obj, event, calldata);
   return false;
 }
+
+//-----------------------------------------------------------------------------
+void vtkSMSessionClient::OnConnectionLost( vtkObject* vtkNotUsed(src),
+                                           unsigned long vtkNotUsed(event),
+                                           void* vtkNotUsed(calldata) )
+{
+  this->InvokeEvent(vtkPVSessionBase::ConnectionLost, (void*)"The server had died, please look at the server side for more details.");
+}
+
 
 //-----------------------------------------------------------------------------
 bool vtkSMSessionClient::IsNotBusy()

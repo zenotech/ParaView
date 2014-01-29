@@ -31,8 +31,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ========================================================================*/
 #include "pqCPPluginManager.h"
 
-#include "pqCPWritersMenuManager.h"
-
 //-----------------------------------------------------------------------------
 pqCPPluginManager::pqCPPluginManager(QObject* parentObject):
   Superclass(parentObject)
@@ -45,14 +43,13 @@ pqCPPluginManager::~pqCPPluginManager()
 }
 
 //-----------------------------------------------------------------------------
-void pqCPPluginManager::startup()
+const char* pqCPPluginManager::getWritersMenuName()
 {
-  // don't delete menuMgr, it will be cleaned up by Qt.
-  pqCPWritersMenuManager *menuMgr = new pqCPWritersMenuManager(this);
-  menuMgr->createMenu();
+  return "&Writers";
 }
 
 //-----------------------------------------------------------------------------
-void pqCPPluginManager::shutdown()
+const char* pqCPPluginManager::getObjectMenuName()
 {
+  return "CPProxyWritersMenu";
 }

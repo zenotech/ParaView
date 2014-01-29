@@ -49,10 +49,6 @@ set(Module_SRCS
   pqCollaborationEventPlayer.h
   pqCollaborationManager.cxx
   pqCollaborationManager.h
-  pqColorButtonEventPlayer.cxx
-  pqColorButtonEventPlayer.h
-  pqColorButtonEventTranslator.cxx
-  pqColorButtonEventTranslator.h
   pqComparativeContextView.cxx
   pqComparativeContextView.h
   pqComparativeRenderView.cxx
@@ -254,8 +250,6 @@ set (Module_MOC_HDRS
   pqChartSeriesSettingsModel.h
   pqCollaborationEventPlayer.h
   pqCollaborationManager.h
-  pqColorButtonEventPlayer.h
-  pqColorButtonEventTranslator.h
   pqComparativeContextView.h
   pqComparativeRenderView.h
   pqComparativeXYBarChartView.h
@@ -342,20 +336,14 @@ set (Module_RESOURCE_FILES
   "${CMAKE_CURRENT_SOURCE_DIR}/Resources/pqCore.qrc"
 )
 
-
-if (PARAVIEW_ENABLE_PYTHON)
-# list (APPEND Module_SRCS
-#   pqPythonEventSourceImage.cxx
-#   pqPythonEventSourceImage.h)
-
-# list (APPEND Module_MOC_HDRS
-#   pqPythonEventSourceImage.h)
-
-# include_directories(
-#   "${VTK_SOURCE_DIR}/Wrapping/Python"
-#   "${VTK_BINARY_DIR}/Wrapping/Python"
-#   "${PYTHON_INCLUDE_PATH}"
-#   )
+if (PARAVIEW_ENABLE_PYTHON AND PARAVIEW_ENABLE_MATPLOTLIB)
+  list (APPEND Module_SRCS
+    pqPythonView.cxx
+    pqPythonView.h
+    )
+  list (APPEND Module_MOC_HDRS
+    pqPythonView.h
+    )
 endif()
 
 
@@ -392,13 +380,13 @@ vtk_module_library(${vtk-module}
   ${__Module_RESOURCE_SRCS}
   ${__Module_MOC_SRCS}
   ${__Module_UI_SRCS})
-target_link_libraries(${vtk-module} ${QT_LIBRARIES})
+target_link_libraries(${vtk-module} LINK_PUBLIC ${QT_LIBRARIES})
 
 #IF (NOT PV_INSTALL_NO_DEVELOPMENT)
 #  # Headers
 #  GLOB_INSTALL_DEVELOPMENT(
 #      ${CMAKE_CURRENT_SOURCE_DIR}
-#      ${PV_INSTALL_INCLUDE_DIR} 
+#      ${PV_INSTALL_INCLUDE_DIR}
 #      "*.h;*.hxx;*.txx")
 #  INSTALL(
 #      FILES ${dynamicHeaders}
@@ -406,12 +394,12 @@ target_link_libraries(${vtk-module} ${QT_LIBRARIES})
 #      COMPONENT Development)
 #  # QT resources
 #  SET(resPath "${CMAKE_CURRENT_SOURCE_DIR}/Resources/UI")
-#  GLOB_INSTALL_DEVELOPMENT( 
+#  GLOB_INSTALL_DEVELOPMENT(
 #    "${CMAKE_CURRENT_SOURCE_DIR}"
 #    "${PV_INSTALL_INCLUDE_DIR}/Qt/Core/Resources/UI"
 #    "${resPath}/*.ui")
 #  SET(resPath "${CMAKE_CURRENT_SOURCE_DIR}/Resources/Icons")
-#  GLOB_INSTALL_DEVELOPMENT( 
+#  GLOB_INSTALL_DEVELOPMENT(
 #    "${CMAKE_CURRENT_SOURCE_DIR}"
 #    "${PV_INSTALL_INCLUDE_DIR}/Qt/Core/Resources/Icons"
 #    "${resPath}/*.ico;${resPath}/*.png;${resPath}/*.svg;${resPath}/*.xpm;${resPath}/*.rc")

@@ -10,14 +10,18 @@ vtk_module(vtkPVClientServerCoreRendering
     vtkDomainsChemistry
     vtkFiltersAMR
     vtkPVClientServerCoreCore
+    vtkPVVTKExtensionsDefault
     vtkPVVTKExtensionsRendering
-    vtkPVVTKExtensionsWebGLExporter
+    vtkWebGLExporter
     vtkRenderingLabel
     vtkRenderingVolumeAMR
     vtkRenderingVolumeOpenGL
     vtkViewsContext2D
     vtkViewsCore
     ${__dependencies}
+  PRIVATE_DEPENDS
+    vtksys
+    vtkzlib
   TEST_LABELS
     PARAVIEW
 )

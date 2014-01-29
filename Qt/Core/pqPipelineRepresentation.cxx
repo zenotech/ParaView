@@ -266,6 +266,21 @@ void pqPipelineRepresentation::setDefaultPropertyValues()
   // its messing up with the scalar coloring.
   this->Superclass::setDefaultPropertyValues();
 
+  vtkSMRepresentationProxy* repr = this->getRepresentationProxy();
+  if (!repr)
+    {
+    return;
+    }
+
+  // Setup property defaults that are independent of data. Eventually,
+  // ServerManager will take care of these defaults.
+  pqSettings *settings = pqApplicationCore::instance()->settings();
+  if(repr->GetProperty("AllowSpecularHighlightingWithScalarColoring"))
+    {
+    vtkSMPropertyHelper(repr, "AllowSpecularHighlightingWithScalarColoring").Set(
+      settings->value("allowSpecularHighlightingWithScalarColoring").toBool());
+    }
+
   if (!this->isVisible() &&
       !pqApplicationCore::instance()->getDisplayPolicy()->getHideByDefault()
       )
@@ -277,12 +292,6 @@ void pqPipelineRepresentation::setDefaultPropertyValues()
   // The HelperProxy is not needed any more since now the OpacityFunction is 
   // created from LookupTableManager (Bug# 0008876)
   // this->createHelperProxies();
-
-  vtkSMRepresentationProxy* repr = this->getRepresentationProxy();
-  if (!repr)
-    {
-    return;
-    }
 
   // For some view all the default representation names may not exist
   // therefore we need to filter them to match existing ones.
@@ -564,13 +573,6 @@ void pqPipelineRepresentation::setDefaultPropertyValues()
 
   // Color by property.
   this->colorByArray(NULL, 0);
-
-  pqSettings *settings = pqApplicationCore::instance()->settings();
-  if(repr->GetProperty("AllowSpecularHighlightingWithScalarColoring"))
-    {
-    vtkSMPropertyHelper(repr, "AllowSpecularHighlightingWithScalarColoring").Set(
-      settings->value("allowSpecularHighlightingWithScalarColoring").toBool());
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -778,60 +780,20 @@ void pqPipelineRepresentation::setColor(double R,double G,double B)
 //-----------------------------------------------------------------------------
 void pqPipelineRepresentation::resetLookupTableScalarRange()
 {
-  pqScalarsToColors* lut = this->getLookupTable();
-  QString colorField = this->getColorField();
-  if (lut && colorField != "" && 
-    colorField != pqPipelineRepresentation::solidColor())
+  vtkSMProxy* proxy = this->getProxy();
+  if (vtkSMPVRepresentationProxy::GetUsingScalarColoring(proxy))
     {
-    QPair<double,double> range = this->getColorFieldRange();
-    lut->setScalarRange(range.first, range.second);
-
-    // scalar opacity is treated as slave to the lookup table.
-    pqScalarOpacityFunction* opacity = this->getScalarOpacityFunction();
-    if(opacity)
-      {
-      opacity->setScalarRange(range.first, range.second);
-      }
+    vtkSMPVRepresentationProxy::RescaleTransferFunctionToDataRange(proxy);
     }
 }
 
 //-----------------------------------------------------------------------------
 void pqPipelineRepresentation::resetLookupTableScalarRangeOverTime()
 {
-  vtkSMRepresentationProxy* repr = this->getRepresentationProxy();
-  pqScalarsToColors* lut = this->getLookupTable();
-  QString colorField = this->getColorField(true);
-
-  if (lut && colorField != "" && 
-    colorField != pqPipelineRepresentation::solidColor())
+  vtkSMProxy* proxy = this->getProxy();
+  if (vtkSMPVRepresentationProxy::GetUsingScalarColoring(proxy))
     {
-    int attribute_type = vtkSMPropertyHelper(repr,
-      "ColorAttributeType").GetAsInt();
-    vtkPVTemporalDataInformation* dataInfo = 
-      this->getInputTemporalDataInformation();
-    vtkPVArrayInformation* arrayInfo = dataInfo->GetAttributeInformation(
-      attribute_type)->GetArrayInformation(colorField.toAscii().data());
-    if (arrayInfo)
-      {
-      int component = vtkSMPropertyHelper(lut->getProxy(),
-        "VectorComponent").GetAsInt();
-        if (vtkSMPropertyHelper(
-            lut->getProxy(), "VectorMode").GetAsInt() ==
-          vtkScalarsToColors::MAGNITUDE)
-          {
-          component = -1;
-          }
-      double range[2];
-      arrayInfo->GetComponentRange(component, range);
-      lut->setScalarRange(range[0], range[1]);
-
-      // scalar opacity is treated as slave to the lookup table.
-      pqScalarOpacityFunction* opacity = this->getScalarOpacityFunction();
-      if (opacity)
-        {
-        opacity->setScalarRange(range[0], range[1]);
-        }
-      }
+    vtkSMPVRepresentationProxy::RescaleTransferFunctionToDataRangeOverTime(proxy);
     }
 }
 
@@ -875,24 +837,17 @@ void pqPipelineRepresentation::updateLookupTableScalarRange()
     return;
     }
 
-  QString colorField = this->getColorField();
-  if (colorField == "" || colorField == pqPipelineRepresentation::solidColor())
+  vtkSMProxy* proxy = this->getProxy();
+  if (vtkSMPVRepresentationProxy::GetUsingScalarColoring(proxy))
     {
-    return;
-    }
-
-  QPair<double, double> range = this->getColorFieldRange();
-  lut->setWholeScalarRange(range.first, range.second);
-
-  // Adjust opacity function range.
-  pqScalarOpacityFunction* opacityFunction = this->getScalarOpacityFunction();
-  if (opacityFunction && !lut->getScalarRangeLock())
-    {
-    QPair<double, double> adjusted_range = lut->getScalarRange();
-
-    // Opacity function always follows the LUT scalar range.
-    // scalar opacity is treated as slave to the lookup table.
-    opacityFunction->setScalarRange(adjusted_range.first, adjusted_range.second);
+    // if scale range was initialized, we extend it, other we simply reset it.
+    vtkSMPropertyHelper helper(lut->getProxy(), "ScalarRangeInitialized", true);
+    bool extend_lut = helper.GetAsInt() == 1;
+    vtkSMPVRepresentationProxy::RescaleTransferFunctionToDataRange(proxy,
+      extend_lut);
+    // mark the scalar range as initialized.
+    helper.Set(0, 1);
+    lut->getProxy()->UpdateVTKObjects();
     }
 }
 

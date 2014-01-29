@@ -32,7 +32,7 @@ MACRO(PV_PLUGIN_PARSE_ARGUMENTS prefix arg_names option_names)
   FOREACH(option ${option_names})
     SET(${prefix}_${option} FALSE)
   ENDFOREACH(option)
-  
+
   SET(current_arg_name DEFAULT_ARGS)
   SET(current_arg_list)
   FOREACH(arg ${ARGN})
@@ -86,7 +86,7 @@ MACRO(ADD_SERVER_MANAGER_EXTENSION OUTSRCS Name Version XMLFile)
   SET (SM_PLUGIN_INCLUDES)
   SET (XML_INTERFACES_INIT)
 
-  # if (XMLFile) doesn't work correctly in a macro. We need to 
+  # if (XMLFile) doesn't work correctly in a macro. We need to
   # set a local variable.
   set (xmlfiles ${XMLFile})
   if (xmlfiles)
@@ -106,7 +106,7 @@ MACRO(ADD_SERVER_MANAGER_EXTENSION OUTSRCS Name Version XMLFile)
 
     set (SM_PLUGIN_INCLUDES "${SM_PLUGIN_INCLUDES}#include \"${XML_HEADER}\"\n")
   endif()
-  
+
   SET(HDRS)
 
   FOREACH(SRC ${ARGN})
@@ -121,11 +121,18 @@ MACRO(ADD_SERVER_MANAGER_EXTENSION OUTSRCS Name Version XMLFile)
     ENDIF()
     LIST(APPEND HDRS ${HDR})
   ENDFOREACH(SRC ${ARGN})
-  
+
   SET(CS_SRCS)
   IF(HDRS)
     include(vtkWrapClientServer)
 
+    # Plugins should not use unified bindings. The problem arises because the
+    # PythonD library links to the plugin itself, but the CS wrapping code
+    # lives in the plugin as well. With unified bindings, the CS wrapping
+    # needs to link to the PythonD library which causes a circular
+    # dependency. The solution is probably to compile all bindings for a
+    # plugin into a single library.
+    set(NO_PYTHON_BINDINGS_AVAILABLE TRUE)
     VTK_WRAP_ClientServer(${Name} CS_SRCS "${HDRS}")
     # only generate the instantiator code for cxx classes that'll be included in
     # the plugin
@@ -135,7 +142,7 @@ MACRO(ADD_SERVER_MANAGER_EXTENSION OUTSRCS Name Version XMLFile)
   ENDIF(HDRS)
 
   SET(${OUTSRCS} ${CS_SRCS} ${XML_HEADER})
-  
+
 ENDMACRO(ADD_SERVER_MANAGER_EXTENSION)
 
 MACRO(ADD_PYTHON_EXTENSION OUTSRCS NAME VERSION)
@@ -178,7 +185,7 @@ MACRO(ADD_PYTHON_EXTENSION OUTSRCS NAME VERSION)
         "${PY_MODULE_LIST},\n        \"${PYFILE_MODULE}\"")
       SET(PY_LOADER_LIST
         "${PY_LOADER_LIST},\n        module_${PYFILE_MODULE_MANGLED}_${PYFILE_NAME}_source()")
-      SET(PY_PACKAGE_FLAGS "${PY_PACKAGE_FLAGS}, ${PACKAGE_FLAG}")        
+      SET(PY_PACKAGE_FLAGS "${PY_PACKAGE_FLAGS}, ${PACKAGE_FLAG}")
     ELSE(PY_MODULE_LIST)
       SET(PY_MODULE_LIST "\"${PYFILE_MODULE}\"")
       SET(PY_LOADER_LIST
@@ -225,7 +232,7 @@ macro(add_paraview_property_group_widget outifaces outsrcs)
 endmacro()
 
 #------------------------------------------------------------------------------
-# Register a custom pqPropertyWidgetDecorator. 
+# Register a custom pqPropertyWidgetDecorator.
 # pqPropertyWidgetDecorator instances are used to add custom logic to
 # pqPropertyWidget.
 # Usage:
@@ -302,7 +309,7 @@ endfunction()
 MACRO(ADD_PARAVIEW_OBJECT_PANEL OUTIFACES OUTSRCS)
 
   SET(ARG_CLASS_NAME)
-  
+
   PV_PLUGIN_PARSE_ARGUMENTS(ARG "CLASS_NAME;XML_NAME;XML_GROUP" "" ${ARGN} )
 
   IF(ARG_CLASS_NAME)
@@ -323,7 +330,7 @@ MACRO(ADD_PARAVIEW_OBJECT_PANEL OUTIFACES OUTSRCS)
   SET(PANEL_MOC_SRCS)
   QT4_WRAP_CPP(PANEL_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${PANEL_NAME}Implementation.h)
 
- SET(${OUTSRCS} 
+ SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${PANEL_NAME}Implementation.cxx
       ${CMAKE_CURRENT_BINARY_DIR}/${PANEL_NAME}Implementation.h
       ${PANEL_MOC_SRCS}
@@ -340,9 +347,9 @@ ENDMACRO(ADD_PARAVIEW_OBJECT_PANEL)
 #  CLASS_NAME: pqDisplayPanel
 #  XML_NAME : the xml name of the display this panel corresponds with
 MACRO(ADD_PARAVIEW_DISPLAY_PANEL OUTIFACES OUTSRCS)
-  
+
   PV_PLUGIN_PARSE_ARGUMENTS(ARG "CLASS_NAME;XML_NAME" "" ${ARGN} )
-  
+
   SET(PANEL_NAME ${ARG_CLASS_NAME})
   SET(PANEL_XML_NAME ${ARG_XML_NAME})
   SET(${OUTIFACES} ${PANEL_NAME})
@@ -355,14 +362,14 @@ MACRO(ADD_PARAVIEW_DISPLAY_PANEL OUTIFACES OUTSRCS)
   SET(DISPLAY_MOC_SRCS)
   QT4_WRAP_CPP(DISPLAY_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${PANEL_NAME}Implementation.h)
 
-  SET(${OUTSRCS} 
+  SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${PANEL_NAME}Implementation.cxx
       ${CMAKE_CURRENT_BINARY_DIR}/${PANEL_NAME}Implementation.h
       ${DISPLAY_MOC_SRCS}
       )
 ENDMACRO(ADD_PARAVIEW_DISPLAY_PANEL)
 
-# create implementation for a custom view 
+# create implementation for a custom view
 # Usage:
 # ADD_PARAVIEW_VIEW_MODULE( OUTIFACES OUTSRCS
 #     VIEW_TYPE Type
@@ -400,7 +407,7 @@ ENDMACRO(ADD_PARAVIEW_DISPLAY_PANEL)
 #  a class MyView derived from pqGenericViewModule is expected to be in "MyView.h"
 
 MACRO(ADD_PARAVIEW_VIEW_MODULE OUTIFACES OUTSRCS)
-  
+
   SET(PANEL_SRCS)
   SET(ARG_VIEW_TYPE)
   SET(ARG_VIEW_NAME)
@@ -448,13 +455,13 @@ MACRO(ADD_PARAVIEW_VIEW_MODULE OUTIFACES OUTSRCS)
   ENDIF(PARAVIEW_BUILD_QT_GUI)
 
   IF(ARG_DISPLAY_PANEL)
-    ADD_PARAVIEW_DISPLAY_PANEL(OUT_PANEL_IFACES PANEL_SRCS 
-                               CLASS_NAME ${ARG_DISPLAY_PANEL} 
+    ADD_PARAVIEW_DISPLAY_PANEL(OUT_PANEL_IFACES PANEL_SRCS
+                               CLASS_NAME ${ARG_DISPLAY_PANEL}
                                XML_NAME ${ARG_DISPLAY_XML})
     SET(${OUTIFACES} ${ARG_VIEW_TYPE} ${OUT_PANEL_IFACES})
   ENDIF(ARG_DISPLAY_PANEL)
 
-  SET(${OUTSRCS} 
+  SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_VIEW_TYPE}Implementation.cxx
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_VIEW_TYPE}Implementation.h
       ${VIEW_MOC_SRCS}
@@ -479,22 +486,22 @@ ENDMACRO(ADD_PARAVIEW_VIEW_MODULE)
 MACRO(ADD_PARAVIEW_VIEW_OPTIONS OUTIFACES OUTSRCS)
 
   PV_PLUGIN_PARSE_ARGUMENTS(ARG "VIEW_TYPE;ACTIVE_VIEW_OPTIONS;GLOBAL_VIEW_OPTIONS" "" ${ARGN} )
-  
+
   IF(NOT ARG_VIEW_TYPE)
     MESSAGE(ERROR " ADD_PARAVIEW_VIEW_OPTIONS called without VIEW_TYPE")
   ENDIF(NOT ARG_VIEW_TYPE)
-  
+
   IF(NOT ARG_ACTIVE_VIEW_OPTIONS AND NOT ARG_GLOBAL_VIEW_OPTIONS)
     MESSAGE(ERROR " ADD_PARAVIEW_VIEW_OPTIONS called without ACTIVE_VIEW_OPTIONS or GLOBAL_VIEW_OPTIONS")
   ENDIF(NOT ARG_ACTIVE_VIEW_OPTIONS AND NOT ARG_GLOBAL_VIEW_OPTIONS)
-  
+
   SET(HAVE_ACTIVE_VIEW_OPTIONS 0)
   SET(HAVE_GLOBAL_VIEW_OPTIONS 0)
-  
+
   IF(ARG_ACTIVE_VIEW_OPTIONS)
     SET(HAVE_ACTIVE_VIEW_OPTIONS 1)
   ENDIF(ARG_ACTIVE_VIEW_OPTIONS)
-  
+
   IF(ARG_GLOBAL_VIEW_OPTIONS)
     SET(HAVE_GLOBAL_VIEW_OPTIONS 1)
   ENDIF(ARG_GLOBAL_VIEW_OPTIONS)
@@ -509,7 +516,7 @@ MACRO(ADD_PARAVIEW_VIEW_OPTIONS OUTIFACES OUTSRCS)
   SET(PANEL_MOC_SRCS)
   QT4_WRAP_CPP(PANEL_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_VIEW_TYPE}OptionsImplementation.h)
 
- SET(${OUTSRCS} 
+ SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_VIEW_TYPE}OptionsImplementation.cxx
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_VIEW_TYPE}OptionsImplementation.h
       ${PANEL_MOC_SRCS}
@@ -529,7 +536,7 @@ ENDMACRO(ADD_PARAVIEW_VIEW_OPTIONS)
 MACRO(ADD_PARAVIEW_ACTION_GROUP OUTIFACES OUTSRCS)
 
   PV_PLUGIN_PARSE_ARGUMENTS(ARG "CLASS_NAME;GROUP_NAME" "" ${ARGN} )
- 
+
   SET(${OUTIFACES} ${ARG_CLASS_NAME})
 
   CONFIGURE_FILE(${ParaView_CMAKE_DIR}/pqActionGroupImplementation.h.in
@@ -540,7 +547,7 @@ MACRO(ADD_PARAVIEW_ACTION_GROUP OUTIFACES OUTSRCS)
   SET(ACTION_MOC_SRCS)
   QT4_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
 
-  SET(${OUTSRCS} 
+  SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h
       ${ACTION_MOC_SRCS}
@@ -557,7 +564,7 @@ ENDMACRO(ADD_PARAVIEW_ACTION_GROUP)
 MACRO(ADD_PARAVIEW_VIEW_FRAME_ACTION_GROUP OUTIFACES OUTSRCS)
 
   PV_PLUGIN_PARSE_ARGUMENTS(ARG "CLASS_NAME" "" ${ARGN} )
- 
+
   SET(${OUTIFACES} ${ARG_CLASS_NAME})
 
   CONFIGURE_FILE(${ParaView_CMAKE_DIR}/pqViewFrameActionGroupImplementation.h.in
@@ -568,7 +575,7 @@ MACRO(ADD_PARAVIEW_VIEW_FRAME_ACTION_GROUP OUTIFACES OUTSRCS)
   SET(ACTION_MOC_SRCS)
   QT4_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
 
-  SET(${OUTSRCS} 
+  SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h
       ${ACTION_MOC_SRCS}
@@ -604,7 +611,7 @@ MACRO(ADD_PARAVIEW_DOCK_WINDOW OUTIFACES OUTSRCS)
   SET(ACTION_MOC_SRCS)
   QT4_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
 
-  SET(${OUTSRCS} 
+  SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h
       ${ACTION_MOC_SRCS}
@@ -623,7 +630,7 @@ ENDMACRO(ADD_PARAVIEW_DOCK_WINDOW)
 # CLASS_NAME : is the name of the class that implements 2 methods which will be
 #              called on startup and shutdown. The names of these methods can be
 #              optionally specified using STARTUP and SHUTDOWN.
-# STARTUP    : name of the method on class CLASS_NAME which should be called 
+# STARTUP    : name of the method on class CLASS_NAME which should be called
 #              when the plugins loads. Default is startup.
 # SHUTDOWN   : name pf the method on class CLASS_NAME which should be called
 #              when the application shuts down. Default is shutdown.
@@ -639,7 +646,7 @@ MACRO(ADD_PARAVIEW_AUTO_START OUTIFACES OUTSRCS)
   IF (NOT ARG_SHUTDOWN)
     SET (ARG_SHUTDOWN shutdown)
   ENDIF (NOT ARG_SHUTDOWN)
-  
+
   SET(${OUTIFACES} ${ARG_CLASS_NAME})
   CONFIGURE_FILE(${ParaView_CMAKE_DIR}/pqAutoStartImplementation.h.in
                  ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h @ONLY)
@@ -649,7 +656,7 @@ MACRO(ADD_PARAVIEW_AUTO_START OUTIFACES OUTSRCS)
   SET(ACTION_MOC_SRCS)
   QT4_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
 
-  SET(${OUTSRCS} 
+  SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h
       ${ACTION_MOC_SRCS}
@@ -680,7 +687,7 @@ MACRO(ADD_PARAVIEW_DISPLAY_PANEL_DECORATOR OUTIFACES OUTSRCS)
   SET(ACTION_MOC_SRCS)
   QT4_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
 
-  SET(${OUTSRCS} 
+  SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h
       ${ACTION_MOC_SRCS}
@@ -707,7 +714,7 @@ MACRO(ADD_3DWIDGET OUTIFACES OUTSRCS)
   SET(ACTION_MOC_SRCS)
   QT4_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
 
-  SET(${OUTSRCS} 
+  SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h
       ${ACTION_MOC_SRCS}
@@ -718,7 +725,7 @@ ENDMACRO(ADD_3DWIDGET)
 #  Macro for a GraphLayoutStrategy plugin
 #  STRATEGY_TYPE = "MyStrategy"
 MACRO(ADD_PARAVIEW_GRAPH_LAYOUT_STRATEGY OUTIFACES OUTSRCS)
-  
+
   SET(ARG_STRATEGY_TYPE)
   SET(ARG_STRATEGY_LABEL)
 
@@ -739,7 +746,7 @@ MACRO(ADD_PARAVIEW_GRAPH_LAYOUT_STRATEGY OUTIFACES OUTSRCS)
   SET(LAYOUT_MOC_SRCS)
   QT4_WRAP_CPP(LAYOUT_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_STRATEGY_TYPE}Implementation.h)
 
-  SET(${OUTSRCS} 
+  SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_STRATEGY_TYPE}Implementation.cxx
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_STRATEGY_TYPE}Implementation.h
       ${LAYOUT_MOC_SRCS}
@@ -750,7 +757,7 @@ ENDMACRO(ADD_PARAVIEW_GRAPH_LAYOUT_STRATEGY)
 #  Macro for a AreaLayoutStrategy plugin
 #  STRATEGY_TYPE = "MyStrategy"
 MACRO(ADD_PARAVIEW_TREE_LAYOUT_STRATEGY OUTIFACES OUTSRCS)
-  
+
   SET(ARG_STRATEGY_TYPE)
   SET(ARG_STRATEGY_LABEL)
 
@@ -771,7 +778,7 @@ MACRO(ADD_PARAVIEW_TREE_LAYOUT_STRATEGY OUTIFACES OUTSRCS)
   SET(LAYOUT_MOC_SRCS)
   QT4_WRAP_CPP(LAYOUT_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_STRATEGY_TYPE}Implementation.h)
 
-  SET(${OUTSRCS} 
+  SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_STRATEGY_TYPE}Implementation.cxx
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_STRATEGY_TYPE}Implementation.h
       ${LAYOUT_MOC_SRCS}
@@ -779,7 +786,7 @@ MACRO(ADD_PARAVIEW_TREE_LAYOUT_STRATEGY OUTIFACES OUTSRCS)
 
 ENDMACRO(ADD_PARAVIEW_TREE_LAYOUT_STRATEGY)
 
-# create implementation for a Qt/ParaView plugin given a 
+# create implementation for a Qt/ParaView plugin given a
 # module name and a list of interfaces
 # ADD_PARAVIEW_GUI_EXTENSION(OUTSRCS NAME VERSION INTERFACES iface1;iface2;iface3)
 MACRO(ADD_PARAVIEW_GUI_EXTENSION OUTSRCS NAME VERSION)
@@ -787,7 +794,7 @@ MACRO(ADD_PARAVIEW_GUI_EXTENSION OUTSRCS NAME VERSION)
   SET(INTERFACE_INCLUDES)
   SET(PUSH_BACK_PV_INTERFACES "#define PUSH_BACK_PV_INTERFACES(arg)\\\n")
   SET(ARG_INTERFACES)
-  
+
   PV_PLUGIN_PARSE_ARGUMENTS(ARG "INTERFACES" "" ${ARGN} )
 
   IF(ARG_INTERFACES)
@@ -799,7 +806,7 @@ MACRO(ADD_PARAVIEW_GUI_EXTENSION OUTSRCS NAME VERSION)
     ENDFOREACH(IFACE ${ARG_INTERFACES})
   ENDIF(ARG_INTERFACES)
   SET (PUSH_BACK_PV_INTERFACES "${PUSH_BACK_PV_INTERFACES}\n")
-  
+
   SET(${OUTSRCS} ${PLUGIN_MOC_SRCS})
 
 ENDMACRO(ADD_PARAVIEW_GUI_EXTENSION)
@@ -812,7 +819,7 @@ MACRO(PARAVIEW_QT4_ADD_RESOURCES outfiles )
     GET_FILENAME_COMPONENT(infile ${it} ABSOLUTE)
     GET_FILENAME_COMPONENT(rc_path ${infile} PATH)
     SET(outfile ${CMAKE_CURRENT_BINARY_DIR}/qrc_${outfilename}.cxx)
-    #  parse file for dependencies 
+    #  parse file for dependencies
     #  all files are absolute paths or relative to the location of the qrc file
     FILE(READ "${infile}" _RC_FILE_CONTENTS)
     STRING(REGEX MATCHALL "<file[^<]+" _RC_FILES "${_RC_FILE_CONTENTS}")
@@ -865,7 +872,7 @@ ENDMACRO(PARAVIEW_QT4_ADD_RESOURCES)
 #     [GUI_RESOURCE_FILES xml1 xml2]
 #     [GUI_SOURCES source files]
 #     [SOURCES source files]
-#     [REQUIRED_ON_SERVER] 
+#     [REQUIRED_ON_SERVER]
 #     [REQUIRED_ON_CLIENT]
 #     [REQUIRED_PLUGINS pluginname1 pluginname2]
 #     [CS_KITS kit1 kit2...]
@@ -906,11 +913,11 @@ FUNCTION(ADD_PARAVIEW_PLUGIN NAME VERSION)
   # documentation.
   set (binary_resources)
 
-  
+
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
-  PV_PLUGIN_PARSE_ARGUMENTS(ARG 
+  PV_PLUGIN_PARSE_ARGUMENTS(ARG
     "DOCUMENTATION_DIR;SERVER_MANAGER_SOURCES;SERVER_MANAGER_XML;SERVER_SOURCES;PYTHON_MODULES;GUI_INTERFACES;GUI_RESOURCES;GUI_RESOURCE_FILES;GUI_SOURCES;SOURCES;REQUIRED_PLUGINS;REQUIRED_ON_SERVER;REQUIRED_ON_CLIENT;AUTOLOAD;CS_KITS"
     "" ${ARGN} )
 
@@ -923,9 +930,9 @@ FUNCTION(ADD_PARAVIEW_PLUGIN NAME VERSION)
   ELSE (reqired_server_arg)
     IF (reqired_client_arg)
       SET(PLUGIN_REQUIRED_ON_SERVER 0)
-    ENDIF (reqired_client_arg)      
+    ENDIF (reqired_client_arg)
   ENDIF (reqired_server_arg)
-  
+
   IF(ARG_REQUIRED_PLUGINS)
     SET(PLUGIN_REQUIRED_PLUGINS "${ARG_REQUIRED_PLUGINS}")
     SET(HAVE_REQUIRED_PLUGINS 1)
@@ -975,7 +982,7 @@ FUNCTION(ADD_PARAVIEW_PLUGIN NAME VERSION)
       list(APPEND binary_resources ${CMAKE_CURRENT_BINARY_DIR}/${NAME}_doc.h)
       set (EXTRA_INCLUDES "${EXTRA_INCLUDES}#include \"${CMAKE_CURRENT_BINARY_DIR}/${NAME}_doc.h\"")
       foreach (func_name ${function_names})
-        set (BINARY_RESOURCES_INIT 
+        set (BINARY_RESOURCES_INIT
           "${BINARY_RESOURCES_INIT}  PushBack(resources, ${func_name});\n")
       endforeach()
     endif()
@@ -986,12 +993,12 @@ FUNCTION(ADD_PARAVIEW_PLUGIN NAME VERSION)
       # plugins
       GENERATE_QT_RESOURCE_FROM_FILES(
         "${CMAKE_CURRENT_BINARY_DIR}/${NAME}.qrc"
-         "/${NAME}/ParaViewResources" 
+         "/${NAME}/ParaViewResources"
          "${ARG_GUI_RESOURCE_FILES}")
       SET(ARG_GUI_RESOURCES ${ARG_GUI_RESOURCES}
         "${CMAKE_CURRENT_BINARY_DIR}/${NAME}.qrc")
     ENDIF(ARG_GUI_RESOURCE_FILES)
-    
+
     IF(ARG_GUI_INTERFACES OR ARG_GUI_RESOURCES OR ARG_GUI_SOURCES)
       ADD_PARAVIEW_GUI_EXTENSION(GUI_SRCS ${NAME} ${VERSION} INTERFACES "${ARG_GUI_INTERFACES}")
     ENDIF(ARG_GUI_INTERFACES OR ARG_GUI_RESOURCES OR ARG_GUI_SOURCES)
@@ -1029,6 +1036,8 @@ FUNCTION(ADD_PARAVIEW_PLUGIN NAME VERSION)
     ${ARG_SERVER_SOURCES}
     ${PY_SRCS})
 
+  set (extradependencies)
+
   SET (PLUGIN_EXTRA_CS_INITS)
   SET (PLUGIN_EXTRA_CS_INITS_EXTERNS)
   SET (INITIALIZE_EXTRA_CS_MODULES)
@@ -1039,9 +1048,22 @@ FUNCTION(ADD_PARAVIEW_PLUGIN NAME VERSION)
       SET (PLUGIN_EXTRA_CS_INITS_EXTERNS
         "extern \"C\" void ${kit}CS_Initialize(vtkClientServerInterpreter*);\n${PLUGIN_EXTRA_CS_INITS_EXTERNS}")
     ENDFOREACH(kit)
-    
+
     SET (INITIALIZE_EXTRA_CS_MODULES TRUE)
   ENDIF (ARG_CS_KITS)
+
+  # If this plugin is being built as a part of an environment that provdes other
+  # modules, we handle those.
+  if (pv-plugin AND ${pv-plugin}_CS_MODULES)
+    foreach(module ${${pv-plugin}_CS_MODULES})
+      set (PLUGIN_EXTRA_CS_INITS
+           "${module}CS_Initialize(interp);\n${PLUGIN_EXTRA_CS_INITS}")
+      set (PLUGIN_EXTRA_CS_INITS_EXTERNS
+           "extern \"C\" void ${module}CS_Initialize(vtkClientServerInterpreter*);\n${PLUGIN_EXTRA_CS_INITS_EXTERNS}")
+      list(APPEND extradependencies ${module} ${module}CS)
+    endforeach()
+    set(INITIALIZE_EXTRA_CS_MODULES TRUE)
+  endif()
 
   IF(GUI_SRCS OR SM_SRCS OR ARG_SOURCES OR ARG_PYTHON_MODULES)
     CONFIGURE_FILE(
@@ -1060,7 +1082,7 @@ FUNCTION(ADD_PARAVIEW_PLUGIN NAME VERSION)
       QT4_WRAP_CPP(__plugin_sources_tmp ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_NAME}_Plugin.h)
       SET (plugin_sources ${plugin_sources} ${__plugin_sources_tmp})
     ENDIF (plugin_type_gui)
-    
+
    if (MSVC)
       # Do not generate manifests for the plugins - caused issues loading plugins
       set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /MANIFEST:NO")
@@ -1083,13 +1105,17 @@ FUNCTION(ADD_PARAVIEW_PLUGIN NAME VERSION)
     ENDIF(MSVC)
 
     IF(plugin_type_gui OR GUI_SRCS)
-      TARGET_LINK_LIBRARIES(${NAME} pqComponents)
+      target_link_libraries(${NAME} LINK_PUBLIC pqComponents)
     ENDIF(plugin_type_gui OR GUI_SRCS)
     IF(SM_SRCS)
-      TARGET_LINK_LIBRARIES(${NAME} vtkPVServerManagerApplication
+      target_link_libraries(${NAME} LINK_PUBLIC vtkPVServerManagerApplication
         vtkPVServerManagerDefault
         vtkPVServerManagerApplicationCS)
     ENDIF(SM_SRCS)
+
+    if (extradependencies)
+      target_link_libraries(${NAME} LINK_PUBLIC ${extradependencies})
+    endif()
 
     # Add install rules for the plugin. Currently only the plugins in ParaView
     # source are installed.
@@ -1100,19 +1126,19 @@ FUNCTION(ADD_PARAVIEW_PLUGIN NAME VERSION)
         " ParaView source should use pv_plugin(..) macro with AUTOLOAD argument.")
     ENDIF(ARG_AUTOLOAD)
   ENDIF(GUI_SRCS OR SM_SRCS OR ARG_SOURCES OR ARG_PYTHON_MODULES)
-  
+
 ENDFUNCTION(ADD_PARAVIEW_PLUGIN)
 
 # wrap a Plugin into Python so that it can be called from pvclient and pvbatch
 #it will produce lib${NAME}Python.so, which you can then
-#import in your python script before calling servermanager.LoadPlugin to get 
+#import in your python script before calling servermanager.LoadPlugin to get
 #python access to the classes from the plugin
 MACRO(WRAP_PLUGIN_FOR_PYTHON NAME WRAP_LIST WRAP_EXCLUDE_LIST)
   #this was taken from Servers/ServerManager/CMakeLists.txt.
-  #I did the same setup and then just inlined the call to 
+  #I did the same setup and then just inlined the call to
   #VTK/Common/KitCommonPythonWrapBlock so that plugin's name
   #does not to start with "vtk".
-    
+
   SET_SOURCE_FILES_PROPERTIES(
     ${WRAP_EXCLUDE_LIST}
     WRAP_EXCLUDE)
@@ -1120,7 +1146,7 @@ MACRO(WRAP_PLUGIN_FOR_PYTHON NAME WRAP_LIST WRAP_EXCLUDE_LIST)
   SET(Kit_PYTHON_EXTRA_SRCS)
 
   SET(KIT_PYTHON_LIBS
-    vtkPVServerManagerPythonD
+    vtkPVServerManagerCorePythonD
     ${NAME})
 
   # Tell vtkWrapPython.cmake to set VTK_PYTHON_LIBRARIES for us.
@@ -1132,14 +1158,14 @@ MACRO(WRAP_PLUGIN_FOR_PYTHON NAME WRAP_LIST WRAP_EXCLUDE_LIST)
   IF(VTKPythonWrapping_INSTALL_BIN_DIR)
     SET(VTK_INSTALL_NO_LIBRARIES)
   ENDIF(VTKPythonWrapping_INSTALL_BIN_DIR)
-  
+
   SET(VTK_INSTALL_LIB_DIR_CM24 "${VTKPythonWrapping_INSTALL_LIB_DIR}")
   SET(VTK_INSTALL_BIN_DIR_CM24 "${VTKPythonWrapping_INSTALL_BIN_DIR}")
-  
+
   #INCLUDE(KitCommonPythonWrapBlock) takes over here
   # Create custom commands to generate the python wrappers for this kit.
   VTK_WRAP_PYTHON3(${NAME}Python KitPython_SRCS "${WRAP_LIST}")
-  
+
   # Create a shared library containing the python wrappers.  Executables
   # can link to this but it is not directly loaded dynamically as a
   # module.
@@ -1152,7 +1178,7 @@ MACRO(WRAP_PLUGIN_FOR_PYTHON NAME WRAP_LIST WRAP_EXCLUDE_LIST)
       ARCHIVE DESTINATION ${VTK_INSTALL_LIB_DIR_CM24} COMPONENT Development)
   ENDIF(NOT VTK_INSTALL_NO_LIBRARIES)
   SET(KIT_LIBRARY_TARGETS ${KIT_LIBRARY_TARGETS} ${NAME}PythonD)
-  
+
   # On some UNIX platforms the python library is static and therefore
   # should not be linked into the shared library.  Instead the symbols
   # are exported from the python executable so that they can be used by
@@ -1162,48 +1188,45 @@ MACRO(WRAP_PLUGIN_FOR_PYTHON NAME WRAP_LIST WRAP_EXCLUDE_LIST)
   IF(WIN32 OR APPLE)
     TARGET_LINK_LIBRARIES (${NAME}PythonD ${VTK_PYTHON_LIBRARIES})
   ENDIF(WIN32 OR APPLE)
-  
+
   # Add dependencies that may have been generated by VTK_WRAP_PYTHON3 to
   # the python wrapper library.  This is needed for the
   # pre-custom-command hack in Visual Studio 6.
   IF(KIT_PYTHON_DEPS)
     ADD_DEPENDENCIES(${NAME}PythonD ${KIT_PYTHON_DEPS})
   ENDIF(KIT_PYTHON_DEPS)
-  
+
   # Create a python module that can be loaded dynamically.  It links to
   # the shared library containing the wrappers for this kit.
   PYTHON_ADD_MODULE(${NAME}Python ${NAME}PythonInit.cxx)
   IF(PYTHON_ENABLE_MODULE_${NAME}Python)
     TARGET_LINK_LIBRARIES(${NAME}Python ${NAME}PythonD)
-    
+
     # Python extension modules on Windows must have the extension ".pyd"
     # instead of ".dll" as of Python 2.5.  Older python versions do support
     # this suffix.
     IF(WIN32 AND NOT CYGWIN)
       SET_TARGET_PROPERTIES(${NAME}Python PROPERTIES SUFFIX ".pyd")
     ENDIF(WIN32 AND NOT CYGWIN)
-    
+
     # The python modules are installed by a setup.py script which does
     # not know how to adjust the RPATH field of the binary.  Therefore
     # we must simply build the modules with no RPATH at all.  The
     # vtkpython executable in the build tree should have the needed
     # RPATH anyway.
     SET_TARGET_PROPERTIES(${NAME}Python PROPERTIES SKIP_BUILD_RPATH 1)
-    
+
     IF(WIN32 OR APPLE)
       TARGET_LINK_LIBRARIES (${NAME}Python ${VTK_PYTHON_LIBRARIES})
     ENDIF(WIN32 OR APPLE)
-    
-    # Generally the pyhon extension module created is installed using setup.py.
-    # However projects that include VTK (such as ParaView) can override this
-    # behaviour by not using setup.py, instead directly installing the extension
-    # module at the same location as other libraries.
-    IF (VTK_INSTALL_PYTHON_USING_CMAKE AND NOT VTK_INSTALL_NO_LIBRARIES)
+
+    # Install the extension module at the same location as other libraries.
+    IF (NOT VTK_INSTALL_NO_LIBRARIES)
       INSTALL(TARGETS ${NAME}Python
         RUNTIME DESTINATION ${VTK_INSTALL_BIN_DIR_CM24} COMPONENT RuntimeLibraries
         LIBRARY DESTINATION ${VTK_INSTALL_LIB_DIR_CM24} COMPONENT RuntimeLibraries
         ARCHIVE DESTINATION ${VTK_INSTALL_LIB_DIR_CM24} COMPONENT Development)
-    ENDIF (VTK_INSTALL_PYTHON_USING_CMAKE AND NOT VTK_INSTALL_NO_LIBRARIES)
+    ENDIF (NOT VTK_INSTALL_NO_LIBRARIES)
   ENDIF(PYTHON_ENABLE_MODULE_${NAME}Python)
 
 ENDMACRO(WRAP_PLUGIN_FOR_PYTHON)
@@ -1255,6 +1278,7 @@ macro(pv_process_modules)
     endif ()
   endforeach()
 
+  set (plugin_cs_modules)
   foreach(_module IN LISTS current_module_set_sorted)
     if (NOT ${_module}_IS_TEST)
       set(vtk-module ${_module})
@@ -1265,14 +1289,21 @@ macro(pv_process_modules)
     if (NOT ${_module}_EXCLUDE_FROM_WRAPPING AND
         NOT ${_module}_IS_TEST AND
         NOT ${_module}_THIRD_PARTY)
+        set(NO_PYTHON_BINDINGS_AVAILABLE TRUE)
         vtk_add_cs_wrapping(${_module})
+        list(APPEND plugin_cs_modules ${_module})
     endif()
     unset(vtk-module)
   endforeach()
 
+  # save the modules so any new plugins added, we can automatically make them
+  # depend on these new modules.
+  set (${pv-plugin}_CS_MODULES ${plugin_cs_modules})
+
   unset (VTK_MODULES_ALL)
   unset (current_module_set)
   unset (current_module_set_sorted)
+  unset (plugin_cs_modules)
 endmacro()
 
 # this macro is used to setup the environment for loading/building VTK modules
@@ -1280,23 +1311,48 @@ endmacro()
 # ParaVIew's source tree.
 macro(pv_setup_module_environment _name)
   # Setup enviroment to build VTK modules outside of VTK source tree.
-  set (VTK_INSTALL_EXPORT_NAME "${_name}Targets")
+  set (BUILD_SHARED_LIBS ${VTK_BUILD_SHARED_LIBS})
+
+  if (NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+  endif()
+  if (NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+  endif()
+  if (NOT CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+  endif()
+
   set (VTK_INSTALL_RUNTIME_DIR "bin")
   set (VTK_INSTALL_LIBRARY_DIR "lib")
   set (VTK_INSTALL_ARCHIVE_DIR "lib")
   set (VTK_INSTALL_INCLUDE_DIR "include")
   set (VTK_INSTALL_PACKAGE_DIR "lib/cmake/${_name}")
-  set (VTK_MODULES_DIR
-    "${CMAKE_CURRENT_BINARY_DIR}/${VTK_INSTALL_PACKAGE_DIR}/Modules")
-  set (VTK_EXPORTS_FILE
-    "${CMAKE_CURRENT_BINARY_DIR}/${_name}Targets.cmake")
-  set (BUILD_SHARED_LIBS ${VTK_BUILD_SHARED_LIBS})
 
-  include(vtkModuleMacros)
-  include(vtkModuleAPI)
+  if (NOT VTK_FOUND)
+    set (VTK_FOUND ${ParaView_FOUND})
+  endif()
+  if (VTK_FOUND)
+    set (VTK_VERSION
+      "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}.${VTK_BUILD_VERSION}")
+  endif()
+
+  include(vtkExternalModuleMacros)
   include(vtkClientServerWrapping)
+  if (PARAVIEW_ENABLE_PYTHON)
+    include(vtkPythonWrapping)
+  endif()
+
   # load information about existing modules.
   foreach (mod IN LISTS VTK_MODULES_ENABLED)
     vtk_module_load("${mod}")
   endforeach()
+
+  # Set this so that we can track all the modules we're building for this
+  # plugin. add_paraview_plugin() call will then add logic to automatically link
+  # and (do CS init) for all modules that are built for the plugin. Note
+  # pv_setup_module_environment() is not called for plugin being built as part
+  # of the ParaView build, in that case pv-plugin is set when processing the
+  # plugin.cmake file, and hence this logic still works!
+  set (pv-plugin "${_name}")
 endmacro()

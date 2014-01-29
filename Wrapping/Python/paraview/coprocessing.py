@@ -6,7 +6,7 @@ approriate for co-processing.
 """
 
 from paraview import simple
-from paraview.vtk import vtkPVVTKExtensionsCore
+from vtkPVVTKExtensionsCorePython import *
 import math
 
 # -----------------------------------------------------------------------------
@@ -260,13 +260,8 @@ class CoProcessor(object):
                datainformation.GetArray(rep.ColorArrayName).GetNumberOfComponents() == 1:
                 datarange = datainformation.GetArray(rep.ColorArrayName).GetRange(lut.VectorComponent)
             else:
-                datarange = [0,0]
-                for i in range(datainformation.GetArray(rep.ColorArrayName).GetNumberOfComponents()):
-                    for j in range(2):
-                        datarange[j] += datainformation.GetArray(rep.ColorArrayName).GetRange(i)[j]*datainformation.GetArray(rep.ColorArrayName).GetRange(i)[j]
-                datarange[0] = math.sqrt(datarange[0])
-                datarange[1] = math.sqrt(datarange[1])
-
+                # -1 corresponds to the magnitude.
+                datarange = datainformation.GetArray(rep.ColorArrayName).GetRange(-1)
 
             import vtkParallelCorePython
             import paraview.vtk as vtk
@@ -296,7 +291,7 @@ class CoProcessor(object):
                          newrgbpoints[v*4] = globaldatarange[0]+(rgbpoints[v*4] - rgbpoints[0])*newrange/oldrange
 
                       # avoid numerical round-off, at least with the last point
-                      newrgbpoints[(numpts-1)*4] = rgbpoints[(numpts-1)*4]
+                      newrgbpoints[(numpts-1)*4] = globaldatarange[1]
                    else: # the old range is 0 so the best we can do is to space the new points evenly
                       for v in range(numpts+1):
                          newrgbpoints[v*4] = globaldatarange[0]+v*newrange/(1.0*numpts)

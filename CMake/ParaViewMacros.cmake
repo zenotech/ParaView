@@ -66,6 +66,23 @@ MACRO(PV_PARSE_ARGUMENTS prefix arg_names option_names)
 ENDMACRO(PV_PARSE_ARGUMENTS)
 
 #----------------------------------------------------------------------------
+# Macro for extracting Plugin path and name from arguments
+#----------------------------------------------------------------------------
+MACRO(PV_EXTRACT_CLIENT_SERVER_ARGS)
+  set(options)
+  set(oneValueArgs LOAD_PLUGIN PLUGIN_PATH)
+  set(multiValueArgs )
+  cmake_parse_arguments(PV "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  set(CLIENT_SERVER_ARGS)
+  if(PV_PLUGIN_PATH)
+    set(CLIENT_SERVER_ARGS ${CLIENT_SERVER_ARGS} "--test-plugin-path=${PV_PLUGIN_PATH}")
+  endif()
+  if(PV_LOAD_PLUGIN)
+    set(CLIENT_SERVER_ARGS ${CLIENT_SERVER_ARGS} "--test-plugin=${PV_LOAD_PLUGIN}")
+  endif()
+ENDMACRO(PV_EXTRACT_CLIENT_SERVER_ARGS)
+
+#----------------------------------------------------------------------------
 # Macro for setting values if a user did not overwrite them
 #----------------------------------------------------------------------------
 MACRO(pv_set_if_not_set name value)
@@ -430,44 +447,6 @@ function (pv_executable_install name exe_suffix)
             DESTINATION ${VTK_INSTALL_RUNTIME_DIR}
             COMPONENT Runtime)
   endif()
-endfunction()
-
-#------------------------------------------------------------------------------
-# Function used to copy a Python package into the binary directory and compile
-# it.
-# package     :- The name of the Python package.
-# source_dir  :- The directory containing the Python source.
-# binary_dir  :- The directory to copy files to and compile into.
-#------------------------------------------------------------------------------
-function(build_python_package package source_dir binary_dir)
-  
-  set (copy-complete "${binary_dir}/${package}-copy-complete")
-
-  copy_files_recursive("${source_dir}"
-    DESTINATION "${binary_dir}"
-    REGEX "^(.*\\.py)$"
-    OUTPUT ${copy-complete}
-    LABEL "Copying ${package} files")
-
-  set(CMAKE_CONFIGURABLE_FILE_CONTENT
-    "from compileall import compile_dir
-compile_dir('${binary_dir}')
-file = open('${binary_dir}/${package}_complete', 'w')
-file.write('Done')
-")
-  configure_file(${CMAKE_ROOT}/Modules/CMakeConfigurableFile.in
-    "${CMAKE_CURRENT_BINARY_DIR}/compile_py" @ONLY)
-  unset(CMAKE_CONFIGURABLE_FILE_CONTENT)
-
-  add_custom_command(
-    COMMAND ${PYTHON_EXECUTABLE} ARGS ${CMAKE_CURRENT_BINARY_DIR}/compile_py
-    COMMAND ${PYTHON_EXECUTABLE} ARGS -O ${CMAKE_CURRENT_BINARY_DIR}/compile_py
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/compile_py
-            ${copy-complete}
-    OUTPUT  "${binary_dir}/${package}_complete"
-    COMMENT "Compiling Python files")
-
-  add_custom_target(${package} ALL DEPENDS "${binary_dir}/${package}_complete")
 endfunction()
 
 #------------------------------------------------------------------------------

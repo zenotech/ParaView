@@ -34,10 +34,6 @@
 // call are defined as Python variables inside both scripts. This allows
 // the developer to keep the scripts the same but change their behaviour
 // using parameters.
-// .SECTION Caveat
-// Note that this algorithm sets the output extent translator to be
-// vtkOnePieceExtentTranslator. This means that all processes will ask
-// for the whole extent. This behaviour can be overridden in InformationScript.
 #ifndef __vtkPythonProgrammableFilter_h
 #define __vtkPythonProgrammableFilter_h
 
@@ -73,10 +69,10 @@ public:
   // when it is run
   void SetParameterInternal(const char *name, const char *value);
   void SetParameter(const char *name, const char *value);
-  void SetParameter(const char *name, const int value);
-  void SetParameter(const char *name, const double value);
-  void SetParameter(const char *name, const double value1, 
-                    const double value2, const double value3);
+  void SetParameter(const char *name, int value);
+  void SetParameter(const char *name, double value);
+  void SetParameter(const char *name, double value1, double value2);
+  void SetParameter(const char *name, double value1, double value2, double value3);
 
   // Description:
   // Clear all name-value parameters
@@ -125,6 +121,14 @@ protected:
                                  vtkInformationVector** inputVector,
                                  vtkInformationVector* outputVector);
 
+  // Description:
+  // We want to temporarilly cache request to be used in the Python
+  // code so we override this method to store request for later use
+  // since otherwise we won't have access to it.
+  virtual int ProcessRequest(vtkInformation* request,
+                             vtkInformationVector** inInfo,
+                             vtkInformationVector* outInfo);
+
   char *Script;
   char *InformationScript;
   char *UpdateExtentScript;
@@ -134,6 +138,12 @@ protected:
 private:
   vtkPythonProgrammableFilter(const vtkPythonProgrammableFilter&);  // Not implemented.
   void operator=(const vtkPythonProgrammableFilter&);  // Not implemented.
+
+  // Description:
+  // When there is a request, cache it so that we can use it inside the Python
+  // source code of the filter. It is set at the beginning of ProcessRequest
+  // and removed at the end of that method.
+  vtkInformation* Request;
 
 //BTX
   vtkPythonProgrammableFilterImplementation* const Implementation;

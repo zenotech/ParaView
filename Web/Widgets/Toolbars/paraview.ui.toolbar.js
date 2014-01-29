@@ -3,6 +3,8 @@
  *
  * This module extend jQuery object to add control button to ParaViewWeb usage.
  *
+ * This module registers itself as: 'paraview-ui-toolbar'
+ *
  * @class jQuery.paraview.ui.toolbar
  */
 (function (GLOBAL, $) {
@@ -29,7 +31,7 @@
             var me = $(this);
 
             function disconnect() {
-                session.call("pv:exit");
+                session.call("vtk:exit");
                 session.close();
                 setTimeout("window.close()", 100);
             }
@@ -37,5 +39,19 @@
             me.click(disconnect);
         });
     };
+
+    // ----------------------------------------------------------------------
+    // Local module registration
+    // ----------------------------------------------------------------------
+    try {
+      // Tests for presence of jQuery, then registers this module
+      if ($ !== undefined) {
+        vtkWeb.registerModule('paraview-ui-toolbar-connect');
+      } else {
+        console.error('Module failed to register, jQuery is missing: ' + err.message);
+      }
+    } catch(err) {
+      console.error('Caught exception while registering module: ' + err.message);
+    }
 
 }(window, jQuery));

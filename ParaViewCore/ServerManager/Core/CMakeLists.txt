@@ -73,7 +73,6 @@ set (Module_SRCS
   vtkSMMapProperty.cxx
   vtkSMNamedPropertyIterator.cxx
   vtkSMNumberOfComponentsDomain.cxx
-  vtkSMNumberOfGroupsDomain.cxx
   vtkSMObject.cxx
   vtkSMOrderedPropertyIterator.cxx
   vtkSMOutputPort.cxx
@@ -81,7 +80,6 @@ set (Module_SRCS
   vtkSMPipelineState.cxx
   vtkSMPluginLoaderProxy.cxx
   vtkSMPluginManager.cxx
-  vtkSMPropertyAdaptor.cxx
   vtkSMProperty.cxx
   vtkSMPropertyGroup.cxx
   vtkSMPropertyHelper.cxx
@@ -98,6 +96,7 @@ set (Module_SRCS
   vtkSMProxyProperty.cxx
   vtkSMProxySelectionModel.cxx
   vtkSMPythonTraceObserver.cxx
+  vtkSMRangeDomainTemplate.txx
   vtkSMReaderFactory.cxx
   vtkSMRemoteObject.cxx
   vtkSMRemoteObjectUpdateUndoElement.cxx
@@ -114,7 +113,6 @@ set (Module_SRCS
   vtkSMStateVersionControllerBase.cxx
   vtkSMStateVersionController.cxx
   vtkSMStringListDomain.cxx
-  vtkSMStringListRangeDomain.cxx
   vtkSMStringVectorProperty.cxx
   vtkSMUncheckedPropertyHelper.cxx
   vtkSMUndoElement.cxx
@@ -134,6 +132,7 @@ SET_SOURCE_FILES_PROPERTIES(
   vtkSMLink
   vtkSMPropertyHelper
   vtkSMProxyManager  # since New() is protected.
+  vtkSMRangeDomainTemplate
   vtkSMRemoteObject
   vtkSMSession
   vtkSMSessionProxyManager # since New() is non-standard.
@@ -146,6 +145,7 @@ SET_SOURCE_FILES_PROPERTIES(
 
 SET_SOURCE_FILES_PROPERTIES(
   vtkSMPropertyHelper
+  vtkSMRangeDomainTemplate
   vtkSMUncheckedPropertyHelper
   WRAP_EXCLUDE)
 

@@ -82,11 +82,11 @@ def cp_hook(info, ctorMethod, ctorArgs, extraCtorCommands):
 
     # handle writers.
     if not proxy.GetHints() or \
-      not proxy.GetHints().FindNestedElementByName("CoProcessing"):
+      not proxy.GetHints().FindNestedElementByName("WriterProxy"):
         return (ctorMethod, ctorArgs, extraCtorCommands)
 
     # this is a writer we are dealing with.
-    xmlElement = proxy.GetHints().FindNestedElementByName("CoProcessing")
+    xmlElement = proxy.GetHints().FindNestedElementByName("WriterProxy")
     xmlgroup = xmlElement.GetAttribute("group")
     xmlname = xmlElement.GetAttribute("name")
     pxm = smtrace.servermanager.ProxyManager()
@@ -148,11 +148,18 @@ def DumpPipeline(export_rendering, simulation_input_map, screenshot_info):
         cpstate_globals.write_frequencies[key] = []
 
     # Start trace
-    smtrace.start_trace(CaptureAllProperties=True, UseGuiName=True)
+    capture_modified_properties = not smstate._save_full_state
+    smtrace.start_trace(CaptureAllProperties=True,
+                        CaptureModifiedProperties=capture_modified_properties,
+                        UseGuiName=True)
+
+    # Disconnect the smtrace module's observer.  It should not be
+    # active while tracing the state.
+    smtrace.reset_trace_observer()
 
     # update trace globals.
     smtrace.trace_globals.proxy_ctor_hook = staticmethod(cp_hook)
-    smtrace.trace_globals.trace_output = []
+    smtrace.trace_globals.trace_output.clear()
 
     # Get list of proxy lists
     proxy_lists = smstate.get_proxy_lists_ordered_by_group(WithRendering=cpstate_globals.export_rendering)
@@ -191,7 +198,7 @@ def DumpPipeline(export_rendering, simulation_input_map, screenshot_info):
     pipelineClassDef += "    class Pipeline:\n";
 
     # add the traced code.
-    for original_line in smtrace.trace_globals.trace_output:
+    for original_line in smtrace.trace_globals.trace_output.raw_data():
         for line in original_line.split("\n"):
             pipelineClassDef += "      " + line + "\n";
     smtrace.clear_trace()

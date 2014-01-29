@@ -1,15 +1,15 @@
 set (__dependencies)
 if (PARAVIEW_USE_MPI)
-  set (__dependencies vtkFiltersParallelMPI)
+  set (__dependencies
+    vtkFiltersParallelMPI
+    vtkRenderingParallelLIC
+    )
   if (PARAVIEW_USE_ICE_T)
     list(APPEND __dependencies vtkicet)
   endif()
-
-  # needed for mpich
-  add_definitions("-DMPICH_IGNORE_CXX_SEEK")
 endif()
 
-if(PARAVIEW_ENABLE_PYTHON)
+if(PARAVIEW_ENABLE_PYTHON AND PARAVIEW_ENABLE_MATPLOTLIB)
   list(APPEND __dependencies vtkRenderingMatplotlib)
 endif()
 
@@ -21,6 +21,8 @@ vtk_module(vtkPVVTKExtensionsRendering
   GROUPS
     Qt
     ParaViewRendering
+  PRIVATE_DEPENDS
+    vtkCommonColor
   DEPENDS
     vtkChartsCore
     vtkFiltersExtraction
@@ -36,8 +38,11 @@ vtk_module(vtkPVVTKExtensionsRendering
     vtkRenderingFreeTypeOpenGL
     vtkRenderingOpenGL
     vtkRenderingParallel
+    vtkRenderingLIC
 
     ${__dependencies}
+PRIVATE_DEPENDS
+    vtkzlib
   COMPILE_DEPENDS
     vtkUtilitiesEncodeString
 
@@ -46,6 +51,7 @@ vtk_module(vtkPVVTKExtensionsRendering
     vtkIOAMR
     vtkIOXML
     vtkRenderingOpenGL
+    vtkRenderingLIC
     vtkTestingRendering
 
   TEST_LABELS

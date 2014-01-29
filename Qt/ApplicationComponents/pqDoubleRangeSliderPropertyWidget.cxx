@@ -33,8 +33,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ui_pqDoubleRangeSliderPropertyWidget.h"
 
 #include "pqPropertiesPanel.h"
+#include "pqProxyWidget.h"
 #include "pqDoubleRangeWidget.h"
 #include "pqWidgetRangeDomain.h"
+#include "vtkSMProperty.h"
 
 #include <QGridLayout>
 

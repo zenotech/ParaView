@@ -54,9 +54,6 @@ set (Module_SRCS
   vtkPVCacheKeeper.cxx
   vtkPVCacheKeeperPipeline.cxx
   vtkPVCacheSizeInformation.cxx
-  vtkPVCameraAnimationCue.cxx
-  vtkPVCameraCueManipulator.cxx
-  vtkPVCameraKeyFrame.cxx
   vtkPVClientServerSynchronizedRenderers.cxx
   vtkPVCompositeRepresentation.cxx
   vtkPVContextView.cxx
@@ -97,6 +94,14 @@ set (Module_SRCS
   vtkXYChartRepresentation.cxx
 )
 
+if (PARAVIEW_ENABLE_PYTHON AND PARAVIEW_ENABLE_MATPLOTLIB)
+  list(APPEND Module_SRCS
+    vtkMatplotlibUtilities.cxx
+    vtkPythonRepresentation.cxx
+    vtkPythonView.cxx)
+endif()
+
+
 if (PARAVIEW_USE_ICE_T)
   list(APPEND Module_SRCS
     vtkIceTSynchronizedRenderers.cxx)
@@ -112,6 +117,8 @@ set_source_files_properties(
   vtkPVSynchronizedRenderWindows
   vtkPVView
   ABSTRACT)
+
+set (${vtk-module}_HDRS vtkStreamingPriorityQueue.h)
 
 # Use a custom hints file for this module.
 set(${vtk-module}_WRAP_HINTS "${CMAKE_CURRENT_SOURCE_DIR}/hints")

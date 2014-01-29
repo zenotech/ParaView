@@ -12,38 +12,37 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-
 #include "pqMultiBlockInspectorPanel.h"
 
 #include "pqActiveObjects.h"
-#include "pqOutputPort.h"
-#include "pqUndoStack.h"
 #include "pqDoubleRangeDialog.h"
-#include "vtkSMProxy.h"
-#include "vtkPVDataInformation.h"
-#include "vtkPVCompositeDataInformation.h"
-#include "vtkSMProperty.h"
-#include "vtkSMIntVectorProperty.h"
-#include "pqTreeWidgetSelectionHelper.h"
-#include "vtkEventQtSlotConnect.h"
+#include "pqOutputPort.h"
 #include "pqSelectionManager.h"
-#include "vtkSelection.h"
-#include "vtkSMPropertyHelper.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkSMProxyManager.h"
-#include "vtkSMSessionProxyManager.h"
+#include "pqTreeWidgetSelectionHelper.h"
+#include "pqUndoStack.h"
+#include "vtkEventQtSlotConnect.h"
+#include "vtkPVCompositeDataInformation.h"
+#include "vtkPVDataInformation.h"
 #include "vtkSMDoubleMapProperty.h"
 #include "vtkSMDoubleMapPropertyIterator.h"
+#include "vtkSMIntVectorProperty.h"
+#include "vtkSMProperty.h"
+#include "vtkSMPropertyHelper.h"
+#include "vtkSMProxy.h"
+#include "vtkSMProxyManager.h"
+#include "vtkSMSessionProxyManager.h"
+#include "vtkSMSourceProxy.h"
+#include "vtkSelection.h"
 
-#include <QMenu>
+#include <QColorDialog>
 #include <QHeaderView>
-#include <QVBoxLayout>
+#include <QIcon>
+#include <QMenu>
+#include <QPainter>
+#include <QPixmap>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
-#include <QColorDialog>
-#include <QIcon>
-#include <QPixmap>
-#include <QPainter>
+#include <QVBoxLayout>
 
 pqMultiBlockInspectorPanel::pqMultiBlockInspectorPanel(QWidget *parent_)
   : QWidget(parent_)
@@ -216,7 +215,10 @@ void pqMultiBlockInspectorPanel::buildTree(vtkPVCompositeDataInformation *info,
       vtkPVCompositeDataInformation *compositeChildInfo =
         childInfo->GetCompositeDataInformation();
 
-      if(compositeChildInfo->GetDataIsComposite())
+      // recurse down through child blocks only if the child block
+      // is composite and is not a multi-piece data set
+      if(compositeChildInfo->GetDataIsComposite() &&
+         !compositeChildInfo->GetDataIsMultiPiece())
         {
         this->buildTree(compositeChildInfo, item, flatIndex);
         }
@@ -670,7 +672,10 @@ void pqMultiBlockInspectorPanel::updateTreeWidgetBlockVisibilities(
       vtkPVCompositeDataInformation *compositeChildInfo =
         childInfo->GetCompositeDataInformation();
 
-      if(compositeChildInfo->GetDataIsComposite())
+      // recurse down through child blocks only if the child block
+      // is composite and is not a multi-piece data set
+      if(compositeChildInfo->GetDataIsComposite() &&
+         !compositeChildInfo->GetDataIsMultiPiece())
         {
         this->updateTreeWidgetBlockVisibilities(compositeChildInfo,
                                                 item,
@@ -789,7 +794,8 @@ void pqMultiBlockInspectorPanel::treeWidgetCustomContextMenuRequested(const QPoi
     }
   else if(action == setColorAction)
     {
-    QColor color = QColorDialog::getColor(Qt::gray, this);
+    QColor color = QColorDialog::getColor(QColor(), this, "Select Color",
+      QColorDialog::DontUseNativeDialog);
     if(color.isValid())
       {
       foreach(QTreeWidgetItem *item, items)
@@ -885,8 +891,8 @@ void pqMultiBlockInspectorPanel::currentSelectionChanged(pqOutputPort *port)
   foreach(QTreeWidgetItem *item,
           this->TreeWidget->findItems("", Qt::MatchContains | Qt::MatchRecursive))
     {
-    unsigned int flatIndex =
-      item->data(0, Qt::UserRole).value<unsigned int>();
+    vtkIdType flatIndex =
+      item->data(0, Qt::UserRole).value<vtkIdType>();
 
     item->setSelected(
       std::binary_search(block_ids.begin(), block_ids.end(), flatIndex));
@@ -973,6 +979,16 @@ QString pqMultiBlockInspectorPanel::lookupBlockName(unsigned int flatIndex) cons
 
 QIcon pqMultiBlockInspectorPanel::makeBlockIcon(unsigned int flatIndex) const
 {
+  BlockIcon options;
+  options.HasColor = this->BlockColors.contains(flatIndex);
+  options.HasOpacity = this->BlockOpacities.contains(flatIndex);
+  options.Color = options.HasColor ? this->BlockColors[flatIndex] : QColor();
+  options.Opacity = options.HasOpacity ? this->BlockOpacities[flatIndex] : 1.0;
+
+  if(this->BlockIconCache.contains(options))
+    {
+    return this->BlockIconCache[options];
+    }
 
   QPixmap pixmap(32, 16);
   pixmap.fill(Qt::transparent);
@@ -1015,5 +1031,11 @@ QIcon pqMultiBlockInspectorPanel::makeBlockIcon(unsigned int flatIndex) const
     }
 
   painter.end();
-  return QIcon(pixmap);
+
+  QIcon icon(pixmap);
+
+  // store icon in the cache
+  this->BlockIconCache[options] = icon;
+
+  return icon;
 }

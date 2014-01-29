@@ -38,26 +38,43 @@ endif()
 set(PV_PYTHON_MODULE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/paraview")
 set(PV_PYTHON_MODULE_BINARY_DIR "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/site-packages/paraview")
 
-# Handle out-of-source builds correctly.
-#
-#  1. Create a list of Python files to be installed/copied.
-#  2. Copy them to the binary directory. Since paraview cannot be built
-#     in place, we must always copy the files to the binary directory.
-#  3. Use Python's compileall to compile the copied files.
-#
-# *** Step 1 has to be done carefully to avoid missing out files ***
-
-# Copy generated module files from VTK.
-# To this first so we can replace some of the VTK files by ParaView
-# customizations.
-if (VTK_BINARY_DIR)
-  file (COPY "${VTK_BINARY_DIR}/Wrapping/Python/vtk"
-        DESTINATION "${PV_PYTHON_MODULE_BINARY_DIR}"
-        USE_SOURCE_PERMISSIONS)
+# Copy generated module files from VTK into place in the build tree
+set(_vtkpy_modules vtkpython_pyc)
+if (TARGET vtkWebPython)
+  list(APPEND _vtkpy_modules vtkWebPython)
 endif()
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/vtk_py_copy_completed"
+  # Copy into $pydir/paraview/vtk.
+  # This is what scripts get when they do "import paraview.vtk".
+  COMMAND ${CMAKE_COMMAND} ARGS -E echo "copying to ${PV_PYTHON_MODULE_BINARY_DIR}"
+  COMMAND ${CMAKE_COMMAND} ARGS -E copy_directory
+          "${VTK_BINARY_DIR}/Wrapping/Python/vtk"
+          "${PV_PYTHON_MODULE_BINARY_DIR}/vtk"
+  # Overlay that with paraview's customizations.
+  COMMAND ${CMAKE_COMMAND} ARGS -E echo "overlaying onto ${PV_PYTHON_MODULE_BINARY_DIR}"
+  COMMAND ${CMAKE_COMMAND} ARGS -E copy_directory
+          "${CMAKE_CURRENT_SOURCE_DIR}/paraview/vtk"
+          "${PV_PYTHON_MODULE_BINARY_DIR}/vtk"
 
-# This will replace the "vtk/__init__.py" file as well as add a few extra files
-# to the "vtk" module.
+  # Also copy into $pydir/vtk.
+  # Scripts that want all of vtk can now "import vtk".
+  COMMAND ${CMAKE_COMMAND} ARGS -E echo "copying to ${VTK_BUILD_PYTHON_MODULE_DIR}/vtk"
+  COMMAND ${CMAKE_COMMAND} ARGS -E copy_directory
+          "${VTK_BINARY_DIR}/Wrapping/Python/vtk"
+          "${VTK_BUILD_PYTHON_MODULE_DIR}/vtk"
+
+  # Touch the OUTPUT file, otherwise this command will always be dirty.
+  COMMAND ${CMAKE_COMMAND} ARGS -E touch "${CMAKE_CURRENT_BINARY_DIR}/vtk_py_copy_completed"
+
+  DEPENDS ${_vtkpy_modules}
+)
+
+add_custom_target(copy_vtk_py_files ALL
+  DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/vtk_py_copy_completed"
+)
+
+# Copy ParaView specific python files
 file (COPY ${CMAKE_CURRENT_SOURCE_DIR}/paraview
       DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/site-packages
       USE_SOURCE_PERMISSIONS
@@ -67,28 +84,34 @@ file (COPY ${CMAKE_CURRENT_SOURCE_DIR}/paraview
 # Add a couple of vtk python files to "paraview" module.
 file (COPY "${ParaView_SOURCE_DIR}/VTK/Wrapping/Python/vtk/util/numpy_support.py"
            "${ParaView_SOURCE_DIR}/VTK/Wrapping/Python/vtk/util/vtkConstants.py"
-      DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/site-packages/paraview
+      DESTINATION ${PV_PYTHON_MODULE_BINARY_DIR}
       USE_SOURCE_PERMISSIONS)
 
+# copy ParaView's default lookup tables
+file(COPY "${CMAKE_SOURCE_DIR}/Qt/Components/Resources/XML/ColorMaps.xml"
+  DESTINATION "${PV_PYTHON_MODULE_BINARY_DIR}"
+  USE_SOURCE_PERMISSIONS)
 
-# Byte compile the Python files.
-CONFIGURE_FILE(${PV_PYTHON_MODULE_SOURCE_DIR}/compile_all_pv.py.in
+# Byte compile the paraview Python files.
+configure_file(${PV_PYTHON_MODULE_SOURCE_DIR}/compile_all_pv.py.in
   ${PV_PYTHON_MODULE_BINARY_DIR}/compile_all_pv.py
   @ONLY IMMEDIATE)
 
-ADD_CUSTOM_COMMAND(
+add_custom_command(
   WORKING_DIRECTORY ${PV_PYTHON_MODULE_BINARY_DIR}
   COMMAND ${PYTHON_EXECUTABLE}
   ARGS compile_all_pv.py
-  DEPENDS ${PV_PYTHON_SOURCE_FILES} ${PV_PYTHON_MODULE_BINARY_DIR}/compile_all_pv.py
+  DEPENDS ${PV_PYTHON_SOURCE_FILES} ${PV_PYTHON_MODULE_BINARY_DIR}/compile_all_pv.py copy_vtk_py_files
   ${PV_PYTHON_OUTPUT_FILES}
   OUTPUT "${PV_PYTHON_MODULE_BINARY_DIR}/pv_compile_complete"
   )
 
-ADD_CUSTOM_TARGET(paraview_pyc ALL 
-  DEPENDS "${PV_PYTHON_MODULE_BINARY_DIR}/pv_compile_complete")
+add_custom_target(paraview_pyc ALL
+  DEPENDS copy_vtk_py_files "${PV_PYTHON_MODULE_BINARY_DIR}/pv_compile_complete")
 
 # Install the paraview module files.
-INSTALL(DIRECTORY ${PV_PYTHON_MODULE_BINARY_DIR}
-    DESTINATION ${VTK_INSTALL_LIBRARY_DIR}/site-packages
-    COMPONENT Runtime)
+install(DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/site-packages
+    DESTINATION ${VTK_INSTALL_LIBRARY_DIR}
+    COMPONENT Runtime
+    PATTERN *-complete EXCLUDE
+    PATTERN *_complete EXCLUDE)

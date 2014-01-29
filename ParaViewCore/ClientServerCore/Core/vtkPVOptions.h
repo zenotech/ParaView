@@ -134,6 +134,17 @@ public:
   // Should this process just print monitor information and exit?
   vtkGetMacro(PrintMonitors, int);
 
+  // Description:
+  // Adding ability to test plugins by loading them at command line
+  vtkGetStringMacro(TestPlugin);
+  vtkGetStringMacro(TestPluginPath);
+
+  // Description:
+  // Flag for controlling auto generation of stack trace on POSIX
+  // systems after crash.
+  vtkGetMacro(EnableStackTrace, int);
+  vtkSetMacro(EnableStackTrace, int);
+
   enum ProcessTypeEnum
     {
     PARAVIEW = 0x2,
@@ -177,28 +188,25 @@ protected:
   // Description:
   // Subclasses may need to access these
   char* ParaViewDataName;
-
-
-  //server URL information
-  vtkSetStringMacro(ServerURL);
-  char* ServerURL;
-
+  char* ServerURL; // server URL information
   int ServerMode;
   int ClientMode;
   int RenderServerMode;
   int MultiClientMode;
   int MultiClientModeWithErrorMacro;
   int MultiServerMode;
-
   int SymmetricMPIMode;
+  char* StateFileName;  // loading state file(Bug #5711)
+  char* TestPlugin; // to load plugins from command line for tests
+  char* TestPluginPath;
 
-  // Command Option for loading state file(Bug #5711)
+  // inline setters
+  vtkSetStringMacro(ServerURL);
   vtkSetStringMacro(StateFileName);
-  char* StateFileName;
-
+  vtkSetStringMacro(TestPlugin);
+  vtkSetStringMacro(TestPluginPath);
 
 private:
-  // Options:
   int ConnectID;
   int UseOffscreenRendering;
   int UseStereoRendering;
@@ -207,21 +215,19 @@ private:
   int TileMullions[2];
   int UseRenderingGroup;
   int Timeout;
-
-
   char* LogFileName;
   int TellVersion;
-
-  vtkSetStringMacro(StereoType);
   char* StereoType;
-
   int EnableStreaming;
-
   int UseCudaInterop;
-
   int SatelliteMessageIds;
-
   int PrintMonitors;
+  int EnableStackTrace;
+  int ForceMPIInitOnClient;
+  int ForceNoMPIInitOnClient;
+
+  // inline setters
+  vtkSetStringMacro(StereoType);
 
 //ETX
 private:

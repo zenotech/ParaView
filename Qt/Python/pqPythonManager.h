@@ -97,11 +97,7 @@ public:
   void editTrace();
 
   // Description:
-  // Show a file dialog in order to save the python trace into a file
-  void saveTrace();
-
-  // Description:
-  // Show a file dialog in order to save the python trace into a file
+  // Trace state and save the trace string to a file with the given filename.
   void saveTraceState(const QString& filename);
 
   // Description:
@@ -112,6 +108,11 @@ public:
   // Invalidate the macro list, so the menu/toolbars are updated according to
   // the content of the Macros directories...
   void updateMacroList();
+
+  // Description:
+  // Set the option to save the full state (true) or just the non-default
+  // values (false). This modifies the _save_full_state value in smstate.py.
+  void setSaveFullState(bool saveFullState);
 
 signals:
 
@@ -147,7 +148,6 @@ protected slots:
 
 protected:
   QString getTraceString();
-  QString getPVModuleDirectory();
 
 private:
   class pqInternal;

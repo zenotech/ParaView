@@ -53,11 +53,16 @@ set (Module_SRCS
   vtkSMSelectionHelper.cxx
   vtkSMSpreadSheetRepresentationProxy.cxx
   vtkSMTextWidgetRepresentationProxy.cxx
+  vtkSMTransferFunctionProxy.cxx
   vtkSMUtilities.cxx
   vtkSMViewLayoutProxy.cxx
   vtkSMViewProxy.cxx
   vtkSMWidgetRepresentationProxy.cxx
 )
+
+if (PARAVIEW_ENABLE_PYTHON AND PARAVIEW_ENABLE_MATPLOTLIB)
+  list(APPEND Module_SRCS vtkSMPythonViewProxy.cxx)
+endif()
 
 vtk_module_library(vtkPVServerManagerRendering
   ${Module_SRCS})

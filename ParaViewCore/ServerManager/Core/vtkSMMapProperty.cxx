@@ -26,6 +26,18 @@ vtkSMMapProperty::~vtkSMMapProperty()
 }
 
 //---------------------------------------------------------------------------
+vtkIdType vtkSMMapProperty::GetNumberOfElements()
+{
+  return 0;
+}
+
+//---------------------------------------------------------------------------
+bool vtkSMMapProperty::IsValueDefault()
+{
+  return this->GetNumberOfElements() == 0;
+}
+
+//---------------------------------------------------------------------------
 int vtkSMMapProperty::LoadState(vtkPVXMLElement* element,
                                 vtkSMProxyLocator* loader)
 {
@@ -47,4 +59,16 @@ int vtkSMMapProperty::ReadXMLAttributes(vtkSMProxy *parent,
 void vtkSMMapProperty::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
+}
+
+//---------------------------------------------------------------------------
+void vtkSMMapProperty::Copy(vtkSMProperty* src)
+{
+  this->Superclass::Copy(src);
+}
+
+//---------------------------------------------------------------------------
+void vtkSMMapProperty::ResetToDefaultInternal()
+{
+  this->Superclass::ResetToDefaultInternal();
 }

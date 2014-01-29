@@ -23,11 +23,11 @@
 #include "vtkIntArray.h"
 #include "vtkMultiProcessController.h"
 #include "vtkObjectFactory.h"
-#include "vtkOpenGLRenderWindow.h"
 #include "vtkPKdTree.h"
 #include "vtkPixelBufferObject.h"
 #include "vtkRenderState.h"
 #include "vtkRenderWindow.h"
+#include "vtkOpenGLRenderWindow.h"
 #include "vtkRenderer.h"
 #include "vtkShader2.h"
 #include "vtkShader2Collection.h"
@@ -37,6 +37,7 @@
 #include "vtkTextureUnitManager.h"
 #include "vtkTilesHelper.h"
 #include "vtkUniformVariables.h"
+#include "vtkOpenGLError.h"
 
 #include <assert.h>
 #include "vtkgl.h"
@@ -102,13 +103,14 @@ vtkIceTCompositePass::vtkIceTCompositePass()
   this->DataReplicatedOnAllProcesses = false;
   this->ImageReductionFactor = 1;
 
+  this->RenderEmptyImages = false;
   this->UseOrderedCompositing = false;
   this->DepthOnly=false;
-  
+
   this->LastRenderedEyes[0] = new vtkSynchronizedRenderers::vtkRawImage();
   this->LastRenderedEyes[1] = new vtkSynchronizedRenderers::vtkRawImage();
   this->LastRenderedRGBAColors = this->LastRenderedEyes[0];
-    
+
   this->LastRenderedDepths = vtkFloatArray::New();
 
   this->PBO=0;
@@ -140,13 +142,13 @@ vtkIceTCompositePass::~vtkIceTCompositePass()
   this->SetController(0);
   this->IceTContext->Delete();
   this->IceTContext = 0;
-  
+
   delete this->LastRenderedEyes[0];
   delete this->LastRenderedEyes[1];
   this->LastRenderedEyes[0] = NULL;
   this->LastRenderedEyes[1] = NULL;
   this->LastRenderedRGBAColors = NULL;
-  
+
   this->LastRenderedDepths->Delete();
   this->LastRenderedDepths = NULL;
 
@@ -197,6 +199,8 @@ void vtkIceTCompositePass::ReleaseGraphicsResources(vtkWindow* window)
 //----------------------------------------------------------------------------
 void vtkIceTCompositePass::SetupContext(const vtkRenderState* render_state)
 {
+  vtkOpenGLClearErrorMacro();
+
   //icetDiagnostics(ICET_DIAG_DEBUG | ICET_DIAG_ALL_NODES);
 
   // Irrespective of whether we are rendering in tile/display mode or not, we
@@ -291,6 +295,7 @@ void vtkIceTCompositePass::SetupContext(const vtkRenderState* render_state)
   // decisions.
   double allBounds[6];
   render_state->GetRenderer()->ComputeVisiblePropBounds(allBounds);
+
   //Try to detect when bounds are empty and try to let IceT know that
   //nothing is in bounds.
   if (allBounds[0] > allBounds[1])
@@ -390,6 +395,21 @@ void vtkIceTCompositePass::SetupContext(const vtkRenderState* render_state)
     }
   glClear(clear_mask);
   //icetEnable(ICET_CORRECT_COLORED_BACKGROUND);
+
+  // when a painter needs to use MPI global collective
+  // communications the empty images option ensures
+  // that all painters including those without visible data
+  // are executed
+  if (this->RenderEmptyImages)
+    {
+    icetEnable(ICET_RENDER_EMPTY_IMAGES);
+    }
+  else
+    {
+    icetDisable(ICET_RENDER_EMPTY_IMAGES);
+    }
+
+  vtkOpenGLCheckErrorMacro("failed after SetupContext");
 }
 
 //----------------------------------------------------------------------------
@@ -416,13 +436,16 @@ void vtkIceTCompositePass::Render(const vtkRenderState* render_state)
   IceTImage renderedImage = icetGLDrawFrame();
   IceTDrawCallbackHandle = NULL;
   IceTDrawCallbackState = NULL;
-  
+
+  // isolate vtk from IceT OpenGL errors
+  vtkOpenGLClearErrorMacro();
+
   if (render_state->GetRenderer()->GetRenderWindow()->GetStereoRender() == 1)
     {
     //if we are doing a stereo render we need to know
     //which stereo eye we are currently rendering. If we don't do this
     //we will overwrite the left eye with the right eye image
-    int eyeIndex = 
+    int eyeIndex =
       render_state->GetRenderer()->GetActiveCamera()->GetLeftEye() == 1 ? 0 : 1;
     this->LastRenderedRGBAColors = this->LastRenderedEyes[eyeIndex];
     }
@@ -430,7 +453,7 @@ void vtkIceTCompositePass::Render(const vtkRenderState* render_state)
   // Capture image.
   vtkIdType numPixels = icetImageGetNumPixels(renderedImage);
   if (icetImageGetColorFormat(renderedImage) != ICET_IMAGE_COLOR_NONE)
-    {    
+    {
     this->LastRenderedRGBAColors->Resize(icetImageGetWidth(renderedImage),
       icetImageGetHeight(renderedImage), 4);
     icetImageCopyColorub(renderedImage,
@@ -495,6 +518,8 @@ void vtkIceTCompositePass::CreateProgram(vtkOpenGLRenderWindow *context)
 //----------------------------------------------------------------------------
 void vtkIceTCompositePass::Draw(const vtkRenderState* render_state)
 {
+  vtkOpenGLClearErrorMacro();
+
   GLbitfield clear_mask = 0;
   if (!this->DepthOnly)
     {
@@ -524,6 +549,8 @@ void vtkIceTCompositePass::Draw(const vtkRenderState* render_state)
     {
     glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
     }
+
+  vtkOpenGLCheckErrorMacro("failed after Draw");
 }
 
 //----------------------------------------------------------------------------
@@ -699,6 +726,8 @@ void vtkIceTCompositePass::GetLastRenderedTile(
 void vtkIceTCompositePass::PushIceTDepthBufferToScreen(
   const vtkRenderState* render_state)
 {
+  vtkOpenGLClearErrorMacro();
+
   // OpenGL code to copy it back
   // merly the code from vtkCompositeZPass
 
@@ -794,12 +823,16 @@ void vtkIceTCompositePass::PushIceTDepthBufferToScreen(
   vtkgl::ActiveTexture(vtkgl::TEXTURE0);
 
   glPopAttrib();
+
+  vtkOpenGLCheckErrorMacro("failed after PushIceTDepthBufferToScreen");
 }
 
 //----------------------------------------------------------------------------
 void vtkIceTCompositePass::PushIceTColorBufferToScreen(
   const vtkRenderState* render_state)
 {
+  vtkOpenGLClearErrorMacro();
+
   // get the dimension of the buffer
   IceTInt id;
   icetGetIntegerv(ICET_TILE_DISPLAYED,&id);
@@ -908,6 +941,8 @@ void vtkIceTCompositePass::PushIceTColorBufferToScreen(
   this->IceTTexture->UnBind();
 
   glPopAttrib();
+
+  vtkOpenGLCheckErrorMacro("failed after PushIceTColorBufferToScreen");
 }
 
 //----------------------------------------------------------------------------

@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ui_pqDisplayProxyEditor.h"
 
 // Qt includes
+#include <QDockWidget>
 #include <QDoubleValidator>
 #include <QFileInfo>
 #include <QIcon>
@@ -48,7 +49,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkEventQtSlotConnect.h"
 #include "vtkGeometryRepresentationWithFaces.h"
 #include "vtkLabeledDataMapper.h"
-#include "vtkMaterialLibrary.h"
 #include "vtkPVArrayInformation.h"
 #include "vtkPVDataInformation.h"
 #include "vtkPVDataSetAttributesInformation.h"
@@ -65,7 +65,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // ParaView client includes
 #include "pqApplicationCore.h"
-#include "pqColorScaleEditor.h"
 #include "pqCoreUtilities.h"
 #include "pqCubeAxesEditorDialog.h"
 #include "pqFileDialog.h"
@@ -280,7 +279,6 @@ void pqDisplayProxyEditor::setRepresentation(pqPipelineRepresentation* repr)
   this->Internal->StyleInterpolation->clear();
   if ((prop = reprProxy->GetProperty("Interpolation")) != 0)
     {
-    prop->UpdateDependentDomains();
     QList<QVariant> items = pqSMAdaptor::getEnumerationPropertyDomain(prop);
     foreach(QVariant item, items)
       {
@@ -564,7 +562,6 @@ void pqDisplayProxyEditor::setRepresentation(pqPipelineRepresentation* repr)
   this->Internal->BackfaceStyleRepresentation->clear();
   if ((prop = reprProxy->GetProperty("BackfaceRepresentation")) != NULL)
     {
-    prop->UpdateDependentDomains();
     QList<QVariant> items = pqSMAdaptor::getEnumerationPropertyDomain(prop);
     foreach (QVariant item, items)
       {
@@ -716,9 +713,6 @@ void pqDisplayProxyEditor::setupGUIConnections()
 
   this->Internal->SliceDirectionAdaptor = new pqSignalAdaptorComboBox(
     this->Internal->SliceDirection);
-  QObject::connect(this->Internal->SliceDirectionAdaptor,
-    SIGNAL(currentTextChanged(const QString&)),
-    this, SLOT(sliceDirectionChanged()));
 
   this->Internal->SelectedMapperAdaptor = new pqSignalAdaptorComboBox(
     this->Internal->SelectMapper);
@@ -794,13 +788,6 @@ void pqDisplayProxyEditor::updateEnableState()
 
   this->Internal->SliceGroup->setEnabled(
     reprType == "Slice" );
-  if (reprType == "Slice")
-    {
-    // every time the user switches to Slice mode we update the domain for the
-    // slider since the domain depends on the input to the image mapper which
-    // may have changed.
-    this->sliceDirectionChanged();
-    }
 
   this->Internal->compositeTree->setVisible(
    this->Internal->CompositeTreeAdaptor &&
@@ -889,10 +876,19 @@ void pqDisplayProxyEditor::updateEnableState()
 //-----------------------------------------------------------------------------
 void pqDisplayProxyEditor::openColorMapEditor()
 {
-  pqColorScaleEditor editor(pqCoreUtilities::mainWidget());
-  editor.setObjectName("pqColorScaleDialog");
-  editor.setRepresentation(this->Internal->Representation);
-  editor.exec();
+  // Raise the color editor is present in the application.
+  QDockWidget* widget = qobject_cast<QDockWidget*>(
+    pqApplicationCore::instance()->manager("COLOR_EDITOR_PANEL"));
+  if (widget)
+    {
+    widget->setVisible(true);
+    widget->setFloating(true);
+    widget->raise();
+    }
+  else
+    {
+    qDebug("Failed to find 'COLOR_EDITOR_PANEL'.");
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -999,20 +995,6 @@ void pqDisplayProxyEditor::editCubeAxes()
 bool pqDisplayProxyEditor::isCubeAxesVisible()
 {
   return this->Internal->ShowCubeAxes->isChecked();
-}
-
-//-----------------------------------------------------------------------------
-void pqDisplayProxyEditor::sliceDirectionChanged()
-{
-  if (this->Internal->Representation)
-    {
-    vtkSMProxy* reprProxy = this->Internal->Representation->getProxy();
-    vtkSMProperty* prop = reprProxy->GetProperty("SliceMode");
-    if (prop)
-      {
-      prop->UpdateDependentDomains();
-      }
-    }
 }
 
 //-----------------------------------------------------------------------------

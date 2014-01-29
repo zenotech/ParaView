@@ -32,10 +32,28 @@
 
 class vtkSMProperty;
 
+namespace
+{
+  template <class B>
+    B vtkSMVPConvertFromString(const std::string& string_representation)
+      {
+      B value;
+      std::istringstream buffer(string_representation);
+      buffer >> value;
+      return value;
+      }
+
+  template <>
+    vtkStdString vtkSMVPConvertFromString<vtkStdString>(
+      const std::string& string_representation)
+      { return string_representation; }
+}
+
 template <class T>
 class vtkSMVectorPropertyTemplate
 {
   vtkSMProperty* Property;
+
 public:
   std::vector<T> Values;
   std::vector<T> UncheckedValues;
@@ -182,20 +200,6 @@ public:
     }
 
   //---------------------------------------------------------------------------
-  int SetElementAsString(unsigned int idx, const char* value)
-    {
-    if(!value) { return 0; }
-
-    // Convert String to T
-    T realValue;
-    vtksys_ios::stringstream vstr;
-    vstr << value << ends;
-    vstr >> realValue;
-
-    // SetElement
-    return this->SetElement(idx, realValue);
-    }
-  //---------------------------------------------------------------------------
   int SetElement(unsigned int idx, T value)
     {
     unsigned int numElems = this->GetNumberOfElements();
@@ -215,7 +219,6 @@ public:
     // the value would not be pushed.
     this->Initialized = true;
     this->Property->Modified();
-
     this->ClearUncheckedElements();
     return 1;
     }
@@ -248,11 +251,20 @@ public:
       }
 
     std::copy(values, values+numArgs, this->Values.begin());
-
     this->Initialized = true;
-    this->Property->Modified();
-
-    this->ClearUncheckedElements();
+    if (!modified && numValues==0)
+      {
+      // handle the case when the property didn't have valid values but the new
+      // values don't really change anything. In that case, the property hasn't
+      // really been modified, so skip invoking the event. This keeps Python
+      // trace from ending up with lots of properties such as EdgeBlocks etc for
+      // ExodusIIReader which haven't really changed at all.
+      }
+    else
+      {
+      this->Property->Modified();
+      this->ClearUncheckedElements();
+      }
     return 1;
     }
 
@@ -277,7 +289,17 @@ public:
       if (modified)
         {
         this->Property->Modified();
-        this->ClearUncheckedElements();
+        }
+
+      // now copy unchecked values.
+      if (this->UncheckedValues != dsrc->Values)
+        {
+        this->UncheckedValues = dsrc->Values;
+        modified = true;
+        }
+      if (modified)
+        {
+        this->Property->InvokeEvent(vtkCommand::UncheckedPropertyModifiedEvent);
         }
       }
     }
@@ -295,6 +317,46 @@ public:
       this->ClearUncheckedElements();
       }
     }
+
+  //---------------------------------------------------------------------------
+  bool LoadStateValues(vtkPVXMLElement* element)
+    {
+    if (!element) { return false; }
+
+    std::vector<T> new_values;
+    unsigned int numElems = element->GetNumberOfNestedElements();
+    for (unsigned int i=0; i<numElems; i++)
+      {
+      vtkPVXMLElement* current = element->GetNestedElement(i);
+      if (current->GetName() && strcmp(current->GetName(), "Element") == 0)
+        {
+        int index;
+        const char* str_value = current->GetAttribute("value");
+        if (str_value &&
+          current->GetScalarAttribute("index", &index) &&
+          index >= 0)
+          {
+          if (index <= static_cast<int>(new_values.size()))
+            {
+            new_values.resize(index+1);
+            }
+
+          new_values[index] = vtkSMVPConvertFromString<T>(str_value);
+          }
+        }
+      }
+    if (new_values.size() > 0)
+      {
+      this->SetElements(&new_values[0], static_cast<unsigned int>(new_values.size()));
+      }
+    else
+      {
+      this->SetNumberOfElements(0);
+      }
+
+    return true;
+    }
+
   //---------------------------------------------------------------------------
   void SaveStateValues(vtkPVXMLElement* propertyElement)
     {
@@ -321,11 +383,25 @@ public:
       }
     }
 
+  //---------------------------------------------------------------------------
   void ClearUncheckedElements()
     {
     // copy values to unchecked values
     this->UncheckedValues = this->Values;
     this->Property->InvokeEvent(vtkCommand::UncheckedPropertyModifiedEvent);
+    }
+
+  //---------------------------------------------------------------------------
+  bool IsValueDefault()
+    {
+    if(this->Values.size() != this->DefaultValues.size())
+      {
+      return false;
+      }
+
+    return std::equal(this->Values.begin(),
+                      this->Values.end(),
+                      this->DefaultValues.begin());
     }
 };
 #endif

@@ -1,3 +1,4 @@
+
 /*=========================================================================
 
   Program:   ParaView
@@ -42,7 +43,29 @@
 # include "vtkProcessModuleInitializePython.h"
 #endif
 
+#ifndef _WIN32
+#include <signal.h>
+#endif
+
 #include <assert.h>
+#include <stdexcept> // for runtime_error
+
+namespace
+{
+  // Returns true if the arguments has the specified boolean_arg.
+  bool vtkFindArgument(const char* boolean_arg,
+    int argc, char** &argv)
+    {
+    for (int cc=0; cc < argc; cc++)
+      {
+      if (argv[cc] != NULL && strcmp(argv[cc], boolean_arg) == 0)
+        {
+        return true;
+        }
+      }
+    return false;
+    }
+}
 
 //----------------------------------------------------------------------------
 // * STATICS
@@ -66,28 +89,58 @@ bool vtkProcessModule::Initialize(ProcessTypes type, int &argc, char** &argv)
 
 #ifdef PARAVIEW_USE_MPI
   bool use_mpi = (type != PROCESS_CLIENT);
-  // initialize MPI only on non-client processes.
-  if (use_mpi)
+  if (!use_mpi) // i.e. type == PROCESS_CLIENT.
     {
-    int mpi_already_initialized = 0;
-    MPI_Initialized(&mpi_already_initialized);
-    if (mpi_already_initialized == 0)
+    // scan the arguments to determine if we need to initialize MPI on client.
+    bool default_use_mpi = false;
+#if defined(PARAVIEW_INITIALIZE_MPI_ON_CLIENT)
+    default_use_mpi = true;
+#endif
+
+    // Refer to vtkPVOptions.cxx for details.
+    if (vtkFindArgument("--mpi", argc, argv))
       {
-      // MPICH changes the current working directory after MPI_Init. We fix that
-      // by changing the CWD back to the original one after MPI_Init.
-      std::string cwd = vtksys::SystemTools::GetCurrentWorkingDirectory(true);
+      default_use_mpi = true;
+      }
+    else if (vtkFindArgument("--no-mpi", argc, argv))
+      {
+      default_use_mpi = false;
+      }
+    use_mpi = default_use_mpi;
+    }
 
-      // This is here to avoid false leak messages from vtkDebugLeaks when
-      // using mpich. It appears that the root process which spawns all the
-      // main processes waits in MPI_Init() and calls exit() when
-      // the others are done, causing apparent memory leaks for any objects
-      // created before MPI_Init().
-      MPI_Init(&argc, &argv);
+  // initialize MPI only on all processes if paraview is compiled w/MPI.
+  int mpi_already_initialized = 0;
+  MPI_Initialized(&mpi_already_initialized);
+  if (mpi_already_initialized == 0 && use_mpi)
+    {
+    // MPICH changes the current working directory after MPI_Init. We fix that
+    // by changing the CWD back to the original one after MPI_Init.
+    std::string cwd = vtksys::SystemTools::GetCurrentWorkingDirectory(true);
 
-      // restore CWD to what it was before the MPI intialization.
-      vtksys::SystemTools::ChangeDirectory(cwd.c_str());
+    // This is here to avoid false leak messages from vtkDebugLeaks when
+    // using mpich. It appears that the root process which spawns all the
+    // main processes waits in MPI_Init() and calls exit() when
+    // the others are done, causing apparent memory leaks for any objects
+    // created before MPI_Init().
+    MPI_Init(&argc, &argv);
 
-      vtkProcessModule::FinalizeMPI = true;
+    // restore CWD to what it was before the MPI intialization.
+    vtksys::SystemTools::ChangeDirectory(cwd.c_str());
+
+    vtkProcessModule::FinalizeMPI = true;
+    } // END if MPI is already initialized
+
+  if (use_mpi || mpi_already_initialized)
+    {
+    // Get number of ranks passed to mpiexec/mpirun etc.
+    int numRanks = 0;
+    MPI_Comm_size(MPI_COMM_WORLD,&numRanks);
+
+    // Ensure that the user cannot run a client with more than one rank.
+    if (type==PROCESS_CLIENT && numRanks > 1)
+      {
+      throw std::runtime_error("Client process should be run with one process!");
       }
 
     vtkProcessModule::GlobalController = vtkSmartPointer<vtkMPIController>::New();
@@ -147,20 +200,12 @@ bool vtkProcessModule::Initialize(ProcessTypes type, int &argc, char** &argv)
   vtkFloatingPointExceptions::Enable();
 #endif //PARAVIEW_ENABLE_FPE
 
-  // Don't prompt the user with startup errors on unix.
-  // On windows, don't prompt when running on the dashboard.
-#if defined(_WIN32) && !defined(__CYGWIN__)
-  if (getenv("DASHBOARD_TEST_FROM_CTEST") || getenv("DART_TEST_FROM_DART"))
-    {
-    vtkOutputWindow::GetInstance()->PromptUserOff();
-    }
-  else
-    {
-    vtkOutputWindow::GetInstance()->PromptUserOn();
-    }
-#else
+  // In general turn off error prompts. This is where the process waits for
+  // user-input on any error/warning. In past, we turned on prompts on Windows.
+  // However, for client processes, we capture the error messages in the UI and
+  // for the server-processes, prompts can cause unnecessary interruptions hence
+  // we turn off prompts all together.
   vtkOutputWindow::GetInstance()->PromptUserOff();
-#endif
 
 #ifdef PARAVIEW_USE_MPI_SSEND
   vtkMPIController::SetUseSsendForRMI(1);
@@ -170,6 +215,16 @@ bool vtkProcessModule::Initialize(ProcessTypes type, int &argc, char** &argv)
 
   // The running dashboard tests avoid showing the abort/retry popup dialog.
   vtksys::SystemTools::EnableMSVCDebugHook();
+
+#ifndef _WIN32
+  // When trying to send data to a socket/pipe and that socket/pipe is
+  // closed/broken, the system will trigger a SIGPIPE signal which has by
+  // default a quit/crash handler that won't give you any chance to handle the
+  // error in any way.
+  // Instead, we ignore the default handler to properly capture the error and
+  // eventually provide some type of recovery.
+  signal(SIGPIPE, SIG_IGN);
+#endif
 
 
   // Create the process module.
@@ -239,7 +294,7 @@ void vtkProcessModule::UpdateProcessType(ProcessTypes newType, bool dontKnowWhat
 
 //----------------------------------------------------------------------------
 vtkProcessModule* vtkProcessModule::GetProcessModule()
-{ 
+{
   return vtkProcessModule::Singleton.GetPointer();
 }
 
@@ -384,6 +439,13 @@ int vtkProcessModule::GetPartitionId()
 }
 
 //----------------------------------------------------------------------------
+bool vtkProcessModule::IsMPIInitialized()
+{
+  return (this->GetGlobalController() &&
+     this->GetGlobalController()->IsA("vtkMPIController") != 0);
+}
+
+//----------------------------------------------------------------------------
 void vtkProcessModule::PushActiveSession(vtkSession* session)
 {
   assert(session != NULL);
@@ -457,7 +519,13 @@ bool vtkProcessModule::InitializePythonEnvironment(int argc, char** argv)
 
   if (argc > 0)
     {
-    programname = vtksys::SystemTools::CollapseFullPath(argv[0]);
+    std::string errMsg;
+    if (!vtksys::SystemTools::FindProgramPath(argv[0], programname, errMsg))
+      {
+      // if FindProgramPath fails. We really don't have much of an alternative
+      // here. Python module importing is going to fail.
+      programname = vtksys::SystemTools::CollapseFullPath(argv[0]);
+      }
     self_dir = vtksys::SystemTools::GetFilenamePath(programname.c_str());
     }
   else

@@ -39,6 +39,8 @@ set (Module_SRCS
   pqAboutDialog.h
   pqActionGroupInterface.cxx
   pqActionGroupInterface.h
+  pqActiveMultiSliceViewOptions.cxx
+  pqActiveMultiSliceViewOptions.h
   pqActiveObjects.cxx
   pqActiveObjects.h
   pqActivePlotMatrixViewOptions.cxx
@@ -92,24 +94,20 @@ set (Module_SRCS
   pqChangeInputDialog.h
   pqChartPixelScale.cxx
   pqChartPixelScale.h
-  pqChartSummaryDisplayPanel.cxx
-  pqChartSummaryDisplayPanel.h
   pqChartValue.cxx
   pqChartValue.h
   pqClipPanel.cxx
   pqClipPanel.h
   pqCollaborationPanel.cxx
   pqCollaborationPanel.h
+  pqColorMapEditor.cxx
+  pqColorMapEditor.h
   pqColorMapModel.cxx
   pqColorMapModel.h
   pqColorPresetManager.cxx
   pqColorPresetManager.h
   pqColorPresetModel.cxx
   pqColorPresetModel.h
-  pqColorScaleEditor.cxx
-  pqColorScaleEditor.h
-  pqColorScaleToolbar.cxx
-  pqColorScaleToolbar.h
   pqComboBoxDomain.cxx
   pqComboBoxDomain.h
   pqCommandPropertyWidget.h
@@ -182,6 +180,14 @@ set (Module_SRCS
   pqFieldSelectionAdaptor.h
   pqFileChooserWidget.cxx
   pqFileChooserWidget.h
+  pqFindDataCreateSelectionFrame.cxx
+  pqFindDataCreateSelectionFrame.h
+  pqFindDataCurrentSelectionFrame.cxx
+  pqFindDataCurrentSelectionFrame.h
+  pqFindDataSelectionDisplayFrame.cxx
+  pqFindDataSelectionDisplayFrame.h
+  pqFindDataDialog.cxx
+  pqFindDataDialog.h
   pqFixStateFilenamesDialog.cxx
   pqFixStateFilenamesDialog.h
   pqGlobalRenderViewOptions.cxx
@@ -226,6 +232,8 @@ set (Module_SRCS
   pqMemoryInspectorPanel.h
   pqMultiBlockInspectorPanel.cxx
   pqMultiBlockInspectorPanel.h
+  pqMultiSliceViewOptions.cxx
+  pqMultiSliceViewOptions.h
   pqMultiViewWidget.cxx
   pqMultiViewWidget.h
   pqNamedObjectPanel.cxx
@@ -305,10 +313,10 @@ set (Module_SRCS
   pqProxySILModel.h
   pqProxyWidget.h
   pqProxyWidget.cxx
+  pqProxyWidgetDialog.cxx
+  pqProxyWidgetDialog.h
   pqQueryClauseWidget.cxx
   pqQueryClauseWidget.h
-  pqQueryDialog.cxx
-  pqQueryDialog.h
   pqRecentFilesMenu.cxx
   pqRecentFilesMenu.h
   pqRenderViewOptions.cxx
@@ -333,8 +341,6 @@ set (Module_SRCS
   pqSelectionAdaptor.h
   pqSelectionInputWidget.cxx
   pqSelectionInputWidget.h
-  pqSelectionInspectorPanel.cxx
-  pqSelectionInspectorPanel.h
   pqSelectionManager.cxx
   pqSelectionManager.h
   pqSelectReaderDialog.cxx
@@ -393,8 +399,8 @@ set (Module_SRCS
   pqTimerLogDisplay.h
   pqToolTipTrapper.cxx
   pqToolTipTrapper.h
-  pqTransferFunctionChartViewWidget.cxx
-  pqTransferFunctionChartViewWidget.h 
+  pqTransferFunctionWidget.cxx
+  pqTransferFunctionWidget.h
   pqTriggerOnIdleHelper.cxx
   pqTriggerOnIdleHelper.h
   pqUndoStackBuilder.cxx
@@ -430,6 +436,7 @@ set (Module_MOC_HDRS
   pq3DWidget.h
   pq3DWidgetPropertyWidget.h
   pqAboutDialog.h
+  pqActiveMultiSliceViewOptions.h
   pqActiveObjects.h
   pqActivePlotMatrixViewOptions.h
   pqActiveRenderViewOptions.h
@@ -455,14 +462,12 @@ set (Module_MOC_HDRS
   pqCameraDialog.h
   pqCameraKeyFrameWidget.h
   pqChangeInputDialog.h
-  pqChartSummaryDisplayPanel.h
   pqClipPanel.h
   pqCollaborationPanel.h
+  pqColorMapEditor.h
   pqColorMapModel.h
   pqColorPresetManager.h
   pqColorPresetModel.h
-  pqColorScaleEditor.h
-  pqColorScaleToolbar.h
   pqComboBoxDomain.h
   pqCommandPropertyWidget.h
   pqComparativeCueWidget.h
@@ -494,6 +499,10 @@ set (Module_MOC_HDRS
   pqExtractCTHPartsPanel.h
   pqFieldSelectionAdaptor.h
   pqFileChooserWidget.h
+  pqFindDataCreateSelectionFrame.h
+  pqFindDataCurrentSelectionFrame.h
+  pqFindDataSelectionDisplayFrame.h
+  pqFindDataDialog.h
   pqFixStateFilenamesDialog.h
   pqGlobalRenderViewOptions.h
   pqGlyphPanel.h
@@ -516,6 +525,7 @@ set (Module_MOC_HDRS
   pqLockViewSizeCustomDialog.h
   pqMemoryInspectorPanel.h
   pqMultiBlockInspectorPanel.h
+  pqMultiSliceViewOptions.h
   pqMultiViewWidget.h
   pqNamedObjectPanel.h
   pqNetCDFPanel.h
@@ -553,8 +563,8 @@ set (Module_MOC_HDRS
   pqProxySelectionWidget.h
   pqProxySILModel.h
   pqProxyWidget.h
+  pqProxyWidgetDialog.h
   pqQueryClauseWidget.h
-  pqQueryDialog.h
   pqRecentFilesMenu.h
   pqRemoteCommandDialog.h
   pqRemoteCommandTemplateDialog.h
@@ -567,7 +577,6 @@ set (Module_MOC_HDRS
   pqScalarValueListPropertyWidget.h
   pqSelectionAdaptor.h
   pqSelectionInputWidget.h
-  pqSelectionInspectorPanel.h
   pqSelectionManager.h
   pqSelectReaderDialog.h
   pqServerConfigurationImporter.h
@@ -597,7 +606,7 @@ set (Module_MOC_HDRS
   pqThresholdPanel.h
   pqTimerLogDisplay.h
   pqToolTipTrapper.h
-  pqTransferFunctionChartViewWidget.h
+  pqTransferFunctionWidget.h
   pqTriggerOnIdleHelper.h
   pqVCRController.h
   pqViewContextMenuHandler.h
@@ -628,7 +637,7 @@ set (Module_UI_FILES
   Resources/UI/pqChartOptionsWidget.ui
   Resources/UI/pqCollaborationPanel.ui
   Resources/UI/pqColorPresetDialog.ui
-  Resources/UI/pqColorScaleDialog.ui
+  Resources/UI/pqColorMapEditor.ui
   Resources/UI/pqComparativeParameterRangeDialog.ui
   Resources/UI/pqComparativeVisPanel.ui
   Resources/UI/pqContourControls.ui
@@ -642,6 +651,10 @@ set (Module_UI_FILES
   Resources/UI/pqDisplayRepresentationWidget.ui
   Resources/UI/pqEmptyView.ui
   Resources/UI/pqExodusIIPanel.ui
+  Resources/UI/pqFindDataCreateSelectionFrame.ui
+  Resources/UI/pqFindDataCurrentSelectionFrame.ui
+  Resources/UI/pqFindDataSelectionDisplayFrame.ui
+  Resources/UI/pqFindDataDialog.ui
   Resources/UI/pqFixStateFilenamesDialog.ui
   Resources/UI/pqGlobalRenderViewOptions.ui
   Resources/UI/pqHandleWidget.ui
@@ -656,6 +669,7 @@ set (Module_UI_FILES
   Resources/UI/pqLinksManager.ui
   Resources/UI/pqLockViewSizeCustomDialog.ui
   Resources/UI/pqMemoryInspectorPanelForm.ui
+  Resources/UI/pqMultiSliceViewOptions.ui
   Resources/UI/pqOptionsDialog.ui
   Resources/UI/pqOrbitCreatorDialog.ui
   Resources/UI/pqParallelCoordinatesChartDisplayPanel.ui
@@ -667,10 +681,10 @@ set (Module_UI_FILES
   Resources/UI/pqPointSourceControls.ui
   Resources/UI/pqPropertiesPanel.ui
   Resources/UI/pqProxyInformationWidget.ui
+  Resources/UI/pqProxyWidgetDialog.ui
   Resources/UI/pqPythonAnimationCue.ui
   Resources/UI/pqQueryClauseWidget.ui
   Resources/UI/pqQueryCompositeTreeDialog.ui
-  Resources/UI/pqQueryDialog.ui
   Resources/UI/pqRemoteCommandDialogForm.ui
   Resources/UI/pqRemoteCommandTemplateDialogForm.ui
   Resources/UI/pqRenderViewOptions.ui
@@ -678,8 +692,8 @@ set (Module_UI_FILES
   Resources/UI/pqSampleScalarAddRangeDialog.ui
   Resources/UI/pqSampleScalarWidget.ui
   Resources/UI/pqSaveSnapshotDialog.ui
+  Resources/UI/pqScalarValueListPropertyWidget.ui
   Resources/UI/pqSelectionInputWidget.ui
-  Resources/UI/pqSelectionInspectorPanel.ui
   Resources/UI/pqSelectReaderDialog.ui
   Resources/UI/pqServerConnectDialog.ui
   Resources/UI/pqServerLauncherDialog.ui
@@ -694,6 +708,47 @@ set (Module_UI_FILES
   Resources/UI/pqWriterDialog.ui
   Resources/UI/pqXYChartDisplayPanel.ui
 )
+
+if(PARAVIEW_ENABLE_PYTHON)
+  # code for generating specialized Python scripts
+  # from the GUI using trace information
+  LIST(APPEND Module_SRCS
+    pqImageOutputInfo.cxx
+    pqImageOutputInfo.h
+    pqSGExportStateWizard.cxx
+    pqSGExportStateWizard.h
+    pqSGPluginManager.cxx
+    pqSGPluginManager.h
+    pqSGWritersMenuManager.cxx
+    pqSGWritersMenuManager.h
+    )
+  LIST(APPEND Module_MOC_HDRS
+    pqImageOutputInfo.h
+    pqSGExportStateWizard.h
+    pqSGPluginManager.h
+    pqSGWritersMenuManager.h
+    )
+  LIST(APPEND Module_UI_FILES
+    Resources/UI/pqImageOutputInfo.ui
+    Resources/UI/pqExportStateWizard.ui
+    )
+
+  if (PARAVIEW_ENABLE_MATPLOTLIB)
+    LIST(APPEND Module_SRCS
+      pqActivePythonViewOptions.cxx
+      pqActivePythonViewOptions.h
+      pqPythonViewOptions.cxx
+      pqPythonViewOptions.h
+      )
+    LIST(APPEND Module_MOC_HDRS
+      pqActivePythonViewOptions.h
+      pqPythonViewOptions.h
+      )
+    LIST(APPEND Module_UI_FILES
+      Resources/UI/pqPythonViewOptions.ui
+      )      
+  endif()
+endif()
 
 GENERATE_QT_RESOURCE_FROM_FILES(
   "${CMAKE_CURRENT_BINARY_DIR}/pqExtraResources.qrc"

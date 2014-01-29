@@ -99,7 +99,9 @@ public:
     vtkOrderedCompositingInfo OrderedCompositingInfo;
 
     vtkWeakPointer<vtkPVDataRepresentation> Representation;
-    bool AlwaysClone;
+    bool CloneDataToAllNodes;
+    bool DeliverToClientAndRenderingProcesses;
+    bool GatherBeforeDeliveringToClient;
     bool Redistributable;
     bool Streamable;
 
@@ -107,7 +109,9 @@ public:
       Producer(vtkSmartPointer<vtkPVTrivialProducer>::New()),
       TimeStamp(0),
       ActualMemorySize(0),
-      AlwaysClone(false),
+      CloneDataToAllNodes(false),
+      DeliverToClientAndRenderingProcesses(false),
+      GatherBeforeDeliveringToClient(false),
       Redistributable(false),
       Streamable(false)
     { }
@@ -287,7 +291,24 @@ void vtkPVDataDeliveryManager::SetDeliverToAllProcesses(
   vtkInternals::vtkItem* item = this->Internals->GetItem(repr, low_res);
   if (item)
     {
-    item->AlwaysClone = mode;
+    item->CloneDataToAllNodes = mode;
+    }
+  else
+    {
+    vtkErrorMacro("Invalid argument.");
+    }
+}
+
+//----------------------------------------------------------------------------
+void vtkPVDataDeliveryManager::SetDeliverToClientAndRenderingProcesses(
+  vtkPVDataRepresentation* repr, bool deliver_to_client,
+  bool gather_before_delivery, bool low_res)
+{
+  vtkInternals::vtkItem* item = this->Internals->GetItem(repr, low_res);
+  if (item)
+    {
+    item->DeliverToClientAndRenderingProcesses = deliver_to_client;
+    item->GatherBeforeDeliveringToClient = gather_before_delivery;
     }
   else
     {
@@ -297,14 +318,14 @@ void vtkPVDataDeliveryManager::SetDeliverToAllProcesses(
 
 //----------------------------------------------------------------------------
 void vtkPVDataDeliveryManager::MarkAsRedistributable(
-  vtkPVDataRepresentation* repr)
+  vtkPVDataRepresentation* repr, bool value/*=true*/)
 {
   vtkInternals::vtkItem* item = this->Internals->GetItem(repr, false);
   vtkInternals::vtkItem* low_item = this->Internals->GetItem(repr, true);
   if (item)
     {
-    item->Redistributable = true;
-    low_item->Redistributable = true;
+    item->Redistributable = value;
+    low_item->Redistributable = value;
     }
   else
     {
@@ -470,23 +491,37 @@ void vtkPVDataDeliveryManager::Deliver(int use_lod, unsigned int size, unsigned 
 
     vtkDataObject* data = item->GetDataObject();
 
-    if (data->IsA("vtkUniformGridAMR"))
-      {
-      // we are dealing with AMR datasets.
-      // We assume for now we're not running in render-server mode. We can
-      // ensure that at some point in future.
-      // So we are either in pass-through or collect mode.
+//    if (data != NULL && data->IsA("vtkUniformGridAMR"))
+//      {
+//      // we are dealing with AMR datasets.
+//      // We assume for now we're not running in render-server mode. We can
+//      // ensure that at some point in future.
+//      // So we are either in pass-through or collect mode.
 
-      // FIXME: check that the mode flags are "suitable" for AMR.
-      }
+//      // FIXME: check that the mode flags are "suitable" for AMR.
+//      }
 
     vtkNew<vtkMPIMoveData> dataMover;
     dataMover->InitializeForCommunicationForParaView();
-    dataMover->SetOutputDataType(data->GetDataObjectType());
+    dataMover->SetOutputDataType(data ? data->GetDataObjectType() : VTK_POLY_DATA);
     dataMover->SetMoveMode(mode);
-    if (item->AlwaysClone)
+    if (item->CloneDataToAllNodes)
       {
       dataMover->SetMoveModeToClone();
+      }
+    else if (item->DeliverToClientAndRenderingProcesses)
+      {
+      if (mode == vtkMPIMoveData::PASS_THROUGH)
+        {
+        dataMover->SetMoveMode(vtkMPIMoveData::COLLECT_AND_PASS_THROUGH);
+        }
+      else
+        {
+        // nothing to do, since the data is going to be delivered to the client
+        // anyways.
+        }
+      dataMover->SetSkipDataServerGatherToZero(
+        item->GatherBeforeDeliveringToClient == false);
       }
     dataMover->SetInputData(data);
 
@@ -695,7 +730,7 @@ void vtkPVDataDeliveryManager::DeliverStreamedPieces(
     dataMover->InitializeForCommunicationForParaView();
     dataMover->SetOutputDataType(data->GetDataObjectType());
     dataMover->SetMoveMode(mode);
-    if (item->AlwaysClone)
+    if (item->CloneDataToAllNodes)
       {
       dataMover->SetMoveModeToClone();
       }

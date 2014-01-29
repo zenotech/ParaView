@@ -1,8 +1,4 @@
 <ParaViewFilters>
-  <Category name="Cosmology" menu_label="Cosmology">
-    <Proxy group="filters" name="HaloFinder" />
-  </Category>
-
   <Category name="Common" menu_label="&amp;Common" preserve_order="1"
     show_in_toolbar="1">
     <Proxy group="filters" name="Calculator" icon=":/pqWidgets/Icons/pqCalculator24.png"/>
@@ -16,6 +12,12 @@
     <Proxy group="filters" name="WarpVector" icon=":/pqWidgets/Icons/pqWarp24.png"/>
     <Proxy group="filters" name="GroupDataSets" icon=":/pqWidgets/Icons/pqGroup24.png"/>
     <Proxy group="filters" name="ExtractHierarchicalLevel" icon=":/pqWidgets/Icons/pqGroupExtract24.png"/>
+  </Category>
+
+  <Category name="CosmoTools" menu_label="&amp;CosmoTools" show_in_toolbar="0">
+    <Proxy group="filters" name="LANLHaloFinder" />
+    <Proxy group="filters" name="MinkowskiFilter" />
+    <Proxy group="filters" name="PMergeConnected" />
   </Category>
 
   <Category name="DataAnalysis" menu_label="&amp;Data Analysis" show_in_toolbar="1" hide_for_tests="1">
@@ -74,6 +76,8 @@
     <Proxy group="filters" name="MaterialInterfaceFilter" />
     <Proxy group="filters" name="AMRDualClip" />
     <Proxy group="filters" name="AMRDualContour" />
+    <Proxy group="filters" name="AMRConnectivity" />
+    <Proxy group="filters" name="AMRFragmentIntegration" />
     <Proxy group="filters" name="ExtractHierarchicalLevel" />
     <Proxy group="filters" name="ExtractHierarchicalDataSets" />
   </Category>
@@ -105,6 +109,7 @@
   <Proxy group="filters" name="ArbitrarySourceGlyph" />
   <Proxy group="filters" name="ArbitrarySourceStreamTracer" />
   <Proxy group="filters" name="BlockIdScalars" />
+  <Proxy group="filters" name="RandomAttributeGenerator" />
   <Proxy group="filters" name="BrownianPoints" />
   <Proxy group="filters" name="Calculator" />
   <Proxy group="filters" name="CellCenters" />
@@ -193,6 +198,7 @@
   <Proxy group="filters" name="TemporalSnapToTimeStep" />
   <Proxy group="filters" name="TemporalShiftScale" />
   <Proxy group="filters" name="TemporalStatistics" />
+  <Proxy group="filters" name="TensorGlyph" />
   <Proxy group="filters" name="TessellatorFilter" />
   <Proxy group="filters" name="TextureMapToCylinder" />
   <Proxy group="filters" name="TextureMapToPlane" />

@@ -133,6 +133,7 @@ vtkInformationKeyMacro(vtkPVRenderView, USE_LOD, Integer);
 vtkInformationKeyMacro(vtkPVRenderView, USE_OUTLINE_FOR_LOD, Integer);
 vtkInformationKeyMacro(vtkPVRenderView, LOD_RESOLUTION, Double);
 vtkInformationKeyMacro(vtkPVRenderView, NEED_ORDERED_COMPOSITING, Integer);
+vtkInformationKeyMacro(vtkPVRenderView, RENDER_EMPTY_IMAGES, Integer);
 vtkInformationKeyMacro(vtkPVRenderView, REQUEST_STREAMING_UPDATE, Request);
 vtkInformationKeyMacro(vtkPVRenderView, REQUEST_PROCESS_STREAMED_PIECE, Request);
 vtkInformationKeyRestrictedMacro(
@@ -184,6 +185,7 @@ vtkPVRenderView::vtkPVRenderView()
   this->Selector = vtkPVHardwareSelector::New();
   this->PreviousParallelProjectionStatus = 0;
   this->NeedsOrderedCompositing = false;
+  this->RenderEmptyImages = false;
 
   this->SynchronizedRenderers = vtkPVSynchronizedRenderer::New();
 
@@ -259,6 +261,16 @@ vtkPVRenderView::vtkPVRenderView()
     manip3->SetButton(2);
     this->ThreeDInteractorStyle->AddManipulator(manip3);
     manip3->Delete();
+
+    vtkTrackballPan* manip4 = vtkTrackballPan::New();
+    manip4->SetButton(1);
+    this->TwoDInteractorStyle->AddManipulator(manip4);
+    manip4->Delete();
+
+    vtkPVTrackballZoom* manip5 = vtkPVTrackballZoom::New();
+    manip5->SetButton(3);
+    this->TwoDInteractorStyle->AddManipulator(manip5);
+    manip5->Delete();
 
     this->RubberBandStyle = vtkInteractorStyleRubberBand3D::New();
     this->RubberBandStyle->RenderOnMouseMoveOff();
@@ -379,6 +391,7 @@ void vtkPVRenderView::Initialize(unsigned int id)
   this->SynchronizedWindows->AddRenderWindow(id, this->RenderView->GetRenderWindow());
   this->SynchronizedWindows->AddRenderer(id, this->RenderView->GetRenderer());
   this->SynchronizedWindows->AddRenderer(id, this->GetNonCompositedRenderer());
+  this->SynchronizedWindows->AddRenderer(id, this->OrientationWidget->GetRenderer());
 
   this->SynchronizedRenderers->Initialize(
     this->SynchronizedWindows->GetSession(), id);
@@ -424,6 +437,18 @@ void vtkPVRenderView::UnRegisterPropForHardwareSelection(
   vtkPVDataRepresentation* repr, vtkProp* prop)
 {
   this->Internals->UnRegisterSelectionProp(prop, repr);
+}
+
+//----------------------------------------------------------------------------
+void vtkPVRenderView::AddPropToRenderer(vtkProp* prop)
+{
+  this->GetRenderer()->AddViewProp(prop);
+}
+
+//----------------------------------------------------------------------------
+void vtkPVRenderView::RemovePropFromRenderer(vtkProp* prop)
+{
+  this->GetRenderer()->RemoveViewProp(prop);
 }
 
 //----------------------------------------------------------------------------
@@ -902,18 +927,26 @@ void vtkPVRenderView::Update()
   // use-lod or not, etc. All these decisions are made right here to avoid
   // making them during each render-call.
 
-  // Check if any representation told us that it needed ordered compositing.
+  // Check if any representation told us:
+  // 1 needed ordered compositing
+  // 2 needed render empty images
   this->NeedsOrderedCompositing = false;
+  this->RenderEmptyImages = false;
   int num_reprs = this->ReplyInformationVector->GetNumberOfInformationObjects();
   for (int cc=0; cc < num_reprs; cc++)
     {
     vtkInformation* info =
       this->ReplyInformationVector->GetInformationObject(cc);
-    if (info->Has(NEED_ORDERED_COMPOSITING()) &&
-      info->Get(NEED_ORDERED_COMPOSITING()) != 0)
+    if ( info->Has(NEED_ORDERED_COMPOSITING())
+      && (info->Get(NEED_ORDERED_COMPOSITING()) != 0))
       {
-      this->NeedsOrderedCompositing= true;
-      break;
+      this->NeedsOrderedCompositing = true;
+      }
+    else
+    if ( info->Has(RENDER_EMPTY_IMAGES())
+      && (info->Get(RENDER_EMPTY_IMAGES()) != 0))
+      {
+      this->RenderEmptyImages = true;
       }
     }
 
@@ -958,6 +991,7 @@ void vtkPVRenderView::Update()
 void vtkPVRenderView::CopyViewUpdateOptions(vtkPVRenderView* otherView)
 {
   this->NeedsOrderedCompositing = otherView->NeedsOrderedCompositing;
+  this->RenderEmptyImages = otherView->RenderEmptyImages;
   this->UseLODForInteractiveRender = otherView->UseLODForInteractiveRender;
   this->UseDistributedRenderingForStillRender = otherView->UseDistributedRenderingForStillRender;
   this->StillRenderProcesses = otherView->StillRenderProcesses;
@@ -1040,7 +1074,13 @@ void vtkPVRenderView::Render(bool interactive, bool skip_rendering)
     // if Render() is called on server side, then we are indeed remote
     // rendering, irrespective of what the local flags tell us and we need to
     // coordinate with the client to update the local flags correctly.
-    this->SynchronizeForCollaboration();
+
+    // Although Selection do trigger a Render on the server side and in such
+    // case we MUST NOT execute that collaboration synchronization
+    if(!this->MakingSelection)
+      {
+      this->SynchronizeForCollaboration();
+      }
     }
 
   // BUG #13534. Reset the clip planes on every render. Since this does not
@@ -1088,6 +1128,9 @@ void vtkPVRenderView::Render(bool interactive, bool skip_rendering)
     {
     this->SynchronizedRenderers->SetKdTree(NULL);
     }
+
+  // enable render empty images if it was requested
+  this->SynchronizedRenderers->SetRenderEmptyImages(this->GetRenderEmptyImages());
 
   // Render each representation with available geometry.
   // This is the pass where representations get an opportunity to get the
@@ -1249,7 +1292,7 @@ vtkAlgorithmOutput* vtkPVRenderView::GetPieceProducerLOD(vtkInformation* info,
 
 //----------------------------------------------------------------------------
 void vtkPVRenderView::MarkAsRedistributable(
-  vtkInformation* info, vtkPVDataRepresentation* repr)
+  vtkInformation* info, vtkPVDataRepresentation* repr, bool value/*=true*/)
 {
   vtkPVRenderView* view = vtkPVRenderView::SafeDownCast(info->Get(VIEW()));
   if (!view)
@@ -1258,7 +1301,7 @@ void vtkPVRenderView::MarkAsRedistributable(
     return;
     }
 
-  view->GetDeliveryManager()->MarkAsRedistributable(repr);
+  view->GetDeliveryManager()->MarkAsRedistributable(repr, value);
 }
 
 //----------------------------------------------------------------------------
@@ -1306,8 +1349,9 @@ void vtkPVRenderView::SetDeliverToAllProcesses(vtkInformation* info,
 }
 
 //----------------------------------------------------------------------------
-void vtkPVRenderView::SetDeliverLODToAllProcesses(vtkInformation* info,
-  vtkPVDataRepresentation* repr, bool clone)
+void vtkPVRenderView::SetDeliverToClientAndRenderingProcesses(
+  vtkInformation* info, vtkPVDataRepresentation* repr,
+  bool deliver_to_client, bool gather_before_delivery)
 {
   vtkPVRenderView* view = vtkPVRenderView::SafeDownCast(info->Get(VIEW()));
   if (!view)
@@ -1316,7 +1360,8 @@ void vtkPVRenderView::SetDeliverLODToAllProcesses(vtkInformation* info,
     return;
     }
 
-  view->GetDeliveryManager()->SetDeliverToAllProcesses(repr, clone, true);
+  view->GetDeliveryManager()->SetDeliverToClientAndRenderingProcesses(
+    repr, deliver_to_client, gather_before_delivery, false);
 }
 
 //----------------------------------------------------------------------------
@@ -1432,6 +1477,21 @@ bool vtkPVRenderView::GetUseOrderedCompositing()
   default:
     return false;
     }
+}
+
+//----------------------------------------------------------------------------
+bool vtkPVRenderView::GetRenderEmptyImages()
+{
+  int ptype = vtkProcessModule::GetProcessType();
+  if ( this->RenderEmptyImages
+    && ((ptype == vtkProcessModule::PROCESS_SERVER)
+    || (ptype == vtkProcessModule::PROCESS_BATCH)
+    || (ptype == vtkProcessModule::PROCESS_RENDER_SERVER))
+    && (vtkProcessModule::GetProcessModule()->GetNumberOfLocalPartitions() > 1) )
+    {
+    return true;
+    }
+  return false;
 }
 
 //----------------------------------------------------------------------------

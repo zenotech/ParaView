@@ -4,6 +4,8 @@
  * This module extend jQuery object to add support for graphical components
  * related to ParaViewWeb usage.
  *
+ * This module registers itself as: 'paraview-ui-pipeline'
+ *
  * @class jQuery.paraview.ui.PipelineBrowser
  */
 (function (GLOBAL, $) {
@@ -379,43 +381,8 @@
         icon: 'filter',
         category: 'filter'
     }],
-    DEFAULT_FILES =  [{
-        name: 'can.ex2',
-        path: '/can.ex2'
-    },{
-        name: 'cow.vtu',
-        path: '/cow.vtu'
-    },{
-        name: 'VTKData',
-        path: '/VTKData',
-        children: [{
-            name: 'cow.vtu',
-            path: '/VTKData/cow.vtu'
-        },{
-            name: 'sphere.vtu',
-            path: '/VTKData/sphere.vtu'
-        }]
-    },{
-        name: 'ParaViewData',
-        path: '/ParaViewData',
-        children: [{
-            name: 'asfdg.vtu',
-            path: '/ParaViewData/asfdg.vtu'
-        },{
-            name: 'can.ex2',
-            path: '/ParaViewData/can.ex2'
-        },{
-            name: 'AnotherDir',
-            path: '/ParaViewData/AnotherDir',
-            children: [{
-                name: 'aaaaa.vtu',
-                path: '/ParaViewData/AnotherDir/aaaaa.vtu'
-            },{
-                name: 'bbbbb.ex2',
-                path: '/ParaViewData/AnotherDir/bbbbb.ex2'
-            }]
-        }]
-    }], buffer = null;
+    busyStatus = 0,
+    buffer = null;
 
 
     // =======================================================================
@@ -428,15 +395,17 @@
      *
      * @member jQuery.paraview.ui.PipelineBrowser
      * @method pipelineBrowser
-     * @param {pv.PipelineBrowserConfig} options
+     * @param {Object} options
      *
      * Usage:
+     *
      *      $('.pipeline-container-div').pipelineBrowser({
      *          session: sessionObj,
      *          pipeline: pipeline,
      *          sources: sourceList,
      *          files: fileList,
-     *          title: 'Kitware'
+     *          title: 'Kitware',
+     *          cacheFiles: false
      *      });
      */
     $.fn.pipelineBrowser = function(options) {
@@ -444,7 +413,8 @@
         var opts = $.extend({},$.fn.pipelineBrowser.defaults, options);
 
         return this.each(function() {
-            var me = $(this).empty().addClass('pipelineBrowser view-pipeline');
+            var me = $(this).empty().addClass('pipelineBrowser view-pipeline'),
+            session = opts.session;
 
             // Initialize global html buffer
             if (buffer === null) {
@@ -460,6 +430,21 @@
             addPipelineToBuffer(opts.title, opts);
             me[0].innerHTML = buffer.toString();
 
+            // Initialize file section
+            $('.pipeline-files').fileBrowser({session: session, cacheFiles: opts.cacheFiles}).bind('file-click file-group-click', function(e){
+                pipeline = getPipeline(me), toggleButton = $('.files.active', pipeline);
+                pipeline.removeClass(PIPELINE_VIEW_TYPES).addClass('view-pipeline');
+                toggleButton.removeClass('active');
+
+                fireBusy(pipeline, true);
+                session.call("vtk:openRelativeFile", e.relativePathList).then(function(newFile){
+                    dataChanged(me);
+                    addProxy(me, 0, newFile);
+                    fireAddSource(pipeline, newFile, 0);
+                    fireBusy(pipeline, false);
+                });
+            });
+
             // Initialize pipelineBrowser (Visibility + listeners)
             initializeListener(me);
 
@@ -468,48 +453,12 @@
         });
     };
 
-    /**
-     * @class pv.PipelineBrowserConfig
-     * Configuration object used to create a Pipeline Browser Widget.
-     *
-     *     DEFAULT_VALUES = {
-     *       session: null,
-     *       pipeline: DEFAULT_PIPELINE,
-     *       sources: DEFAULT_SOURCES,
-     *       files: DEFAULT_FILES
-     *     }
-     */
     $.fn.pipelineBrowser.defaults = {
-        /**
-         * @member pv.PipelineBrowserConfig
-         * @property {pv.Session} session
-         * Session used to be attached with the given pipeline.
-         */
         session: null,
-        /**
-         * @member pv.PipelineBrowserConfig
-         * @property {reply.Pipeline} pipeline
-         * Pipeline used to initialized the widget.
-         */
         pipeline: DEFAULT_PIPELINE,
-        /**
-         * @member pv.PipelineBrowserConfig
-         * @property {pv.Algorithm} sources[]
-         * List of source and filters available for the pipeline.
-         */
         sources: DEFAULT_SOURCES,
-        /**
-         * @member pv.PipelineBrowserConfig
-         * @property {reply.FileList[]} files
-         * List of files and directory accessible to the pipeline browser.
-         */
-        files: DEFAULT_FILES,
-        /**
-         * @member pv.PipelineBrowserConfig
-         * @property {String} title
-         * Label used inside the pipeline browser title bar
-         */
-        title: 'Kitware'
+        title: 'Kitware',
+        cacheFiles: true
     };
 
     /**
@@ -596,20 +545,16 @@
     }
 
     /**
-     * Event that get triggered when a request for a new file open is made.
+     * Event that get triggered when the user wants to invalidate the full pipeline
+     * and get a new version from the server.
      * @member jQuery.paraview.ui.PipelineBrowser
-     * @event openFile
-     * @param {String} path
-     * File path that is requested to be open.
+     * @event reloadPipeline
      */
-    function fireOpenFile(uiWidget, filePath) {
+    function fireReloadPipeline(uiWidget) {
         getPipeline(uiWidget).trigger({
-            type: 'openFile',
-            path: filePath
+            type: 'reloadPipeline'
         });
-        dataChanged(uiWidget);
     }
-
 
     /**
      * Event that get triggered when a source or a filter is getting added.
@@ -675,6 +620,23 @@
 
     function dataChanged(uiWidget) {
         getPipeline(uiWidget).trigger('dataChanged');
+    }
+
+    /**
+     * Event triggered when the pipeline browser changes busy states
+     *
+     * @member jQuery.paraview.ui.PipelineBrowser
+     * @event busy
+     * @param {Boolean} status
+     * True when pipeline is busy, false otherwise
+     */
+
+    function fireBusy(uiWidget, isBusy) {
+        busyStatus += (isBusy ? 1 : -1);
+        getPipeline(uiWidget).trigger({
+            type: 'busy',
+            status: (busyStatus > 0)
+        });
     }
 
     // =======================================================================
@@ -946,9 +908,7 @@
 
 
         // Build file selector
-        buffer.append("<div class='pipeline-files'>");
-        addFilePanelToBuffer(data.files, "ROOT", null);
-        buffer.append("</div>");
+        buffer.append("<div class='pipeline-files'></div>");
 
         // Build source/filter selector
         buffer.append("<div class='pipeline-sources'>");
@@ -1022,53 +982,6 @@
             addProxiesToBuffer(proxy.children);
         }
         buffer.append("</li>");
-    }
-
-    // =======================================================================
-
-    function addFilePanelToBuffer(fileList, panelClassName, parentClassName) {
-        if(fileList === null || fileList === undefined) {
-            return;
-        }
-
-        var childrenList = [], i;
-        buffer.append("<ul class='file-panel ");
-        buffer.append(panelClassName);
-        buffer.append("'");
-        if(parentClassName != null) {
-            buffer.append(" style='display: none;'");
-        }
-        buffer.append(">");
-        if(parentClassName) {
-            buffer.append("<li class='parent menu-link' link='");
-            buffer.append(parentClassName);
-            buffer.append("'>..</li>");
-        }
-        for(i in fileList) {
-            if(fileList[i].hasOwnProperty("children") && fileList[i].children.length > 0) {
-                buffer.append("<li class='child menu-link' link='");
-                var obj = {
-                    id: fileList[i].path.replace(/\//g, "_"),
-                    children: fileList[i].children
-                };
-                childrenList.push(obj);
-                buffer.append(obj.id);
-                buffer.append("'><div class='icon'></div>");
-            } else {
-                buffer.append("<li class='open-file' path='");
-                buffer.append(fileList[i].path);
-                buffer.append("'><div class='icon'></div>");
-            }
-            buffer.append(fileList[i].name);
-            buffer.append("</li>");
-        }
-
-        buffer.append("</ul>\n");
-
-        // Add all child panels
-        for(i in childrenList) {
-            addFilePanelToBuffer(childrenList[i].children, childrenList[i].id, panelClassName);
-        }
     }
 
     // =======================================================================
@@ -1211,7 +1124,12 @@
                 values.push($(this).is(':checked') ? 1 : 0);
             });
             $('select[type=array]', property).each(function(){
-                values = $(this).val().split(';');
+                value = $(this).val();
+                if(value != null) {
+                    values = $(this).val().split(';');
+                } else {
+                    values = null;
+                }
             });
             $('select[type=enum]', property).each(function(){
                 value = Number($(this).val());
@@ -1226,7 +1144,9 @@
             if(!state.hasOwnProperty(property.attr('proxy'))) {
                 state[property.attr('proxy')] = {};
             }
-            state[property.attr('proxy')][property.attr('label')] = values;
+            if(values != null) {
+                state[property.attr('proxy')][property.attr('label')] = values;
+            }
         });
 
         console.log(state);
@@ -1251,19 +1171,52 @@
             return;
         }
 
+        function idle() {
+            fireBusy(pipelineBrowser, false);
+        }
+
         // Attach filter creation
         pipelineBrowser.bind('addSource', function(e) {
             var parentId = (e.parent_id ? e.parent_id : 0);
-            session.call('pv:addSource', e.name, parentId).then(function(newNode) {
+            fireBusy(pipelineBrowser, true);
+            session.call('vtk:addSource', e.name, parentId).then(function(newNode) {
+                fireBusy(pipelineBrowser, false);
                 addProxy(pipelineBrowser, parentId, newNode);
-            });
+            }, idle);
         });
 
-        // Attach file loading
-        pipelineBrowser.bind('openFile', function(e) {
-            session.call('pv:openFile', e.path).then(function(newFile) {
-                addProxy(pipelineBrowser, 0, newFile);
-            });
+        // Attach pipeline reload
+        pipelineBrowser.bind('reloadPipeline', function(e) {
+            fireBusy(pipelineBrowser, true);
+            session.call('vtk:reloadPipeline').then(function(rootNode) {
+                fireBusy(pipelineBrowser, false);
+                var pipelineLineAfter, pipelineLineBefore;
+
+                // Update data model part
+                data = pipelineBrowser.data('pipeline');
+                data.pipeline = rootNode;
+                updateIndexMap(pipelineBrowser, 0, rootNode.children);
+
+                // Handle UI part
+                // Update subtree
+
+                // Generate html
+                buffer.clear();
+                addProxiesToBuffer(rootNode['children']);
+
+                // Update HTML
+                pipelineLineBefore = $('li.server > ul', pipelineBrowser);
+                pipelineLineAfter = $(buffer.toString());
+
+                pipelineLineBefore.empty()
+                pipelineLineBefore[0].innerHTML = pipelineLineAfter[0].innerHTML;
+
+                // Attach listeners
+                initializeListener(pipelineLineBefore);
+
+                // Update proxy editor
+                setActiveProxyId(pipelineBrowser, 0);
+            }, idle);
         });
 
         // Attach representation change
@@ -1281,7 +1234,7 @@
                     options['Visibility'] = 1;
                     options['Representation'] = changeSet.representation;
                 }
-                session.call('pv:updateDisplayProperty', options);
+                session.call('vtk:updateDisplayProperty', options);
             } else if(e.origin === 'colorBy') {
                 if(changeSet.hasOwnProperty('color')) {
                     // Solid color
@@ -1298,31 +1251,38 @@
                 }
 
                 // Update server
-                session.call('pv:updateDisplayProperty', options).then(function(){
-                    session.call('pv:updateScalarbarVisibility').then(function(status){
+                fireBusy(pipelineBrowser, true);
+                session.call('vtk:updateDisplayProperty', options).then(function(){
+                    session.call('vtk:updateScalarbarVisibility').then(function(status){
                         pipelineBrowser.data('scalarbars', status);
                         updateUIPipeline(pipelineBrowser);
                         updateScalarBarUI(pipelineBrowser, status);
-                    });
-                });
+                        fireBusy(pipelineBrowser, false);
+                    }, idle);
+                }, idle);
             } else if(e.origin === 'scalarbar') {
-                session.call('pv:updateScalarbarVisibility', changeSet).then(function(status){
+                fireBusy(pipelineBrowser, true);
+                session.call('vtk:updateScalarbarVisibility', changeSet).then(function(status){
+                    fireBusy(pipelineBrowser, false);
                     pipelineBrowser.data('scalarbars', status);
                     updateScalarBarUI(pipelineBrowser, status);
-                });
+                }, idle);
             } else if(e.origin === 'property') {
                 for(var key in changeSet) {
                     options[key] = changeSet[key];
                 }
-                session.call('pv:pushState', options).then(function(newState){
+                fireBusy(pipelineBrowser, true);
+                session.call('vtk:pushState', options).then(function(newState){
+                    fireBusy(pipelineBrowser, false);
                     updateProxy(pipelineBrowser, newState);
-                });
+                }, idle);
             }
         });
 
         // Attach delete action
         pipelineBrowser.bind('deleteProxy', function(e) {
-            session.call('pv:deleteSource', e.proxy_id).then(function(){
+            fireBusy(pipelineBrowser, true);
+            session.call('vtk:deleteSource', e.proxy_id).then(function(){
                 removeProxy(pipelineBrowser, e.proxy_id);
 
                 var fullLutStatus = pipelineBrowser.data('scalarbars'),
@@ -1339,22 +1299,26 @@
                         needToUpdateServer = true;
                     }
                 }
-
+                fireBusy(pipelineBrowser, false);
                 if(needToUpdateServer) {
-                    session.call('pv:updateScalarbarVisibility', lutToDelete).then(function(status){
+                    fireBusy(pipelineBrowser, true);
+                    session.call('vtk:updateScalarbarVisibility', lutToDelete).then(function(status){
                         updateScalarBarUI(pipelineBrowser, status);
-                    });
+                        fireBusy(pipelineBrowser, false);
+                    }, idle);
                 }
-            });
+            }, idle);
 
         });
 
         // Attach property editing
         pipelineBrowser.bind('apply', function() {
             var proxyState = getProxyPropertyPanelState(pipelineBrowser);
-            session.call('pv:pushState', proxyState).then(function(newState){
+            fireBusy(pipelineBrowser, true);
+            session.call('vtk:pushState', proxyState).then(function(newState){
+                fireBusy(pipelineBrowser, false);
                 updateProxy(pipelineBrowser, newState);
-            });
+            }, idle);
         });
 
         pipelineBrowser.bind('reset', function() {
@@ -1655,23 +1619,6 @@
             me.toggleClass('active');
         });
 
-        // ============= File browsing ===========
-
-        $(".open-file", pipelineBrowser).unbind().click(function() {
-            var me = $(this), pipeline = getPipeline(me), toggleButton = $('.files.active', pipeline);
-            pipeline.removeClass(PIPELINE_VIEW_TYPES).addClass('view-pipeline');
-
-            fireOpenFile(pipelineBrowser, me.attr('path'));
-            toggleButton.removeClass('active');
-        });
-
-        $(".menu-link", pipelineBrowser).unbind().click(function() {
-            var me = $(this), menuToShow = $("." + me.attr('link'), pipelineBrowser);
-            me.parent().hide('slide', 250, function(){
-                menuToShow.show('slide',250);
-            });
-        });
-
         // ============= Source/Filter browsing ===========
 
         $(".pipeline-sources .action", pipelineBrowser).unbind().click(function(){
@@ -1706,6 +1653,12 @@
 
         $('.reset', pipelineBrowser).unbind().click(function(){
             fireReset($(this));
+        });
+
+        // ============= Invalidate / Reload Pipeline ===========
+
+        $('.head-icon.server',pipelineBrowser).unbind().click(function(){
+            fireReloadPipeline($(this));
         });
     }
 
@@ -2161,6 +2114,20 @@
         for(idx in propertyValue) {
             $('input.multi-value', container).eq(idx).val(propertyValue[idx]);
         }
+    }
+
+    // ----------------------------------------------------------------------
+    // Local module registration
+    // ----------------------------------------------------------------------
+    try {
+      // Tests for presence of jQuery, then registers this module
+      if ($ !== undefined) {
+        vtkWeb.registerModule('paraview-ui-pipeline');
+      } else {
+        console.error('Module failed to register, jQuery is missing: ' + err.message);
+      }
+    } catch(err) {
+      console.error('Caught exception while registering module: ' + err.message);
     }
 
 }(window, jQuery));

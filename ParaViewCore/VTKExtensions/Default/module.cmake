@@ -17,7 +17,9 @@ vtk_module(vtkPVVTKExtensionsDefault
     vtkIOParallelExodus
     vtkPVVTKExtensionsCore
     vtkPVVTKExtensionsRendering
-    vtkPVClientServerCoreRendering
     vtkIOParallel
     ${_dependencies}
+    vtknetcdf
+  PRIVATE_DEPENDS
+    vtksys
 )

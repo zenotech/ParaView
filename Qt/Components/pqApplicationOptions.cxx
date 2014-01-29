@@ -148,6 +148,9 @@ pqApplicationOptions::pqApplicationOptions(QWidget *widgetParent)
   QObject::connect(this->Internal->OnlyApplyCurrentPanel,
                    SIGNAL(toggled(bool)),
                    this, SIGNAL(changesAvailable()));
+  QObject::connect(this->Internal->SaveFullState,
+                  SIGNAL(toggled(bool)),
+                  this, SIGNAL(changesAvailable()));
 
   QObject::connect(this->Internal->ForegroundColor,
                   SIGNAL(chosenColorChanged(const QColor&)),
@@ -182,11 +185,6 @@ pqApplicationOptions::pqApplicationOptions(QWidget *widgetParent)
   QObject::connect(this->Internal->AnimationCacheGeometry,
                    SIGNAL(toggled(bool)),
                    this->Internal->AnimationCacheLimit,
-                   SLOT(setEnabled(bool)));
-
-  QObject::connect(this->Internal->AnimationCacheGeometry,
-                   SIGNAL(toggled(bool)),
-                   this->Internal->AnimationCacheLimitLabel,
                    SLOT(setEnabled(bool)));
 
   QObject::connect(this->Internal->ChartHiddenSeries,
@@ -342,6 +340,9 @@ void pqApplicationOptions::applyChanges()
   bool onlyApplyCurrentPanel = this->Internal->OnlyApplyCurrentPanel->isChecked();
   settings->setValue("onlyApplyCurrentPanel", onlyApplyCurrentPanel);
 
+  bool saveFullState = this->Internal->SaveFullState->isChecked();
+  settings->setValue("saveFullState", saveFullState);
+
   settings->setValue("GlobalProperties/ForegroundColor",
     this->Internal->ForegroundColor->chosenColor());
   settings->setValue("GlobalProperties/SurfaceColor",
@@ -436,6 +437,9 @@ void pqApplicationOptions::resetChanges()
 
   this->Internal->OnlyApplyCurrentPanel->setChecked(
     settings->value("onlyApplyCurrentPanel", false).toBool());
+
+  this->Internal->SaveFullState->setChecked(
+    settings->value("saveFullState", false).toBool());
 
   this->Internal->ForegroundColor->setChosenColor(
     settings->value("GlobalProperties/ForegroundColor",

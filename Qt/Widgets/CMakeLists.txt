@@ -29,6 +29,10 @@
 #
 #==========================================================================
 set(Module_SRCS
+  ctkRangeSlider.h
+  ctkRangeSlider.cpp
+  ctkDoubleRangeSlider.h
+  ctkDoubleRangeSlider.cpp
   pqAnimationKeyFrame.cxx
   pqAnimationKeyFrame.h
   pqAnimationModel.cxx
@@ -47,6 +51,14 @@ set(Module_SRCS
   pqCheckBoxPixMaps.h
   pqCollapsedGroup.cxx
   pqCollapsedGroup.h
+  pqColorButtonEventPlayer.cxx
+  pqColorDialogEventPlayer.cxx
+  pqColorDialogEventPlayer.h
+  pqColorDialogEventTranslator.cxx
+  pqColorDialogEventTranslator.h
+  pqColorButtonEventPlayer.h
+  pqColorButtonEventTranslator.cxx
+  pqColorButtonEventTranslator.h
   pqColorChooserButton.cxx
   pqColorChooserButton.h
   pqColorTableDelegate.cxx
@@ -69,6 +81,8 @@ set(Module_SRCS
   pqDoubleRangeWidget.h
   pqDoubleSpinBox.cxx
   pqDoubleSpinBox.h
+  pqExpandableTableView.cxx
+  pqExpandableTableView.h
   pqExpanderButton.cxx
   pqExpanderButton.h
   pqFlatTreeView.cxx
@@ -123,6 +137,8 @@ set(Module_SRCS
 QT4_WRAP_CPP(QtWidgets_MOC_SOURCES
 #  QtWidgetsPlugin.h
 
+  ctkRangeSlider.h
+  ctkDoubleRangeSlider.h
   pqAnimationKeyFrame.h
   pqAnimationModel.h
   pqAnimationTrack.h
@@ -132,15 +148,20 @@ QT4_WRAP_CPP(QtWidgets_MOC_SOURCES
   pqCheckableHeaderView.h
   pqCheckBoxPixMaps.h
   pqCollapsedGroup.h
+  pqColorButtonEventPlayer.h
+  pqColorButtonEventTranslator.h
   pqColorChooserButton.h
+  pqColorDialogEventPlayer.h
+  pqColorDialogEventTranslator.h
   pqColorTableModel.h
+  pqConsoleWidget.h
   pqConsoleWidgetEventPlayer.h
   pqConsoleWidgetEventTranslator.h
-  pqConsoleWidget.h
   pqDelimitedTextParser.h
   pqDoubleRangeDialog.h
   pqDoubleRangeWidget.h
   pqDoubleSpinBox.h
+  pqExpandableTableView.h
   pqExpanderButton.h
   pqFlatTreeView.h
   pqLineEdit.h
@@ -223,13 +244,12 @@ set (${vtk-module}_INCLUDE_DIRS
 
 set(${vtk-module}_NO_HeaderTest 1)
 
-vtk_module_library(${vtk-module} ${QT_WIDGETS_ALL_SRCS})
-target_link_libraries(${vtk-module} ${QT_LIBRARIES})
-
 if (PQWIDGETS_DISABLE_QTWEBKIT)
-  set_target_properties(${vtk-module}
-    PROPERTIES DEFINE_SYMBOL PQWIDGETS_DISABLE_QTWEBKIT)
+  add_definitions(-DPQWIDGETS_DISABLE_QTWEBKIT)
 endif()
+
+vtk_module_library(${vtk-module} ${QT_WIDGETS_ALL_SRCS})
+target_link_libraries(${vtk-module} LINK_PUBLIC ${QT_LIBRARIES})
 
 #IF (NOT PV_INSTALL_NO_DEVELOPMENT)
 #  # Headers

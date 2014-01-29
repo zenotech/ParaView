@@ -20,7 +20,8 @@
 #include "vtkObjectFactory.h"
 #include "vtkPVProminentValuesInformation.h"
 #include "vtkPVRepresentedDataInformation.h"
-#include "vtkSMProxyProperty.h"
+#include "vtkSMInputProperty.h"
+#include "vtkSMProxyInternals.h"
 #include "vtkSMSession.h"
 #include "vtkTimerLog.h"
 
@@ -185,7 +186,11 @@ void vtkSMRepresentationProxy::MarkDirty(vtkSMProxy* modifiedProxy)
     // marking all representations dirty when a sub-representation is modified.
     (this->GetSubProxyName(modifiedProxy) == NULL))
     {
-    if (!this->MarkedModified)
+    // We need to check that modified proxy is a type of proxy that affects data
+    // rendered/processed by the representation. This is basically a HACK to
+    // avoid invalidating geometry when lookuptable and piecewise-function is
+    // modified.
+    if (!this->MarkedModified && !this->SkipDependency(modifiedProxy))
       {
       this->MarkedModified = true;
       vtkClientServerStream stream;
@@ -207,6 +212,26 @@ void vtkSMRepresentationProxy::MarkDirty(vtkSMProxy* modifiedProxy)
   this->NeedsUpdate = false;
 
   this->Superclass::MarkDirty(modifiedProxy);
+}
+
+//----------------------------------------------------------------------------
+bool vtkSMRepresentationProxy::SkipDependency(vtkSMProxy* producer)
+{
+  if (producer && producer->GetXMLName() &&
+    (strcmp(producer->GetXMLName(), "PVLookupTable") == 0 ||
+     strcmp(producer->GetXMLName(), "PiecewiseFunction") == 0))
+    {
+    return true;
+    }
+
+  if (producer && producer->GetXMLGroup() &&
+    (strcmp(producer->GetXMLGroup(), "lookup_tables") == 0 ||
+     strcmp(producer->GetXMLGroup(), "piecewise_functions") == 0))
+    {
+    return true;
+    }
+
+  return false;
 }
 
 //----------------------------------------------------------------------------
@@ -353,4 +378,47 @@ vtkTypeUInt32 vtkSMRepresentationProxy::GetGlobalID()
         MAX_NUMBER_OF_INTERNAL_REPRESENTATIONS));
     }
   return this->GlobalID;
+}
+
+//---------------------------------------------------------------------------
+class vtkSMRepresentationProxyObserver : public vtkCommand
+{
+public:
+  vtkWeakPointer<vtkSMProperty> Output;
+  typedef vtkCommand Superclass;
+  virtual const char* GetClassNameInternal() const
+    { return "vtkSMRepresentationProxyObserver"; }
+  static vtkSMRepresentationProxyObserver* New()
+    {
+    return new vtkSMRepresentationProxyObserver();
+    }
+  virtual void Execute(vtkObject* caller, unsigned long event, void* calldata)
+    {
+    (void)event;
+    (void)calldata;
+    vtkSMProperty* input = vtkSMProperty::SafeDownCast(caller);
+    if (input && this->Output)
+      {
+      // this will copy both checked and unchecked property values.
+      this->Output->Copy(input);
+      }
+    }
+};
+
+//---------------------------------------------------------------------------
+void vtkSMRepresentationProxy::LinkProperty(
+  vtkSMProperty* input, vtkSMProperty* output)
+{
+  if (input == output || input == NULL || output == NULL)
+    {
+    vtkErrorMacro("Invalid call to LinkProperty. Check arguments.");
+    return;
+    }
+
+  vtkSMRepresentationProxyObserver* observer =
+    vtkSMRepresentationProxyObserver::New();
+  observer->Output = output;
+  input->AddObserver(vtkCommand::PropertyModifiedEvent, observer);
+  input->AddObserver(vtkCommand::UncheckedPropertyModifiedEvent, observer);
+  observer->FastDelete();
 }

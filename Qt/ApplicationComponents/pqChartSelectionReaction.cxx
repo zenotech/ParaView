@@ -31,135 +31,159 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ========================================================================*/
 #include "pqChartSelectionReaction.h"
 
-#include "pqActiveObjects.h"
-#include "pqCoreUtilities.h"
 #include "pqContextView.h"
+#include "pqCoreUtilities.h"
 #include "vtkChart.h"
+#include "vtkCommand.h"
 #include "vtkContextMouseEvent.h"
 #include "vtkContextScene.h"
+#include "vtkContextView.h"
+#include "vtkRenderWindowInteractor.h"
 #include "vtkScatterPlotMatrix.h"
 #include "vtkSMContextViewProxy.h"
 
-//-----------------------------------------------------------------------------
-pqChartSelectionReaction::pqChartSelectionReaction(
-  QAction* parentObject, pqContextView* view,
-  int selectionMode, int selectAction)
-  : Superclass(parentObject), View(view),
-    SelectionMode(selectionMode), SelectionAction(selectAction)
-{
-  if (!view)
-    {
-    QObject::connect(&pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)),
-      this, SLOT(updateEnableState()), Qt::QueuedConnection);
-    }
+#include <QActionGroup>
+#include <QtDebug>
 
-  this->updateEnableState();
+namespace
+{
+  inline int getSelectionModifier(QActionGroup* group)
+    {
+    if (!group)
+      {
+      return vtkContextScene::SELECTION_DEFAULT;
+      }
+
+    // we cannot use QActionGroup::checkedAction() since the ModifierGroup may
+    // not be exclusive.
+    foreach (QAction* maction, group->actions())
+      {
+      if (maction->isChecked() && maction->data().isValid())
+        {
+        return maction->data().toInt();
+        }
+      }
+
+    return vtkContextScene::SELECTION_DEFAULT;
+    }
 }
 
 //-----------------------------------------------------------------------------
-void pqChartSelectionReaction::updateEnableState()
+pqChartSelectionReaction::pqChartSelectionReaction(
+  QAction *parentObject, pqContextView *view, QActionGroup* modifierGroup)
+: Superclass(parentObject),
+  View(view),
+  ModifierGroup(modifierGroup)
 {
-  pqView *view = this->View;
-  if (!view)
+  parentObject->setEnabled(view != NULL && view->supportsSelection());
+  this->connect(parentObject, SIGNAL(triggered(bool)), SLOT(triggered(bool)));
+
+  vtkRenderWindowInteractor* interactor = 
+    (view ? view->getVTKContextView()->GetInteractor() : 0);
+  if (interactor)
     {
-    view = pqActiveObjects::instance().activeView();
+    pqCoreUtilities::connect(
+      interactor, vtkCommand::LeftButtonReleaseEvent,
+      this, SLOT(stopSelection()));
     }
-  pqContextView *thisView = qobject_cast<pqContextView*>(view);
-  if (thisView && thisView->supportsSelection())
+
+  // if modified is changed while selection is in progress, we need to ensure we
+  // update the selection modifier on the view.
+  if (modifierGroup)
     {
-    this->parentAction()->setEnabled(true);
+    this->connect(modifierGroup, SIGNAL(triggered(QAction*)),
+      SLOT(modifiersChanged()));
     }
-  else
+}
+
+//-----------------------------------------------------------------------------
+inline void setChartParameters(
+  pqContextView* view,
+  int selectionType, bool update_type,
+  int selectionModifier, bool update_modifier)
+{
+  if (view == NULL && !view->supportsSelection() && view->getContextViewProxy() == NULL)
     {
-    this->parentAction()->setEnabled(false);
+    return;
+    }
+
+  vtkAbstractContextItem* contextItem =
+    view->getContextViewProxy()->GetContextItem();
+  vtkChart *chart = vtkChart::SafeDownCast(contextItem);
+  vtkScatterPlotMatrix *chartMatrix =
+    vtkScatterPlotMatrix::SafeDownCast(contextItem);
+  if (chartMatrix)
+    {
+    chart = chartMatrix->GetMainChart();
+    }
+
+  if (update_modifier &&
+    (selectionModifier < vtkContextScene::SELECTION_NONE ||
+     selectionModifier > vtkContextScene::SELECTION_TOGGLE))
+    {
+    qWarning() << "Invalid selection modifier  " << selectionModifier
+      << ", using vtkContextScene::SELECTION_DEFAULT";
+    selectionModifier = vtkContextScene::SELECTION_DEFAULT;
+    }
+
+  if (chart)
+    {
+    if (update_type)
+      {
+      chart->SetActionToButton(selectionType, vtkContextMouseEvent::LEFT_BUTTON);
+      }
+    if (update_modifier)
+      {
+      chart->SetSelectionMode(selectionModifier);
+      }
     }
 }
 
 //-----------------------------------------------------------------------------
 void pqChartSelectionReaction::startSelection(
-  pqContextView* view, int selMode, int selAction)
+  pqContextView* view, int selectionType, int selectionModifier)
 {
-  if(view && view->supportsSelection() && view->getContextViewProxy())
-    {
-    vtkAbstractContextItem* contextItem =
-      view->getContextViewProxy()->GetContextItem();
-    vtkChart *chart = vtkChart::SafeDownCast(contextItem);
-    vtkScatterPlotMatrix *chartMatrix =
-      vtkScatterPlotMatrix::SafeDownCast(contextItem);
-    if (chart)
-      {
-      chart->SetSelectionMode(selMode);
-      }
-    else if(chartMatrix)
-      {
-      chartMatrix->SetSelectionMode(selMode);
-      chart = chartMatrix->GetMainChart();
-      }
-    // Handle selection actions
-    if(!chart)
-      {
-      return;
-      }
-    view->setSelectionAction(selAction);
-    // if none of the ADD/Subtract/Toggle button is picked
-    // go back to default right-button selection;
-    // if any of these selection mode button is triggered
-    // make the selection to use left-button
-    chart->SetActionToButton(selAction,
-      selMode == vtkContextScene::SELECTION_NONE ?
-      vtkContextMouseEvent::RIGHT_BUTTON :
-      vtkContextMouseEvent::LEFT_BUTTON);
-    }
+  ::setChartParameters(view, selectionType, true, selectionModifier, true);
 }
 
 //-----------------------------------------------------------------------------
-void pqChartSelectionReaction::onTriggered()
-{ 
-  if(this->View->supportsSelection() && this->View->getContextViewProxy())
+void pqChartSelectionReaction::stopSelection()
+{
+  ::setChartParameters(this->View,
+    vtkChart::PAN, true, vtkContextScene::SELECTION_DEFAULT, true);
+  this->parentAction()->setChecked(false);
+}
+
+//-----------------------------------------------------------------------------
+void pqChartSelectionReaction::modifiersChanged()
+{
+  int selectionModifier = getSelectionModifier(this->ModifierGroup);
+  ::setChartParameters(this->View, -1, false, selectionModifier, true);
+}
+
+//-----------------------------------------------------------------------------
+void pqChartSelectionReaction::triggered(bool checked)
+{
+  if (this->View &&
+      this->View->supportsSelection() &&
+      this->View->getContextViewProxy())
     {
-    vtkAbstractContextItem* contextItem =
-      this->View->getContextViewProxy()->GetContextItem();
-    vtkChart *chart = vtkChart::SafeDownCast(contextItem);
-    vtkScatterPlotMatrix *chartMatrix =
-      vtkScatterPlotMatrix::SafeDownCast(contextItem);
-    int selMode = -1;
-    if (chart)
+    QAction* _action = this->parentAction();
+    int selectionType = vtkChart::SELECT_RECTANGLE;
+    if (_action->data().isValid())
       {
-      selMode =chart->GetSelectionMode();
+      selectionType = _action->data().toInt();
       }
-    else if(chartMatrix)
-      {
-      selMode = chartMatrix->GetSelectionMode();
-      }
-    // we have to have a valid mode to continue
-    if(selMode < 0)
-      {
-      return;
-      }
-    int selAction = this->View->selectionAction();
-    // if selection action buttons are invoked
-    if(this->SelectionAction != 0)
-      {
-      if(selAction != this->SelectionAction)
-        {
-        pqChartSelectionReaction::startSelection(this->View,
-          selMode, this->SelectionAction);    
-        }
-      }
-    // if a different selection mode button
-    else if(selMode != this->SelectionMode)
+
+    int selectionModifier = getSelectionModifier(this->ModifierGroup);
+    if (checked)
       {
       pqChartSelectionReaction::startSelection(this->View,
-        this->SelectionMode, selAction);
+        selectionType, selectionModifier);
       }
-    // if the same selection mode button
     else
       {
-      this->parentAction()->blockSignals(true);
-      this->parentAction()->setChecked(false);
-      this->parentAction()->blockSignals(false);
-      pqChartSelectionReaction::startSelection(this->View,
-        vtkContextScene::SELECTION_NONE, selAction);    
+      pqChartSelectionReaction::stopSelection();
       }
     }
 }

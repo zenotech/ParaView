@@ -56,6 +56,11 @@ public:
   pqPythonShell(QWidget* parent=0, Qt::WindowFlags flags=0);
   ~pqPythonShell();
 
+  /// Returns the interactive console context (the locals() dict).
+  /// You can use static_cast<PythonObject*>() to convert the void pointer.
+  /// See vtkPythonInteractiveInterpreter::GetInteractiveConsoleLocalsPyObject().
+  void* consoleLocals();
+
   enum PrintMode
     {
     STATUS,
@@ -109,6 +114,7 @@ protected:
   /// Called to setup the Python interpreter during startup or after the Python
   /// environment was finalized.
   void setupInterpreter();
+  friend class pqPythonManager;
 
   /// Show the user-input prompt, if needed. Returns true if the prompt was
   /// re-rendered, otherwise false.
@@ -117,13 +123,9 @@ protected:
   void HandleInterpreterEvents(
     vtkObject* caller, unsigned long eventid, void* calldata);
 
-private slots:
-  void initPythonInterpreter();
-
 private:
   Q_DISABLE_COPY(pqPythonShell);
 
-  pqTimer CreatePythonTimer;
   bool Prompted;
   bool Executing;
 };

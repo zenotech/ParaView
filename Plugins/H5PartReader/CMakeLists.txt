@@ -1,20 +1,22 @@
 ## Thanks to John Biddiscombe of
 ## CSCS - Swiss National Supercomputing Centre for creating and contributing
 ## this plugin.
-  
+
 IF (QT_USE_FILE)
   INCLUDE(${QT_USE_FILE})
 ENDIF (QT_USE_FILE)
 
-INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR}
+vtk_module_load(vtkhdf5)
+
+INCLUDE_DIRECTORIES(
+  ${vtkhdf5_INCLUDE_DIRS}
   ${VTK_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/H5Part/src
   )
 
-IF (PARAVIEW_USE_MPI)
-  INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
+if(PARAVIEW_USE_MPI)
   ADD_DEFINITIONS(-DH5PART_HAS_MPI)
-ENDIF (PARAVIEW_USE_MPI)
+endif()
 
 ADD_DEFINITIONS(-DH5_USE_16_API)
 
@@ -32,9 +34,17 @@ ADD_PARAVIEW_PLUGIN(H5PartReader "1.0"
   SERVER_MANAGER_XML
     H5PartServerManager.xml
 
-  GUI_RESOURCE_FILES
-    H5PartGUI.xml
+  REQUIRED_ON_SERVER
 )
+
+target_link_libraries(H5PartReader LINK_PRIVATE
+  ${vtkhdf5_LIBRARIES}
+  vtksys)
+
+if(PARAVIEW_USE_MPI)
+  include(vtkMPI)
+  vtk_mpi_link(H5PartReader)
+endif()
 
 SET_SOURCE_FILES_PROPERTIES(
   ${CMAKE_CURRENT_SOURCE_DIR}/H5Part/src/H5Part.c

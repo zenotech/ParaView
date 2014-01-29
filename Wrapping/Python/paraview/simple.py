@@ -39,6 +39,7 @@ import paraview
 paraview.compatibility.major = 3
 paraview.compatibility.minor = 5
 import servermanager
+import lookuptable
 
 #==============================================================================
 # Client/Server Connection methods
@@ -105,15 +106,17 @@ def SetActiveConnection(connection=None, ns=None):
 # Views and Layout methods
 #==============================================================================
 
-def _create_view(view_xml_name):
-    "Creates and returns a 3D render view."
+def CreateView(view_xml_name):
+    "Creates and returns the specified proxy view based on its name/label."
     view = servermanager._create_view(view_xml_name)
     servermanager.ProxyManager().RegisterProxy("views", \
       "my_view%d" % _funcs_internals.view_counter, view)
     active_objects.view = view
     _funcs_internals.view_counter += 1
 
-    tk = servermanager.ProxyManager().GetProxiesInGroup("timekeeper").values()[0]
+    tk = _find_proxy("timekeeper", "misc", "TimeKeeper")
+    if not tk:
+        paraview.print_error("Error: Failed to locate TimeKeeper")
     views = tk.Views
     if not view in views:
         views.append(view)
@@ -129,49 +132,49 @@ def _create_view(view_xml_name):
 
 def CreateRenderView():
     """"Create standard 3D render view"""
-    return _create_view("RenderView")
+    return CreateView("RenderView")
 
 # -----------------------------------------------------------------------------
 
 def CreateXYPlotView():
     """Create XY plot Chart view"""
-    return _create_view("XYChartView")
+    return CreateView("XYChartView")
 
 # -----------------------------------------------------------------------------
 
 def CreateBarChartView():
     """"Create Bar Chart view"""
-    return _create_view("XYBarChartView")
+    return CreateView("XYBarChartView")
 
 # -----------------------------------------------------------------------------
 
 def CreateComparativeRenderView():
     """"Create Comparative view"""
-    return _create_view("ComparativeRenderView")
+    return CreateView("ComparativeRenderView")
 
 # -----------------------------------------------------------------------------
 
 def CreateComparativeXYPlotView():
     """"Create comparative XY plot Chart view"""
-    return _create_view("ComparativeXYPlotView")
+    return CreateView("ComparativeXYPlotView")
 
 # -----------------------------------------------------------------------------
 
 def CreateComparativeBarChartView():
     """"Create comparative Bar Chart view"""
-    return _create_view("ComparativeBarChartView")
+    return CreateView("ComparativeBarChartView")
 
 # -----------------------------------------------------------------------------
 
 def CreateParallelCoordinatesChartView():
     """"Create Parallele coordinate Chart view"""
-    return _create_view("ParallelCoordinatesChartView")
+    return CreateView("ParallelCoordinatesChartView")
 
 # -----------------------------------------------------------------------------
 
 def Create2DRenderView():
     """"Create the standard 3D render view with the 2D interaction mode turned ON"""
-    return _create_view("2DRenderView")
+    return CreateView("2DRenderView")
 
 # -----------------------------------------------------------------------------
 
@@ -257,6 +260,36 @@ def GetLayout(view=None):
         if layout.GetViewLocation(view) != -1:
             return layout
     return None
+
+# -----------------------------------------------------------------------------
+
+def RemoveViewsAndLayouts():
+    pxm = servermanager.ProxyManager()
+    layouts = pxm.GetProxiesInGroup("layouts")
+
+    for view in GetRenderViews():
+        Delete(view)
+
+    # Can not use regular delete for layouts
+    for name, id in layouts:
+        proxy = layouts[(name, id)]
+        pxm.UnRegisterProxy('layouts', name, layouts[(name, id)])
+
+#==============================================================================
+# XML State management
+#==============================================================================
+
+def LoadState(filename, connection=None):
+    RemoveViewsAndLayouts()
+    servermanager.LoadState(filename, connection)
+    # Try to set the new view active
+    if len(GetRenderViews()) > 0:
+        SetActiveView(GetRenderViews()[0])
+
+# -----------------------------------------------------------------------------
+
+def SaveState(filename):
+    servermanager.SaveXMLState(filename)
 
 #==============================================================================
 # Representation methods
@@ -458,15 +491,15 @@ def Delete(proxy=None):
             if listdomain.GetClassName() != 'vtkSMProxyListDomain':
                 continue
             group = "pq_helper_proxies." + proxy.GetGlobalIDAsString()
-            for i in xrange(listdomain.GetNumberOfProxies()):
-                pm = servermanager.ProxyManager()
-                iproxy = listdomain.GetProxy(i)
-                name = pm.GetProxyName(group, iproxy)
+            pm = servermanager.ProxyManager()
+            iproxies = [listdomain.GetProxy(i) for i in xrange(listdomain.GetNumberOfProxies())]
+            names = [pm.GetProxyName(group, iproxy) for iproxy in iproxies]
+            for name, iproxy in zip(names, iproxies):
                 if iproxy and name:
                     pm.UnRegisterProxy(group, name, iproxy)
 
     # Remove source/view from time keeper
-    tk = servermanager.ProxyManager().GetProxiesInGroup("timekeeper").values()[0]
+    tk = _find_proxy("timekeeper", "misc", "TimeKeeper")
     if isinstance(proxy, servermanager.SourceProxy):
         try:
             idx = tk.TimeSources.index(proxy)
@@ -502,7 +535,7 @@ def Delete(proxy=None):
                     SetActiveSource(proxy.Input[0])
             else: SetActiveSource(None)
         for rep in GetRepresentations().values():
-            if rep.Input == proxy:
+            if rep.Input.GetAddressAsString('') == proxy.GetAddressAsString(''):
                 Delete(rep)
     # Change the active view if necessary
     elif proxy.SMProxy.IsA("vtkSMRenderViewProxy"):
@@ -560,7 +593,7 @@ def OpenDataFile(filename, **extraArgs):
     session = servermanager.ActiveConnection.Session
     reader_factor = servermanager.vtkSMProxyManager.GetProxyManager().GetReaderFactory()
     if reader_factor.GetNumberOfRegisteredPrototypes() == 0:
-      reader_factor.RegisterPrototypes(session, "sources")
+        reader_factor.UpdateAvailableReaders()
     first_file = filename
     if type(filename) == list:
         first_file = filename[0]
@@ -592,7 +625,7 @@ def CreateWriter(filename, proxy=None, **extraArgs):
     session = servermanager.ActiveConnection.Session
     writer_factory = servermanager.vtkSMProxyManager.GetProxyManager().GetWriterFactory()
     if writer_factory.GetNumberOfRegisteredPrototypes() == 0:
-        writer_factory.RegisterPrototypes(session, "writers")
+        writer_factory.UpdateAvailableWriters()
     if not proxy:
         proxy = GetActiveSource()
     if not proxy:
@@ -714,6 +747,46 @@ def GetLookupTableForArray(arrayname, num_components, **params):
     servermanager.Register(lut, registrationName=proxyName)
     return lut
 
+# global lookup table reader instance
+# the user can use the simple api below
+# rather than creating a lut reader themself
+_lutReader = None
+def _GetLUTReaderInstance():
+    """ Internal api. Return the lookup table reader singleton. Create
+    it if needed."""
+    global _lutReader
+    if _lutReader is None:
+      _lutReader = lookuptable.vtkPVLUTReader()
+    return _lutReader
+
+# -----------------------------------------------------------------------------
+
+def AssignLookupTable(arrayObject, LUTName, rangeOveride=[]):
+    """Assign a lookup table to an array by lookup table name. The array
+    may ber obtained from a ParaView source in it's point or cell data.
+    The lookup tables available in ParaView's GUI are loaded by default.
+    To get a list of the available lookup table names see GetLookupTableNames.
+    To load a custom lookup table see LoadLookupTable."""
+    return _GetLUTReaderInstance().GetLUT(arrayObject, LUTName, rangeOveride)
+
+# -----------------------------------------------------------------------------
+
+def GetLookupTableNames():
+    """Return a list containing the currently available lookup table names.
+    A name maybe used to assign a lookup table to an array. See
+    AssignLookupTable.
+    """
+    return _GetLUTReaderInstance().GetLUTNames()
+
+# -----------------------------------------------------------------------------
+
+def LoadLookupTable(fileName):
+    """Read the lookup tables in the named file and append them to the
+    global collection of lookup tables. The newly loaded lookup tables
+    may then be used with AssignLookupTable function.
+    """
+    return _GetLUTReaderInstance().Read(fileName)
+
 # -----------------------------------------------------------------------------
 
 def CreateScalarBar(**params):
@@ -784,12 +857,7 @@ def GetAnimationScene():
     global animation scene. This method provides access to that. Users are
     free to create additional animation scenes directly, but those scenes
     won't be shown in the ParaView GUI."""
-    animation_proxies = servermanager.ProxyManager().GetProxiesInGroup("animation")
-    scene = None
-    for aProxy in animation_proxies.values():
-        if aProxy.GetXMLName() == "AnimationScene":
-            scene = aProxy
-            break
+    scene = _find_proxy("animation", "animation", "AnimationScene")
     if not scene:
         raise servermanager.MissingProxy, "Could not locate global AnimationScene."
     return scene
@@ -1155,16 +1223,11 @@ def _create_func(key, module):
             # Register pipeline objects with the time keeper. This is used to extract time values
             # from sources. NOTE: This should really be in the servermanager controller layer.
             if group == "sources":
-                has_tk = True
-                try:
-                    tk = servermanager.ProxyManager().GetProxiesInGroup("timekeeper").values()[0]
-                except IndexError:
-                    has_tk = False
-                if has_tk:
+                tk = _find_proxy("timekeeper", "misc", "TimeKeeper")
+                if tk:
                     sources = tk.TimeSources
                     if not px in sources:
                         sources.append(px)
-
                 active_objects.source = px
         except servermanager.MissingRegistrationInformation:
             pass
@@ -1202,9 +1265,6 @@ def _func_name_valid(name):
 # -----------------------------------------------------------------------------
 
 def _add_functions(g):
-    import os
-    if os.environ.has_key("PARAVIEW_DOCUMENTATION_SKIP_ADD_FUNCTIONS"):
-        return
     if not servermanager.ActiveConnection:
         return
 
@@ -1220,6 +1280,20 @@ def _add_functions(g):
                     g[key] = _create_func(key, m)
                     exec "g[key].__doc__ = _create_doc(m.%s.__doc__, g[key].__doc__)" % key
 
+# -----------------------------------------------------------------------------
+
+def _get_generated_proxies():
+    activeModule = servermanager.ActiveConnection.Modules
+    proxies = []
+    for m in [activeModule.filters, activeModule.sources,
+              activeModule.writers, activeModule.animation]:
+        dt = m.__dict__
+        for key in dt.keys():
+            cl = dt[key]
+            if not isinstance(cl, str):
+                if _func_name_valid(key):
+                    proxies.append(key)
+    return proxies
 # -----------------------------------------------------------------------------
 
 def _remove_functions(g):
@@ -1260,6 +1334,30 @@ def _find_writer(filename):
         raise RuntimeError, "Cannot infer filetype from extension:", extension
 
 # -----------------------------------------------------------------------------
+def _find_proxy(group, xmlgroup, xmltype):
+    """Find a proxy of the given type (xmlgroup, xmltype) in the registration
+       group (group). This is useful to locate proxies that should have only 1
+       instance in a typical ParaView application. Returns the first proxy that
+       matches the type in the registration group.
+
+       :param group: name of the registration group in which to search for the
+                     proxy.
+       :param xmlgroup: name of the group for the matched proxy's type. It
+                        should match the value returned by proxy.GetXMLGroup()
+       :param xmltype: name of the type for the proxy i.e. the value returned by
+                       proxy.GetXMLType()
+    """
+    pxm = servermanager.ProxyManager()
+    proxies = pxm.GetProxiesInGroup(group)
+    proxy = None
+    for aProxy in proxies.values():
+        if aProxy and \
+            aProxy.GetXMLGroup() == xmlgroup and \
+            aProxy.GetXMLName() == xmltype:
+            return aProxy
+    return None
+
+# -----------------------------------------------------------------------------
 
 def _CreateEssentialProxies():
     """Ensures that essetial proxies like TimeKeeper and AnimationScene are
@@ -1267,7 +1365,7 @@ def _CreateEssentialProxies():
 
     servermanager.ProxyManager().DisableStateUpdateNotification()
     servermanager.ProxyManager().UpdateFromRemote()
-    tk = servermanager.ProxyManager().GetProxy("timekeeper", "TimeKeeper")
+    tk = _find_proxy(group="timekeeper", xmlgroup="misc", xmltype="TimeKeeper")
     if not tk:
        try:
            tk = servermanager.misc.TimeKeeper()
@@ -1275,13 +1373,20 @@ def _CreateEssentialProxies():
        except AttributeError:
            paraview.print_error("Error: Could not create TimeKeeper")
 
-    scene = servermanager.ProxyManager().GetProxy("animation", "AnimationScene")
+    scene = _find_proxy(group="animation", xmlgroup="animation", xmltype="AnimationScene")
     if not scene:
        try:
            scene = AnimationScene()
+           # no need to register, since we use the function to create the
+           # AnimationScene object, that automatically registers it.
            scene.TimeKeeper = tk
+
+           # Ensure that the time-track is setup so animations on readers work as
+           # expected (BUG #14452).
+           GetTimeTrack()
        except NameError:
            paraview.print_error("Error: Could not create AnimationScene")
+
 
     servermanager.ProxyManager().EnableStateUpdateNotification()
     servermanager.ProxyManager().TriggerStateUpdate()
