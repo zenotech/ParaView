@@ -50,8 +50,9 @@ public:
                         vtkSMProxy *proxy,
                         QWidget *parent = 0);
 
-  /// Overridden for pqSelectionInputWidget.
+  /// Overridden to pass the calls to internal widgets.
   virtual void apply();
+  virtual void reset();
 
   /// These methods are called when the pqProxyPropertiesPanel containing the
   /// widget is activated/deactivated. Only widgets that have 3D widgets need to
@@ -59,9 +60,14 @@ public:
   virtual void select();
   virtual void deselect();
 
+  /// Overridden to hide the properties for proxies in a vtkSMProxyListDomain if
+  /// requested.
+  virtual void updateWidget(bool showing_advanced_properties);
+
 private:
   QPointer<pqSelectionInputWidget> SelectionInputWidget;
   QPointer<pqProxySelectionWidget> ProxySelectionWidget;
+  bool HideWidgetsInDefaultView;
 };
 
 #endif // _pqProxyPropertyWidget_h

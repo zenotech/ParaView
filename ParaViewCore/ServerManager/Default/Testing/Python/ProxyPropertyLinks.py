@@ -41,6 +41,7 @@ sphere1 = None
 sphere2 = None
 sphere3 = None
 pxm.UnRegisterProxies()
+pxm.UnRegisterAllLinks()
 
 # Load the saved state which also has the links.
 smtesting.LoadServerManagerState(temp_state)
@@ -61,7 +62,7 @@ sphere3.GetProperty("ThetaResolution").SetElement(0, 10)
 sphere3.GetProperty("PhiResolution").SetElement(0, 10)
 sphere3.UpdateVTKObjects()
 
-rmProxy = pxm.GetProxy("rendermodules","RenderModule0")
+rmProxy = servermanager.GetRenderView()
 rmProxy.StillRender()
 
 if not smtesting.DoRegressionTesting():

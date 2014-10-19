@@ -47,7 +47,6 @@ class PQCORE_EXPORT pqSpreadSheetView : public pqView
   typedef pqView Superclass;
 public:
   static QString spreadsheetViewType() { return "SpreadSheetView"; }
-  static QString spreadsheetViewTypeName() { return "Spreadsheet View"; }
 
 public:
   pqSpreadSheetView(const QString& group, const QString& name, 
@@ -59,15 +58,6 @@ public:
   /// This view has no widget.
   virtual QWidget* getWidget();
 
-  /// This view does not support image capture, return 0;
-  virtual vtkImageData* captureImage(int /*magnification*/)
-    { return 0; }
-  virtual vtkImageData* captureImage(const QSize& asize)
-    { return this->Superclass::captureImage(asize); } 
-  
-  /// Currently, this view can show only Extraction filters.
-  virtual bool canDisplay(pqOutputPort* opPort) const;
-  
   /// Get the internal model for the view
   pqSpreadSheetViewModel* getViewModel();
 

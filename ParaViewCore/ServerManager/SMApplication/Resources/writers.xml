@@ -23,7 +23,7 @@
         written to the files.</Documentation>
       </InputProperty>
       <IntVectorProperty command="SetHeaderType"
-                         default_values="32"
+                         default_values="64"
                          name="HeaderType"
                          number_of_elements="1">
         <EnumerationDomain name="enum">
@@ -76,6 +76,8 @@
                   show="0" />
         <Property name="FileName"
                   show="0" />
+        <Property name="HeaderType"
+                  show="0" />
         <WriterFactory extensions="pvd"
                        file_description="ParaView Data Files" />
       </Hints>
@@ -94,7 +96,6 @@
         <ExposedProperties>
           <PropertyGroup label="XML Writer Parameters">
             <Property name="DataMode" />
-            <Property name="HeaderType" />
             <Property name="EncodeAppendedData" />
             <Property name="CompressorType" />
           </PropertyGroup>
@@ -125,6 +126,8 @@
                   show="0" />
         <Property name="FileName"
                   show="0" />
+        <Property name="HeaderType"
+                  show="0" />
         <WriterFactory extensions="vtp"
                        file_description="VTK PolyData Files" />
       </Hints>
@@ -153,10 +156,12 @@
                   show="0" />
         <Property name="FileName"
                   show="0" />
+        <Property name="HeaderType"
+                  show="0" />
         <WriterFactory extensions="vto"
                        file_description="VTK Octree Files" />
       </Hints>
-      <!-- End of XMLUnstructuredGridWriter -->
+      <!-- End of XMLHyperOctreeWriter -->
     </WriterProxy>
     <!-- ================================================================= -->
     <WriterProxy base_proxygroup="writers"
@@ -180,6 +185,8 @@
         <Property name="Input"
                   show="0" />
         <Property name="FileName"
+                  show="0" />
+        <Property name="HeaderType"
                   show="0" />
         <WriterFactory extensions="vtu"
                        file_description="VTK UnstructuredGrid Files" />
@@ -209,6 +216,8 @@
                   show="0" />
         <Property name="FileName"
                   show="0" />
+        <Property name="HeaderType"
+                  show="0" />
         <WriterFactory extensions="vts"
                        file_description="VTK StructuredGrid Files" />
       </Hints>
@@ -237,6 +246,8 @@
                   show="0" />
         <Property name="FileName"
                   show="0" />
+        <Property name="HeaderType"
+                  show="0" />
         <WriterFactory extensions="vtr"
                        file_description="VTK RectilinearGrid Files" />
       </Hints>
@@ -264,6 +275,8 @@
         <Property name="Input"
                   show="0" />
         <Property name="FileName"
+                  show="0" />
+        <Property name="HeaderType"
                   show="0" />
         <WriterFactory extensions="vti"
                        file_description="VTK ImageData Files" />
@@ -307,6 +320,8 @@
                   show="0" />
         <Property name="FileName"
                   show="0" />
+        <Property name="HeaderType"
+                  show="0" />
         <WriterFactory extensions="pvtp"
                        file_description="PVTK PolyData Files" />
       </Hints>
@@ -348,6 +363,8 @@
         <Property name="Input"
                   show="0" />
         <Property name="FileName"
+                  show="0" />
+        <Property name="HeaderType"
                   show="0" />
         <WriterFactory extensions="pvtu"
                        file_description="PVTK UnstructuredGrid Files" />
@@ -391,6 +408,8 @@
                   show="0" />
         <Property name="FileName"
                   show="0" />
+        <Property name="HeaderType"
+                  show="0" />
         <WriterFactory extensions="pvts"
                        file_description="PVTK StructuredGrid Files" />
       </Hints>
@@ -432,6 +451,8 @@
         <Property name="Input"
                   show="0" />
         <Property name="FileName"
+                  show="0" />
+        <Property name="HeaderType"
                   show="0" />
         <WriterFactory extensions="pvtr"
                        file_description="PVTK RectilinearGrid Files" />
@@ -475,6 +496,8 @@
                   show="0" />
         <Property name="FileName"
                   show="0" />
+        <Property name="HeaderType"
+                  show="0" />
         <WriterFactory extensions="pvti"
                        file_description="PVTK ImageData Files" />
       </Hints>
@@ -516,6 +539,8 @@
         <Property name="Input"
                   show="0" />
         <Property name="FileName"
+                  show="0" />
+        <Property name="HeaderType"
                   show="0" />
         <WriterFactory extensions="vtm"
                        file_description="VTK Multi Block Files" />
@@ -559,6 +584,7 @@
       <Hints>
         <Property name="Input" show="0" />
         <Property name="FileName" show="0" />
+        <Property name="HeaderType" show="0" />
         <WriterFactory extensions="vthb"
                        file_description="VTK AMR Files" />
       </Hints>
@@ -820,7 +846,81 @@
                  name="PNGWriter">
       <Documentation short_help="Write image data as a PNG file.">Writer to
       write image data as a PNG file. It supports 1 to 4 component data of
-      unsigned char or unsigned short.</Documentation>
+      unsigned char or unsigned short.
+      This Writer can also generate a stack of images when the FileName is in
+      the form of /path/file_%03d.png and that the input data is a 3D image
+      data.
+      </Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain composite_data_supported="0"
+                        name="input_type">
+          <DataType value="vtkImageData" />
+        </DataTypeDomain>
+        <Documentation>The input filter/source whose output dataset is to
+        written to the file.</Documentation>
+      </InputProperty>
+      <StringVectorProperty command="SetFilePattern"
+                            name="FileName"
+                            number_of_elements="1">
+        <Documentation>The name of the file to be written.</Documentation>
+      </StringVectorProperty>
+      <Hints>
+        <Property name="Input"
+                  show="0" />
+        <Property name="FileName"
+                  show="0" />
+        <WriterFactory extensions="png"
+                       file_description="PNG Image Files" />
+      </Hints>
+      <!-- End of PNGWriter -->
+    </WriterProxy>
+    <!-- ================================================================= -->
+    <WriterProxy class="vtkJPEGWriter"
+                 name="JPEGWriter">
+      <Documentation short_help="Write image data as a JPEG file.">
+      Writer to write image data as a JPEG file. It supports 1 to 3 component
+      data of unsigned char or unsigned short.
+      This Writer can also generate a stack of images when the FileName is in
+      the form of /path/file_%03d.jpg and that the input data is a 3D image
+      data.
+      </Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain composite_data_supported="0"
+                        name="input_type">
+          <DataType value="vtkImageData" />
+        </DataTypeDomain>
+        <Documentation>The input filter/source whose output dataset is to
+        written to the file.</Documentation>
+      </InputProperty>
+      <StringVectorProperty command="SetFilePattern"
+                            name="FileName"
+                            number_of_elements="1">
+        <Documentation>The name of the file to be written.</Documentation>
+      </StringVectorProperty>
+      <Hints>
+        <Property name="Input"
+                  show="0" />
+        <Property name="FileName"
+                  show="0" />
+        <WriterFactory extensions="jpg"
+                       file_description="JPEG Image Files" />
+      </Hints>
+      <!-- End of JPEGWriter -->
+    </WriterProxy>
+    <!-- ================================================================= -->
+    <WriterProxy class="vtkJSONImageWriter"
+                 name="JSONImageWriter">
+      <Documentation short_help="Write image data as a JSON file."/>
       <InputProperty command="SetInputConnection"
                      name="Input">
         <ProxyGroupDomain name="groups">
@@ -839,15 +939,28 @@
                             number_of_elements="1">
         <Documentation>The name of the file to be written.</Documentation>
       </StringVectorProperty>
+      <StringVectorProperty command="SetArrayName"
+                            name="ArrayName"
+                            number_of_elements="1">
+        <Documentation>The name of the field to export. If Empty all fields will be saved.</Documentation>
+      </StringVectorProperty>
+      <IntVectorProperty command="SetSlice"
+                            name="Slice"
+                            default_values="-1"
+                            number_of_elements="1">
+        <Documentation>Write only one slice if slice >= 0</Documentation>
+        <IntRangeDomain min="-1"
+                        name="range" />
+      </IntVectorProperty>
       <Hints>
         <Property name="Input"
                   show="0" />
         <Property name="FileName"
                   show="0" />
-        <WriterFactory extensions="png"
-                       file_description="PNG Image Files" />
+        <WriterFactory extensions="json"
+                       file_description="json Image Files" />
       </Hints>
-      <!-- End of PNGWriter -->
+      <!-- End of vtkJSONImageWriter -->
     </WriterProxy>
     <!-- ================================================================= -->
     <WriterProxy class="vtkXdmfWriter"
@@ -882,6 +995,147 @@
       </Hints>
       <!-- End of XdmfWriter -->
     </WriterProxy>
+#ifdef Module_vtkIOXdmf3
+    <!-- ================================================================= -->
+    <WriterProxy class="vtkXdmf3Writer"
+                 name="Xdmf3Writer">
+      <Documentation short_help="Write data in Xdmf files.">Writer to write
+      data in eXtensible Data Model and Format *(XDMF) files.</Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain composite_data_supported="1"
+                        name="input_type">
+          <DataType value="vtkDataSet" />
+          <DataType value="vtkGraph" />
+        </DataTypeDomain>
+        <Documentation>The input filter/source whose output dataset is to
+        written to the file.</Documentation>
+      </InputProperty>
+      <IntVectorProperty command="SetWriteAllTimeSteps"
+                         default_values="0"
+                         name="WriteAllTimeSteps"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>When WriteAllTimeSteps is turned ON, the writer is
+        executed once for each time step available from the
+        reader.</Documentation>
+      </IntVectorProperty>
+      <PropertyGroup label="File Series">
+        <Property name="WriteAllTimeSteps" />
+      </PropertyGroup>
+      <StringVectorProperty command="SetFileName"
+                            name="FileName"
+                            number_of_elements="1">
+        <Documentation>The name of the file to be written.</Documentation>
+      </StringVectorProperty>
+      <Hints>
+        <Property name="Input"
+                  show="0" />
+        <Property name="FileName"
+                  show="0" />
+        <WriterFactory extensions="xmf"
+                       file_description="Xdmf3 Data File" />
+      </Hints>
+      <!-- End of XdmfWriter -->
+    </WriterProxy>
+#endif
+#ifdef Module_vtkIOADIOS
+    <!-- ================================================================= -->
+    <PWriterProxy class="vtkADIOSWriter"
+                  name="ADIOSWriter">
+      <Documentation short_help="Write ADIOS BP files using VTKs schema.">
+        Writer to write ADIOS BP files using a VTK specific schema
+      </Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain composite_data_supported="1"
+                        name="input_type">
+          <DataType value="vtkCompositeDataSet" />
+          <DataType value="vtkDataSet" />
+        </DataTypeDomain>
+        <Documentation>The input filter/source whose output dataset is to
+        written to the file.</Documentation>
+      </InputProperty>
+      <IntVectorProperty command="SetTransportMethod"
+                         default_values="1"
+                         name="TransportMethod"
+                         number_of_elements="1">
+        <EnumerationDomain name="enum">
+          <Entry text="NULL"          value="0" />
+          <Entry text="POSIX"         value="1" />
+          <Entry text="MPI"           value="2" />
+          <Entry text="MPILustre"     value="3" />
+          <Entry text="MPIAggregate"  value="4" />
+          <Entry text="VarMerge"      value="5" />
+          <Entry text="DataSpaces"    value="6" />
+          <Entry text="DIMES"         value="7" />
+          <Entry text="FlexPath"      value="8" />
+          <Entry text="PHDF5"         value="9" />
+          <Entry text="NetCDF4"       value="10" />
+        </EnumerationDomain>
+        <Documentation>
+          Select the specific ADIOS backend write method to use.
+        </Documentation>
+      </IntVectorProperty>
+      <StringVectorProperty command="SetTransportMethodArguments"
+                            name="TransportMethodArguments"
+                            default=""
+                            number_of_elements="1">
+        <Documentation>
+          Configuration parameters to pass to the specified ADIOS backend.
+        </Documentation>
+      </StringVectorProperty>
+      <IntVectorProperty command="SetTransform"
+                         default_values="0"
+                         name="CompressionMethod"
+                         number_of_elements="1">
+        <EnumerationDomain name="enum">
+          <Entry text="None"  value="0" />
+          <Entry text="ZLib"  value="1" />
+          <Entry text="BZip2" value="2" />
+          <Entry text="SZip"  value="3" />
+        </EnumerationDomain>
+        <Documentation>
+          Select the specific array compression method to use.
+        </Documentation>
+      </IntVectorProperty>
+      <StringVectorProperty command="SetFileName"
+                            name="FileName"
+                            number_of_elements="1">
+        <Documentation>The name of the file to write to.</Documentation>
+      </StringVectorProperty>
+      <IntVectorProperty command="SetWriteAllTimeSteps"
+                         default_values="0"
+                         name="WriteAllTimeSteps"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>When WriteAllTimeSteps is turned ON, the writer is
+        executed once for each time step available from the
+        reader.</Documentation>
+      </IntVectorProperty>
+      <PropertyGroup label="Transport">
+        <Property name="TransportMethod" />
+        <Property name="TransportMethodArguments" />
+      </PropertyGroup>
+      <Hints>
+        <Property name="Input"               show="0" />
+        <Property name="TransportMethod"     show="1" />
+        <Property name="TransportMethodArgs" show="1" />
+        <Property name="CompressionMethod"   show="1" />
+        <WriterFactory extensions="bp"
+                       file_description="VTK ADIOS File" />
+      </Hints>
+      <!-- End of ADIOSWriter -->
+    </PWriterProxy>
+#endif
     <!-- ================================================================= -->
     <PWriterProxy base_proxygroup="internal_writers"
                   base_proxyname="ParallelWriterBase"

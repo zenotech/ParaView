@@ -1,7 +1,3 @@
-if (NOT PARAVIEW_DATA_ROOT)
-  return()
-endif()
-
 include_directories(
   ${TestDriver_SOURCE_DIR})
 
@@ -26,16 +22,80 @@ add_test(NAME CoProcessingTestInput
   )
 set_tests_properties(CoProcessingTestInput PROPERTIES LABELS "${CP_LABELS}")
 
+
+
 # the CoProcessingTestPythonScript needs to be run with ${MPIEXEC} if
 # CoProcessingPythonScriptExample was built with MPI because certain
 # machines only allow running MPI programs with the proper ${MPIEXEC}
+
+# just test if a given Catalyst Python script can import another script
+if (NOT PARAVIEW_USE_MPI)
+  add_test(NAME CoProcessingImport
+    COMMAND ${CMAKE_COMMAND}
+    -DCOPROCESSING_TEST_DRIVER:FILEPATH=$<TARGET_FILE:CoProcessingPythonScriptExample>
+    -DCOPROCESSING_TEST_DIR:PATH=${PARAVIEW_TEST_OUTPUT_DIR}
+    -DCOPROCESSING_TEST_SCRIPT=${CMAKE_CURRENT_SOURCE_DIR}/cpimport.py
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/CoProcessingTestPythonScript.cmake)
+else()
+  add_test(NAME CoProcessingImport
+    COMMAND ${CMAKE_COMMAND}
+    -DCOPROCESSING_TEST_DRIVER:FILEPATH=$<TARGET_FILE:CoProcessingPythonScriptExample>
+    -DCOPROCESSING_TEST_DIR:PATH=${PARAVIEW_TEST_OUTPUT_DIR}
+    -DCOPROCESSING_TEST_SCRIPT=${CMAKE_CURRENT_SOURCE_DIR}/cpimport.py
+    -DUSE_MPI:BOOL=TRUE
+    -DMPIEXEC:FILEPATH=${MPIEXEC}
+    -DMPIEXEC_NUMPROC_FLAG:STRING=${MPIEXEC_NUMPROC_FLAG}
+    -DMPIEXEC_NUMPROCS=2
+    -DMPIEXEC_PREFLAGS:STRING=${MPIEXEC_PREFLAGS}
+    -DVTK_MPI_POSTFLAGS:STRING=${VTK_MPI_POSTFLAGS}
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/CoProcessingTestPythonScript.cmake)
+endif()
+
+set_tests_properties(CoProcessingImport PROPERTIES LABELS "${CP_LABELS}")
+
+# test if we can use a Python programmable filter in a Catalyst Python script
+if (NOT PARAVIEW_USE_MPI)
+  add_test(NAME CoProcessingProgrammableFilter
+    COMMAND ${CMAKE_COMMAND}
+    -DCOPROCESSING_TEST_DRIVER:FILEPATH=$<TARGET_FILE:CoProcessingPythonScriptExample>
+    -DCOPROCESSING_TEST_DIR:PATH=${PARAVIEW_TEST_OUTPUT_DIR}
+    -DCOPROCESSING_TEST_SCRIPT=${CMAKE_CURRENT_SOURCE_DIR}/cpprogrammablefilter.py
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/CoProcessingTestPythonScript.cmake)
+else()
+  add_test(NAME CoProcessingProgrammableFilter
+    COMMAND ${CMAKE_COMMAND}
+    -DCOPROCESSING_TEST_DRIVER:FILEPATH=$<TARGET_FILE:CoProcessingPythonScriptExample>
+    -DCOPROCESSING_TEST_DIR:PATH=${PARAVIEW_TEST_OUTPUT_DIR}
+    -DCOPROCESSING_TEST_SCRIPT=${CMAKE_CURRENT_SOURCE_DIR}/cpprogrammablefilter.py
+    -DUSE_MPI:BOOL=TRUE
+    -DMPIEXEC:FILEPATH=${MPIEXEC}
+    -DMPIEXEC_NUMPROC_FLAG:STRING=${MPIEXEC_NUMPROC_FLAG}
+    -DMPIEXEC_NUMPROCS=2
+    -DMPIEXEC_PREFLAGS:STRING=${MPIEXEC_PREFLAGS}
+    -DVTK_MPI_POSTFLAGS:STRING=${VTK_MPI_POSTFLAGS}
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/CoProcessingTestPythonScript.cmake)
+endif()
+
+set_tests_properties(CoProcessingProgrammableFilter PROPERTIES LABELS "${CP_LABELS}")
+#-  add_test(NAME CoProcessingProgrammableFilter
+#-    COMMAND CoProcessingProgrammableFilter
+#-    ${CMAKE_CURRENT_SOURCE_DIR}/cpprogrammablefilter.py)
+
+
+
+
+
+
+
+
+
 if (NOT PARAVIEW_USE_MPI)
   add_test(NAME CoProcessingTestPythonScript
     COMMAND ${CMAKE_COMMAND}
     -DCOPROCESSING_TEST_DRIVER:FILEPATH=$<TARGET_FILE:CoProcessingPythonScriptExample>
-    -DCOPROCESSING_TEST_DIR:PATH=${PARAVIEW_TEST_DIR}
+    -DCOPROCESSING_TEST_DIR:PATH=${PARAVIEW_TEST_OUTPUT_DIR}
     -DCOPROCESSING_IMAGE_TESTER:FILEPATH=$<TARGET_FILE:CoProcessingCompareImagesTester>
-    -DCOPROCESSING_DATA_DIR:PATH=${PARAVIEW_DATA_ROOT}
+    -DCOPROCESSING_DATA_DIR:PATH=${PARAVIEW_TEST_OUTPUT_BASELINE_DIR}
     -DCOPROCESSING_TEST_SCRIPT=${CMAKE_CURRENT_SOURCE_DIR}/PythonScriptTest.py
     -P ${CMAKE_CURRENT_SOURCE_DIR}/CoProcessingTestPythonScript.cmake)
 else()
@@ -43,9 +103,9 @@ else()
   add_test(NAME CoProcessingTestPythonScript
     COMMAND ${CMAKE_COMMAND}
     -DCOPROCESSING_TEST_DRIVER:FILEPATH=$<TARGET_FILE:CoProcessingPythonScriptExample>
-    -DCOPROCESSING_TEST_DIR:PATH=${PARAVIEW_TEST_DIR}
+    -DCOPROCESSING_TEST_DIR:PATH=${PARAVIEW_TEST_OUTPUT_DIR}
     -DCOPROCESSING_IMAGE_TESTER:FILEPATH=$<TARGET_FILE:CoProcessingCompareImagesTester>
-    -DCOPROCESSING_DATA_DIR:PATH=${PARAVIEW_DATA_ROOT}
+    -DCOPROCESSING_DATA_DIR:PATH=${PARAVIEW_TEST_OUTPUT_BASELINE_DIR}
     -DCOPROCESSING_TEST_SCRIPT=${CMAKE_CURRENT_SOURCE_DIR}/PythonScriptTest.py
     -DUSE_MPI:BOOL=TRUE
     -DMPIEXEC:FILEPATH=${MPIEXEC}
@@ -62,9 +122,9 @@ if (PARAVIEW_USE_MPI)
   add_test(NAME PCoProcessingTestPythonScript
           COMMAND ${CMAKE_COMMAND}
           -DCOPROCESSING_TEST_DRIVER:FILEPATH=$<TARGET_FILE:CoProcessingPythonScriptExample>
-          -DCOPROCESSING_TEST_DIR:PATH=${PARAVIEW_TEST_DIR}
+          -DCOPROCESSING_TEST_DIR:PATH=${PARAVIEW_TEST_OUTPUT_DIR}
           -DCOPROCESSING_IMAGE_TESTER:FILEPATH=$<TARGET_FILE:CoProcessingCompareImagesTester>
-          -DCOPROCESSING_DATA_DIR:PATH=${PARAVIEW_DATA_ROOT}
+          -DCOPROCESSING_DATA_DIR:PATH=${PARAVIEW_TEST_OUTPUT_BASELINE_DIR}
           -DCOPROCESSING_TEST_SCRIPT=${CMAKE_CURRENT_SOURCE_DIR}/PythonScriptTest.py
           -DUSE_MPI:BOOL=TRUE
           -DMPIEXEC:FILEPATH=${MPIEXEC}
@@ -90,13 +150,13 @@ if (PARAVIEW_BUILD_QT_GUI)
       COMMAND ${CMAKE_COMMAND}
       -DPARAVIEW_EXECUTABLE:FILEPATH=$<TARGET_FILE:paraview>
       -DCOPROCESSING_TEST_DIR:PATH=${PARAVIEW_TEST_DIR}
-      -DPARAVIEW_TEST_XML:FILEPATH=${ParaView_SOURCE_DIR}/Plugins/CoProcessingScriptGenerator/Testing/CoProcessingGUI.xml
+      -DPARAVIEW_TEST_XML:FILEPATH=${ParaView_SOURCE_DIR}/Plugins/CatalystScriptGenerator/Testing/CatalystGUI.xml
       -DPVPYTHON_EXECUTABLE:FILEPATH=$<TARGET_FILE:pvpython>
       -DCOPROCESSING_DRIVER_SCRIPT:FILEPATH=${CMAKE_CURRENT_SOURCE_DIR}/waveletdriver.py
       -DCOPROCESSING_IMAGE_TESTER:FILEPATH=$<TARGET_FILE:CoProcessingCompareImagesTester>
-      -DCOPROCESSING_DATA_DIR:PATH=${PARAVIEW_DATA_ROOT}
+      -DCOPROCESSING_DATA_DIR:PATH=${PARAVIEW_TEST_OUTPUT_BASELINE_DIR}
       -DCOPROCESSING_OUTPUTCHECK_SCRIPT:FILEPATH=${CMAKE_CURRENT_SOURCE_DIR}/outputcheck.py
       -P ${CMAKE_CURRENT_SOURCE_DIR}/CoProcessingFullWorkflowTest.cmake)
     set_tests_properties(CoProcessingFullWorkflow PROPERTIES LABELS "${CP_LABELS}")
-  ENDIF ( BUILD_SHARED_LIBS )
+  ENDIF ()
 endif()

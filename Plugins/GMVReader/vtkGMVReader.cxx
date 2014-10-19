@@ -38,6 +38,7 @@
 #include "vtkPolyhedron.h"
 #include "vtkCellArray.h"
 #include <set>
+#include <algorithm>
 
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMultiProcessController.h"
@@ -52,7 +53,8 @@ namespace GMVRead {
 // include GMV's I/O utility provided by GMV's author, Frank Ortega (LANL).
 // import it from VisItBridge's include directories
   extern "C" {
-#   include "gmvread.c"
+#include "gmvread.c"
+#include "snprintf.c"
   }
 
   template <class C> void minmax(C * pointer, size_t len, C& min_out, C& max_out)
@@ -387,7 +389,6 @@ int vtkGMVReader::RequestData(vtkInformation *vtkNotUsed(request),
 
             output->SetBlock(blockNo, sgrid);
             this->Mesh = sgrid;
-            outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),1);
             output->GetMetaData(blockNo)->Set(vtkCompositeDataSet::NAME(), "Element Sets");
 
             GMVRead::gmvread_mesh();
@@ -407,7 +408,6 @@ int vtkGMVReader::RequestData(vtkInformation *vtkNotUsed(request),
             vtkRectilinearGrid *rgrid = vtkRectilinearGrid::New();
             output->SetBlock(blockNo, rgrid);
             this->Mesh = rgrid;
-            outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),1);
             output->GetMetaData(blockNo)->Set(vtkCompositeDataSet::NAME(), "Element Sets");
 
             dims[0] = GMVRead::gmv_data.ndoubledata1;
@@ -480,7 +480,6 @@ int vtkGMVReader::RequestData(vtkInformation *vtkNotUsed(request),
             ugrid->Allocate(this->NumberOfCells);
             output->SetBlock(blockNo, ugrid);
             this->Mesh = ugrid;
-            outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),1);
             output->GetMetaData(blockNo)->Set(vtkCompositeDataSet::NAME(), "Element Sets");
 
 

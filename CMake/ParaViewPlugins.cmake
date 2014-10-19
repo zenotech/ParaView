@@ -280,8 +280,11 @@ function(__add_paraview_property_widget outifaces outsrcs)
                    @ONLY)
 
     set (_moc_srcs)
-    qt4_wrap_cpp(_moc_srcs ${CMAKE_CURRENT_BINARY_DIR}/${name}Implementation.h)
-
+    if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+      qt5_wrap_cpp(_moc_srcs ${CMAKE_CURRENT_BINARY_DIR}/${name}Implementation.h)
+    else ()
+      qt4_wrap_cpp(_moc_srcs ${CMAKE_CURRENT_BINARY_DIR}/${name}Implementation.h)
+    endif ()
     set (${outifaces} ${name} PARENT_SCOPE)
     set (${outsrcs}
          ${_moc_srcs}
@@ -328,7 +331,11 @@ MACRO(ADD_PARAVIEW_OBJECT_PANEL OUTIFACES OUTSRCS)
                  ${CMAKE_CURRENT_BINARY_DIR}/${PANEL_NAME}Implementation.cxx @ONLY)
 
   SET(PANEL_MOC_SRCS)
-  QT4_WRAP_CPP(PANEL_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${PANEL_NAME}Implementation.h)
+  IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    QT5_WRAP_CPP(PANEL_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${PANEL_NAME}Implementation.h)
+  ELSE ()
+    QT4_WRAP_CPP(PANEL_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${PANEL_NAME}Implementation.h)
+  ENDIF ()
 
  SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${PANEL_NAME}Implementation.cxx
@@ -360,7 +367,11 @@ MACRO(ADD_PARAVIEW_DISPLAY_PANEL OUTIFACES OUTSRCS)
                  ${CMAKE_CURRENT_BINARY_DIR}/${PANEL_NAME}Implementation.cxx @ONLY)
 
   SET(DISPLAY_MOC_SRCS)
-  QT4_WRAP_CPP(DISPLAY_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${PANEL_NAME}Implementation.h)
+  IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    QT5_WRAP_CPP(DISPLAY_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${PANEL_NAME}Implementation.h)
+  ELSE ()
+    QT4_WRAP_CPP(DISPLAY_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${PANEL_NAME}Implementation.h)
+  ENDIF ()
 
   SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${PANEL_NAME}Implementation.cxx
@@ -369,8 +380,98 @@ MACRO(ADD_PARAVIEW_DISPLAY_PANEL OUTIFACES OUTSRCS)
       )
 ENDMACRO(ADD_PARAVIEW_DISPLAY_PANEL)
 
-# create implementation for a custom view
+#------------------------------------------------------------------------------
+# Register a pqProxy subclass with ParaView. This macro is used to register
+# pqProxy subclasses, including pqView subclasses, pqDataRepresentation
+# subclasses, etc. to create when a particular type of proxy is registered with
+# the application.
 # Usage:
+#   add_pqproxy(OUTIFACES OUTSRCS
+#     TYPE <pqProxy subclass name>
+#     XML_GROUP <xml group used to identify the vtkSMProxy>
+#     XML_NAME <xml name used to indentify the vtkSMProxy>
+#     ...)
+# The TYPE, XML_GROUP, and XML_NAME can be repeated to register multiple types
+# of pqProxy subclasses or reuse the same pqProxy for multiple proxy types.
+macro(add_pqproxy OUTIFACES OUTSRCS)
+  set (arg_types)
+  set (_doing)
+  set (_active_index)
+  foreach (arg ${ARGN})
+    if ((NOT _doing) AND ("${arg}" MATCHES "^(TYPE|XML_GROUP|XML_NAME)$"))
+      set (_doing "${arg}")
+    elseif (_doing STREQUAL "TYPE")
+      list(APPEND arg_types "${arg}")
+      list(LENGTH arg_types _active_index)
+      math(EXPR _active_index "${_active_index}-1")
+      set (_type_${_active_index}_xmlgroup)
+      set (_type_${_active_index}_xmlname)
+      set (_doing)
+    elseif (_doing STREQUAL "XML_GROUP")
+      set (_type_${_active_index}_xmlgroup "${arg}")
+      set (_doing)
+    elseif (_doing STREQUAL "XML_NAME")
+      set (_type_${_active_index}_xmlname "${arg}")
+      set (_doing)
+    else()
+      set (_doing)
+    endif()
+  endforeach()
+
+  list(LENGTH arg_types num_items)
+  math(EXPR max_index "${num_items}-1")
+  set (ARG_INCLUDES)
+  set (ARG_BODY)
+  foreach (index RANGE ${max_index})
+    list(GET arg_types ${index} arg_type)
+    set (arg_xml_group "${_type_${index}_xmlgroup}")
+    set (arg_xml_name "${_type_${index}_xmlname}")
+    set (ARG_INCLUDES "${ARG_INCLUDES}#include\"${arg_type}.h\"\n")
+    set (ARG_BODY "${ARG_BODY}
+    if (QString(\"${arg_xml_group}\") == proxy->GetXMLGroup() &&
+        QString(\"${arg_xml_name}\") == proxy->GetXMLName())
+        {
+        return new ${arg_type}(regGroup, regName, proxy, server, NULL);
+        }")
+  endforeach()
+
+  if (ARG_INCLUDES AND ARG_BODY)
+    list(GET arg_types 0 ARG_TYPE)
+    set (IMP_CLASS "${ARG_TYPE}ServerManagerModelImplementation")
+    configure_file(${ParaView_CMAKE_DIR}/pqServerManagerModelImplementation.h.in
+      ${CMAKE_CURRENT_BINARY_DIR}/${IMP_CLASS}.h @ONLY)
+    configure_file(${ParaView_CMAKE_DIR}/pqServerManagerModelImplementation.cxx.in
+      ${CMAKE_CURRENT_BINARY_DIR}/${IMP_CLASS}.cxx @ONLY)
+
+    set (_moc_srcs)
+    if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+      QT5_WRAP_CPP(_moc_srcs ${CMAKE_CURRENT_BINARY_DIR}/${IMP_CLASS}.h)
+    else()
+      QT4_WRAP_CPP(_moc_srcs ${CMAKE_CURRENT_BINARY_DIR}/${IMP_CLASS}.h)
+    endif()
+
+    set(${OUTIFACES} ${${OUTIFACES}} ${ARG_TYPE}ServerManagerModel) # don't add
+                                        # the extra "Implementation" here.
+    set(${OUTSRCS}
+      ${${OUTSRCS}}
+      ${_moc_srcs}
+      ${CMAKE_CURRENT_BINARY_DIR}/${IMP_CLASS}.h
+      ${CMAKE_CURRENT_BINARY_DIR}/${IMP_CLASS}.cxx
+      )
+  endif()
+
+  unset (ARG_TYPE)
+  unset (ARG_INCLUDES)
+  unset (ARG_BODY)
+endmacro()
+
+#------------------------------------------------------------------------------
+# *** OBSOLETE *** : No longer supported.
+# To add new view proxies (or representation proxies) simply add new proxies to
+# "views" or "representations" groups. To add new pqView or pqDataRepresentation
+# subclasses, use ADD_PQPROXY().
+# create implementation for a custom view
+# Obsolete Usage:
 # ADD_PARAVIEW_VIEW_MODULE( OUTIFACES OUTSRCS
 #     VIEW_TYPE Type
 #     VIEW_XML_GROUP Group
@@ -378,151 +479,21 @@ ENDMACRO(ADD_PARAVIEW_DISPLAY_PANEL)
 #     [VIEW_NAME Name]
 #     [DISPLAY_PANEL Display]
 #     [DISPLAY_TYPE Display]
-
-# for the given server manager XML
-#  <SourceProxy name="MyFilter" class="MyFilter" label="My Filter">
-#    ...
-#    <Hints>
-#      <View type="MyView" />
-#    </Hints>
-#  </SourceProxy>
-#  ....
-# <ProxyGroup name="plotmodules">
-#  <ViewProxy name="MyView"
-#      base_proxygroup="newviews" base_proxyname="ViewBase"
-#      representation_name="MyDisplay">
-#  </ViewProxy>
-# </ProxyGroup>
-
-#  VIEW_TYPE = "MyView"
-#  VIEW_XML_GROUP = "plotmodules"
-#  VIEW_XML_NAME is optional and defaults to VIEW_TYPE
-#  VIEW_NAME is optional and gives a friendly name for the view type
-#  DISPLAY_TYPE is optional and defaults to pqDataRepresentation
-#  DISPLAY_PANEL gives the name of the display panel
-#  DISPLAY_XML is the XML name of the display for this view and is required if
-#     DISPLAY_PANEL is set
-#
-#  if DISPLAY_PANEL is MyDisplay, then "MyDisplayPanel.h" is looked for.
-#  a class MyView derived from pqGenericViewModule is expected to be in "MyView.h"
-
 MACRO(ADD_PARAVIEW_VIEW_MODULE OUTIFACES OUTSRCS)
-
-  SET(PANEL_SRCS)
-  SET(ARG_VIEW_TYPE)
-  SET(ARG_VIEW_NAME)
-  SET(ARG_VIEW_XML_GROUP)
-  SET(ARG_VIEW_XML_NAME)
-  SET(ARG_DISPLAY_PANEL)
-  SET(ARG_DISPLAY_XML)
-  SET(ARG_DISPLAY_TYPE)
-
-  PV_PLUGIN_PARSE_ARGUMENTS(ARG "VIEW_TYPE;VIEW_XML_GROUP;VIEW_XML_NAME;VIEW_NAME;DISPLAY_PANEL;DISPLAY_TYPE;DISPLAY_XML"
-                  "" ${ARGN} )
-
-  IF(NOT ARG_VIEW_TYPE OR NOT ARG_VIEW_XML_GROUP)
-    MESSAGE(ERROR " ADD_PARAVIEW_VIEW_MODULE called without VIEW_TYPE or VIEW_XML_GROUP")
-  ENDIF(NOT ARG_VIEW_TYPE OR NOT ARG_VIEW_XML_GROUP)
-
-  IF(ARG_DISPLAY_PANEL)
-    IF(NOT ARG_DISPLAY_XML)
-      MESSAGE(ERROR " ADD_PARAVIEW_VIEW_MODULE called with DISPLAY_PANEL but DISPLAY_XML not specified")
-    ENDIF(NOT ARG_DISPLAY_XML)
-  ENDIF(ARG_DISPLAY_PANEL)
-
-  SET(${OUTIFACES} ${ARG_VIEW_TYPE})
-  IF(NOT ARG_VIEW_XML_NAME)
-    SET(ARG_VIEW_XML_NAME ${ARG_VIEW_TYPE})
-  ENDIF(NOT ARG_VIEW_XML_NAME)
-  IF(ARG_VIEW_NAME)
-    SET(VIEW_TYPE_NAME ${ARG_VIEW_NAME})
-  ELSE(ARG_VIEW_NAME)
-    SET(VIEW_TYPE_NAME ${ARG_VIEW_TYPE})
-  ENDIF(ARG_VIEW_NAME)
-
-  IF(NOT ARG_DISPLAY_TYPE)
-    SET(ARG_DISPLAY_TYPE "pqDataRepresentation")
-  ENDIF(NOT ARG_DISPLAY_TYPE)
-
-  CONFIGURE_FILE(${ParaView_CMAKE_DIR}/pqViewModuleImplementation.h.in
-                 ${CMAKE_CURRENT_BINARY_DIR}/${ARG_VIEW_TYPE}Implementation.h @ONLY)
-  CONFIGURE_FILE(${ParaView_CMAKE_DIR}/pqViewModuleImplementation.cxx.in
-                 ${CMAKE_CURRENT_BINARY_DIR}/${ARG_VIEW_TYPE}Implementation.cxx @ONLY)
-
-  IF(PARAVIEW_BUILD_QT_GUI)
-    SET(VIEW_MOC_SRCS)
-    QT4_WRAP_CPP(VIEW_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_VIEW_TYPE}Implementation.h)
-  ENDIF(PARAVIEW_BUILD_QT_GUI)
-
-  IF(ARG_DISPLAY_PANEL)
-    ADD_PARAVIEW_DISPLAY_PANEL(OUT_PANEL_IFACES PANEL_SRCS
-                               CLASS_NAME ${ARG_DISPLAY_PANEL}
-                               XML_NAME ${ARG_DISPLAY_XML})
-    SET(${OUTIFACES} ${ARG_VIEW_TYPE} ${OUT_PANEL_IFACES})
-  ENDIF(ARG_DISPLAY_PANEL)
-
-  SET(${OUTSRCS}
-      ${CMAKE_CURRENT_BINARY_DIR}/${ARG_VIEW_TYPE}Implementation.cxx
-      ${CMAKE_CURRENT_BINARY_DIR}/${ARG_VIEW_TYPE}Implementation.h
-      ${VIEW_MOC_SRCS}
-      ${PANEL_SRCS}
-      )
-
+  message(FATAL_ERROR
+"'ADD_PARAVIEW_VIEW_MODULE' macro is no longer supported.  To add new view proxies, or representation proxies, simply add new proxies to 'views' or 'representations' groups. To add new pqView or pqDataRepresentation subclasses, use 'ADD_PQPROXY' macro.")
 ENDMACRO(ADD_PARAVIEW_VIEW_MODULE)
 
-# create implementation for a custom view options interface
-# ADD_PARAVIEW_VIEW_OPTIONS(
-#    OUTIFACES
-#    OUTSRCS
-#    VIEW_TYPE type
-#    [ACTIVE_VIEW_OPTIONS classname]
-#    [GLOBAL_VIEW_OPTIONS classname]
-#
-#  VIEW_TYPE: the type of view the options panels are associated with
-#  ACTIVE_VIEW_OPTIONS: optional name for the class that implements pqActiveViewOptions
-#                       this is to add options that are specific to a view instance
-#  GLOBAL_VIEW_OPTIONS: optional name for the class that implements pqOptionsContainer
-#                       this is to add options that apply to all view instances
-MACRO(ADD_PARAVIEW_VIEW_OPTIONS OUTIFACES OUTSRCS)
-
-  PV_PLUGIN_PARSE_ARGUMENTS(ARG "VIEW_TYPE;ACTIVE_VIEW_OPTIONS;GLOBAL_VIEW_OPTIONS" "" ${ARGN} )
-
-  IF(NOT ARG_VIEW_TYPE)
-    MESSAGE(ERROR " ADD_PARAVIEW_VIEW_OPTIONS called without VIEW_TYPE")
-  ENDIF(NOT ARG_VIEW_TYPE)
-
-  IF(NOT ARG_ACTIVE_VIEW_OPTIONS AND NOT ARG_GLOBAL_VIEW_OPTIONS)
-    MESSAGE(ERROR " ADD_PARAVIEW_VIEW_OPTIONS called without ACTIVE_VIEW_OPTIONS or GLOBAL_VIEW_OPTIONS")
-  ENDIF(NOT ARG_ACTIVE_VIEW_OPTIONS AND NOT ARG_GLOBAL_VIEW_OPTIONS)
-
-  SET(HAVE_ACTIVE_VIEW_OPTIONS 0)
-  SET(HAVE_GLOBAL_VIEW_OPTIONS 0)
-
-  IF(ARG_ACTIVE_VIEW_OPTIONS)
-    SET(HAVE_ACTIVE_VIEW_OPTIONS 1)
-  ENDIF(ARG_ACTIVE_VIEW_OPTIONS)
-
-  IF(ARG_GLOBAL_VIEW_OPTIONS)
-    SET(HAVE_GLOBAL_VIEW_OPTIONS 1)
-  ENDIF(ARG_GLOBAL_VIEW_OPTIONS)
-
-  SET(${OUTIFACES} ${ARG_VIEW_TYPE}Options)
-
-  CONFIGURE_FILE(${ParaView_CMAKE_DIR}/pqViewOptionsImplementation.h.in
-                 ${CMAKE_CURRENT_BINARY_DIR}/${ARG_VIEW_TYPE}OptionsImplementation.h @ONLY)
-  CONFIGURE_FILE(${ParaView_CMAKE_DIR}/pqViewOptionsImplementation.cxx.in
-                 ${CMAKE_CURRENT_BINARY_DIR}/${ARG_VIEW_TYPE}OptionsImplementation.cxx @ONLY)
-
-  SET(PANEL_MOC_SRCS)
-  QT4_WRAP_CPP(PANEL_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_VIEW_TYPE}OptionsImplementation.h)
-
- SET(${OUTSRCS}
-      ${CMAKE_CURRENT_BINARY_DIR}/${ARG_VIEW_TYPE}OptionsImplementation.cxx
-      ${CMAKE_CURRENT_BINARY_DIR}/${ARG_VIEW_TYPE}OptionsImplementation.h
-      ${PANEL_MOC_SRCS}
-      )
-
+#------------------------------------------------------------------------
+# OBSOLETE: create implementation for a custom view options interface
+MACRO(ADD_PARAVIEW_VIEW_OPTIONS)
+  message(FATAL_ERROR
+"'ADD_PARAVIEW_VIEW_OPTIONS' macro is no longer supported.
+ParaView's settings/view settings infrastructure has been refactored.
+These old options panel no longer make sense and hence cannot be supported
+anymore.")
 ENDMACRO(ADD_PARAVIEW_VIEW_OPTIONS)
+#------------------------------------------------------------------------
 
 # create implementation for a custom menu or toolbar
 # ADD_PARAVIEW_ACTION_GROUP(
@@ -545,7 +516,11 @@ MACRO(ADD_PARAVIEW_ACTION_GROUP OUTIFACES OUTSRCS)
                  ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx @ONLY)
 
   SET(ACTION_MOC_SRCS)
-  QT4_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
+  IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    QT5_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
+  ELSE ()
+    QT4_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
+  ENDIF ()
 
   SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx
@@ -573,7 +548,11 @@ MACRO(ADD_PARAVIEW_VIEW_FRAME_ACTION_GROUP OUTIFACES OUTSRCS)
                  ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx @ONLY)
 
   SET(ACTION_MOC_SRCS)
-  QT4_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
+  IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    QT5_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
+  ELSE ()
+    QT4_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
+  ENDIF ()
 
   SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx
@@ -609,7 +588,11 @@ MACRO(ADD_PARAVIEW_DOCK_WINDOW OUTIFACES OUTSRCS)
                  ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx @ONLY)
 
   SET(ACTION_MOC_SRCS)
-  QT4_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
+  IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    QT5_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
+  ELSE ()
+    QT4_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
+  ENDIF ()
 
   SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx
@@ -654,7 +637,11 @@ MACRO(ADD_PARAVIEW_AUTO_START OUTIFACES OUTSRCS)
                  ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx @ONLY)
 
   SET(ACTION_MOC_SRCS)
-  QT4_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
+  IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    QT5_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
+  ELSE ()
+    QT4_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
+  ENDIF ()
 
   SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx
@@ -663,35 +650,14 @@ MACRO(ADD_PARAVIEW_AUTO_START OUTIFACES OUTSRCS)
       )
 ENDMACRO(ADD_PARAVIEW_AUTO_START)
 
-# Create implementation for a custom display panel decorator interface.
+#--------------------------------------------------------------------------------------
+# DEPRECATED: Create implementation for a custom display panel decorator interface.
 # Decorators are used to add additional decorations to display panels.
-# ADD_PARAVIEW_DISPLAY_PANEL_DECORATOR(
-#    OUTIFACES
-#    OUTSRCS
-#    CLASS_NAME classname
-#    PANEL_TYPES type1 type2 ..)
-# CLASS_NAME   : The class name for the decorator. The decorator must be a
-#                QObject subclass. The display panel is passed as the parent for
-#                the object.
-# PANEL_TYPES  : list of classnames for the display panel which this decorator
-#                can decorate.
-MACRO(ADD_PARAVIEW_DISPLAY_PANEL_DECORATOR OUTIFACES OUTSRCS)
-  PV_PLUGIN_PARSE_ARGUMENTS(ARG "CLASS_NAME;PANEL_TYPES" "" ${ARGN})
-
-  SET(${OUTIFACES} ${ARG_CLASS_NAME})
-  CONFIGURE_FILE(${ParaView_CMAKE_DIR}/pqDisplayPanelDecoratorImplementation.h.in
-                 ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h @ONLY)
-  CONFIGURE_FILE(${ParaView_CMAKE_DIR}/pqDisplayPanelDecoratorImplementation.cxx.in
-                 ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx @ONLY)
-
-  SET(ACTION_MOC_SRCS)
-  QT4_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
-
-  SET(${OUTSRCS}
-      ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx
-      ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h
-      ${ACTION_MOC_SRCS}
-      )
+MACRO(ADD_PARAVIEW_DISPLAY_PANEL_DECORATOR)
+  message(FATAL_ERROR
+"'ADD_PARAVIEW_DISPLAY_PANEL_DECORATOR' macro is no longer supported.
+ParaView's Properties panel has been refactored in 3.98.
+Display Panel Decorators are no longer applicaple.")
 ENDMACRO(ADD_PARAVIEW_DISPLAY_PANEL_DECORATOR)
 
 
@@ -712,7 +678,11 @@ MACRO(ADD_3DWIDGET OUTIFACES OUTSRCS)
                  ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx @ONLY)
 
   SET(ACTION_MOC_SRCS)
-  QT4_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
+  IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    QT5_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
+  ELSE ()
+    QT4_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
+  ENDIF ()
 
   SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx
@@ -744,7 +714,11 @@ MACRO(ADD_PARAVIEW_GRAPH_LAYOUT_STRATEGY OUTIFACES OUTSRCS)
                  ${CMAKE_CURRENT_BINARY_DIR}/${ARG_STRATEGY_TYPE}Implementation.cxx @ONLY)
 
   SET(LAYOUT_MOC_SRCS)
-  QT4_WRAP_CPP(LAYOUT_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_STRATEGY_TYPE}Implementation.h)
+  IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    QT5_WRAP_CPP(LAYOUT_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_STRATEGY_TYPE}Implementation.h)
+  ELSE ()
+    QT4_WRAP_CPP(LAYOUT_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_STRATEGY_TYPE}Implementation.h)
+  ENDIF ()
 
   SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_STRATEGY_TYPE}Implementation.cxx
@@ -776,7 +750,11 @@ MACRO(ADD_PARAVIEW_TREE_LAYOUT_STRATEGY OUTIFACES OUTSRCS)
                  ${CMAKE_CURRENT_BINARY_DIR}/${ARG_STRATEGY_TYPE}Implementation.cxx @ONLY)
 
   SET(LAYOUT_MOC_SRCS)
-  QT4_WRAP_CPP(LAYOUT_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_STRATEGY_TYPE}Implementation.h)
+  IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    QT5_WRAP_CPP(LAYOUT_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_STRATEGY_TYPE}Implementation.h)
+  ELSE ()
+    QT4_WRAP_CPP(LAYOUT_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_STRATEGY_TYPE}Implementation.h)
+  ENDIF ()
 
   SET(${OUTSRCS}
       ${CMAKE_CURRENT_BINARY_DIR}/${ARG_STRATEGY_TYPE}Implementation.cxx
@@ -954,6 +932,18 @@ FUNCTION(ADD_PARAVIEW_PLUGIN NAME VERSION)
 
   IF(PARAVIEW_BUILD_QT_GUI)
 
+    IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+      SET(Qt5_FIND_COMPONENTS
+        Gui
+        Help
+        Widgets
+        )
+      INCLUDE (ParaViewQt5)
+    ELSE (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+      FIND_PACKAGE (Qt4)
+      INCLUDE (${QT_USE_FILE})
+    ENDIF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+
     # if server-manager xmls are specified, we can generate documentation from
     # them, if Qt is enabled.
     if (ARG_SERVER_MANAGER_XML)
@@ -1079,7 +1069,11 @@ FUNCTION(ADD_PARAVIEW_PLUGIN NAME VERSION)
     )
     IF (plugin_type_gui)
       set (__plugin_sources_tmp)
-      QT4_WRAP_CPP(__plugin_sources_tmp ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_NAME}_Plugin.h)
+      IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+        QT5_WRAP_CPP(__plugin_sources_tmp ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_NAME}_Plugin.h)
+      ELSE ()
+        QT4_WRAP_CPP(__plugin_sources_tmp ${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_NAME}_Plugin.h)
+      ENDIF ()
       SET (plugin_sources ${plugin_sources} ${__plugin_sources_tmp})
     ENDIF (plugin_type_gui)
 
@@ -1109,6 +1103,7 @@ FUNCTION(ADD_PARAVIEW_PLUGIN NAME VERSION)
     ENDIF(plugin_type_gui OR GUI_SRCS)
     IF(SM_SRCS)
       target_link_libraries(${NAME} LINK_PUBLIC vtkPVServerManagerApplication
+        vtkPVAnimation
         vtkPVServerManagerDefault
         vtkPVServerManagerApplicationCS)
     ENDIF(SM_SRCS)
@@ -1250,7 +1245,7 @@ macro(pv_process_modules)
       "${CMAKE_CURRENT_SOURCE_DIR}/${base}"
       module.cmake
       "${CMAKE_CURRENT_BINARY_DIR}/${base}"
-      Cxx)
+      ${_test_languages})
   endforeach()
 
   set (current_module_set ${VTK_MODULES_ALL})

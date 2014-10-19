@@ -65,6 +65,7 @@ public:
     this->DomainObserver = NULL;
     this->Widget = NULL;
     this->Selected = false;
+    this->SelectedProxyWidgetVisibility = true;
     }
   QComboBox* Combo;
   vtkSMProxy* ReferenceProxy;
@@ -73,6 +74,7 @@ public:
   pqProxyPanel* Widget;
   QPointer<pqView> View;
   bool Selected;
+  bool SelectedProxyWidgetVisibility;
 
   typedef QMap<vtkSMProxy*, pqProxyPanel*> PanelMap;
   PanelMap Panels;
@@ -108,7 +110,7 @@ pqProxySelectionWidget::pqProxySelectionWidget(vtkSMProxy* ref_proxy,
   this->Internal->Property = prop;
 
   this->Internal->DomainObserver = new pqComboBoxDomain(this->Internal->Combo,
-    ref_proxy->GetProperty(prop.toAscii().data()), "proxy_list");
+    ref_proxy->GetProperty(prop.toLatin1().data()), "proxy_list");
 }
 
 //-----------------------------------------------------------------------------
@@ -127,7 +129,7 @@ pqSMProxy pqProxySelectionWidget::proxy() const
 {
   QList<pqSMProxy> proxies = pqSMAdaptor::getProxyPropertyDomain(
     this->Internal->ReferenceProxy->GetProperty(
-      this->Internal->Property.toAscii().data()));
+      this->Internal->Property.toLatin1().data()));
 
   int index = this->Internal->Combo->currentIndex();
   if (index < 0 || index >= proxies.size())
@@ -143,7 +145,7 @@ void pqProxySelectionWidget::setProxy(pqSMProxy var)
 {
   QList<pqSMProxy> proxies = pqSMAdaptor::getProxyPropertyDomain(
     this->Internal->ReferenceProxy->GetProperty(
-      this->Internal->Property.toAscii().data()));
+      this->Internal->Property.toLatin1().data()));
 
   int index = proxies.indexOf(var.GetPointer());
 
@@ -302,7 +304,8 @@ void pqProxySelectionWidget::initialize3DWidget()
     {
     this->Internal->Widget->deselect();
     }
-  this->Internal->Widget->show();
+
+  this->Internal->Widget->setVisible(this->Internal->SelectedProxyWidgetVisibility);
 }
 
 //-----------------------------------------------------------------------------
@@ -353,4 +356,12 @@ void pqProxySelectionWidget::setView(pqView* rm)
     }
 }
 
-
+//-----------------------------------------------------------------------------
+void pqProxySelectionWidget::setSelectedProxyWidgetVisibility(bool visible)
+{
+  this->Internal->SelectedProxyWidgetVisibility = visible;
+  if (this->Internal->Widget)
+    {
+    this->Internal->Widget->setVisible(visible);
+    }
+}

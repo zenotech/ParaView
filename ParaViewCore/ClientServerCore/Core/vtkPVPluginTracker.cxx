@@ -67,8 +67,9 @@ namespace
       }
     };
 
-  std::string vtkLocatePlugin(const char* plugin, bool add_extensions)
+  std::string vtkLocatePlugin(const char* plugin, bool add_extensions, vtkPluginSearchFunction searchFunction)
     {
+    (void)searchFunction;
     // Make sure we can get the options before going further
     if(vtkProcessModule::GetProcessModule() == NULL)
       {
@@ -76,6 +77,14 @@ namespace
       }
 
     bool debug_plugin = vtksys::SystemTools::GetEnv("PV_PLUGIN_DEBUG") != NULL;
+#ifndef BUILD_SHARED_LIBS
+    vtkPVPluginTrackerDebugMacro("Looking for static plugin \'" << plugin << "\'");
+    if (searchFunction && searchFunction(plugin))
+      {
+      vtkPVPluginTrackerDebugMacro("Found static plugin \'" << plugin << "\'");
+      return plugin;
+      }
+#endif
     vtkPVOptions* options = vtkProcessModule::GetProcessModule()->GetOptions();
     std::string app_dir = options->GetApplicationPath();
     app_dir = vtksys::SystemTools::GetProgramPath(app_dir.c_str());
@@ -89,10 +98,10 @@ namespace
     paths_to_search.push_back(app_dir + "/../Plugins");
     paths_to_search.push_back(app_dir + "/../../..");
     paths_to_search.push_back(app_dir + "/../../../../lib");
-
-    // paths when doing an unix style install.
-    paths_to_search.push_back(app_dir +"/../lib/paraview-" PARAVIEW_VERSION);
 #endif
+    // paths when doing an unix style install on OsX and static builds on Linux.
+    paths_to_search.push_back(app_dir +"/../lib/paraview-" PARAVIEW_VERSION);
+
     // On windows configuration files are in the parent directory
     paths_to_search.push_back(app_dir + "/../");
 
@@ -171,6 +180,8 @@ public:
     }
 };
 
+vtkPluginSearchFunction vtkPVPluginTracker::StaticPluginSearchFunction = 0;
+
 vtkStandardNewMacro(vtkPVPluginTracker);
 //----------------------------------------------------------------------------
 vtkPVPluginTracker::vtkPVPluginTracker()
@@ -198,11 +209,10 @@ vtkPVPluginTracker* vtkPVPluginTracker::GetInstance()
     bool debug_plugin = vtksys::SystemTools::GetEnv("PV_PLUGIN_DEBUG") != NULL;
     vtkPVPluginTrackerDebugMacro("Locate and load distributed plugin list.");
 
-#ifdef BUILD_SHARED_LIBS
     // Locate ".plugins" file and process it.
     // This will setup the distributed-list of plugins. Also it will load any
     // auto-load plugins.
-    std::string _plugins = vtkLocatePlugin(".plugins", false);
+    std::string _plugins = vtkLocatePlugin(".plugins", false, StaticPluginSearchFunction);
     if (!_plugins.empty())
       {
       mgr->LoadPluginConfigurationXML(_plugins.c_str());
@@ -212,10 +222,6 @@ vtkPVPluginTracker* vtkPVPluginTracker::GetInstance()
       vtkPVPluginTrackerDebugMacro(
         "Could not find .plugins file for distributed plugins");
       }
-#else
-    vtkPVPluginTrackerDebugMacro(
-      "Static build. Skipping .plugins processing.");
-#endif
     }
 
   return Instance;
@@ -295,8 +301,7 @@ void vtkPVPluginTracker::LoadPluginConfigurationXML(vtkPVXMLElement* root)
           "Missing required attribute name or auto_load. Skipping element.");
         continue;
         }
-      vtkPVPluginTrackerDebugMacro("Trying to locate plugin with name: "
-        << name.c_str());
+      vtkPVPluginTrackerDebugMacro("Trying to locate plugin with name: " << name.c_str());
       std::string plugin_filename;
       if (child->GetAttribute("filename") &&
         vtksys::SystemTools::FileExists(child->GetAttribute("filename"), true))
@@ -305,7 +310,7 @@ void vtkPVPluginTracker::LoadPluginConfigurationXML(vtkPVXMLElement* root)
         }
       else
         {
-        plugin_filename = vtkLocatePlugin(name.c_str(), true);
+        plugin_filename = vtkLocatePlugin(name.c_str(), true, StaticPluginSearchFunction);
         }
       if (plugin_filename.empty())
         {
@@ -361,7 +366,10 @@ unsigned int vtkPVPluginTracker::RegisterAvailablePlugin(const char* filename)
     }
   else
     {
-    iter->FileName = filename;
+    // don't update the filename here. This avoids cloberring of paths for
+    // distributed plugins between servers that are named the same (as far as
+    // the client goes).
+    // iter->FileName = filename;
     return static_cast<unsigned int>(iter - this->PluginsList->begin());
     }
 }
@@ -492,4 +500,13 @@ bool vtkPVPluginTracker::GetPluginAutoLoad(unsigned int index)
     return false;
     }
   return (*this->PluginsList)[index].AutoLoad;
+}
+
+//-----------------------------------------------------------------------------
+void vtkPVPluginTracker::SetStaticPluginSearchFunction(vtkPluginSearchFunction function)
+{
+  if (!StaticPluginSearchFunction)
+    {
+    StaticPluginSearchFunction = function;
+    }
 }

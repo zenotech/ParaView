@@ -42,7 +42,7 @@ add_custom_target(ParaViewPythonDoc
   SOURCES sphinx_apidoc.py
           config/index.rst
           config/quick-start.rst
+          config/api-changes.rst
           config/conf.py.in)
 
-add_dependencies(ParaViewPythonDoc ParaViewWWW)
 add_dependencies(ParaViewDoc ParaViewPythonDoc)

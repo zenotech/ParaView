@@ -28,6 +28,7 @@
 #include "vtkPVOptions.h"
 #include "vtkPVServerInformation.h"
 #include "vtkPVSessionServer.h"
+#include "vtkSMSettings.h"
 #include "vtkReservedRemoteObjectIds.h"
 #include "vtkSMCollaborationManager.h"
 #include "vtkSMMessage.h"
@@ -225,10 +226,10 @@ bool vtkSMSessionClient::Connect(const char* url)
       << "?listen=true&nonblocking=true&" << handshake.str();
     data_server_url = stream.str().c_str();
 
-    stream.clear();
-    stream << "tcp://localhost:" << rsport
+    vtksys_ios::ostringstream stream2;
+    stream2 << "tcp://localhost:" << rsport
       << "?listen=true&nonblocking=true&" << handshake.str();
-    render_server_url = stream.str();
+    render_server_url = stream2.str();
     }
 
   bool need_rcontroller = render_server_url.size() > 0;

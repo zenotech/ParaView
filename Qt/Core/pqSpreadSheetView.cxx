@@ -72,7 +72,11 @@ public:
   this->Table->setCornerButtonEnabled(false);
   this->Table->setSelectionBehavior(QAbstractItemView::SelectRows);
   this->Table->setSelectionModel(&this->SelectionModel);
+#if QT_VERSION >= 0x050000
+  this->Table->horizontalHeader()->setSectionsMovable(true);
+#else
   this->Table->horizontalHeader()->setMovable(true);
+#endif
   this->SingleColumnMode = false;
 
   // Do not show the sorting arrow as default
@@ -177,19 +181,6 @@ void pqSpreadSheetView::updateRepresentationVisibility(
     return;
     }
 
-  __updating_visibility__ = true;
-
-  // If visible, turn-off visibility of all other representations.
-  QList<pqRepresentation*> reprs = this->getRepresentations();
-  foreach (pqRepresentation* cur_repr, reprs)
-    {
-    if (cur_repr != repr)
-      {
-      cur_repr->setVisible(false);
-      }
-    }
-  __updating_visibility__ = false;
-
   pqDataRepresentation* dataRepr = qobject_cast<pqDataRepresentation*>(repr);
   this->Internal->Model->setActiveRepresentation(dataRepr);
   emit this->showing(dataRepr);
@@ -213,20 +204,6 @@ void pqSpreadSheetView::onEndRender()
   //this->Internal->Model.forceUpdate();
   //this->Internal->Model->update();
   this->Internal->Table->viewport()->update();
-}
-
-//-----------------------------------------------------------------------------
-bool pqSpreadSheetView::canDisplay(pqOutputPort* opPort) const
-{
-  if(this->Superclass::canDisplay(opPort))
-    {
-    return true;
-    }
-  else
-    {
-    return (opPort && opPort->getServer()->GetConnectionID() ==
-            this->getServer()->GetConnectionID());
-    }
 }
 
 //-----------------------------------------------------------------------------

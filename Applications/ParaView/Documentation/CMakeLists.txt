@@ -27,19 +27,13 @@ build_help_project(paraview
   TABLE_OF_CONTENTS
     "<toc>
        <section title=\"ParaView User Manual\" ref=\"index.html\">
-         <section title=\"Introduction\" ref=\"Book/Book_Chapter_01_Intro.html\"/>
-         <section title=\"Python Calculator\" ref=\"Book/Book_Chapter_06_PythonCalculator.html\"/>
-         <section title=\"Display Data\" ref=\"Book/Book_Chapter_04_DisplayData.html\"/>
-         <section title=\"Query Data\" ref=\"Book/Book_Chapter_06_findData.html\"/>
-         <section title=\"Plugins\" ref=\"Book/Book_Chapter_16_Plugins.html\"/>
-         <section title=\"Appendices\" ref=\"Book/Book_Chapter_17_Appendix.html\"/>
          <section title=\"Sources\" ref=\"Sources.html\"/>
          <section title=\"Filters\" ref=\"Filters.html\"/>
          <section title=\"Readers\" ref=\"Readers.html\"/>
          <section title=\"Writers\" ref=\"Writers.html\"/>
        </section>
      </toc>"
-  FILEPATTERNS "*.html;*.css;*.png;*.jpg;Book/*.html;Book/*.css;Book/*.png;Book/*.jpg;images/*.jpg"
+  FILEPATTERNS "*.html;*.css;*.png;*.jpg;images/*.jpg"
   DEPENDS "${proxy_html_outputs}"
   )
 
@@ -52,14 +46,22 @@ set_source_files_properties(
   PROPERTIES OBJECT_DEPENDS
   "${CMAKE_CURRENT_BINARY_DIR}/paraview.qch")
 
-QT4_ADD_RESOURCES(rcs_sources
-  "${CMAKE_CURRENT_BINARY_DIR}/paraview_documentation.qrc")
+if(PARAVIEW_QT_VERSION VERSION_GREATER "4")
+  QT5_ADD_RESOURCES(rcs_sources
+    "${CMAKE_CURRENT_BINARY_DIR}/paraview_documentation.qrc")
+else()
+  QT4_ADD_RESOURCES(rcs_sources
+    "${CMAKE_CURRENT_BINARY_DIR}/paraview_documentation.qrc")
+endif()
 
 add_library(vtkParaViewDocumentation STATIC
   ParaViewDocumentationInitializer.cxx
   ${rcs_sources})
-target_link_libraries(vtkParaViewDocumentation ${QT_LIBRARIES}) 
-
+target_link_libraries(vtkParaViewDocumentation ${QT_LIBRARIES})
+if(PARAVIEW_QT_VERSION VERSION_GREATER "4")
+  set_target_properties(vtkParaViewDocumentation PROPERTIES
+    COMPILE_FLAGS "${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
+endif()
 
 IF (NOT VTK_INSTALL_NO_DEVELOPMENT)
   # We install the qch file only when installing development files since the

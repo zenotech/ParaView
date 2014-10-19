@@ -35,7 +35,7 @@ set (Module_SRCS
   vtkPVFileInformation.cxx
   vtkPVFileInformationHelper.cxx
   vtkPVSingleOutputExtractSelection.cxx
-  vtkXMLPVAnimationWriter.cxx
+  vtkSliceAlongPolyPlane.cxx
 )
 
 if (PARAVIEW_ENABLE_PYTHON)

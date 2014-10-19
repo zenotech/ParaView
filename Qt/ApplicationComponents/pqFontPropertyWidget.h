@@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define __pqFontPropertyWidget_h
 
 #include "pqApplicationComponentsModule.h"
-#include "pqPropertyWidget.h"
+#include "pqPropertyGroupWidget.h"
 
 class vtkSMPropertyGroup;
 
@@ -43,13 +43,26 @@ class vtkSMPropertyGroup;
 /// "Bold", "Italics" and "Shadow". If any property is missing, the
 /// corresponding widget will be hidden.
 class PQAPPLICATIONCOMPONENTS_EXPORT pqFontPropertyWidget :
-  public pqPropertyWidget
+  public pqPropertyGroupWidget
 {
   Q_OBJECT
-  typedef pqPropertyWidget Superclass;
+  Q_PROPERTY(QString justification READ justification WRITE setJustification)
+
+  typedef pqPropertyGroupWidget Superclass;
 public:
   pqFontPropertyWidget(vtkSMProxy* proxy, vtkSMPropertyGroup* smgroup, QWidget* parent=0);
   virtual ~pqFontPropertyWidget();
+
+  QString justification() const;
+signals:
+  void justificationChanged(QString&);
+
+protected:
+  void setJustification(QString&);
+  void setupJustificationButton();
+
+protected slots:
+  void changeJustificationIcon(QAction*);
 
 private:
   Q_DISABLE_COPY(pqFontPropertyWidget)

@@ -29,7 +29,6 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
-
 #ifndef pq_ColorChooserButton_h
 #define pq_ColorChooserButton_h
 
@@ -37,23 +36,36 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QToolButton>
 #include <QColor>
+#include <QVariant>
 
-/// 
+/// pqColorChooserButton is a QToolButton subclass suitable for showing a
+/// a button that allows the use to select/change color. It renders a color
+/// swatch next to the button text matching the chosen color.
 class PQWIDGETS_EXPORT pqColorChooserButton : public QToolButton
 {
   Q_OBJECT
-  Q_PROPERTY(QColor chosenColor READ chosenColor WRITE setChosenColor)
+  Q_PROPERTY(QColor chosenColor READ chosenColor WRITE setChosenColor);
+  Q_PROPERTY(QVariantList chosenColorRgbF
+             READ chosenColorRgbF
+             WRITE setChosenColorRgbF);
+  Q_PROPERTY(QVariantList chosenColorRgbaF
+             READ chosenColorRgbaF
+             WRITE setChosenColorRgbaF);
+  Q_PROPERTY(bool showAlphaChannel READ showAlphaChannel WRITE setShowAlphaChannel);
 public:
   /// constructor requires a QComboBox
   pqColorChooserButton(QWidget* p);
+
   /// get the color
   QColor chosenColor() const;
 
-  /// Set the label to be used when firing beginUndo() signal.
-  void setUndoLabel(const QString& lbl)
-    { this->UndoLabel = lbl; }
-  const QString& undoLabel() const
-    { return this->UndoLabel; }
+  /// Returns the chosen color as a QVariantList with exatctly 3 QVariants with
+  /// values in the range [0, 1] for each of the 3 color components.
+  QVariantList chosenColorRgbF() const;
+
+  /// Returns the chosen color as a QVariantList with exatctly 4 QVariants with
+  /// values in the range [0, 1] for each of the 4 color components.
+  QVariantList chosenColorRgbaF() const;
 
   /// Set/Get the ratio of icon radius to button height
   void setIconRadiusHeightRatio(double val)
@@ -61,20 +73,31 @@ public:
   double iconRadiusHeightRatio() const
     { return this->IconRadiusHeightRatio; }
 
-signals:
-  /// Signals fired before and after the chosenColorChanged() signal is fired.
-  /// This is used in ParaView to set up the creation of undo set.
-  void beginUndo(const QString&);
-  void endUndo();
+  /// When true, the widget will allow users to choose the alpha channel.
+  bool showAlphaChannel() const { return this->ShowAlphaChannel; }
+  void setShowAlphaChannel(bool val)
+    { this->ShowAlphaChannel = val; }
 
-  /// signal color changed
-  void chosenColorChanged(const QColor&);  
-  /// signal color selected
-  void validColorChosen(const QColor&);  
+signals:
+  /// signal color changed. This is fired in setChosenColor() only
+  /// when the color is indeed different.
+  void chosenColorChanged(const QColor&);
+
+  /// signal color selected. Unlike chosenColorChanged() this is fired
+  /// even if the color hasn't changed.
+  void validColorChosen(const QColor&);
 
 public slots:
   /// set the color
   virtual void setChosenColor(const QColor&);
+
+  /// set the color as a QVariantList with exactly 3 QVariants with
+  /// values in the range [0, 1] for each of the 3 color components.
+  void setChosenColorRgbF(const QVariantList&);
+
+  /// set the color as a QVariantList with exactly 4 QVariants with
+  /// values in the range [0, 1] for each of the 4 color components.
+  void setChosenColorRgbaF(const QVariantList&);
 
   /// show a dialog to choose the color
   virtual void chooseColor();
@@ -86,11 +109,13 @@ protected:
   /// renders an icon for the color.
   QIcon renderColorSwatch(const QColor&);
 
-  QColor Color;
-  QString UndoLabel;
+  /// RGBA values representing the chosen color
+  double Color[4];
+
   /// the ratio of icon radius to button height
   double IconRadiusHeightRatio;
+
+  bool ShowAlphaChannel;
 };
 
 #endif
-

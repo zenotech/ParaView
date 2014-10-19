@@ -136,15 +136,25 @@ pqGlyphPanel::pqGlyphPanel(pqProxy* object_proxy, QWidget* _parent)
                    this, SLOT(updateScalarsVectorsEnable()),
                    Qt::QueuedConnection);
 
-  if (object_proxy->modifiedState() == pqProxy::UNINITIALIZED)
-    {
-    this->updateScaleFactor();
-    }
+
+  // HACK: Oh we need to get rid of this panel!!!
+  this->connect(object_proxy, SIGNAL(modifiedStateChanged(pqServerManagerModelItem*)),
+    SLOT(updateScaleFactorIfNeeded()));
+  this->updateScaleFactorIfNeeded();
 }
 
 //-----------------------------------------------------------------------------
 pqGlyphPanel::~pqGlyphPanel()
 {
+}
+
+//-----------------------------------------------------------------------------
+void pqGlyphPanel::updateScaleFactorIfNeeded()
+{
+  if (this->referenceProxy()->modifiedState() == pqProxy::UNINITIALIZED)
+    {
+    this->updateScaleFactor();
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -162,7 +172,7 @@ void pqGlyphPanel::updateScaleFactor()
 
   int valid;
   int scale_mode = enumDomain->GetEntryValue(
-    this->ScaleModeWidget->currentText().toAscii().data(), valid);
+    this->ScaleModeWidget->currentText().toLatin1().data(), valid);
   if (!valid)
     {
     return;
@@ -231,7 +241,7 @@ void pqGlyphPanel::updateScalarsVectorsEnable()
 
   int valid;
   int scale_mode = enumDomain->GetEntryValue(
-    this->ScaleModeWidget->currentText().toAscii().data(), valid);
+    this->ScaleModeWidget->currentText().toLatin1().data(), valid);
   if (!valid) return;
 
   bool orientGlyphs = this->OrientWidget->isChecked();

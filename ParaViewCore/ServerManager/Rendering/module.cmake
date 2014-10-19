@@ -1,11 +1,18 @@
 vtk_module(vtkPVServerManagerRendering
   GROUPS
     ParaViewRendering
+  IMPLEMENTS
+    vtkPVServerManagerCore
   DEPENDS
     vtkPVServerManagerCore
     vtkPVServerImplementationRendering
   PRIVATE_DEPENDS
     vtksys
+    vtkCommonColor
+  TEST_DEPENDS
+    vtkPVServerManagerApplication
   TEST_LABELS
     PARAVIEW
+  KIT
+    vtkPVServerManager
 )

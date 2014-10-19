@@ -50,6 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMProperty.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMProxy.h"
+#include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMTransferFunctionProxy.h"
 #include "vtkTuple.h"
 #include "vtkVariant.h"
@@ -190,7 +191,7 @@ public:
           }
         }
       }
-    else if (role == Qt::DisplayRole)
+    else if (role == Qt::DisplayRole || role == Qt::EditRole)
       {
       switch (idx.column())
         {
@@ -419,7 +420,11 @@ public:
 
     this->Ui.AnnotationsTable->setModel(&this->Model);
     this->Ui.AnnotationsTable->horizontalHeader()->setHighlightSections(false);
+#if QT_VERSION >= 0x050000
+    this->Ui.AnnotationsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+#else
     this->Ui.AnnotationsTable->horizontalHeader()->setResizeMode(QHeaderView::ResizeToContents);
+#endif
     this->Ui.AnnotationsTable->horizontalHeader()->setStretchLastSection(true);
 
     this->Decorator = new pqColorAnnotationsPropertyWidgetDecorator(NULL, self);
@@ -607,7 +612,7 @@ void pqColorAnnotationsPropertyWidget::addAnnotation()
 //-----------------------------------------------------------------------------
 void pqColorAnnotationsPropertyWidget::editPastLastRow()
 {
-  QModelIndex idx = this->Internals->Model.addAnnotation(
+  this->Internals->Model.addAnnotation(
     this->Internals->Ui.AnnotationsTable->currentIndex());
   emit this->annotationsChanged();
 }
@@ -617,6 +622,11 @@ void pqColorAnnotationsPropertyWidget::removeAnnotation()
 {
   QModelIndexList indexes =
     this->Internals->Ui.AnnotationsTable->selectionModel()->selectedIndexes();
+  if( indexes.size() == 0 )
+    {
+    // Nothing selected. Nothing to remove
+    return;
+    }
   QModelIndex idx = this->Internals->Model.removeAnnotations(indexes);
   this->Internals->Ui.AnnotationsTable->setCurrentIndex(idx);
   emit this->annotationsChanged();
@@ -636,7 +646,8 @@ void pqColorAnnotationsPropertyWidget::addActiveAnnotations()
       }
 
     vtkPVProminentValuesInformation* info =
-      repr->getProxyColorProminentValuesInfo();
+      vtkSMPVRepresentationProxy::GetProminentValuesInformationForColorArray(
+        repr->getProxy());
     if (!info)
       {
       throw 0;

@@ -194,6 +194,18 @@ public:
   // Resets the layout.
   void Reset();
 
+  // Description:
+  // Helper method to locate a layout, if any that contains the specified view
+  // proxy.
+  static vtkSMViewLayoutProxy* FindLayout(vtkSMViewProxy*, const char* reggroup="layouts");
+
+  // Description:
+  // Set border size/color to use when capturing multiview images.
+  static void SetMultiViewImageBorderColor(double r, double g, double b);
+  static void SetMultiViewImageBorderWidth(int width);
+  static const double* GetMultiViewImageBorderColor();
+  static int GetMultiViewImageBorderWidth();
+
 //BTX
 protected:
   vtkSMViewLayoutProxy();
@@ -236,6 +248,10 @@ private:
     }
 
   bool BlockUpdate;
+
+  static double MultiViewImageBorderColor[3];
+  static int MultiViewImageBorderWidth;
+
 //ETX
 };
 

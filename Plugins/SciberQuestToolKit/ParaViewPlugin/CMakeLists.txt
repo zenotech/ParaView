@@ -16,9 +16,17 @@ if(PARAVIEW_BUILD_QT_GUI)
   set(_IFACE_SRCS)
 
   macro(sciberquest_wrap_qt name)
-    qt4_wrap_cpp(MOC_SRCS "${name}.h")
+    if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+      qt5_wrap_cpp(MOC_SRCS "${name}.h")
+    else ()
+      qt4_wrap_cpp(MOC_SRCS "${name}.h")
+    endif ()
     if (EXISTS "${CMAKE_CURRENT_LIST_DIR}/${name}Form.ui")
-      qt4_wrap_ui(UI_SRCS "${name}Form.ui")
+      if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+        qt5_wrap_ui(UI_SRCS "${name}Form.ui")
+      else ()
+        qt4_wrap_ui(UI_SRCS "${name}Form.ui")
+      endif ()
     endif ()
   endmacro()
 
@@ -102,7 +110,9 @@ if(PARAVIEW_BUILD_QT_GUI)
     LINK_PRIVATE pqComponents)
 endif()
 
-install(TARGETS SciberQuestToolKit DESTINATION lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR})
+install(TARGETS SciberQuestToolKit
+  ARCHIVE DESTINATION ${VTK_INSTALL_ARCHIVE_DIR}
+  LIBRARY DESTINATION ${VTK_INSTALL_LIBRARY_DIR})
 
 if(PARAVIEW_USE_MPI)
   include(vtkMPI)

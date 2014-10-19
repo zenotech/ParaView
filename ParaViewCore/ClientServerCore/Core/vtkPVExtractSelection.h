@@ -12,8 +12,9 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVExtractSelection - Adds a second port to vtkExtractSelection,
-// the second port contains an id selection.
+// .NAME vtkPVExtractSelection - Adds a two more output ports to vtkExtractSelection,
+// the second port contains an id selection and the third is simply the input
+// selection.
 // .SECTION Description
 // vtkPVExtractSelection adds a second port to vtkExtractSelection.
 // \li Output port 0 -- is the output from the superclass. It's nothing but the
@@ -28,6 +29,11 @@
 // This second output is useful for correlating particular
 // cells in the subset with the original data set. This is used, for instance,
 // by Chart representations to show selections.
+//
+// \li Output port 2 -- is simply the input vtkSelection. We currently use this
+// for Histogram View/Representation. Since that view cannot show arbitrary ID
+// based selections, it needs to get to the original vtkSelection to determine
+// if the particular selection can be shown in the view at all.
 // .SECTION See Also
 // vtkExtractSelection vtkSelection
 
@@ -45,6 +51,10 @@ public:
   vtkTypeMacro(vtkPVExtractSelection,vtkExtractSelection);
   void PrintSelf(ostream& os, vtkIndent indent);
 
+  static const int OUTPUT_PORT_EXTRACTED_DATASET = 0;
+  static const int OUTPUT_PORT_SELECTION_IDS = 1;
+  static const int OUTPUT_PORT_SELECTION_ORIGINAL = 2;
+
   // Description:
   // Constructor
   static vtkPVExtractSelection *New();
@@ -53,11 +63,6 @@ public:
   // Removes all inputs from input port 1.
   void RemoveAllSelectionsInputs()
     { this->SetInputConnection(1, 0); }
-
-  // Description:
-  // Set/get the inverse flag.
-  vtkSetMacro(Inverse, int);
-  vtkGetMacro(Inverse, int);
 
 //BTX
 protected:
@@ -79,8 +84,6 @@ protected:
   vtkSelectionNode* LocateSelection(unsigned int level,
     unsigned int index, vtkSelection* sel);
   vtkSelectionNode* LocateSelection(unsigned int composite_index, vtkSelection* sel);
-
-  int Inverse;
 
 private:
   vtkPVExtractSelection(const vtkPVExtractSelection&);  // Not implemented.

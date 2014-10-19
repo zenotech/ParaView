@@ -69,7 +69,14 @@ vtkPVScalarBarActor::vtkPVScalarBarActor()
 {
   this->AspectRatio = 20.0;
   this->AutomaticLabelFormat = 1;
+  this->DrawTickMarks = 1;
+  this->AddRangeLabels = 1;
+  this->RangeLabelFormat = NULL;
+  this->SetRangeLabelFormat("%4.3e");
+  this->TitleJustification = VTK_TEXT_CENTERED;
+  this->AddRangeAnnotations = 1;
   this->AnnotationTextScaling = 1;
+  this->SetVerticalTitleSeparation(4);
 
   this->ScalarBarTexture = vtkTexture::New();
 
@@ -82,6 +89,7 @@ vtkPVScalarBarActor::vtkPVScalarBarActor()
     ->SetReferenceCoordinate(this->PositionCoordinate);
 }
 
+//-----------------------------------------------------------------------------
 vtkPVScalarBarActor::~vtkPVScalarBarActor()
 {
   this->ScalarBarTexture->Delete();
@@ -97,11 +105,54 @@ vtkPVScalarBarActor::~vtkPVScalarBarActor()
     }
 }
 
+//-----------------------------------------------------------------------------
 void vtkPVScalarBarActor::PrintSelf(ostream &os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "AspectRatio: " << this->AspectRatio << endl;
-  os << indent << "AutomaticLabelFormat: " << this->AutomaticLabelFormat <<endl;
+  os << indent << "AutomaticLabelFormat: " << this->AutomaticLabelFormat << endl;
+  os << indent << "DrawTickMarks: " << this->DrawTickMarks << endl;
+  os << indent << "AddRangeLabels: " << this->AddRangeLabels << endl;
+  os << indent << "RangeLabelFormat: " << (this->RangeLabelFormat ? this->RangeLabelFormat : "(null)") << endl;
+  os << indent << "ScalarBarTexture: ";
+  if (this->ScalarBarTexture)
+    {
+    this->ScalarBarTexture->PrintSelf(os << "\n", indent.GetNextIndent());
+    }
+  else
+    {
+    os << "(null)\n";
+    }
+  os << indent << "TickMarks: ";
+  if (this->TickMarks)
+    {
+    this->TickMarks->PrintSelf(os << "\n", indent.GetNextIndent());
+    }
+  else
+    {
+    os << "(null)\n";
+    }
+  os << indent << "TickMarksMapper: ";
+  if (this->TickMarksMapper)
+    {
+    this->TickMarksMapper->PrintSelf(os << "\n", indent.GetNextIndent());
+    }
+  else
+    {
+    os << "(null)\n";
+    }
+  os << indent << "TickMarksActor: ";
+  if (this->TickMarksActor)
+    {
+    this->TickMarksActor->PrintSelf(os << "\n", indent.GetNextIndent());
+    }
+  else
+    {
+    os << "(null)\n";
+    }
+  os << indent << "LabelSpace: " << this->LabelSpace << endl;
+  os << indent << "TitleJustification: " << this->TitleJustification << endl;
+  os << indent << "AddRangeAnnotations: " << this->AddRangeAnnotations << endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -128,7 +179,10 @@ int vtkPVScalarBarActor::RenderOverlay(vtkViewport *viewport)
     return renderedSomething;
     }
 
-  renderedSomething += this->TickMarksActor->RenderOverlay(viewport);
+  if (this->DrawTickMarks)
+    {
+    renderedSomething += this->TickMarksActor->RenderOverlay(viewport);
+    }
 
   return renderedSomething;
 }
@@ -153,6 +207,13 @@ int vtkPVScalarBarActor::CreateLabel(
     textActor->SetTextScaleModeToViewport();
     textActor->ComputeScaledFont(this->P->Viewport);
     }
+
+  // One Windows, formats with exponents have three digits by default
+  // whereas on other systems, exponents have two digits. Set to two
+  // digits on Windows for consistent behavior.
+#ifdef _WIN32
+  unsigned int oldWin32ExponentFormat = _set_output_format(_TWO_DIGIT_EXPONENT);
+#endif
 
   if (this->AutomaticLabelFormat)
     {
@@ -209,8 +270,11 @@ int vtkPVScalarBarActor::CreateLabel(
     }
 
   // Set the txt label
-  //cout << "Value: " << value << " converted to " << string << endl;
   textActor->SetInput(string);
+
+#ifdef _WIN32
+  _set_output_format(oldWin32ExponentFormat);
+#endif
 
   // Size the font to fit in the targetHeight, which we are using
   // to size the font because it is (relatively?) constant.
@@ -223,7 +287,6 @@ int vtkPVScalarBarActor::CreateLabel(
     }
 
   // Make sure that the string fits in the allotted space.
-  //
   double tsize[2];
   textActor->GetSize(viewport, tsize);
   if (tsize[0] > targetWidth)
@@ -334,6 +397,7 @@ std::vector<double> vtkPVScalarBarActor::LinearTickMarks(
       {
       ticks.push_back(tick);
       }
+
     int nticks = static_cast<int>(ticks.size());
     int leastDig = floor(log10(fabs(mag)));
     minDigits = leadDig - leastDig;
@@ -439,11 +503,7 @@ void vtkPVScalarBarActor::LayoutTitle()
 
   // Reset the text size and justification
   this->TitleActor->GetTextProperty()->ShallowCopy(this->TitleTextProperty);
-  this->TitleActor->GetTextProperty()->SetJustification(
-    this->Orientation == VTK_ORIENT_HORIZONTAL ?
-      VTK_TEXT_CENTERED :
-      (this->TextPosition == vtkScalarBarActor::PrecedeScalarBar ?
-        VTK_TEXT_RIGHT : VTK_TEXT_LEFT));
+  this->TitleActor->GetTextProperty()->SetJustification(this->TitleJustification);
   this->TitleActor->GetTextProperty()->SetVerticalJustification(
     this->Orientation == VTK_ORIENT_VERTICAL ?
       VTK_TEXT_BOTTOM :
@@ -603,17 +663,42 @@ void vtkPVScalarBarActor::ConfigureAnnotations()
 
 void vtkPVScalarBarActor::ConfigureTitle()
 {
+  // This adjustment is necessary because this->TitleActor adjusts
+  // where the text is rendered relative to the position of the
+  // TitleActor based on the justification set on the TitleActor's
+  // TextProperty.
+  double texturePolyDataBounds[6];
+  this->TexturePolyData->GetBounds(texturePolyDataBounds);
+
+  double scalarBarMinX = texturePolyDataBounds[0];
+  double scalarBarMaxX = texturePolyDataBounds[1];
   double x;
   switch(this->TitleActor->GetTextProperty()->GetJustification())
     {
   case VTK_TEXT_LEFT:
-    x = this->P->TitleBox.Posn[0];
+    if (this->Orientation == VTK_ORIENT_VERTICAL)
+      {
+      x = scalarBarMaxX;
+      x -= this->P->TitleBox.Size[this->P->TL[0]];
+      }
+    else
+      {
+      x = scalarBarMinX;
+      }
     break;
   case VTK_TEXT_RIGHT:
-    x = this->P->TitleBox.Posn[0] + this->P->TitleBox.Size[this->P->TL[0]];
+    if (this->Orientation == VTK_ORIENT_VERTICAL)
+      {
+      x = scalarBarMinX;
+      x += this->P->TitleBox.Size[this->P->TL[0]];
+      }
+    else
+      {
+      x = scalarBarMaxX;
+      }
     break;
   case VTK_TEXT_CENTERED:
-    x = this->P->TitleBox.Posn[0] + this->P->TitleBox.Size[this->P->TL[0]] / 2;
+    x = 0.5 * (scalarBarMinX + scalarBarMaxX);
     break;
   default:
     x = 0.;
@@ -627,7 +712,7 @@ void vtkPVScalarBarActor::ConfigureTitle()
   double y =
     this->TitleActor->GetTextProperty()->GetVerticalJustification() ==
     VTK_TEXT_BOTTOM ?
-    this->P->TitleBox.Posn[1]:
+      this->P->TitleBox.Posn[1] :
       this->P->TitleBox.Posn[1] + this->P->TitleBox.Size[this->P->TL[1]];
 
   this->TitleActor->SetPosition(x, y);
@@ -655,6 +740,9 @@ void vtkPVScalarBarActor::ConfigureTicks()
     ticks = this->LinearTickMarks(range, this->NumberOfLabels, minDigits);
     }
 
+  // Map from tick to label ID for tick
+  std::vector<int> tickToLabelId(ticks.size(), -1);
+
   this->P->TextActors.reserve(ticks.size());
 
   vtkNew<vtkCellArray> tickCells;
@@ -663,10 +751,60 @@ void vtkPVScalarBarActor::ConfigureTicks()
   vtkNew<vtkPoints> tickPoints;
   tickPoints->Allocate(ticks.size() * 20);
 
+  double targetWidth = this->P->TickBox.Size[this->P->TL[0]];
+  double targetHeight = this->P->TickBox.Size[this->P->TL[1]];
+  if (this->Orientation == VTK_ORIENT_HORIZONTAL)
+    {
+    targetWidth = (targetWidth - (ticks.size() - 1) * this->TextPad) / (ticks.size() + 1.);
+    }
+  else // VTK_ORIENT_VERTICAL
+    {
+    targetHeight = (targetHeight - (ticks.size() - 1) * this->TextPad) / (ticks.size() + 1.);
+    }
+
   bool precede = this->TextPosition == vtkScalarBarActor::PrecedeScalarBar;
+  int minimumFontSize = VTK_INT_MAX;
   for (int i = 0; i < static_cast<int>(ticks.size()); i++)
     {
     double val = ticks[i];
+
+    // Do not create the label if it is already represented in the min or max
+    // label.
+    if (!(
+      (val - 1e-6*MY_ABS(val+range[0]) > range[0]) &&
+      (val + 1e-6*MY_ABS(val+range[1]) < range[1])))
+      {
+      continue;
+      }
+
+    int labelIdx = this->CreateLabel(val, minDigits, targetWidth, targetHeight, this->P->Viewport);
+    tickToLabelId[i] = labelIdx;
+    vtkTextActor* textActor = this->P->TextActors[labelIdx];
+
+    int labelFontSize = textActor->GetTextProperty()->GetFontSize();
+    if (labelFontSize < minimumFontSize)
+      {
+      minimumFontSize = labelFontSize;
+      }
+    }
+
+  // Now place the label actors
+  for (size_t i = 0; i < ticks.size(); i++)
+    {
+    int labelIdx = tickToLabelId[i];
+    if (labelIdx == -1)
+      {
+      // No label
+      continue;
+      }
+    vtkTextActor* textActor = this->P->TextActors[labelIdx];
+
+    // Make sure every text actor gets the smallest text size to fit
+    // the constraints.
+    textActor->GetTextProperty()->SetFontSize(minimumFontSize);
+
+    double val = ticks[i];
+
     double normVal;
     if (isLogTable)
       {
@@ -678,36 +816,12 @@ void vtkPVScalarBarActor::ConfigureTicks()
       normVal = (val - range[0])/(range[1] - range[0]);
       }
 
-    int labelIdx;
-
-    // Do not create the label if it is already represented in the min or max
-    // label.
-    if (!(
-      (val - 1e-6*MY_ABS(val+range[0]) > range[0]) &&
-      (val + 1e-6*MY_ABS(val+range[1]) < range[1])))
-      {
-      continue;
-      }
-
-    double targetWidth = this->P->TickBox.Size[this->P->TL[0]];
-    double targetHeight = this->P->TickBox.Size[this->P->TL[1]];
-    if (this->Orientation == VTK_ORIENT_HORIZONTAL)
-      targetWidth = (targetWidth - (ticks.size() - 1) * this->TextPad) / (ticks.size() + 1.);
-    else // VTK_ORIENT_VERTICAL
-      targetHeight = (targetHeight - (ticks.size() - 1) * this->TextPad) / (ticks.size() + 1.);
-    labelIdx = this->CreateLabel(val, minDigits, targetWidth, targetHeight, this->P->Viewport);
-    vtkTextActor* textActor = this->P->TextActors[labelIdx];
-
     if (this->Orientation == VTK_ORIENT_VERTICAL)
       {
       double x = precede ?
         this->P->TickBox.Posn[0] + this->P->TickBox.Size[0] :
         this->P->TickBox.Posn[0];
       double y = normVal * this->P->TickBox.Size[1] + this->P->TickBox.Posn[1];
-      vtkIdType ids[2];
-      ids[0] = tickPoints->InsertNextPoint(x - this->LabelSpace + 2, y, 0.0);
-      ids[1] = tickPoints->InsertNextPoint(x + this->LabelSpace - 2, y, 0.0);
-      tickCells->InsertNextCell(2, ids);
       double textSize[2];
       textActor->GetSize(this->P->Viewport, textSize);
       y -= textSize[1]/2;   // Adjust to center text.
@@ -723,10 +837,6 @@ void vtkPVScalarBarActor::ConfigureTicks()
       double y = precede ?
         this->P->TickBox.Posn[1] + this->P->TickBox.Size[0] :
         this->P->TickBox.Posn[1];
-      vtkIdType ids[2];
-      ids[0] = tickPoints->InsertNextPoint(x, y - this->LabelSpace + 2, 0.0);
-      ids[1] = tickPoints->InsertNextPoint(x, y + this->LabelSpace - 2, 0.0);
-      tickCells->InsertNextCell(2, ids);
       textActor->GetTextProperty()->SetJustificationToCentered();
       textActor->GetTextProperty()->SetVerticalJustification(
         precede ? VTK_TEXT_TOP : VTK_TEXT_BOTTOM);
@@ -854,6 +964,165 @@ void vtkPVScalarBarActor::ConfigureTicks()
     }
   vtkMath::HSVToRGB(color, color);
   this->TickMarksActor->GetProperty()->SetColor(color);
+
+  if (this->AddRangeLabels)
+    {
+
+    // Save state and set preferred parameters
+    int previousAutomaticLabelFormat = this->GetAutomaticLabelFormat();
+    this->SetAutomaticLabelFormat(0);
+
+    std::string previousLabelFormat(this->GetLabelFormat());
+    this->SetLabelFormat(this->RangeLabelFormat);
+
+    this->CreateLabel(range[0], minDigits, targetWidth, targetHeight, this->P->Viewport);
+    this->CreateLabel(range[1], minDigits, targetWidth, targetHeight, this->P->Viewport);
+
+    // Restore state
+    this->AutomaticLabelFormat = previousAutomaticLabelFormat;
+    this->SetLabelFormat(previousLabelFormat.c_str());
+
+    // Now change the font size of the min/max text actors to the minimum
+    // font size of all the text actors.
+    for (size_t i = this->P->TextActors.size()-2; i < this->P->TextActors.size(); ++i)
+      {
+      vtkTextActor* textActor = this->P->TextActors[i];
+
+      // Keep min/max labels the same size as the rest of the labels
+      textActor->GetTextProperty()->SetFontSize(minimumFontSize);
+
+      double val = range[i - (this->P->TextActors.size()-2)];
+
+      double normVal;
+      if (isLogTable)
+        {
+        normVal = ((log10(val) - log10(range[0])) /
+                   (log10(range[1]) - log10(range[0])));
+        }
+      else
+        {
+        normVal = (val - range[0])/(range[1] - range[0]);
+        }
+
+      if (this->Orientation == VTK_ORIENT_VERTICAL)
+        {
+        double x = precede ?
+          this->P->TickBox.Posn[0] + this->P->TickBox.Size[0] :
+          this->P->TickBox.Posn[0];
+        double y = normVal * this->P->TickBox.Size[1] + this->P->TickBox.Posn[1];
+        double textSize[2];
+        textActor->GetSize(this->P->Viewport, textSize);
+        y -= textSize[1]/2;   // Adjust to center text.
+        textActor->GetTextProperty()->SetJustification(
+          precede ? VTK_TEXT_RIGHT : VTK_TEXT_LEFT);
+        textActor->SetPosition(
+          precede ? x - this->LabelSpace : x + this->LabelSpace,
+          y);
+        }
+      else // this->Orientation == VTK_ORIENT_HORIZONTAL
+        {
+        double x = this->P->TickBox.Posn[0] + normVal * this->P->TickBox.Size[1];
+        double y = precede ?
+          this->P->TickBox.Posn[1] + this->P->TickBox.Size[0] :
+          this->P->TickBox.Posn[1];
+        textActor->GetTextProperty()->SetJustificationToCentered();
+        textActor->GetTextProperty()->SetVerticalJustification(
+          precede ? VTK_TEXT_TOP : VTK_TEXT_BOTTOM);
+        textActor->SetPosition(x, precede ? y - this->LabelSpace : y + this->LabelSpace);
+        }
+
+      // Turn off visibility of any labels that overlap the min/max labels
+      double bbox[4];
+      textActor->GetBoundingBox(this->P->Viewport, bbox);
+      double *pos = textActor->GetPosition();
+      bbox[0] += pos[0];
+      bbox[1] += pos[0];
+      bbox[2] += pos[1];
+      bbox[3] += pos[1];
+
+      for (size_t j = 0; j < tickToLabelId.size(); ++j)
+        {
+        int labelIdx = tickToLabelId[j];
+        if (labelIdx == -1)
+          {
+          // No label
+          continue;
+          }
+        vtkTextActor* labelActor = this->P->TextActors[labelIdx];
+
+        double labelbbox[4];
+        double *labelpos;
+        labelActor->GetBoundingBox(this->P->Viewport, labelbbox);
+        labelpos = labelActor->GetPosition();
+        labelbbox[0] += labelpos[0];
+        labelbbox[1] += labelpos[0];
+        labelbbox[2] += labelpos[1];
+        labelbbox[3] += labelpos[1];
+
+        // Does label bounding box intersect min/max label bounding box?
+        bool xoverlap = !((labelbbox[0] < bbox[0] && labelbbox[1] < bbox[0]) ||
+                          (labelbbox[0] > bbox[1] && labelbbox[1] > bbox[1]));
+        bool yoverlap = !((labelbbox[2] < bbox[2] && labelbbox[3] < bbox[2]) ||
+                          (labelbbox[2] > bbox[3] && labelbbox[3] > bbox[3]));
+        if (xoverlap && yoverlap)
+          {
+          labelActor->SetVisibility(0);
+          }
+        }
+      }
+    }
+
+  // Loop range accounts for "fake" min max ticks
+  for (size_t i = 1; ticks.size() > 0 && i < ticks.size()-1; i++)
+    {
+    int labelIdx = tickToLabelId[i-1];
+    if (labelIdx == -1)
+      {
+      // No label
+      continue;
+      }
+    vtkTextActor* textActor = this->P->TextActors[labelIdx];
+    if (textActor->GetVisibility() == 0)
+      {
+      continue;
+      }
+
+    double val = ticks[i];
+
+    double normVal;
+    if (isLogTable)
+      {
+      normVal = ((log10(val) - log10(range[0])) /
+                 (log10(range[1]) - log10(range[0])));
+      }
+    else
+      {
+      normVal = (val - range[0])/(range[1] - range[0]);
+      }
+    
+    if (this->Orientation == VTK_ORIENT_VERTICAL)
+      {
+      double x = precede ?
+        this->P->TickBox.Posn[0] + this->P->TickBox.Size[0] :
+        this->P->TickBox.Posn[0];
+      double y = normVal * this->P->TickBox.Size[1] + this->P->TickBox.Posn[1];
+      vtkIdType ids[2];
+      ids[0] = tickPoints->InsertNextPoint(x - this->LabelSpace + 2, y, 0.0);
+      ids[1] = tickPoints->InsertNextPoint(x + this->LabelSpace - 2, y, 0.0);
+      tickCells->InsertNextCell(2, ids);
+      }
+    else // this->Orientation == VTK_ORIENT_HORIZONTAL
+      {
+      double x = this->P->TickBox.Posn[0] + normVal * this->P->TickBox.Size[1];
+      double y = precede ?
+        this->P->TickBox.Posn[1] + this->P->TickBox.Size[0] :
+        this->P->TickBox.Posn[1];
+      vtkIdType ids[2];
+      ids[0] = tickPoints->InsertNextPoint(x, y - this->LabelSpace + 2, 0.0);
+      ids[1] = tickPoints->InsertNextPoint(x, y + this->LabelSpace - 2, 0.0);
+      tickCells->InsertNextCell(2, ids);
+      }
+    }
 }
 
 //----------------------------------------------------------------------------
@@ -897,7 +1166,7 @@ static void AddLabelIfUnoccluded(
 void vtkPVScalarBarActor::EditAnnotations()
 {
   vtkScalarsToColors* lut = this->LookupTable;
-  if (lut && !lut->GetIndexedLookup())
+  if (lut && !lut->GetIndexedLookup() && this->AddRangeAnnotations)
     {
     const double* range = lut->GetRange();
     double minX, maxX;

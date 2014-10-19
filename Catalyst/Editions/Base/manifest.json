@@ -1,4 +1,5 @@
 {
+  "edition": "Base",
   "cmake":{
     "cache":[
       { "name":"CMAKE_BUILD_TYPE",
@@ -17,6 +18,10 @@
         "type":"BOOL",
         "value":"OFF"
       },
+      { "name":"PARAVIEW_ENABLE_WEB",
+        "type":"BOOL",
+        "value":"OFF"
+      },
       { "name":"PARAVIEW_USE_MPI",
         "type":"BOOL",
         "value":"ON"
@@ -28,6 +33,10 @@
       { "name":"PARAVIEW_ENABLE_VTK_MODULES_AS_NEEDED",
         "type":"BOOL",
         "value":"OFF"
+      },
+      { "name":"VTK_ENABLE_KITS",
+        "type":"BOOL",
+        "value":"ON"
       }
     ]
   },
@@ -42,13 +51,13 @@
     },
     { "name":"vtkPVCatalyst",
       "path":"CoProcessing/Catalyst",
-      "pythonwrap":true,
       "exclude": [
         { "path":"Testing" }
       ],
       "replace":[
         { "path":"CoProcessing/Catalyst/module.cmake" }
-      ]
+      ],
+      "pythonwrap":true
     },
     { "name":"vtkCommonCore",
       "path":"VTK/Common/Core",
@@ -84,16 +93,6 @@
       "cswrap":true,
       "pythonwrap":true
     },
-    { "name":"vtkFiltersExtraction",
-      "path":"VTK/Filters/Extraction",
-      "patches": [
-          { "path": "VTK-Filters-Extraction-CMake.patch" }
-      ],
-      "exclude":[
-        { "path":"Testing" },
-        { "path": "vtkExtractArraysOverTime*"  }
-      ]
-    },
     { "name":"vtkCommonExecutionModel",
       "path":"VTK/Common/ExecutionModel",
       "exclude":[
@@ -115,25 +114,31 @@
       "exclude":[
         { "path":"Testing" }
       ],
+      "cswrap":true,
       "pythonwrap":true
     },
     { "name":"vtkCommonMisc",
       "path":"VTK/Common/Misc",
       "exclude":[
         { "path":"Testing" }
-      ]
+      ],
+      "cswrap":true,
+      "pythonwrap":true
     },
     { "name":"vtkCommonSystem",
       "path":"VTK/Common/System",
       "exclude":[
         { "path":"Testing" }
-      ]
+      ],
+      "cswrap":true,
+      "pythonwrap":true
     },
     { "name":"vtkCommonTransforms",
       "path":"VTK/Common/Transforms",
       "exclude":[
         { "path":"Testing" }
       ],
+      "cswrap":true,
       "pythonwrap":true
     },
     { "name":"vtkFiltersCore",
@@ -149,18 +154,21 @@
         { "class":"vtkPointDataToCellData" },
         { "class":"vtkProbeFilter" },
         { "class":"vtkQuadricClustering" },
+        { "class":"vtkStructuredGridAppend" },
         { "class":"vtkThreshold" }
       ],
       "replace":[
         { "path":"VTK/Filters/Core/CMakeLists.txt" }
       ],
-      "cswrap":true
+      "cswrap":true,
+      "pythonwrap":true
     },
     { "name":"vtkPVCommon",
       "path":"ParaViewCore/Common",
       "exclude":[
         { "path":"Testing" }
       ],
+      "cswrap":true,
       "pythonwrap":true
     },
     { "name":"vtkClientServer",
@@ -171,6 +179,7 @@
     },
     { "name":"vtkIOXMLParser",
       "path":"VTK/IO/XMLParser",
+      "cswrap":true,
       "pythonwrap":true
     },
     { "name":"vtkIOCore",
@@ -178,6 +187,7 @@
       "exclude":[
         { "path":"Testing" }
       ],
+      "cswrap":true,
       "pythonwrap":true
     },
     { "name":"vtkThirdPartyzlib",
@@ -185,6 +195,9 @@
     },
     { "name":"vtkThirdPartyexpat",
       "path":"VTK/ThirdParty/expat"
+    },
+    { "name":"vtkjsoncpp",
+      "path":"VTK/ThirdParty/jsoncpp"
     },
     { "name":"vtkPVVTKExtensionsCore",
       "path":"ParaViewCore/VTKExtensions/Core",
@@ -196,6 +209,7 @@
       "exclude":[
         { "path":"Testing" }
       ],
+      "cswrap":true,
       "pythonwrap":true
     },
     { "name":"vtkIOLegacy",
@@ -211,7 +225,9 @@
       "path":"VTK/Parallel/MPI",
       "exclude":[
         { "path":"Testing" }
-      ]
+      ],
+      "cswrap":true,
+      "pythonwrap":true
     },
     { "name":"vtkUtilitiesWrapClientServer",
       "path":"Utilities/WrapClientServer"
@@ -221,6 +237,10 @@
     },
     { "name":"vtkprotobuf",
       "path":"ThirdParty/protobuf"
+    },
+    {
+      "name":"vtkpugixml",
+      "path":"ThirdParty/pugixml"
     },
     { "path":"Wrapping" },
     { "path":"VTK/Copyright.txt" },
@@ -236,7 +256,12 @@
       ],
       "replace":[
         { "path":"ParaViewCore/ServerManager/SMApplication/Resources/catalyst.xml" }
-      ]
+      ],
+      "patches": [
+          { "path": "ParaViewCore-catalyst-xml.patch" }
+      ],
+      "cswrap":true,
+      "pythonwrap":true
     },
     { "path":"vtkPVConfig.h.in" },
     { "path":"CommandLineExecutables" },
@@ -251,5 +276,10 @@
     { "path":"VTK/vtkLogo.ico" },
     { "path":"VTK/README.html" },
     { "path":"VTK/ThirdParty/utf8" }
+  ],
+  "proxies":[
+    { "path":"ParaViewCore/ServerManager/SMApplication/Resources/utilities.xml",
+      "proxies":[ "TimeKeeper" ]
+    }
   ]
 }

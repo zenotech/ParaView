@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
+#include "pqLiveInsituManager.h"
 #include "pqCoreUtilities.h"
 #include "pqLiveInsituVisualizationManager.h"
 #include "pqServer.h"
@@ -58,97 +59,34 @@ pqCatalystConnectReaction::~pqCatalystConnectReaction()
 }
 
 //-----------------------------------------------------------------------------
+bool pqCatalystConnectReaction::connect()
+{
+  pqLiveInsituManager* cs = pqLiveInsituManager::instance();
+  pqServer* server = pqActiveObjects::instance().activeServer();
+  pqLiveInsituVisualizationManager* mgr = cs->connect(server);
+  if (mgr)
+    {
+    this->updateEnableState();
+    QObject::connect(mgr, SIGNAL(insituDisconnected()),
+                     this, SLOT(updateEnableState()));
+    }
+  return mgr;
+}
+
+
+//-----------------------------------------------------------------------------
 void pqCatalystConnectReaction::updateEnableState()
 {
   pqServer* server = pqActiveObjects::instance().activeServer();
   if (server && 
-    server->getResource().scheme() != "catalyst" &&
-    !server->session()->IsMultiClients() &&
-    !this->Managers.contains(server))
+      ! pqLiveInsituManager::isInsituServer(server) &&
+      ! server->session()->IsMultiClients() &&
+      ! pqLiveInsituManager::instance()->isDisplayServer(server))
     {
-    this->parentAction()->setEnabled(true); 
+    this->parentAction()->setEnabled(true);
     }
   else
     {
     this->parentAction()->setEnabled(false);
     }
-}
-
-//-----------------------------------------------------------------------------
-bool pqCatalystConnectReaction::connect()
-{
-  pqServer* server = pqActiveObjects::instance().activeServer();
-
-  if (server != NULL || !this->Managers.contains(server))
-    {
-    // Make sure we are in multi-server mode
-    vtkProcessModule::GetProcessModule()->MultipleSessionsSupportOn();
-
-    bool user_ok = false;
-    int portNumber = QInputDialog::getInt(
-      pqCoreUtilities::mainWidget(),
-      "Catalyst Server Port",
-      "Enter the port number to accept connections \nfrom Catalyst on:",
-      22222, 1024, 0x0fffffff, 1, &user_ok);
-    if (!user_ok)
-      {
-      // user cancelled.
-      return false;
-      }
-
-    pqLiveInsituVisualizationManager* mgr =
-      new pqLiveInsituVisualizationManager(portNumber, server);
-    QObject::connect(mgr, SIGNAL(catalystDisconnected()),
-      this, SLOT(onCatalystDisconnected()));
-    this->Managers[server] = mgr;
-    this->updateEnableState();
-    QMessageBox::information(pqCoreUtilities::mainWidget(),
-      "Ready for Catalyst connections",
-      QString("Accepting connections from Catalyst Co-Processor \n"
-      "for live-coprocessing on port %1").arg(portNumber));
-    return true;
-    }
-
-  qWarning("A Catalyst connection has already been established.");
-  return false;
-}
-
-
-//-----------------------------------------------------------------------------
-void pqCatalystConnectReaction::onCatalystDisconnected()
-{
-  pqLiveInsituVisualizationManager* mgr =
-    qobject_cast<pqLiveInsituVisualizationManager*>(this->sender());
-  if (!mgr)
-    {
-    return;
-    }
-
-  QMessageBox::information(pqCoreUtilities::mainWidget(),
-    "Catalyst Disconnected",
-    "Connection to Catalyst Co-Processor has been terminated involuntarily. "
-    "This implies either a communication error, or that the "
-    "Catalyst co-processor has terminated. "
-    "The Catalyst session will now be cleaned up. "
-    "You can start a new one if you want to monitor for additional Catalyst "
-    "connection requests.");
-
-  mgr->deleteLater();
-
-  // Remove the mgr from the map, so that we can allow the user to connect to
-  // another Catalyst session, if he wants.
-  for (ManagersType::iterator iter = this->Managers.begin();
-    iter != this->Managers.end(); ++iter)
-    {
-    if (iter.value() == mgr)
-      {
-      this->Managers.erase(iter);
-      break;
-      }
-    }
-
-  // Depending upon which server was currently active, the activeServerChanged()
-  // signal may never be fired. If that happens, we won't get any opportunity to
-  // change update the action enable state. So do it now.
-  this->updateEnableState();
 }

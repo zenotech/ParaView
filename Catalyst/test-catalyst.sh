@@ -1,6 +1,6 @@
 #!/bin/sh
 
-usage="$0 <srcdir> <builddir> [--no-configure] [--no-build] [--no-test] --input <edition> [--input <edition>]... [<cmake arguments>...]"
+usage="$0 <catalyst srcdir> <catalyst builddir> [--install] [--no-configure] [--no-build] [--no-test] [--remove-dirs] --input <edition> [--input <edition>]... [--] [<cmake arguments>...]"
 
 # A handy function for handling errors.
 die () {
@@ -22,6 +22,9 @@ editiondir="$scriptdir/Editions"
 src_output="$1"
 shift
 
+[ -d "$src_output/.git" ] && \
+    die "Refusing to use a git repository as the source output directory"
+
 # The output directory to build into.
 bin_output="$1"
 shift
@@ -29,9 +32,11 @@ shift
 # Parse out --input parameters.
 editions=
 args=
+remove=
 no_configure=
 no_build=
 no_test=
+install=
 while [ "$#" -gt 0 ]; do
     case "$1" in
     --input)
@@ -45,6 +50,9 @@ while [ "$#" -gt 0 ]; do
         editions="$editions $edition"
         args="$args -i $editiondir/$edition"
         ;;
+    --remove-dirs)
+        remove=y
+        ;;
     --no-configure)
         no_configure=y
         ;;
@@ -53,6 +61,12 @@ while [ "$#" -gt 0 ]; do
         ;;
     --no-test)
         no_test=y
+        ;;
+    --install)
+        install=y
+        ;;
+    --)
+        break
         ;;
     *)
         break
@@ -65,53 +79,67 @@ done
 [ -z "$editions" ] && \
     die "Need at least one input"
 
+if [ -n "$no_build" ] && [ -n "$install" ]; then
+    die "--install requires a build"
+fi
+
+# Remove directories if requested
+[ -n "$remove" ] && \
+    rm -rf "$src_output" "$bin_output"
+
 # Catalyze.
-mkdir -p "$src_output"
+mkdir -v -p "$src_output"
 python "$scriptdir/catalyze.py" -r "$scriptdir/.." $args -o "$src_output" || \
     die "Failed to catalyze"
 
+[ -n "$no_configure" ] && exit 0
+
+# Configure the catalyzed tree.
+mkdir -v -p "$bin_output"
+cd "$bin_output"
+"$src_output/cmake.sh" "$@" "$src_output" || \
+    die "Failed to configure the tree"
+
+if [ -z "$no_build" ]; then
+    cd "$bin_output"
+    cmake --build . || \
+        die "Failed to build"
+fi
+
+# Test if wanted.
 if [ -z "$no_test" ]; then
-    # Build the testing directory.
-    mkdir "$src_output/Testing"
+    # Create the testing directory.
+    mkdir -v "$src_output/Testing"
     for edition in $editions; do
         [ -d "$editiondir/$edition/Testing" ] || continue
 
         cp -rv "$editiondir/$edition/Testing/"* "$src_output/Testing" || \
             die "Failed to copy tests for edition $edition"
     done
-fi
 
-[ -n "$no_configure" ] && exit 0
-
-# Configure the catalyzed tree.
-mkdir -p "$bin_output"
-cd "$bin_output"
-"$src_output/cmake.sh" "$@" "$src_output" || \
-    die "Failed to configure the tree"
-
-if [ -z "$no_test" ]; then
     # Configure the testing tree.
-    mkdir -p "$bin_output/Testing"
+    mkdir -v -p "$bin_output/Testing"
     cd "$bin_output/Testing"
     cmake "$@" \
         "-DPVPYTHON_EXE=$bin_output/bin/pvpython" \
         "-DParaView_DIR=$bin_output" \
         "$src_output/Testing" || \
         die "Failed to configure tests"
+
+    if [ -z "$no_build" ]; then
+        # Build the testing tree.
+        cd "$bin_output/Testing"
+        cmake --build . || \
+            die "Failed to build tests"
+
+        # Run the tests.
+        ctest -VV || \
+            die "Tests failed"
+    fi
 fi
 
-# Exit if a build is not wanted.
-[ -n "$no_build" ] && exit 0
-
-cd "$bin_output"
-cmake --build . || \
-    die "Failed to build"
-
-# Exit if tests are not wanted.
-[ -n "$no_test" ] && exit 0
-
-cd "$bin_output/Testing"
-cmake --build . || \
-    die "Failed to build tests"
-ctest -VV || \
-    die "Tests failed"
+if [ -n "$install" ]; then
+    cd "$bin_output"
+    cmake --build . --target install || \
+        die "Failed to install"
+fi

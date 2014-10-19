@@ -42,7 +42,7 @@
 
 message (STATUS "Building Examples against ParaView install tree")
 set (ParaView_DIR
-  ${PARAVIEW_INSTALL_DIR}/lib/cmake/paraview-${PARAVIEW_VERSION})
+  $ENV{DESTDIR}${PARAVIEW_INSTALL_DIR}/lib/cmake/paraview-${PARAVIEW_VERSION})
 
 # Build target "INSTALL" for paraview
 if (MSVC)
@@ -50,7 +50,7 @@ if (MSVC)
   set (opt "/maxcpucount")
 else ()
   set (install_tgt "install")
-  set (opt "-j"5)
+  set (opt "-j5")
 endif ()
 execute_process (COMMAND ${CMAKE_COMMAND}
   --build ${PARAVIEW_BINARY_DIR}
@@ -69,7 +69,7 @@ if (NOT EXISTS ${INSTALL_TEST_BUILD_DIR})
 endif ()
 execute_process (
   COMMAND ${CMAKE_COMMAND}
-  -DParaView_DIR:PATH=${PARAVIEW_INSTALL_DIR}/lib/cmake/paraview-${PARAVIEW_VERSION}
+  -DParaView_DIR:PATH=${ParaView_DIR}
   ${PARAVIEW_SOURCE_DIR}/Examples
   WORKING_DIRECTORY ${INSTALL_TEST_BUILD_DIR}
   RESULT_VARIABLE crv)

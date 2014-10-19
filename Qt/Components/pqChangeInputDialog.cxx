@@ -76,7 +76,7 @@ pqChangeInputDialog::pqChangeInputDialog(
 
   pqServerManagerModel *smModel =
     pqApplicationCore::instance()->getServerManagerModel();
-  this->Internals->PipelineModel = new pqPipelineModel(*smModel);
+  this->Internals->PipelineModel = new pqPipelineModel(*smModel, this);
   this->Internals->PipelineModel->setEditable(false);
   this->Internals->pipelineView->setModel(this->Internals->PipelineModel);
 
@@ -231,7 +231,7 @@ void pqChangeInputDialog::inputPortToggled(bool checked)
 
   vtkSMInputProperty* inputProp = vtkSMInputProperty::SafeDownCast(
     this->Internals->Proxy->GetProperty(
-      input_prop_name.toAscii().data()));
+      input_prop_name.toLatin1().data()));
 
   QModelIndex root = this->Internals->pipelineView->getRootIndex();
   QModelIndex index = this->Internals->PipelineModel->getNextIndex(root, root);

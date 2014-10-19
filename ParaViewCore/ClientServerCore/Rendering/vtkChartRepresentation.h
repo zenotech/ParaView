@@ -26,22 +26,18 @@
 #ifndef __vtkChartRepresentation_h
 #define __vtkChartRepresentation_h
 
-#include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 #include "vtkPVDataRepresentation.h"
 #include "vtkWeakPointer.h" // needed for vtkWeakPointer
 #include "vtkSmartPointer.h" // needed for vtkSmartPointer
-#include <vector> //needed for ivars
-#include <set> //needed for ivars
+#include "vtkStdString.h" //  needed for vtkStdString.
 
-class vtkBlockDeliveryPreprocessor;
-class vtkChartNamedOptions;
+#include <set> //needed for ivars
+#include <map> // needed for map
+
 class vtkChartSelectionRepresentation;
-class vtkClientServerMoveData;
-class vtkDataObjectTree;
 class vtkMultiBlockDataSet;
 class vtkPVCacheKeeper;
 class vtkPVContextView;
-class vtkReductionFilter;
 class vtkSelectionDeliveryFilter;
 class vtkTable;
 
@@ -58,35 +54,8 @@ public:
   void SetSelectionRepresentation(vtkChartSelectionRepresentation*);
 
   // Description:
-  // Set the options object. This must be done before any other state is
-  // updated.
-  virtual void SetOptions(vtkChartNamedOptions*);
-
-  // Description:
   // Set visibility of the representation.
   virtual void SetVisibility(bool visible);
-
-  // Description:
-  // Get the number of series in this representation
-  virtual int GetNumberOfSeries();
-
-  // Description:
-  // Get the name of the series with the given index.  Returns 0 if the index
-  // is out of range.  The returned pointer is only valid until the next call
-  // to GetSeriesName.
-  virtual const char* GetSeriesName(int series);
-
-  //Description:
-  //Get the names of the series
-  void GetSeriesNames(std::vector<const char*>& names);
-
-  // Description:
-  // Get the names of the arrays
-  void GetArraysNames(std::vector<const char*>& names);
-
-  // Description:
-  // Force the chaty to rescale its axes.
-  virtual void RescaleChart();
 
   // Description:
   // This needs to be called on all instances of vtkGeometryRepresentation when
@@ -96,17 +65,69 @@ public:
   virtual void MarkModified();
 
   // *************************************************************************
-  // methods to control block selection
+
+  // Description:
+  // Set the field association for arrays to use. When changed, this will call
+  // MarkModified().
   void SetFieldAssociation(int);
+  vtkGetMacro(FieldAssociation, int);
+
+  // methods to control block selection.
+  // When changed, this will call MarkModified().
   void SetCompositeDataSetIndex(unsigned int); //only used for single block selection
   void AddCompositeDataSetIndex(unsigned int);
   void ResetCompositeDataSetIndices();
 
   // Description:
   // Override because of internal selection representations that need to be
-  // initilized as well.
+  // initialized as well.
   virtual unsigned int Initialize(unsigned int minIdAvailable, unsigned int maxIdAvailable);
 
+  // Description:
+  // vtkAlgorithm::ProcessRequest() equivalent for rendering passes. This is
+  // typically called by the vtkView to request meta-data from the
+  // representations or ask them to perform certain tasks e.g.
+  // PrepareForRendering.
+  // Overridden to handle REQUEST_RENDER() to call PrepareForRendering.
+  virtual int ProcessViewRequest(vtkInformationRequestKey* request_type,
+    vtkInformation* inInfo, vtkInformation* outInfo);
+
+  // Description:
+  // Method to provide the default name given the name of a table and a column
+  // in that table.
+  static vtkStdString GetDefaultSeriesLabel(
+    const vtkStdString& tableName, const vtkStdString& columnName);
+
+  // Description:
+  // Flatten the table, i.e. split any multicomponent columns into separate
+  // components.
+  vtkSetMacro(FlattenTable, int);
+  vtkGetMacro(FlattenTable, int);
+
+  // Description:
+  // This method is called on the client-side by the vtkPVContextView whenever a
+  // new selection is made on all the visible representations in that view.
+  // The goal of this method is allow the representations to transform the
+  // selection created in the view (which is an id-based selection based on the
+  // vtkTable that is fed into the vtkChart) to an appropriate selection based
+  // on the data going into the representation.
+  // Return false if the selection is not applicable to this representation or
+  // the conversion cannot be made.
+  // Default implementation simply ensures that the FieldType on the
+  // selection nodes is set to match up with the FieldAssociation on the
+  // representation.
+  virtual bool MapSelectionToInput(vtkSelection* sel);
+
+  // Description:
+  // This is the inverse of MapSelectionToInput(). In this case, we are
+  // converting the selection defined on the input for the representation to a
+  // selection that corresponds to elements being rendered in the view.
+  // The default implementation checks removes vtkSelectionNode items in sel
+  // that don't have the FieldType that matches this->FieldAssociation.
+  // Similar to MapSelectionToInput(), this method is expected to transform the
+  // sel in place and return false is the selection is not applicable to this
+  // representation or the conversion cannot be made.
+  virtual bool MapSelectionToView(vtkSelection* sel);
 
 //BTX
 protected:
@@ -116,6 +137,17 @@ protected:
   // Description:
   // Fill input port information.
   virtual int FillInputPortInformation(int port, vtkInformation* info);
+
+  // Description:
+  // This method is called before actual render if this->MTime was modified
+  // since the last time this method was called. Subclasses should override to
+  // update "appearance" related changes that don't affect data.
+  // When this method is called, you're assured that this->ContextView is
+  // valid.
+  // Note that this method will not be called if this->GetVisibility()
+  // returns false, this subclasses should also override SetVisibility() to
+  // hide "actors" and such.
+  virtual void PrepareForRendering() {}
 
   // Description:
   // Subclasses should override this to connect inputs to the internal pipeline
@@ -128,10 +160,6 @@ protected:
   // annotation port whose selections are localized for a particular input data object.
   virtual int RequestData(vtkInformation*,
     vtkInformationVector**, vtkInformationVector*);
-
-  virtual int RequestUpdateExtent(vtkInformation* request,
-    vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
 
   // Description:
   // Adds the representation to the view.  This is called from
@@ -150,38 +178,37 @@ protected:
   virtual bool IsCached(double cache_key);
 
   // Description:
-  // Returns vtkTable at the local processes.
-  bool GetLocalOutput(std::vector<vtkTable*>& tables, std::vector<std::string> *blockNames = NULL);
-  void UpdateSeriesNames();
+  // Convenience method to get the first vtkTable from LocalOutput, if any.
+  vtkTable* GetLocalOutput();
 
   // Description:
-  // Method used recursively to traverse the tree and build the full path name of the blocks.
-  void FillTableList(vtkMultiBlockDataSet* tree, std::vector<vtkTable*>& tables, std::vector<std::string> *blockNames = NULL, const char* currentPath = "");
+  // Method to be overrided to transform input data to a vtkTable.
+  // The default implementation just returns the data object provided in parameter.
+  virtual vtkDataObject* TransformInputData(vtkInformationVector** inputVector,
+                                            vtkDataObject* data);
 
-  vtkBlockDeliveryPreprocessor* Preprocessor;
+  typedef std::map<std::string, vtkSmartPointer<vtkTable> > MapOfTables;
+  // Description:
+  // Convenience method to get all vtkTable instances with their associated
+  // names.
+  bool GetLocalOutput(MapOfTables& tables);
+
+  int FieldAssociation;
   vtkPVCacheKeeper* CacheKeeper;
-  vtkReductionFilter* ReductionFilter;
-  vtkClientServerMoveData* DeliveryFilter;
   vtkWeakPointer<vtkPVContextView> ContextView;
-  vtkChartNamedOptions* Options;
-
   bool EnableServerSideRendering;
+  int FlattenTable;
+
   vtkSmartPointer<vtkMultiBlockDataSet> LocalOutput;
+  std::set<unsigned int> CompositeIndices; //the selected blocks
 
-  std::vector<std::string> SeriesNames; //all series names consistent with local output
-  std::set<std::string> ArrayNames; // Similar to array name without block name prefix
-  std::set<int> CompositeIndices; //the selected blocks
-
-  vtkChartSelectionRepresentation* SelectionRepresentation;
-
-  // Vars used to Cache GetLocalOutput call when possible
-  std::vector<vtkTable*>   LocalOutputTableCache;
-  std::vector<std::string> LocalOutputBlockNameCache;
-  unsigned long            LocalOutputCacheTimeStamp;
-
+  vtkWeakPointer<vtkChartSelectionRepresentation> SelectionRepresentation;
 private:
   vtkChartRepresentation(const vtkChartRepresentation&); // Not implemented
   void operator=(const vtkChartRepresentation&); // Not implemented
+
+  vtkTimeStamp PrepareForRenderingTime;
+  vtkSmartPointer<vtkChartSelectionRepresentation> DummyRepresentation;
 //ETX
 };
 

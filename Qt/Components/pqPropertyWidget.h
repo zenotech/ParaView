@@ -36,11 +36,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QPointer>
 #include <QWidget>
-
+#include <QScopedPointer>
 #include "pqPropertyLinks.h"
 #include "pqDebug.h"
 
 class pqPropertyWidgetDecorator;
+class pqTimer;
 class pqView;
 class vtkSMDomain;
 class vtkSMProperty;
@@ -51,7 +52,7 @@ class vtkSMProxy;
 class PQCOMPONENTS_EXPORT pqPropertyWidget : public QWidget
 {
   Q_OBJECT
-
+  typedef QWidget Superclass;
 public:
   pqPropertyWidget(vtkSMProxy *proxy, QWidget *parent = 0);
   virtual ~pqPropertyWidget();
@@ -67,9 +68,22 @@ public:
   virtual void select() {}
   virtual void deselect() {}
 
+  // This method is called on pqPropertyWidget instances that pqProxyWidget
+  // deems that should be shown in current configuration. Subclasses can
+  // override this method to change the appearance of the widget based on
+  // whether advanced properties are currently being shown by the pqProxyWidget
+  // or not.
+  virtual void updateWidget(bool showing_advanced_properties)
+    {Q_UNUSED(showing_advanced_properties);}
+
   pqView* view() const;
   vtkSMProxy* proxy() const;
   vtkSMProperty* property() const;
+
+  /// Forward calls to vtkSMProperty. Are overwritten by pqPropertyGroupWidget 
+  ///   to forward calls to vtkSMPropertyGroup
+  virtual char* panelVisibility() const;
+  virtual void setPanelVisibility(const char* vis);
 
   bool showLabel() const;
 
@@ -96,6 +110,10 @@ public:
     return this->Decorators;
     }
 
+  /// unhide superclass method. Note this is not virtual in QObject so don't add
+  /// any other logic here.
+  bool setProperty (const char *name, const QVariant &value)
+    { return this->Superclass::setProperty(name, value); }
 signals:
   /// This signal is emitted when the current view changes.
   void viewChanged(pqView *view);
@@ -107,6 +125,10 @@ signals:
   /// This signal is fired as soon as the user is done with making an atomic
   /// change. changeAvailable() is always fired before changeFinished().
   void changeFinished();
+
+  /// Indicates that a restart of the program is required for the setting
+  /// to take effect.
+  void restartRequired();
 
 public slots:
   /// called to set the active view. This will fire the viewChanged() signal.
@@ -140,26 +162,19 @@ protected:
   /// destroyed.
   void addDecorator(pqPropertyWidgetDecorator*);
 
+  /// Provides access to the pqPropertyLinks instance.
+  pqPropertyLinks& links()
+    { return this->Links; }
+
 private:
-  /// setAutoUpdateVTKObjects no longer simply passes the flag to
-  /// pqPropertyLinks. Instead we set a flag so that when this->changeFinished()
-  /// is fired, we call this->apply(). Thus makes it possible for widgets with
-  /// AutoUpdateVTKObjects set to true handle editing of values correctly and
-  /// not push the values as the values are being edited.
-  void setAutoUpdateVTKObjects(bool autoUpdate);
-  void setUseUncheckedProperties(bool useUnchecked);
   void setProperty(vtkSMProperty *property);
 
-  friend class pqPropertiesPanel;
   friend class pqPropertyWidgetDecorator;
   friend class pqProxyWidget;
 
 private slots:
   /// check if changeFinished() must be fired as well.
   void onChangeAvailable();
-
-  /// if AutoUpdateVTKObjects is true, call this->apply();
-  void onChangeFinished();
 
 private:
   vtkSMProxy *Proxy;
@@ -170,7 +185,8 @@ private:
   pqPropertyLinks Links;
   bool ShowLabel;
   bool ChangeAvailableAsChangeFinished;
-  bool AutoUpdateVTKObjects;
+
+  const QScopedPointer<pqTimer> Timer;
 
   /// Deprecated signals. Making private so developers get errors when they
   /// use them.

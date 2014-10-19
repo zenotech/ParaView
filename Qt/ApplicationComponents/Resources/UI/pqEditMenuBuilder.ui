@@ -117,7 +117,7 @@
   </action>
   <action name="actionDelete_All">
    <property name="text">
-    <string>Delete All</string>
+    <string>Reset Session</string>
    </property>
   </action>
   <action name="actionIgnoreTime">
@@ -135,11 +135,6 @@
    </property>
    <property name="whatsThis">
     <string>Disregard this source/filter's time from animations</string>
-   </property>
-  </action>
-  <action name="actionEditViewSettings">
-   <property name="text">
-    <string>View Settings...</string>
    </property>
   </action>
   <action name="actionEditSettings">
@@ -182,7 +177,6 @@
   <addaction name="actionDelete_All"/>
   <addaction name="separator"/>
   <addaction name="actionEditSettings"/>
-  <addaction name="actionEditViewSettings"/>
  </widget>
  <resources>
   <include location="../../../Components/Resources/pqComponents.qrc"/>

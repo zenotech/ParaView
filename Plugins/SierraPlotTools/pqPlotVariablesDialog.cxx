@@ -357,9 +357,9 @@ public:
     }
 
   //-----------------------------------------------------------------------------
-  void updateHoverWithPlotter(pqPlotVariablesDialog::pqUI * ui)
+  void updateHoverWithPlotter(pqPlotVariablesDialog::pqUI * _ui)
   {
-    ui->variableVsWhatever->setPlotter(this->getPlotter());
+    _ui->variableVsWhatever->setPlotter(this->getPlotter());
   }
 
   //-----------------------------------------------------------------------------
@@ -387,11 +387,11 @@ public:
   //-----------------------------------------------------------------------------
   bool isSeparator(QChar ch)
   {
-    if (ch.toAscii() == ',')
+    if (ch.toLatin1() == ',')
       {
       return true;
       }
-    if (ch.toAscii() == '-')
+    if (ch.toLatin1() == '-')
       {
       return true;
       }
@@ -403,12 +403,12 @@ public:
   bool separator(QChar ch, separators_enum & sepType)
   {
     sepType = e_unknownSep;
-    if (ch.toAscii() == ',')
+    if (ch.toLatin1() == ',')
       {
       sepType = e_commaSep;
       return true;
       }
-    if (ch.toAscii() == '-')
+    if (ch.toLatin1() == '-')
       {
       sepType = e_dashSep;
       return true;
@@ -529,7 +529,7 @@ public:
     // pass 2 - look for invalid characters
     for (int i = 0; i < retString.length(); i++)
       {
-      if ( ! this->util.validChar(retString[i].toAscii()))
+      if ( ! this->util.validChar(retString[i].toLatin1()))
         {
         errFlag = true;
         break;
@@ -625,7 +625,7 @@ void pqPlotVariablesDialog::pqInternal::addVariable(QString varName)
 }
 
 //-----------------------------------------------------------------------------
-bool pqPlotVariablesDialog::pqInternal::removeRangeFromUI(pqPlotVariablesDialog::pqUI *ui, QString variableAsString)
+bool pqPlotVariablesDialog::pqInternal::removeRangeFromUI(pqPlotVariablesDialog::pqUI *_ui, QString variableAsString)
 {
   pqRangeWidget * rangeWidget;
 
@@ -643,14 +643,14 @@ bool pqPlotVariablesDialog::pqInternal::removeRangeFromUI(pqPlotVariablesDialog:
         {
         if (this->verticalSpacer)
           {
-          ui->scrollWidgetLayout->removeItem(this->verticalSpacer);
+          _ui->scrollWidgetLayout->removeItem(this->verticalSpacer);
           this->verticalSpacer = NULL;
           }
         }
 
       // update the scroll area geometry
       // so that it resizes if need be
-      ui->rangeScrollArea->updateGeometry();
+      _ui->rangeScrollArea->updateGeometry();
 
       return true;
       }
@@ -660,7 +660,7 @@ bool pqPlotVariablesDialog::pqInternal::removeRangeFromUI(pqPlotVariablesDialog:
 }
 
 //-----------------------------------------------------------------------------
-bool pqPlotVariablesDialog::pqInternal::addRangeToUI(pqPlotVariablesDialog::pqUI *ui, QString variableAsString)
+bool pqPlotVariablesDialog::pqInternal::addRangeToUI(pqPlotVariablesDialog::pqUI *_ui, QString variableAsString)
 {
   QString strippedVariableName = this->stripComponentSuffix(variableAsString);
   int arrayIndex = this->componentArrayIndexFromSuffix(variableAsString);
@@ -669,7 +669,7 @@ bool pqPlotVariablesDialog::pqInternal::addRangeToUI(pqPlotVariablesDialog::pqUI
   if (varRange != NULL)
     {
     pqRangeWidget * rangeWidget = new pqRangeWidget(variableAsString);
-    rangeWidget->build(ui, varRange, arrayIndex);
+    rangeWidget->build(_ui, varRange, arrayIndex);
 
     this->rangeWidgets.append(rangeWidget);
     }

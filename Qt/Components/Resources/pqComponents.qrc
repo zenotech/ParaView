@@ -4,19 +4,17 @@
         <file>Icons/pq3DView16.png</file>
         <file>Icons/pqAdvanced26.png</file>
         <file>Icons/pqAddFavorites16.png</file>
-        <file>Icons/pqAppIcon16.png</file>
-        <file>Icons/pqAppIcon22.png</file>
-        <file>Icons/pqAppIcon32.png</file>
-        <file>Icons/pqAppIcon64.png</file>
         <file>Icons/pqArrowDown16.png</file>
         <file>Icons/pqArrowUp16.png</file>
         <file>Icons/pqAutoApply32.png</file>
         <file>Icons/pqBack16.png</file>
+        <file>Icons/pqBagChart16.png</file>
         <file>Icons/pqBlockInheritColor16.png</file>
         <file>Icons/pqBlockInheritOpacity16.png</file>
         <file>Icons/pqBottomCenter32.png</file>
         <file>Icons/pqBottomLeftCorner32.png</file>
         <file>Icons/pqBottomRightCorner32.png</file>
+        <file>Icons/pqBoxChart16.png</file>
         <file>Icons/pqBundle16.png</file>
         <file>Icons/pqBundle22.png</file>
         <file>Icons/pqBundle32.png</file>
@@ -46,6 +44,8 @@
         <file>Icons/pqEdgeMapData16.png</file>
         <file>Icons/pqEdgeSetData16.png</file>
         <file>Icons/pqEditCamera16.png</file>
+        <file>Icons/pqInteractionMode2D16.png</file>
+        <file>Icons/pqInteractionMode3D16.png</file>
         <file>Icons/pqEditColor24.png</file>
         <file>Icons/pqEditScalarBar16.png</file>
         <file>Icons/pqElemData16.png</file>
@@ -80,6 +80,7 @@
         <file>Icons/pqFolderUp16.png</file>
         <file>Icons/pqFrustumSelectionCell24.png</file>
         <file>Icons/pqFrustumSelectionPoint24.png</file>
+        <file>Icons/pqFunctionalBagChart16.png</file>
         <file>Icons/pqGlobalData16.png</file>
         <file>Icons/pqGlyph24.png</file>
         <file>Icons/pqGroup24.png</file>
@@ -156,6 +157,7 @@
         <file>Icons/pqResetRange24.png</file>
         <file>Icons/pqResetRangeCustom24.png</file>
         <file>Icons/pqResetRangeTemporal24.png</file>
+        <file>Icons/pqResetToVisibleRange32.png</file>
         <file>Icons/pqRotate16.png</file>
         <file>Icons/pqRotate24.png</file>
         <file>Icons/pqRotate32.png</file>
@@ -181,6 +183,9 @@
         <file>Icons/pqServer16.png</file>
         <file>Icons/pqServer22.png</file>
         <file>Icons/pqServer32.png</file>
+        <file>Icons/pqInsituServerRunning16.png</file>
+        <file>Icons/pqInsituServerPaused16.png</file>
+        <file>Icons/pqInsituBreakpoint16.png</file>
         <file>Icons/pqShowCenterAxes24.png</file>
         <file>Icons/pqShowCenterAxes32.png</file>
         <file>Icons/pqShowOrientationAxes24.png</file>
@@ -274,5 +279,15 @@
         <file>Icons/pqItalics24.png</file>
         <file>Icons/pqShadow16.png</file>
         <file>Icons/pqShadow24.png</file>
+        <file>Icons/pqTextAlignRight16.png</file>
+        <file>Icons/pqTextAlignLeft16.png</file>
+        <file>Icons/pqTextAlignCenter16.png</file>
+        <file>Icons/pqTextAlignJustified16.png</file>
+        <file>Icons/pvIcon16.png</file>
+        <file>Icons/pvIcon22.png</file>
+        <file>Icons/pvIcon32.png</file>
+        <file>Icons/pvIcon64.png</file>
+        <file>Icons/pvIcon96.png</file>
+        <file>Icons/pvIcon512.png</file>
     </qresource>
 </RCC>

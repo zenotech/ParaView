@@ -29,64 +29,212 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
-
 #include "pqDisplayColorWidget.h"
 
+#include "pqDataRepresentation.h"
+#include "pqPropertiesPanel.h"
+#include "pqPropertyLinks.h"
+#include "pqScalarsToColors.h"
+#include "pqUndoStack.h"
 #include "vtkDataObject.h"
 #include "vtkEventQtSlotConnect.h"
-#include "vtkSMOutputPort.h"
+#include "vtkNew.h"
+#include "vtkPVArrayInformation.h"
+#include "vtkPVDataInformation.h"
+#include "vtkPVGeneralSettings.h"
+#include "vtkSMArrayListDomain.h"
 #include "vtkSMProperty.h"
+#include "vtkSMPropertyHelper.h"
 #include "vtkSMPVRepresentationProxy.h"
+#include "vtkSMTrace.h"
+#include "vtkSMTransferFunctionManager.h"
+#include "vtkSMTransferFunctionProxy.h"
+#include "vtkSMViewProxy.h"
+#include "vtkWeakPointer.h"
 
 #include <QComboBox>
 #include <QHBoxLayout>
 #include <QIcon>
-#include <QRegExp>
+#include <QtDebug>
 
-#include "pqApplicationCore.h"
-#include "pqOutputPort.h"
-#include "pqPipelineRepresentation.h"
-#include "pqPropertiesPanel.h"
-#include "pqScalarBarRepresentation.h"
-#include "pqScalarsToColors.h"
-#include "pqUndoStack.h"
+
+//=============================================================================
+/// This class makes it possible to add custom logic when updating the
+/// "ColorArrayName" property instead of directly setting the SMProperty. The
+/// custom logic, in this case, ensures that the LUT is setup and initialized
+/// (all done by vtkSMPVRepresentationProxy::SetScalarColoring()).
+class pqDisplayColorWidget::PropertyLinksConnection : public pqPropertyLinksConnection
+{
+  typedef pqPropertyLinksConnection Superclass;
+  typedef pqDisplayColorWidget::ValueType ValueType;
+public:
+  PropertyLinksConnection(
+    QObject* qobject, const char* qproperty, const char* qsignal,
+    vtkSMProxy* smproxy, vtkSMProperty* smproperty, int smindex,
+    bool use_unchecked_modified_event,
+    QObject* parentObject=0)
+    : Superclass(qobject, qproperty, qsignal,
+      smproxy, smproperty, smindex, use_unchecked_modified_event,
+      parentObject)
+    {
+    }
+  virtual ~PropertyLinksConnection()
+    {
+    }
+
+  // Methods to convert between ValueType and QVariant. Since QVariant doesn't
+  // support == operations of non-default Qt types, we are forced to convert the
+  // ValueType to a QStringList.
+  static ValueType convert(const QVariant& value)
+    {
+    if (!value.isValid()) { return ValueType(); }
+    Q_ASSERT(value.canConvert<QStringList>());
+    QStringList strList = value.toStringList();
+    Q_ASSERT(strList.size() == 2);
+    return ValueType(strList[0].toInt(), strList[1]);
+    }
+  static QVariant convert(const ValueType& value)
+    {
+    if (value.first < vtkDataObject::POINT || value.first > vtkDataObject::CELL ||
+      value.second.isEmpty())
+      {
+      return QVariant();
+      }
+    QStringList val;
+    val << QString::number(value.first)
+        << value.second;
+    return val;
+    }
+
+protected:
+  /// Called to update the ServerManager Property due to UI change.
+  virtual void setServerManagerValue(bool use_unchecked, const QVariant& value)
+    {
+    Q_ASSERT(use_unchecked == false);
+
+    ValueType val = this->convert(value);
+    int association = val.first;
+    const QString &arrayName = val.second;
+
+    BEGIN_UNDO_SET("Change coloring");
+    vtkSMProxy* reprProxy = this->proxySM();
+
+    // before changing scalar color, save the LUT being used so we can hide the
+    // scalar bar later, if needed.
+    vtkSMProxy* oldLutProxy = vtkSMPropertyHelper(reprProxy, "LookupTable", true).GetAsProxy();
+
+    vtkSMPVRepresentationProxy::SetScalarColoring(reprProxy, arrayName.toLatin1().data(), association);
+
+    vtkNew<vtkSMTransferFunctionManager> tmgr;
+    pqDisplayColorWidget* widget = qobject_cast<pqDisplayColorWidget*>(this->objectQt());
+    vtkSMViewProxy* view = widget->viewProxy();
+
+    // Hide unused scalar bars, if applicable.
+    vtkPVGeneralSettings* gsettings = vtkPVGeneralSettings::GetInstance();
+    switch (gsettings->GetScalarBarMode())
+      {
+    case vtkPVGeneralSettings::AUTOMATICALLY_HIDE_SCALAR_BARS:
+    case vtkPVGeneralSettings::AUTOMATICALLY_SHOW_AND_HIDE_SCALAR_BARS:
+      tmgr->HideScalarBarIfNotNeeded(oldLutProxy, view);
+      break;
+      }
+
+    if (!arrayName.isEmpty())
+      {
+      // we could now respect some application setting to determine if the LUT is
+      // to be reset.
+      vtkSMPVRepresentationProxy::RescaleTransferFunctionToDataRange(reprProxy, true);
+
+      // now show used scalar bars if applicable.
+      if (gsettings->GetScalarBarMode() ==
+        vtkPVGeneralSettings::AUTOMATICALLY_SHOW_AND_HIDE_SCALAR_BARS)
+        {
+        vtkSMPVRepresentationProxy::SetScalarBarVisibility(reprProxy, view, true);
+        }
+      }
+    END_UNDO_SET();
+    }
+
+  /// called to get the current value for the ServerManager Property.
+  virtual QVariant currentServerManagerValue(bool use_unchecked) const
+    {
+    Q_ASSERT(use_unchecked == false);
+    ValueType val;
+    vtkSMProxy* reprProxy = this->proxySM();
+    if (vtkSMPVRepresentationProxy::GetUsingScalarColoring(reprProxy))
+      {
+      vtkSMPropertyHelper helper(this->propertySM());
+      val.first = helper.GetInputArrayAssociation();
+      val.second = helper.GetInputArrayNameToProcess();
+      }
+    return this->convert(val);
+    }
+
+  /// called to set the UI due to a ServerManager Property change.
+  virtual void setQtValue(const QVariant& value)
+    {
+    ValueType val = this->convert(value);
+    qobject_cast<pqDisplayColorWidget*>(this->objectQt())->setArraySelection(val);
+    }
+
+  /// called to get the UI value.
+  virtual QVariant currentQtValue() const
+    {
+    ValueType curVal = qobject_cast<pqDisplayColorWidget*>(
+      this->objectQt())->arraySelection();
+    return this->convert(curVal);
+    }
+private:
+  Q_DISABLE_COPY(PropertyLinksConnection);
+};
+
+//=============================================================================
+class pqDisplayColorWidget::pqInternals
+{
+public:
+  pqPropertyLinks Links;
+  vtkNew<vtkEventQtSlotConnect> Connector;
+  vtkWeakPointer<vtkSMArrayListDomain> Domain;
+};
 
 //-----------------------------------------------------------------------------
-pqDisplayColorWidget::pqDisplayColorWidget( QWidget *p ) :
-  QWidget( p ),
-  BlockEmission(0),
-  Updating(false)
+pqDisplayColorWidget::pqDisplayColorWidget( QWidget *parentObject ) :
+  Superclass(parentObject),
+  CachedRepresentation(NULL),
+  Internals(new pqDisplayColorWidget::pqInternals())
 {
   this->CellDataIcon = new QIcon(":/pqWidgets/Icons/pqCellData16.png");
   this->PointDataIcon = new QIcon(":/pqWidgets/Icons/pqPointData16.png");
   this->SolidColorIcon = new QIcon(":/pqWidgets/Icons/pqSolidColor16.png");
 
-  this->Layout  = new QHBoxLayout( this );
-  this->Layout->setMargin(0);
-  this->Layout->setSpacing(pqPropertiesPanel::suggestedHorizontalSpacing());
+  QHBoxLayout* hbox = new QHBoxLayout(this);
+  hbox->setMargin(0);
+  hbox->setSpacing(pqPropertiesPanel::suggestedHorizontalSpacing());
 
   this->Variables = new QComboBox( this );
-  this->Variables->setMaxVisibleItems(60);
+  //this->Variables->setMaxVisibleItems(60);
   this->Variables->setObjectName("Variables");
   this->Variables->setMinimumSize( QSize( 150, 0 ) );
   this->Variables->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-  
+
   this->Components = new QComboBox( this );
   this->Components->setObjectName("Components");
 
-  this->Layout->addWidget(this->Variables);
-  this->Layout->addWidget(this->Components);
+  hbox->addWidget(this->Variables);
+  hbox->addWidget(this->Components);
 
-  QObject::connect(this->Variables, SIGNAL(currentIndexChanged(int)), 
-    SLOT(onVariableActivated(int)));
-  QObject::connect(this->Components, SIGNAL(currentIndexChanged(int)), 
-    SLOT(onComponentActivated(int)));
-  QObject::connect(this, 
-    SIGNAL(variableChanged(pqVariableType, const QString&)),
-    this,
-    SLOT(onVariableChanged(pqVariableType, const QString&)));
+  this->Variables->setEnabled(false);
+  this->Components->setEnabled(false);
 
-  this->VTKConnect = vtkEventQtSlotConnect::New();
+  this->connect(this->Variables,
+    SIGNAL(currentIndexChanged(int)), SLOT(refreshComponents()));
+  this->connect(this->Variables,
+    SIGNAL(currentIndexChanged(int)), SIGNAL(arraySelectionChanged()));
+  this->connect(this->Components,
+    SIGNAL(currentIndexChanged(int)), SLOT(componentNumberChanged()));
+
+  this->connect(&this->Internals->Links,
+    SIGNAL(qtWidgetChanged()), SLOT(renderActiveView()));
 }
 
 //-----------------------------------------------------------------------------
@@ -95,350 +243,354 @@ pqDisplayColorWidget::~pqDisplayColorWidget()
   delete this->CellDataIcon;
   delete this->PointDataIcon;
   delete this->SolidColorIcon;
-  this->VTKConnect->Delete();
+  delete this->Internals;
 }
 
 //-----------------------------------------------------------------------------
-QString pqDisplayColorWidget::getCurrentText() const
+void pqDisplayColorWidget::renderActiveView()
 {
-  return this->Variables->currentText();
-}
-
-//-----------------------------------------------------------------------------
-void pqDisplayColorWidget::clear()
-{
-  this->BlockEmission++;
-  this->Variables->clear();
-  this->BlockEmission--;
-}
-
-//-----------------------------------------------------------------------------
-void pqDisplayColorWidget::addVariable(pqVariableType type, 
-  const QString& arg_name, bool is_partial)
-{
-  QString name = arg_name;
-  if (is_partial)
+  if (this->Representation)
     {
-    name += " (partial)";
-    }
-
-  // Don't allow duplicates to creep in ...
-  if(-1 != this->Variables->findData(this->variableData(type, arg_name)))
-    {
-    return;
-    }
-
-  this->BlockEmission++;
-  switch(type)
-    {
-    case VARIABLE_TYPE_NONE:
-      this->Variables->addItem(*this->SolidColorIcon,
-        "Solid Color", this->variableData(type, arg_name));
-      break;
-
-    case VARIABLE_TYPE_NODE:
-      this->Variables->addItem(*this->PointDataIcon, name, 
-        this->variableData(type, arg_name));
-      break;
-
-    case VARIABLE_TYPE_CELL:
-      this->Variables->addItem(*this->CellDataIcon,
-        name, this->variableData(type, arg_name));
-      break;
-    }
-  this->BlockEmission--;
-}
-
-//-----------------------------------------------------------------------------
-void pqDisplayColorWidget::chooseVariable(pqVariableType type, 
-  const QString& name)
-{
-  const int row = this->Variables->findData(variableData(type, name));
-  if(row != -1)
-    {
-    this->Variables->setCurrentIndex(row);
+    this->Representation->renderViewEventually();
     }
 }
 
 //-----------------------------------------------------------------------------
-void pqDisplayColorWidget::onComponentActivated(int row)
+vtkSMViewProxy* pqDisplayColorWidget::viewProxy() const
 {
-  if(this->BlockEmission)
+  if (this->Representation)
     {
-    return;
+    return this->Representation->getViewProxy();
     }
-  
-  pqPipelineRepresentation* display = this->getRepresentation();
-  if(display)
-    {
-    BEGIN_UNDO_SET("Color Component Change");
-    pqScalarsToColors* lut = display->getLookupTable();
-    if(row == 0)
-      {
-      lut->setVectorMode(pqScalarsToColors::MAGNITUDE, -1);
-      }
-    else
-      {
-      lut->setVectorMode(pqScalarsToColors::COMPONENT, row-1);
-      }
-    lut->updateScalarBarTitles(this->Components->itemText(row));
-    display->resetLookupTableScalarRange();
-    END_UNDO_SET();
-
-    display->renderViewEventually();
-    }
+  return NULL;
 }
 
 //-----------------------------------------------------------------------------
-void pqDisplayColorWidget::onVariableActivated(int row)
+void pqDisplayColorWidget::setRepresentation(pqDataRepresentation* repr)
 {
-  if(this->BlockEmission)
-    {
-    return;
-    }
-
-  const QStringList d = this->Variables->itemData(row).toStringList();
-  if(d.size() != 2)
-    return;
-    
-  pqVariableType type = VARIABLE_TYPE_NONE;
-  if(d[1] == "cell")
-    {
-    type = VARIABLE_TYPE_CELL;
-    }
-  else if(d[1] == "point")
-    {
-    type = VARIABLE_TYPE_NODE;
-    }
-    
-  const QString name = d[0];
-  
-  emit variableChanged(type, name);
-  emit this->modified();
-}
-
-//-----------------------------------------------------------------------------
-const QStringList pqDisplayColorWidget::variableData(pqVariableType type, 
-                                                     const QString& name)
-{
-  QStringList result;
-  result << name;
-
-  switch(type)
-    {
-    case VARIABLE_TYPE_NONE:
-      result << "none";
-      break;
-    case VARIABLE_TYPE_NODE:
-      result << "point";
-      break;
-    case VARIABLE_TYPE_CELL:
-      result << "cell";
-      break;
-    default:
-      // Return empty list.
-      return QStringList();
-    }
-    
-  return result;
-}
-
-//-----------------------------------------------------------------------------
-void pqDisplayColorWidget::onVariableChanged(pqVariableType type, 
-  const QString& name)
-{
-  pqPipelineRepresentation* display = this->getRepresentation();
-  if (display)
-    {
-    BEGIN_UNDO_SET("Color Change");
-    switch(type)
-      {
-    case VARIABLE_TYPE_NONE:
-      display->colorByArray(NULL, 0);
-      break;
-    case VARIABLE_TYPE_NODE:
-      display->colorByArray(name.toAscii().data(),
-        vtkDataObject::FIELD_ASSOCIATION_POINTS);
-      break;
-    case VARIABLE_TYPE_CELL:
-      display->colorByArray(name.toAscii().data(), 
-        vtkDataObject::FIELD_ASSOCIATION_CELLS);
-      break;
-      }
-    END_UNDO_SET();
-    display->renderViewEventually();
-    }
-}
-
-//-----------------------------------------------------------------------------
-void pqDisplayColorWidget::updateGUI()
-{
-  this->BlockEmission++;
-  pqPipelineRepresentation* display = this->getRepresentation();
-  if (display)
-    {
-    int index = this->AvailableArrays.indexOf(display->getColorField());
-    if (index < 0)
-      {
-      index = 0;
-      }
-    this->Variables->setCurrentIndex(index);
-    this->updateComponents();
-    }
-  this->BlockEmission--;
-}
-
-//-----------------------------------------------------------------------------
-void pqDisplayColorWidget::updateComponents()
-{
-  this->BlockEmission++;
-  this->Components->clear();
-
-  pqPipelineRepresentation* display = this->getRepresentation();
-  if (display)
-    {
-    pqScalarsToColors* lut = display->getLookupTable();
-    int numComponents = display->getColorFieldNumberOfComponents(
-        display->getColorField());
-    if ( lut && numComponents == 1 )
-      {
-      //we need to show a single name
-      QString compName = display->getColorFieldComponentName( 
-        display->getColorField(), 0);
-      if ( compName.length() > 0 )
-        {
-        //only add an item if a component name exists, that way
-        //we don't get a drop down box with a single empty item
-        this->Components->addItem( compName );          
-        }
-      }
-    else if(lut && numComponents > 1)
-      {
-      // delayed connection for when lut finally exists
-      // remove previous connection, if any
-      this->VTKConnect->Disconnect(
-        lut->getProxy(), vtkCommand::PropertyModifiedEvent, 
-        this, SLOT(updateGUI()), NULL);
-      this->VTKConnect->Connect(
-        lut->getProxy(), vtkCommand::PropertyModifiedEvent, 
-        this, SLOT(updateGUI()), NULL, 0.0);
-
-      this->Components->addItem("Magnitude");
-      for(int i=0; i<numComponents; i++)
-        {        
-        this->Components->addItem(  
-          display->getColorFieldComponentName( display->getColorField(), i) );          
-        }
-      
-      if(lut->getVectorMode() == pqScalarsToColors::MAGNITUDE)
-        {
-        this->Components->setCurrentIndex(0);
-        }
-      else
-        {
-        this->Components->setCurrentIndex(lut->getVectorComponent()+1);
-        }
-      }
-    }
-  this->BlockEmission--;
-}
-
-//-----------------------------------------------------------------------------
-void pqDisplayColorWidget::setRepresentation(pqDataRepresentation* display) 
-{
-  if(display == this->Representation)
+  if (this->CachedRepresentation == repr)
     {
     return;
     }
 
   if (this->Representation)
     {
-    QObject::disconnect(this->Representation, 0, this, 0);
+    this->disconnect(this->Representation);
+    this->Representation = NULL;
     }
-
-  this->VTKConnect->Disconnect();
-  this->Representation = qobject_cast<pqPipelineRepresentation*>(display);
-  if(this->Representation)
+  if (this->ColorTransferFunction)
     {
-    vtkSMProxy* repr = this->Representation->getProxy();
-    this->VTKConnect->Connect(repr->GetProperty("ColorAttributeType"),
-      vtkCommand::ModifiedEvent, this, SLOT(updateGUI()),
-      NULL, 0.0);
-    this->VTKConnect->Connect(repr->GetProperty("ColorArrayName"),
-      vtkCommand::ModifiedEvent, this, SLOT(updateGUI()),
-      NULL, 0.0);
-
-    if (repr->GetProperty("Representation"))
-      {
-      this->VTKConnect->Connect(
-        repr->GetProperty("Representation"), vtkCommand::ModifiedEvent, 
-        this, SLOT(updateGUI()),
-        NULL, 0.0);
-      }
-
-    // Every time the display updates, it is possible that the arrays available for 
-    // coloring have changed, hence we reload the list.
-    QObject::connect(this->Representation, SIGNAL(dataUpdated()),
-      this, SLOT(reloadGUI()));
+    this->disconnect(this->ColorTransferFunction);
+    this->ColorTransferFunction->disconnect(this);
+    this->ColorTransferFunction = NULL;
     }
-  this->reloadGUI();
-}
+  this->Variables->setEnabled(false);
+  this->Components->setEnabled(false);
+  this->Internals->Links.clear();
+  this->Internals->Connector->Disconnect();
+  this->Internals->Domain = NULL;
+  this->Variables->clear();
+  this->Components->clear();
 
-//-----------------------------------------------------------------------------
-pqPipelineRepresentation* pqDisplayColorWidget::getRepresentation() const
-{
-  return this->Representation;
-}
+  // now, save the new repr.
+  this->CachedRepresentation = repr;
+  this->Representation = repr;
 
-//-----------------------------------------------------------------------------
-void pqDisplayColorWidget::reloadGUI()
-{
-  this->reloadGUIInternal();
-}
-
-//-----------------------------------------------------------------------------
-void pqDisplayColorWidget::reloadGUIInternal()
-{
-  this->Updating = false;
-  this->BlockEmission++;
-  this->clear();
-
-  pqPipelineRepresentation* display = this->getRepresentation();
-  if (!display)
+  vtkSMProxy* proxy = repr? repr->getProxy() : NULL;
+  bool can_color = (proxy != NULL && proxy->GetProperty("ColorArrayName") != NULL);
+  if (!can_color)
     {
-    this->addVariable(VARIABLE_TYPE_NONE, "Solid Color", false);
-    this->BlockEmission--;
-    this->setEnabled(false);
     return;
     }
-  this->setEnabled(true);
 
-  this->AvailableArrays = display->getColorFields();
-  QRegExp regExpCell(" \\(cell\\)\\w*$");
-  QRegExp regExpPoint(" \\(point\\)\\w*$");
-  foreach(QString arrayName, this->AvailableArrays)
+  vtkSMProperty* prop = proxy->GetProperty("ColorArrayName");
+  vtkSMArrayListDomain* domain = vtkSMArrayListDomain::SafeDownCast(
+    prop->FindDomain("vtkSMArrayListDomain"));
+  if (!domain)
     {
-    if (arrayName == "Solid Color")
-      {
-      this->addVariable(VARIABLE_TYPE_NONE, arrayName, false);
-      }
-    else if (regExpCell.indexIn(arrayName) != -1)
-      {
-      arrayName = arrayName.replace(regExpCell, "");
-      this->addVariable(VARIABLE_TYPE_CELL, arrayName, 
-        display->isPartial(arrayName, vtkDataObject::FIELD_ASSOCIATION_CELLS));
-      }
-    else if (regExpPoint.indexIn(arrayName) != -1)
-      {
-      arrayName = arrayName.replace(regExpPoint, "");
-      this->addVariable(VARIABLE_TYPE_NODE, arrayName,
-        display->isPartial(arrayName, vtkDataObject::FIELD_ASSOCIATION_POINTS));
-      }
+    qCritical("Representation has ColorArrayName property without "
+      "a vtkSMArrayListDomain. This is no longer supported.");
+    return;
     }
-    
-  this->BlockEmission--;
-  this->updateGUI();
+  this->Internals->Domain = domain;
 
-  emit this->modified();
+  this->Internals->Connector->Connect(
+    prop, vtkCommand::DomainModifiedEvent, this, SLOT(refreshColorArrayNames()));
+  this->refreshColorArrayNames();
+
+  // monitor LUT changes. we need to link the component number on the LUT's
+  // property.
+  this->connect(repr, SIGNAL(colorTransferFunctionModified()),
+    SLOT(updateColorTransferFunction()));
+
+  this->Internals->Links.addPropertyLink<PropertyLinksConnection>(
+    this, "notused", SIGNAL(arraySelectionChanged()), proxy, prop);
+
+  this->updateColorTransferFunction();
 }
 
+//-----------------------------------------------------------------------------
+QPair<int, QString> pqDisplayColorWidget::arraySelection() const
+{
+  if (this->Variables->currentIndex() != -1)
+    {
+    return PropertyLinksConnection::convert(this->Variables->itemData(
+        this->Variables->currentIndex()));
+    }
+
+  return QPair<int, QString>();
+}
+
+//-----------------------------------------------------------------------------
+void pqDisplayColorWidget::setArraySelection(
+  const QPair<int, QString> & value)
+{
+  int association = value.first;
+  const QString& arrayName = value.second;
+
+  if (association < vtkDataObject::POINT || association > vtkDataObject::CELL)
+    {
+    qCritical("Only cell/point data coloring is currently supported by this widget.");
+    association = vtkDataObject::POINT;
+    }
+
+  QVariant idata = this->itemData(association, arrayName);
+  QIcon* icon = this->itemIcon(association, arrayName);
+
+  int index = this->Variables->findData(idata);
+  if (index == -1)
+    {
+    // NOTE: it possible in several occasions (e.g. when domain is not
+    // up-to-date, or property value is explicitly set to something not in the
+    // domain) that the selected array is not present in the domain. In that
+    // case, based on what we know of the array selection, we update the UI and
+    // add that entry to the UI.
+    bool prev = this->Variables->blockSignals(true);
+    this->Variables->addItem(*icon, arrayName, idata);
+    this->Variables->blockSignals(prev);
+
+    index = this->Variables->findData(idata);
+    //qDebug() << "(" << association << ", " << arrayName << " ) "
+    //  "is not an array shown in the pqDisplayColorWidget currently. "
+    //  "Will add a new entry for it";
+    }
+  Q_ASSERT(index != -1);
+  this->Variables->setCurrentIndex(index);
+  this->refreshComponents();
+}
+
+//-----------------------------------------------------------------------------
+QVariant pqDisplayColorWidget::itemData(int association, const QString& arrayName) const
+{
+  return PropertyLinksConnection::convert(ValueType(association, arrayName));
+}
+
+//-----------------------------------------------------------------------------
+QIcon* pqDisplayColorWidget::itemIcon(int association, const QString& arrayName) const
+{
+  QVariant idata = this->itemData(association, arrayName);
+  if (!idata.isValid())
+    {
+    return this->SolidColorIcon;
+    }
+  return association == vtkDataObject::CELL?  this->CellDataIcon: this->PointDataIcon;
+}
+
+//-----------------------------------------------------------------------------
+void pqDisplayColorWidget::refreshColorArrayNames()
+{
+  // Simply update the this->Variables combo-box with values from the domain.
+  // Try to preserve the current text if possible.
+  QVariant current = PropertyLinksConnection::convert(this->arraySelection());
+
+  bool prev = this->Variables->blockSignals(true);
+
+  this->Variables->clear();
+
+  // add solid color.
+  this->Variables->addItem(*this->SolidColorIcon, "Solid Color", QVariant());
+
+  vtkSMArrayListDomain* domain = this->Internals->Domain;
+  Q_ASSERT (domain);
+
+  for (unsigned int cc=0, max = domain->GetNumberOfStrings(); cc < max; cc++)
+    {
+    int icon_association = domain->GetDomainAssociation(cc);
+    int association = domain->GetFieldAssociation(cc);
+    QString name = domain->GetString(cc);
+    QString label = name;
+    if (domain->IsArrayPartial(cc))
+      {
+      label += " (partial)";
+      }
+    QIcon* icon = this->itemIcon(icon_association, name);
+    QVariant idata = this->itemData(association, name);
+    this->Variables->addItem(*icon, label, idata);
+    }
+  // doing this here, instead of in the construtor ensures that the
+  // popup menu shows resonably on OsX.
+  this->Variables->setMaxVisibleItems(
+    this->Variables->count()+1);
+  int idx = this->Variables->findData(current);
+  if (idx >= 0)
+    {
+    this->Variables->setCurrentIndex(idx);
+    }
+  this->Variables->blockSignals(prev);
+  this->Variables->setEnabled(this->Variables->count() > 0);
+
+  // since a change in domain could mean a change in components too,
+  // we should refresh those as well.
+  this->refreshComponents();
+
+  // now, refreshing the list of components is not enough. We also need to
+  // ensure that we are showing the correct selected component. Calling
+  // updateColorTransferFunction() ensures that widget is updated to reflect the
+  // current component number selection, if applicable.
+  this->updateColorTransferFunction();
+}
+
+//-----------------------------------------------------------------------------
+int pqDisplayColorWidget::componentNumber() const
+{
+  // here, we treat -1 as the magnitude (to be consistent with
+  // VTK/vtkScalarsToColors). This mismatches with how
+  // vtkPVArrayInformation refers to magnitude.
+  int index = this->Components->currentIndex();
+  return index >=0? this->Components->itemData(index).toInt() : -1;
+}
+
+//-----------------------------------------------------------------------------
+void pqDisplayColorWidget::setComponentNumber(int val)
+{
+  if (this->Components->isEnabled())
+    {
+    int index = this->Components->findData(val);
+    if (index == -1)
+      {
+      this->Components->blockSignals(true);
+      this->Components->addItem(QString("%1").arg(val), val);
+      this->Components->blockSignals(false);
+
+      index = this->Components->findData(val);
+      qDebug() << "Component " << val << " is not currently known. "
+        "Will add a new entry for it.";
+      }
+    Q_ASSERT(index != -1);
+    this->Components->setCurrentIndex(index);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void pqDisplayColorWidget::componentNumberChanged()
+{
+  if (this->ColorTransferFunction)
+    {
+    BEGIN_UNDO_SET("Change color component");
+    SM_SCOPED_TRACE(PropertiesModified)
+      .arg("proxy", this->ColorTransferFunction->getProxy())
+      .arg("comment", "change array component used for coloring");
+
+    int number = this->componentNumber();
+    this->ColorTransferFunction->setVectorMode(
+      number<0? pqScalarsToColors::MAGNITUDE : pqScalarsToColors::COMPONENT,
+      number<0? 0 : number);
+
+    // we could now respect some application setting to determine if the LUT is
+    // to be reset.
+    vtkSMProxy* reprProxy = this->Representation?
+      this->Representation->getProxy() : NULL;
+    vtkSMPVRepresentationProxy::RescaleTransferFunctionToDataRange(reprProxy);
+
+    // Update scalar bars.
+    vtkSMTransferFunctionProxy::UpdateScalarBarsComponentTitle(
+      this->ColorTransferFunction->getProxy(),
+      vtkSMPVRepresentationProxy::GetArrayInformationForColorArray(reprProxy));
+    END_UNDO_SET();
+
+    // render all views since this could affect multiple views.
+    pqApplicationCore::instance()->render();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void pqDisplayColorWidget::refreshComponents()
+{
+  if (!this->Representation)
+    {
+    return;
+    }
+
+  int comp_number = this->componentNumber();
+
+  QPair<int, QString> val = this->arraySelection();
+  int association = val.first;
+  const QString &arrayName = val.second;
+
+  vtkPVDataInformation* dataInfo = this->Representation->getInputDataInformation();
+  vtkPVArrayInformation* arrayInfo = dataInfo?
+    dataInfo->GetArrayInformation(arrayName.toLatin1().data(), association) : NULL;
+  if (!arrayInfo)
+    {
+    vtkPVDataInformation* reprInfo = this->Representation->getRepresentedDataInformation();
+    arrayInfo = reprInfo?
+      reprInfo->GetArrayInformation(arrayName.toLatin1().data(), association) : NULL;
+    }
+
+  if (!arrayInfo || arrayInfo->GetNumberOfComponents() <= 1)
+    {
+    // using solid color or coloring by non-existing array.
+    this->Components->setEnabled(false);
+    bool prev = this->Components->blockSignals(true);
+    this->Components->clear();
+    this->Components->blockSignals(prev);
+    return;
+    }
+
+  bool prev = this->Components->blockSignals(true);
+
+  this->Components->clear();
+  for (int cc=0, max=arrayInfo->GetNumberOfComponents(); cc < max; cc++)
+    {
+    if (cc==0 && max > 1)
+      {
+      // add magnitude for non-scalar values.
+      this->Components->addItem(arrayInfo->GetComponentName(-1), -1);
+      }
+    this->Components->addItem(arrayInfo->GetComponentName(cc), cc);
+    }
+
+  /// restore component choice if possible.
+  int idx = this->Components->findData(comp_number);
+  if (idx != -1)
+    {
+    this->Components->setCurrentIndex(idx);
+    }
+  this->Components->blockSignals(prev);
+  this->Components->setEnabled(this->Components->count() > 0);
+}
+
+//-----------------------------------------------------------------------------
+void pqDisplayColorWidget::updateColorTransferFunction()
+{
+  if (!this->Representation)
+    {
+    return;
+    }
+
+  pqScalarsToColors* lut = this->Representation->getLookupTable();
+  if (this->ColorTransferFunction && this->ColorTransferFunction != lut)
+    {
+    this->disconnect(this->ColorTransferFunction);
+    this->ColorTransferFunction->disconnect(this);
+    }
+  this->ColorTransferFunction = lut;
+  if (lut)
+    {
+    this->setComponentNumber(
+      lut->getVectorMode() == pqScalarsToColors::MAGNITUDE? -1 :
+      lut->getVectorComponent());
+    this->connect(lut, SIGNAL(componentOrModeChanged()),
+      SLOT(updateColorTransferFunction()), Qt::UniqueConnection);
+    }
+}

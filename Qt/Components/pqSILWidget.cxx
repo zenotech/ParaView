@@ -37,20 +37,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QVBoxLayout>
 #include <QPushButton>
 
-#include "pqTreeView.h"
-#include "pqProxySILModel.h"
-#include "pqSILModel.h"
 #include "pqApplicationCore.h"
-#include "pqSelectionManager.h"
 #include "pqOutputPort.h"
-#include "vtkPVDataInformation.h"
-#include "vtkSMSILModel.h"
 #include "pqPipelineSource.h"
-#include "vtkSMProxy.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkSMPropertyHelper.h"
+#include "pqProxySILModel.h"
+#include "pqSelectionManager.h"
+#include "pqSILModel.h"
+#include "pqTreeView.h"
+#include "pqTreeViewSelectionHelper.h"
 #include "vtkPVCompositeDataInformation.h"
 #include "vtkPVCompositeDataInformationIterator.h"
+#include "vtkPVDataInformation.h"
+#include "vtkSMPropertyHelper.h"
+#include "vtkSMProxy.h"
+#include "vtkSMSILModel.h"
+#include "vtkSMSourceProxy.h"
 
 //-----------------------------------------------------------------------------
 pqSILWidget::pqSILWidget(const QString& activeCategory, QWidget* parentObject)
@@ -127,18 +128,25 @@ void pqSILWidget::onModelReset()
 
   // First add the active-tree.
   pqTreeView* activeTree = new pqTreeView(this);
+
   // pqTreeView create a pqCheckableHeaderView which we don't care for since the
   // pqSILModel handles header-state on its own. We just need to set the default
   // header.
   activeTree->setHeader(new QHeaderView(Qt::Horizontal, activeTree));
   activeTree->header()->setStretchLastSection(true);
   activeTree->setRootIsDecorated(false);
+#if QT_VERSION >= 0x050000
+  activeTree->header()->setSectionsClickable(true);
+#else
   activeTree->header()->setClickable(true);
+#endif
+
   QObject::connect(activeTree->header(), SIGNAL(sectionClicked(int)),
     this->ActiveModel, SLOT(toggleRootCheckState()), Qt::QueuedConnection);
   activeTree->setModel(this->ActiveModel);
   activeTree->expandAll();
   this->TabWidget->addTab(activeTree, this->ActiveCategory);
+  new pqTreeViewSelectionHelper(activeTree);
 
   int num_tabs = this->Model->rowCount();
   for (int cc=0; cc < num_tabs; cc++)
@@ -161,11 +169,16 @@ void pqSILWidget::onModelReset()
       this->Model->data(this->Model->index(cc, 0)).toString(), tree);
     proxyModel->setSourceModel(this->Model);
 
+#if QT_VERSION >= 0x050000
+    tree->header()->setSectionsClickable(true);
+#else
     tree->header()->setClickable(true);
+#endif
     QObject::connect(tree->header(), SIGNAL(sectionClicked(int)),
       proxyModel, SLOT(toggleRootCheckState()), Qt::QueuedConnection);
     tree->setModel(proxyModel);
     tree->expandAll();
+    new pqTreeViewSelectionHelper(tree);
 
     this->TabWidget->addTab(tree,
                             proxyModel->headerData(cc, Qt::Horizontal).toString());

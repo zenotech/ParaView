@@ -31,29 +31,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ========================================================================*/
 #include "pqSGExportStateWizard.h"
 
-#include <pqApplicationCore.h>
-#include <pqContextView.h>
-#include <pqFileDialog.h>
-#include <pqPipelineFilter.h>
-#include <pqPipelineRepresentation.h>
-#include <pqPipelineSource.h>
-#include <pqPythonDialog.h>
-#include <pqPythonManager.h>
-#include <pqRenderViewBase.h>
-#include <pqServerManagerModel.h>
-#include <pqSettings.h>
+#include "pqApplicationCore.h"
+#include "pqContextView.h"
 #include "pqImageOutputInfo.h"
+#include "pqPipelineFilter.h"
+#include "pqRenderViewBase.h"
+#include "pqServerManagerModel.h"
+#include "vtkPythonInterpreter.h"
+#include "vtkSmartPointer.h"
+#include "vtkSMCoreUtilities.h"
 
-#include <vtkImageData.h>
-#include <vtkNew.h>
-#include <vtkPNGWriter.h>
-#include <vtkPVXMLElement.h>
-#include <vtkSMProxyManager.h>
-#include <vtkSMSessionProxyManager.h>
-#include <vtkSMSourceProxy.h>
-#include <vtkSMViewProxy.h>
-#include <vtkSmartPointer.h>
-#include <vtkUnsignedCharArray.h>
 #include <vtksys/SystemTools.hxx>
 
 #include <QLabel>
@@ -98,7 +85,17 @@ void pqSGExportStateWizardPage2::initializePage()
       {
       continue;
       }
-    this->Internals->allInputs->addItem(source->getSMName());
+    if(this->Internals->showAllSources->isChecked())
+      {
+      this->Internals->allInputs->addItem(source->getSMName());
+      }
+    else
+      { // determine if the source is a reader or not, only include readers
+      if( vtkSMCoreUtilities::GetFileNameProperty(source->getProxy()) )
+        {
+        this->Internals->allInputs->addItem(source->getSMName());
+        }
+      }
     }
 }
 
@@ -158,6 +155,8 @@ pqSGExportStateWizard::pqSGExportStateWizard(
     this, SLOT(updateAddRemoveButton()));
   QObject::connect(this->Internals->simulationInputs, SIGNAL(itemSelectionChanged()),
     this, SLOT(updateAddRemoveButton()));
+  QObject::connect(this->Internals->showAllSources, SIGNAL(toggled(bool)),
+    this, SLOT(onShowAllSources(bool)));
   QObject::connect(this->Internals->addButton, SIGNAL(clicked()),
     this, SLOT(onAdd()));
   QObject::connect(this->Internals->removeButton, SIGNAL(clicked()),
@@ -233,6 +232,49 @@ void pqSGExportStateWizard::updateAddRemoveButton()
 }
 
 //-----------------------------------------------------------------------------
+void pqSGExportStateWizard::onShowAllSources(bool isChecked)
+{
+  if(isChecked)
+    { // add any sources that aren't readers and aren't in simulationInputs
+    QList<pqPipelineSource*> sources =
+      pqApplicationCore::instance()->getServerManagerModel()->
+      findItems<pqPipelineSource*>();
+    foreach (pqPipelineSource* source, sources)
+      {
+      if (qobject_cast<pqPipelineFilter*>(source))
+        {
+        continue;
+        }
+      if( vtkSMCoreUtilities::GetFileNameProperty(source->getProxy()) == NULL )
+        {
+        // make sure it's not in the list of simulationInputs
+        QList<QListWidgetItem*> matchingNames =
+          this->Internals->simulationInputs->findItems(source->getSMName(), 0);
+        if(matchingNames.isEmpty())
+          {
+          this->Internals->allInputs->addItem(source->getSMName());
+          }
+        }
+      }
+    }
+  else
+    { // remove any source that aren't readers from allInputs
+    for(int i=this->Internals->allInputs->count()-1;i>=0;i--)
+      {
+      QListWidgetItem* item = this->Internals->allInputs->item(i);
+      QString text = item->text();
+      pqPipelineSource* source =
+        pqApplicationCore::instance()->getServerManagerModel()->findItem<pqPipelineSource*>(text);
+      if( vtkSMCoreUtilities::GetFileNameProperty(source->getProxy())==NULL )
+        {
+        delete this->Internals->allInputs->takeItem(i);
+        }
+      }
+    }
+  dynamic_cast<pqSGExportStateWizardPage2*>(this->currentPage())->emitCompleteChanged();
+}
+
+//-----------------------------------------------------------------------------
 void pqSGExportStateWizard::onAdd()
 {
   foreach (QListWidgetItem* item, this->Internals->allInputs->selectedItems())
@@ -252,7 +294,19 @@ void pqSGExportStateWizard::onRemove()
   foreach (QListWidgetItem* item, this->Internals->simulationInputs->selectedItems())
     {
     QString text = item->text();
-    this->Internals->allInputs->addItem(text);
+    if(this->Internals->showAllSources->isChecked())
+      { // we show all sources...
+      this->Internals->allInputs->addItem(text);
+      }
+    else
+      { // show only reader sources...
+      pqPipelineSource* source =
+        pqApplicationCore::instance()->getServerManagerModel()->findItem<pqPipelineSource*>(text);
+      if( vtkSMCoreUtilities::GetFileNameProperty(source->getProxy()) )
+        {
+        this->Internals->allInputs->addItem(text);
+        }
+      }
     delete this->Internals->simulationInputs->takeItem(
       this->Internals->simulationInputs->row(item));
     }
@@ -330,33 +384,12 @@ bool pqSGExportStateWizard::validateCurrentPage()
     return true;
     }
 
-  // Last Page, export the state.
-  pqPythonManager* manager = qobject_cast<pqPythonManager*>(
-    pqApplicationCore::instance()->manager("PYTHON_MANAGER"));
-
-  pqPythonDialog* dialog = 0;
-  if (manager)
-    {
-    dialog = manager->pythonShellDialog();
-    }
-  if (!dialog)
-    {
-    qCritical("Failed to locate Python dialog. Cannot save state.");
-    return true;
-    }
-
-  // Get from the settings whether or not we should save the full state
-  // or just non-default values.
-  pqSettings* settings = pqApplicationCore::instance()->settings();
-  if(settings)
-    {
-    manager->setSaveFullState(settings->value("saveFullState", false).toBool());
-    }
-
   QString command;
-  if(this->getCommandString(command))
+  if (this->getCommandString(command))
     {
-    dialog->runString(command);
+    // ensure Python in initialized.
+    vtkPythonInterpreter::Initialize();
+    vtkPythonInterpreter::RunSimpleString(command.toLatin1().data());
     return true;
     }
   return false;

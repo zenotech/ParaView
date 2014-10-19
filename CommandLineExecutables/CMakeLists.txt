@@ -28,6 +28,113 @@
 #  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 #==========================================================================
+
+# Needed to have the Python version numbers available in paraview-config.
+set(extra_modules)
+if (PARAVIEW_ENABLE_PYTHON)
+  find_package(PythonInterp REQUIRED)
+  set(extra_modules vtkUtilitiesPythonInitializer)
+endif ()
+
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/vtkModules.h"
+"#include \"vtkModuleDependencies.h\"
+
+struct vtkModuleDependency
+{
+  const char* ModuleName;
+  const char** LibraryNames;
+  const char** Depends;
+  bool Python;
+} vtkModules[] = {
+")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/vtkModuleDependencies.h"
+"#include <cstdlib>
+
+")
+foreach (vtk_module IN LISTS VTK_MODULES_ENABLED extra_modules)
+  if (NOT vtk_module STREQUAL last_module)
+    set(has_python "false")
+    if (TARGET ${vtk_module}PythonD)
+      set(has_python "true")
+    endif ()
+    file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/vtkModules.h"
+"  { \"${vtk_module}\", ${vtk_module}Libraries, ${vtk_module}Depends, ${has_python} },
+")
+
+    file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/vtkModuleDependencies.h"
+"const char* ${vtk_module}Libraries[] = { ")
+    foreach (vtk_module_library IN LISTS "${vtk_module}_LIBRARIES")
+      if (vtk_module_library STREQUAL "optimized" OR
+          vtk_module_library STREQUAL "debug")
+        unset(vtk_module_library_name)
+      elseif (vtk_module_library MATCHES "^-l")
+        string(SUBSTRING "${vtk_module_library}" 2 -1 vtk_module_library)
+        find_library(vtk_module_library_name "${vtk_module_library}")
+      elseif (IS_ABSOLUTE "${vtk_module_library}")
+        set(vtk_module_library_name "${vtk_module_library}")
+      elseif (vtk_module_library)
+        set(type)
+        get_property(type TARGET "${vtk_module_library}" PROPERTY TYPE)
+        if (type STREQUAL "INTERFACE_LIBRARY")
+          get_property(vtk_module_library TARGET "${vtk_module_library}" PROPERTY INTERFACE_LINK_LIBRARIES)
+        endif ()
+        set(vtk_module_library_name)
+        get_property(vtk_module_library_name TARGET "${vtk_module_library}" PROPERTY OUTPUT_NAME)
+        if (NOT vtk_module_library_name)
+          set(vtk_module_library_name "${vtk_module_library}")
+        endif ()
+      endif ()
+      if (vtk_module_library_name)
+        file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/vtkModuleDependencies.h"
+"\"${vtk_module_library_name}\", ")
+      endif ()
+    endforeach ()
+
+    if (TARGET ${vtk_module}_KIT)
+      file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/vtkModuleDependencies.h"
+        "\"${${vtk_module}_KIT}\", ")
+    elseif (TARGET ${vtk_module})
+      get_property(target_type TARGET "${vtk_module}" PROPERTY TYPE)
+      if (target_type MATCHES "_LIBRARY$")
+        if (target_type STREQUAL "INTERFACE_LIBRARY")
+          get_property(vtk_module_library TARGET "${vtk_module}" PROPERTY INTERFACE_LINK_LIBRARIES)
+        else ()
+          set(vtk_module_library "${vtk_module}")
+        endif ()
+        set(vtk_module_library_name)
+        get_property(vtk_module_library_name TARGET "${vtk_module_library}" PROPERTY OUTPUT_NAME)
+        file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/vtkModuleDependencies.h"
+"\"${vtk_module_library_name}\", ")
+      endif ()
+    endif ()
+
+    file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/vtkModuleDependencies.h"
+"NULL };
+const char* ${vtk_module}Depends[] = { ")
+    foreach (vtk_module_depends IN LISTS ${vtk_module}_DEPENDS)
+      file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/vtkModuleDependencies.h"
+"\"${vtk_module_depends}\", ")
+    endforeach ()
+    file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/vtkModuleDependencies.h"
+"NULL };
+")
+    set(last_module ${vtk_module})
+  endif ()
+endforeach ()
+file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/vtkModules.h"
+"  { NULL, NULL, NULL, false }
+};
+")
+
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/paraview-config.cxx.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/paraview-config.cxx"
+  @ONLY)
+pv_add_executable(paraview-config
+  "${CMAKE_CURRENT_BINARY_DIR}/paraview-config.cxx")
+target_link_libraries(paraview-config
+  vtksys)
+
 if (NOT TARGET vtkPVServerManagerApplication)
   message(STATUS "vtkPVServerManagerApplication module is not enabled. "
     "Command line executables will not be built.")
@@ -40,7 +147,37 @@ include_directories(${vtkPVServerManagerApplication_DEPENDS_INCLUDE_DIRS}
 
 set(STATIC_LINK_PLUGINS)
 if (NOT BUILD_SHARED_LIBS)
-  set(STATIC_LINK_PLUGINS ${PARAVIEW_PLUGINLIST})
+  set(STATIC_LINK_PLUGINS vtkPVStaticPluginsInit)
+endif()
+if (PARAVIEW_USE_STATIC_NUMPY)
+  find_library(UTIL_LIB util)
+
+  set(extra_python_libs)
+  foreach (lib "${UTIL_LIB}")
+    if (lib)
+      list(APPEND extra_python_libs
+        "${lib}")
+    endif ()
+  endforeach ()
+
+  find_library(BLAS_LIB blas)
+  find_library(GSL_LIB gsl)
+  find_library(GSLCBLAS_LIB gslcblas)
+  find_library(LAPACK_LIB lapack)
+
+  set(extra_numpy_libs)
+  foreach (libvar BLAS_LIB GSL_LIB GSLCBLAS_LIB LAPACK_LIB)
+    if (${libvar})
+      list(APPEND extra_numpy_libs
+        "${${libvar}}")
+      add_definitions(-DHAVE_NUMPY_${libvar})
+    endif ()
+  endforeach ()
+  add_definitions(-DHAVE_NUMPY_STATIC)
+
+  list(APPEND STATIC_LINK_PLUGINS
+    ${extra_python_libs} "${PYTHON_LIBRARY}"
+    ${extra_numpy_libs} "${STATIC_NUMPY_LIBRARY}")
 endif()
 
 foreach (name pvserver pvdataserver pvrenderserver)

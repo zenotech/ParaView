@@ -42,6 +42,12 @@
 #define vtkPVPluginLoaderErrorMacro(x)\
   if (!no_errors) {vtkErrorMacro(<< x);} this->SetErrorString(x);
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+const char ENV_PATH_SEP=';';
+#else
+const char ENV_PATH_SEP=':';
+#endif
+
 namespace
 {
   // This is an helper class used for plugins constructed from XMLs.
@@ -158,10 +164,47 @@ public:
         delete *iter;
         }
       }
+    static vtkPVPluginLoaderCleaner* GetInstance()
+      {
+      if (!vtkPVPluginLoaderCleaner::LibCleaner)
+        {
+        vtkPVPluginLoaderCleaner::LibCleaner = new vtkPVPluginLoaderCleaner();
+        }
+      return vtkPVPluginLoaderCleaner::LibCleaner;
+      }
+    static void FinalizeInstance()
+      {
+      if (vtkPVPluginLoaderCleaner::LibCleaner)
+        {
+        delete vtkPVPluginLoaderCleaner::LibCleaner;
+        vtkPVPluginLoaderCleaner::LibCleaner = NULL;
+        }
+      }
+  private:
+    static vtkPVPluginLoaderCleaner *LibCleaner;
     };
-  static vtkPVPluginLoaderCleaner LibCleaner;
+  vtkPVPluginLoaderCleaner* vtkPVPluginLoaderCleaner::LibCleaner = NULL;
 };
 
+
+//=============================================================================
+static int nifty_counter = 0;
+vtkPVPluginLoaderCleanerInitializer::vtkPVPluginLoaderCleanerInitializer()
+{
+  nifty_counter++;
+}
+vtkPVPluginLoaderCleanerInitializer::~vtkPVPluginLoaderCleanerInitializer()
+{
+  nifty_counter--;
+  if (nifty_counter == 0)
+    {
+    vtkPVPluginLoaderCleaner::FinalizeInstance();
+    }
+}
+//=============================================================================
+
+
+vtkPluginLoadFunction vtkPVPluginLoader::StaticPluginLoadFunction = 0;
 
 vtkStandardNewMacro(vtkPVPluginLoader);
 //-----------------------------------------------------------------------------
@@ -195,7 +238,7 @@ vtkPVPluginLoader::vtkPVPluginLoader()
       appDir += "/plugins";
       if(paths.size())
         {
-        paths += ";";
+        paths += ENV_PATH_SEP;
         }
       paths += appDir;
       }
@@ -227,10 +270,15 @@ void vtkPVPluginLoader::LoadPluginsFromPluginSearchPath()
     << this->SearchPaths);
 
   std::vector<std::string> paths;
-  vtksys::SystemTools::Split(this->SearchPaths, paths, ';');
-  for (size_t cc=0; cc < paths.size(); cc++)
+  vtksys::SystemTools::Split(this->SearchPaths, paths, ENV_PATH_SEP);
+  for (size_t cc = 0; cc < paths.size(); cc++)
     {
-    this->LoadPluginsFromPath(paths[cc].c_str());
+    std::vector<std::string> subpaths;
+    vtksys::SystemTools::Split(paths[cc].c_str(), subpaths, ';');
+    for (size_t scc = 0; scc < subpaths.size(); scc++)
+      {
+      this->LoadPluginsFromPath(subpaths[scc].c_str());
+      }
     }
 #else
   vtkPVPluginLoaderDebugMacro(
@@ -281,21 +329,31 @@ bool vtkPVPluginLoader::LoadPluginInternal(const char* file, bool no_errors)
   std::string defaultname = vtksys::SystemTools::GetFilenameWithoutExtension(file);
   this->SetPluginName(defaultname.c_str());
 
-
   if (vtksys::SystemTools::GetFilenameLastExtension(file) == ".xml")
     {
     vtkPVPluginLoaderDebugMacro("Loading XML plugin");
     vtkPVXMLOnlyPlugin* plugin = vtkPVXMLOnlyPlugin::Create(file);
     if (plugin)
       {
-      ::LibCleaner.Register(plugin);
+      vtkPVPluginLoaderCleaner::GetInstance()->Register(plugin);
       return this->LoadPlugin(file, plugin);
       }
     vtkPVPluginLoaderErrorMacro(
       "Failed to load XML plugin. Not a valid XML or file could not be read.");
     return false;
     }
-
+#ifndef BUILD_SHARED_LIBS
+  if (StaticPluginLoadFunction &&
+      StaticPluginLoadFunction(file))
+    {
+    this->Loaded = true;
+    return true;
+    }
+  vtkPVPluginLoaderErrorMacro(
+    "Could not find the plugin statically linked in, and "
+    "cannot load dynamic plugins  in static builds.");
+  return false;
+#else // ifndef BUILD_SHARED_LIBS
   vtkLibHandle lib = vtkDynamicLoader::OpenLibrary(file);
   if (!lib)
     {
@@ -307,7 +365,7 @@ bool vtkPVPluginLoader::LoadPluginInternal(const char* file, bool no_errors)
 
   // So that the lib is closed when the application quits.
   // BUG #10293.
-  ::LibCleaner.Register(lib);
+  vtkPVPluginLoaderCleaner::GetInstance()->Register(lib);
 
   vtkPVPluginLoaderDebugMacro("Loaded shared library successfully. "
     "Now trying to validate that it's a ParaView plugin.");
@@ -426,11 +484,25 @@ bool vtkPVPluginLoader::LoadPluginInternal(const char* file, bool no_errors)
 
   vtkPVPlugin* plugin = pv_plugin_query_instance();
   return this->LoadPlugin(file, plugin);
+#endif // ifndef BUILD_SHARED_LIBS else
 }
 
 //-----------------------------------------------------------------------------
 bool vtkPVPluginLoader::LoadPlugin(const char* file, vtkPVPlugin* plugin)
 {
+#ifndef BUILD_SHARED_LIBS
+  if (StaticPluginLoadFunction &&
+      StaticPluginLoadFunction(plugin->GetPluginName()))
+    {
+    this->Loaded = true;
+    return true;
+    }
+  else
+    {
+    this->SetErrorString("Failed to load static plugin.");
+    }
+#endif
+
   this->SetPluginName(plugin->GetPluginName());
   this->SetPluginVersion(plugin->GetPluginVersionString());
 
@@ -500,4 +572,13 @@ void vtkPVPluginLoader::PrintSelf(ostream& os, vtkIndent indent)
     (this->FileName ? this->FileName : "(none)") << endl;
   os << indent << "SearchPaths: " <<
     (this->SearchPaths ? this->SearchPaths : "(none)") << endl;
+}
+
+//-----------------------------------------------------------------------------
+void vtkPVPluginLoader::SetStaticPluginLoadFunction(vtkPluginLoadFunction function)
+{
+  if (!StaticPluginLoadFunction)
+    {
+    StaticPluginLoadFunction = function;
+    }
 }

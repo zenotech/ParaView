@@ -12,7 +12,10 @@ vtk_module(vtkClientServer
     ${_dependencies}
   TEST_DEPENDS
     vtkCommonCore
+    vtkTestingCore
   EXCLUDE_FROM_WRAPPING
   TEST_LABELS
     PARAVIEW
+  KIT
+    vtkPVCore
 )

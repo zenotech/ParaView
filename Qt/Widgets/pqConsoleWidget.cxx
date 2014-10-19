@@ -37,11 +37,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QClipboard>
 #include <QCompleter>
 #include <QKeyEvent>
+#include <QMimeData>
 #include <QPointer>
+#include <QScrollBar>
 #include <QTextCursor>
 #include <QTextEdit>
 #include <QVBoxLayout>
-#include <QScrollBar>
 
 /////////////////////////////////////////////////////////////////////////
 // pqConsoleWidget::pqImplementation
@@ -82,10 +83,10 @@ public:
     // The following keys are forwarded by the completer to the widget
     switch (e->key())
       {
+      case Qt::Key_Tab:
       case Qt::Key_Enter:
       case Qt::Key_Return:
       case Qt::Key_Escape:
-      case Qt::Key_Tab:
       case Qt::Key_Backtab:
         e->ignore();
         return; // let the completer do default behavior
@@ -204,10 +205,26 @@ public:
         break;
 
       case Qt::Key_Tab:
+        {
         e->accept();
-        this->updateCompleter();
-        this->selectCompletion();
+        int anchor = text_cursor.anchor();
+        int position = text_cursor.position();
+        text_cursor.movePosition(QTextCursor::StartOfLine,QTextCursor::MoveAnchor);
+        text_cursor.setPosition(position,QTextCursor::KeepAnchor);
+        QString text = text_cursor.selectedText().trimmed();
+        text_cursor.setPosition(anchor,QTextCursor::MoveAnchor);
+        text_cursor.setPosition(position,QTextCursor::KeepAnchor);
+        if(text == ">>>" || text == "...")
+          {
+          text_cursor.insertText("    ");
+          }
+        else
+          {
+          this->updateCompleter();
+          this->selectCompletion();
+          }
         break;
+        }
         
 
       case Qt::Key_Home:

@@ -172,10 +172,10 @@ void pqSGWritersMenuManager::createMenu()
   vtkSMProxyDefinitionManager* proxyDefinitions =
     pxm->GetProxyDefinitionManager();
 
-  // For now we only worry about proxies in the filter group and
+  // For search proxies in the insitu_writer_parameters group and
   // we search specifically for proxies with a proxy writer hint
   // since we've marked them as special
-  const char proxyGroup[] = "filters";
+  const char proxyGroup[] = "insitu_writer_parameters";
   vtkPVProxyDefinitionIterator* iter =
     proxyDefinitions->NewSingleGroupIterator(proxyGroup);
   for(iter->InitTraversal();!iter->IsDoneWithTraversal();iter->GoToNextItem())
@@ -254,8 +254,8 @@ void pqSGWritersMenuManager::updateEnableState()
       }
 
     vtkSMProxy* output = pxm->GetPrototypeProxy(
-      filterType[0].toAscii().data(),
-      filterType[1].toAscii().data());
+      filterType[0].toLatin1().data(),
+      filterType[1].toLatin1().data());
     if (!output)
       {
       action->setEnabled(false);
@@ -327,7 +327,7 @@ void pqSGWritersMenuManager::createWriter(const QString& xmlgroup,
   vtkSMSessionProxyManager* pxm =
       vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
   vtkSMProxy* prototype =
-    pxm->GetPrototypeProxy(xmlgroup.toAscii().data(), xmlname.toAscii().data());
+    pxm->GetPrototypeProxy(xmlgroup.toLatin1().data(), xmlname.toLatin1().data());
   if (!prototype)
     {
     qCritical() << "Unknown proxy type: " << xmlname;

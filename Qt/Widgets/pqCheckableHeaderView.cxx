@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -31,373 +31,399 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =========================================================================*/
 
 /// \file pqCheckableHeaderView.cxx
-/// \date 8/17/2007
+/// \date 03/04/2014
 
 #include "pqCheckableHeaderView.h"
-#include "pqCheckBoxPixMaps.h"
 
-#include <QAbstractItemModel>
-#include <QApplication>
-#include <QEvent>
-#include <QList>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QPixmap>
-#include <QStyle>
 
-
-class pqCheckableHeaderViewItem
-{
-public:
-  pqCheckableHeaderViewItem(bool checkable, int state);
-  pqCheckableHeaderViewItem(const pqCheckableHeaderViewItem &other);
-  ~pqCheckableHeaderViewItem() {}
-
-  pqCheckableHeaderViewItem &operator=(const pqCheckableHeaderViewItem &other);
-
-  int State;
-  bool Checkable;
-};
-
-
+//----------------------------------------------------------------------------
 class pqCheckableHeaderViewInternal
 {
 public:
-  pqCheckableHeaderViewInternal();
-  ~pqCheckableHeaderViewInternal();
+  pqCheckableHeaderViewInternal()
+    {
+    this->Style = 0;
+    this->forceCheck = false;
+    }
+  ~pqCheckableHeaderViewInternal()
+    {
+    }
 
-  pqCheckBoxPixMaps* CheckBoxPixMaps;
-  QList<pqCheckableHeaderViewItem> Items;
-  bool IgnoreChange;
+  /// \brief
+  ///   Returns the placeholder rect for a checkbox in the section header.
+  QRect checkBoxRect(const QRect &sourceRect,
+    const QAbstractItemView *view) const;
+
+  /// \brief
+  ///   Draw the checkbox control
+  ///   Based on two scenarios:
+  ///   1. If any of the item checkboxes are changed, the section header
+  ///   checkbox needs to be updated.
+  ///   2. If the section header checkbox is clicked and its state needs
+  ///   to be toggled.
+  ///   It returns the new checkbox state
+  ///   \arg checkState: State to force the header checkbox to. Used when
+  ///   clicked on the checkbox.
+  QVariant drawCheckboxControl(QPainter *painter, const QRect &rect,
+    QRect &chbRect, int numItemsChecked, int totalItems, QVariant checkState,
+    const QAbstractItemView *view);
+
+  QStyle *Style;
+
+  /// \brief
+  ///   Map of (section,checkable) values indicating whether
+  ///   the section is checkable
+  QHash<int, bool> isCheckable;
+
+  /// \brief
+  ///   Map of (section,checkstate) values indicating whether
+  ///   the section checkbox is checked/partially checked/unchecked
+  QHash<int, QVariant> checkState;
+
+  /// \brief
+  ///   Map of (section,checkBoxRect) values indicating the top-left corner
+  ///   position and size of the section checkbox
+  QHash<int, QRect> checkBoxRectHash;
+
+  /// \brief
+  ///   Boolean to force check/uncheck state of header checkbox
+  bool forceCheck;
 };
 
-
 //----------------------------------------------------------------------------
-pqCheckableHeaderViewItem::pqCheckableHeaderViewItem(bool checkable, int state)
+QRect pqCheckableHeaderViewInternal::checkBoxRect(
+  const QRect &sourceRect, const QAbstractItemView *view) const
 {
-  this->Checkable = checkable;
-  this->State = state;
-}
+  QStyleOptionButton checkBoxStyleOption;
+  QRect cboxRect = this->Style->subElementRect(
+    QStyle::SE_CheckBoxIndicator,
+    &checkBoxStyleOption);
+  int buttonMargin = this->Style->pixelMetric(
+    QStyle::PM_ButtonMargin, NULL, view);
 
-pqCheckableHeaderViewItem::pqCheckableHeaderViewItem(
-    const pqCheckableHeaderViewItem &other)
-{
-  this->Checkable = other.Checkable;
-  this->State = other.State;
-}
+  int ch = cboxRect.height();
+  int cw = cboxRect.width();
+  int sh = sourceRect.height();
+  int sw = sourceRect.width();
+  int bh = buttonMargin;
+  int bw = buttonMargin;
 
-pqCheckableHeaderViewItem &pqCheckableHeaderViewItem::operator=(
-    const pqCheckableHeaderViewItem &other)
-{
-  this->Checkable = other.Checkable;
-  this->State = other.State;
-  return *this;
-}
-
-
-//----------------------------------------------------------------------------
-pqCheckableHeaderViewInternal::pqCheckableHeaderViewInternal()
-  : Items()
-{
-  this->IgnoreChange = false;
-  this->CheckBoxPixMaps = 0;
-}
-
-pqCheckableHeaderViewInternal::~pqCheckableHeaderViewInternal()
-{
-  delete this->CheckBoxPixMaps;
-}
-
-//----------------------------------------------------------------------------
-pqCheckableHeaderView::pqCheckableHeaderView(Qt::Orientation orient,
-    QWidget *widgetParent)
-  : QHeaderView(orient, widgetParent)
-{
-  this->Internal = new pqCheckableHeaderViewInternal();
-  this->Internal->CheckBoxPixMaps = new pqCheckBoxPixMaps(this);
-
-  // Listen for user clicks.
-  if(widgetParent)
+  // Logic to make sure the checkbox is contained in the viewable area of the
+  // section header rect.
+  if((ch + 2*bh) > sh)
     {
-    // Listen for focus change events.
-    widgetParent->installEventFilter(this);
-    }
-}
-
-pqCheckableHeaderView::~pqCheckableHeaderView()
-{
-  delete this->Internal;
-}
-
-bool pqCheckableHeaderView::eventFilter(QObject *, QEvent *e)
-{
-  if(e->type() == QEvent::FocusIn || e->type() == QEvent::FocusOut)
-    {
-    QAbstractItemModel *current = this->model();
-    if(current)
+    if(ch > sh)
       {
-      bool active = e->type() == QEvent::FocusIn;
-      this->Internal->IgnoreChange = true;
-      for(int i = 0; i < this->Internal->Items.size(); i++)
-        {
-        pqCheckableHeaderViewItem *item = &this->Internal->Items[i];
-        if(item->Checkable)
-          {
-          current->setHeaderData(i, this->orientation(),
-              this->Internal->CheckBoxPixMaps->getPixmap(item->State, active),
-              Qt::DecorationRole);
-          }
-        }
-
-      this->Internal->IgnoreChange = false;
+      bh = 0;
+      cboxRect.setHeight(sh);
       }
-    }
-
-  return false;
-}
-
-void pqCheckableHeaderView::mousePressEvent(QMouseEvent *e)
-{
-  QAbstractItemModel *current = this->model();
-
-  if(current)
-    {
-    bool active = true;
-    if(this->parentWidget())
+    else if(ch < sh)
       {
-      active = this->parentWidget()->hasFocus();
-      }
-
-    bool checkable = false;
-    int cs = current->headerData(
-      0, this->orientation(), Qt::CheckStateRole).toInt(&checkable);
-
-    QPixmap icon = this->Internal->CheckBoxPixMaps->getPixmap(cs, active);
-
-    int buttonMargin =
-      this->style()->pixelMetric(QStyle::PM_ButtonMargin, NULL, this);
-
-    // Capture mouse clicks on the checkbox icon and emit checkStateChanged signals.
-    // Assuming left/bottom aligned checkbox
-    if(e->x() <= (icon.width() + buttonMargin - 1) &&
-       e->x() >= (buttonMargin - 1) &&
-       e->y() <= (icon.height() + buttonMargin - 1) &&
-       e->y() >= (buttonMargin - 1))
-      {
-        emit checkStateChanged();
-        return;
-      }
-    }
-  this->update();
-  QHeaderView::mousePressEvent(e);
-}
-
-void pqCheckableHeaderView::setModel(QAbstractItemModel *newModel)
-{
-  QAbstractItemModel *current = this->model();
-  if(current)
-    {
-    this->Internal->Items.clear();
-    this->disconnect(current, 0, this, 0);
-    }
-
-  QHeaderView::setModel(newModel);
-  if(newModel)
-    {
-    this->connect(
-        newModel, SIGNAL(headerDataChanged(Qt::Orientation, int, int)),
-        this, SLOT(updateHeaderData(Qt::Orientation, int, int)));
-    this->connect(newModel, SIGNAL(modelReset()),
-        this, SLOT(initializeIcons()));
-    if(this->orientation() == Qt::Horizontal)
-      {
-      this->connect(newModel,
-          SIGNAL(columnsInserted(const QModelIndex &, int, int)),
-          this, SLOT(insertHeaderSection(const QModelIndex &, int, int)));
-      this->connect(newModel,
-          SIGNAL(columnsAboutToBeRemoved(const QModelIndex &, int, int)),
-          this, SLOT(removeHeaderSection(const QModelIndex &, int, int)));
+      bh = static_cast<int> ((sh - ch)/2.0);
       }
     else
       {
-      this->connect(newModel,
-          SIGNAL(rowsInserted(const QModelIndex &, int, int)),
-          this, SLOT(insertHeaderSection(const QModelIndex &, int, int)));
-      this->connect(newModel,
-          SIGNAL(rowsAboutToBeRemoved(const QModelIndex &, int, int)),
-          this, SLOT(removeHeaderSection(const QModelIndex &, int, int)));
+      // ch == sh
+      bh = 0;
       }
     }
 
-  // Determine which sections are clickable and setup the icons.
-  this->initializeIcons();
-}
-
-void pqCheckableHeaderView::setRootIndex(const QModelIndex &index)
-{
-  QHeaderView::setRootIndex(index);
-  this->initializeIcons();
-}
-
-void pqCheckableHeaderView::toggleCheckState(int section)
-{
-  // If the section is checkable, toggle the check state.
-  QAbstractItemModel *current = this->model();
-  if(current && section >= 0 && section < this->Internal->Items.size())
+  if((cw + 2*bw) > sw)
     {
-    const pqCheckableHeaderViewItem &item = this->Internal->Items[section];
-    if(item.Checkable)
+    if(cw > sw)
       {
-      // If the state is unchecked or partially checked, the state
-      // should be changed to checked.
-      current->setHeaderData(section, this->orientation(),
-          item.State == Qt::Checked ? Qt::Unchecked : Qt::Checked,
-          Qt::CheckStateRole);
+      bw = 0;
+      cboxRect.setWidth(sw);
+      }
+    else if(cw < sw)
+      {
+      bw = static_cast<int> ((sw - cw)/2.0);
+      }
+    else
+      {
+      // cw == sw
+      bw = 0;
       }
     }
+
+  QSize chbSize = QSize(cw, ch);
+  chbSize.scale(cboxRect.size(), Qt::KeepAspectRatio);
+
+  QPoint checkBoxPoint(
+    sourceRect.x() + bw,
+    sourceRect.y() + bh);
+  return QRect(checkBoxPoint, chbSize);
 }
 
-void pqCheckableHeaderView::initializeIcons()
+//----------------------------------------------------------------------------
+QVariant pqCheckableHeaderViewInternal::drawCheckboxControl(
+  QPainter *painter,
+  const QRect &rect,
+  QRect &chbRect,
+  int numItemsChecked,
+  int totalItems,
+  QVariant curCheckState,
+  const QAbstractItemView *view)
 {
-  this->Internal->Items.clear();
-  QAbstractItemModel *current = this->model();
-  if(current)
+  QVariant isChecked;
+
+  QStyleOptionButton option;
+  option.rect = this->checkBoxRect(rect, view);
+  chbRect = option.rect;
+  option.state |= QStyle::State_Enabled;
+
+  if (this->forceCheck)
     {
-    bool active = true;
-    if(this->parentWidget())
+    if (curCheckState.toInt() == Qt::Unchecked)
       {
-      active = this->parentWidget()->hasFocus();
+      option.state |= QStyle::State_Off;
       }
-
-    this->Internal->IgnoreChange = true;
-    int total = this->orientation() == Qt::Horizontal ?
-        current->columnCount() : current->rowCount();
-    for(int i = 0; i < total; i++)
+    else
       {
-      bool checkable = false;
-      int cs = current->headerData(
-          i, this->orientation(), Qt::CheckStateRole).toInt(&checkable);
-      this->Internal->Items.append(pqCheckableHeaderViewItem(checkable, cs));
-      if(checkable)
-        {
-        current->setHeaderData(i, this->orientation(),
-            this->Internal->CheckBoxPixMaps->getPixmap(cs, active), Qt::DecorationRole);
-        }
-      else
-        {
-        current->setHeaderData(i, this->orientation(), QVariant(),
-            Qt::DecorationRole);
-        }
+      option.state |= QStyle::State_On;
       }
+    isChecked = curCheckState;
+    }
+  else
+    {
+      if (numItemsChecked == 0)
+      {
+      option.state |= QStyle::State_Off;
+      isChecked = QVariant(Qt::Unchecked);
+      }
+    else if (numItemsChecked < totalItems)
+      {
+      option.state |= QStyle::State_NoChange;
+      isChecked = QVariant(Qt::PartiallyChecked);
+      }
+    else if (numItemsChecked == totalItems)
+      {
+      option.state |= QStyle::State_On;
+      isChecked = QVariant(Qt::Checked);
+      }
+    else
+      {
+      // Invalid
+      option.state |= QStyle::State_None;
+      }
+    }
+  this->Style->drawPrimitive(QStyle::PE_IndicatorCheckBox, &option, painter);
 
-    this->Internal->IgnoreChange = false;
+  // Reset the forceCheck boolean once the checkbox is drawn
+  this->forceCheck = false;
+
+  return isChecked;
+}
+
+//----------------------------------------------------------------------------
+pqCheckableHeaderView::pqCheckableHeaderView(Qt::Orientation orientation,
+  QWidget *parentObject) :
+  QHeaderView(orientation, parentObject)
+{
+  this->Internal = new pqCheckableHeaderViewInternal();
+  this->Internal->Style = this->style();
+#if QT_VERSION >= 0x050000
+  setSectionsClickable(true);
+#else
+  setClickable(true);
+#endif
+  QObject::connect(this, SIGNAL(checkStateChanged(int)),
+    this, SLOT(updateSection(int)));
+}
+
+//----------------------------------------------------------------------------
+pqCheckableHeaderView::~pqCheckableHeaderView()
+{
+  if (this->Internal)
+    {
+    delete this->Internal;
     }
 }
 
-void pqCheckableHeaderView::updateHeaderData(Qt::Orientation orient,
-    int first, int last)
+//----------------------------------------------------------------------------
+void pqCheckableHeaderView::paintSection(QPainter *painter,
+  const QRect &sectionRect, int logicalIdx) const
 {
-  if(this->Internal->IgnoreChange || orient != this->orientation())
+  painter->save();
+  QHeaderView::paintSection(painter, sectionRect, logicalIdx);
+  painter->restore();
+
+  QAbstractItemModel *theModel = this->model();
+  if (!theModel)
     {
     return;
     }
 
-  QAbstractItemModel *current = this->model();
-  if(!current)
+  // Total number of top-level items in this section
+  int totalItems = this->orientation() == Qt::Horizontal ?
+    theModel->rowCount() : theModel->columnCount();
+
+  bool checkable = false;
+  int numItemsChecked = 0;
+
+  if (this->orientation() == Qt::Horizontal)
+    {
+    for (int i = 0; i < totalItems; i++)
+      {
+      QModelIndex idx;
+      if (this->orientation() == Qt::Horizontal)
+        {
+        // If headerview is horizontal, the sections are columns and iterate
+        // over rows
+        idx = theModel->index(i, logicalIdx);
+        }
+      else
+        {
+        // If headerview is vertical, the sections are rows and iterate over
+        // columns
+        idx = theModel->index(logicalIdx, i);
+        }
+      Qt::ItemFlags f = theModel->flags(idx);
+      if ((f & Qt::ItemIsUserCheckable) != 0)
+        {
+        checkable = true;
+        QVariant value = theModel->data(idx, Qt::CheckStateRole);
+        if (value.toInt() != Qt::Unchecked)
+          {
+          numItemsChecked++;
+          }
+        }
+      }
+    }
+  if (checkable)
+    {
+    QVariant checkstate;
+    if(this->Internal->checkState.contains(logicalIdx))
+      {
+      checkstate = this->Internal->checkState[logicalIdx];
+      }
+    QRect chbRect;
+    QVariant newCheckstate = this->Internal->drawCheckboxControl(
+      painter, sectionRect, chbRect, numItemsChecked, totalItems, checkstate, this);
+    this->Internal->isCheckable[logicalIdx] = true;
+    this->Internal->checkBoxRectHash[logicalIdx] = chbRect;
+    if (checkstate != newCheckstate)
+      {
+      this->Internal->checkState[logicalIdx] = newCheckstate;
+      emit this->checkStateChanged(logicalIdx);
+      }
+    }
+  else
+    {
+    this->Internal->isCheckable[logicalIdx] = false;
+    this->Internal->checkState[logicalIdx] = QVariant(Qt::Unchecked);
+    }
+}
+
+//----------------------------------------------------------------------------
+void pqCheckableHeaderView::mousePressEvent(QMouseEvent *evt)
+{
+  QAbstractItemModel *theModel = this->model();
+
+  if(theModel)
+    {
+    //bool active = true;
+    //if (this->parentWidget())
+    //  {
+    //  active = this->parentWidget()->hasFocus();
+    //  }
+    int logicalIndexPressed = logicalIndexAt(evt->pos());
+    if (this->Internal->isCheckable.contains(logicalIndexPressed) &&
+      this->Internal->isCheckable[logicalIndexPressed])
+      {
+      int secPos = this->sectionViewportPosition(logicalIndexPressed);
+      int secPosX = this->orientation() == Qt::Horizontal ?
+        secPos : 0;
+      int secPosY = this->orientation() == Qt::Horizontal ?
+        0 : secPos;
+      QRect chbRect = this->Internal->checkBoxRectHash[logicalIndexPressed];
+      if (evt->x() <= (secPosX + chbRect.right()) &&
+          evt->x() >= (secPosX + chbRect.left()) &&
+          evt->y() <= (secPosY + chbRect.bottom()) &&
+          evt->y() >= (secPosY + chbRect.top()))
+        {
+        if (this->Internal->checkState.contains(logicalIndexPressed))
+          {
+          if ((this->Internal->checkState[logicalIndexPressed]).toInt() != Qt::Unchecked)
+            {
+            this->Internal->checkState[logicalIndexPressed] = QVariant(Qt::Unchecked);
+            }
+          else
+            {
+            this->Internal->checkState[logicalIndexPressed] = QVariant(Qt::Checked);
+            }
+          this->Internal->forceCheck = true;
+          emit this->checkStateChanged(logicalIndexPressed);
+          this->updateModelCheckState(logicalIndexPressed);
+          }
+        else
+          {
+          // assuming it was not checked if not registered
+          this->Internal->checkState[logicalIndexPressed] =
+            QVariant(Qt::Checked);
+          }
+        this->updateSection(logicalIndexPressed);
+        return;
+        }
+      }
+    }
+  this->update();
+  QHeaderView::mousePressEvent(evt);
+}
+
+//----------------------------------------------------------------------------
+void pqCheckableHeaderView::updateModelCheckState(int section)
+{
+  // Update the check state of all checkable items in the model based on the
+  // checkstate of the header checkbox
+
+  QAbstractItemModel *theModel = this->model();
+
+  if (!theModel)
     {
     return;
     }
 
-  bool active = true;
-  if(this->parentWidget())
+  // Total number of top-level items in this section
+  int totalItems = this->orientation() == Qt::Horizontal ?
+    theModel->rowCount() : theModel->columnCount();
+
+  //bool checkable = false;
+  QVariant checked = ((this->Internal->checkState[section]).toInt() ==
+    Qt::Unchecked) ? Qt::Unchecked : Qt::Checked;
+
+  if (this->orientation() == Qt::Horizontal)
     {
-    active = this->parentWidget()->hasFocus();
-    }
-
-  // If the check state has changed, update the icons.
-  this->Internal->IgnoreChange = true;
-  for(int i = first; i <= last; i++)
-    {
-    pqCheckableHeaderViewItem *item = &this->Internal->Items[i];
-    if(item->Checkable)
+    for (int i = 0; i < totalItems; i++)
       {
-      int cs = current->headerData(
-          i, orient, Qt::CheckStateRole).toInt(&item->Checkable);
-      if(!item->Checkable)
+      QModelIndex idx;
+      if (this->orientation() == Qt::Horizontal)
         {
-        // Clear the check box pixmap.
-        current->setHeaderData(i, orient, QVariant(), Qt::DisplayRole);
-        }
-      else if(cs != item->State)
-        {
-        item->State = cs;
-        current->setHeaderData(i, orient,
-            this->Internal->CheckBoxPixMaps->getPixmap(cs, active), Qt::DecorationRole);
-        }
-      }
-    }
-
-  this->Internal->IgnoreChange = false;
-}
-
-void pqCheckableHeaderView::insertHeaderSection(const QModelIndex &parentIndex,
-    int first, int last)
-{
-  QAbstractItemModel *current = this->model();
-  if(current && parentIndex == this->rootIndex() && first >= 0)
-    {
-    bool active = true;
-    if(this->parentWidget())
-      {
-      active = this->parentWidget()->hasFocus();
-      }
-
-    bool doAdd = first >= this->Internal->Items.size();
-    this->Internal->IgnoreChange = true;
-    for(int i = first; i <= last; i++)
-      {
-      bool checkable = false;
-      int cs = current->headerData(
-          i, this->orientation(), Qt::CheckStateRole).toInt(&checkable);
-      if(doAdd)
-        {
-        this->Internal->Items.append(pqCheckableHeaderViewItem(checkable, cs));
+        // If headerview is horizontal, the sections are columns and iterate
+        // over rows
+        idx = theModel->index(i, section);
         }
       else
         {
-        this->Internal->Items.insert(i,
-            pqCheckableHeaderViewItem(checkable, cs));
+        // If headerview is vertical, the sections are rows and iterate over
+        // columns
+        idx = theModel->index(section, i);
         }
-
-      if(checkable)
+      Qt::ItemFlags f = theModel->flags(idx);
+      if ((f & Qt::ItemIsUserCheckable) != 0)
         {
-        current->setHeaderData(i, this->orientation(),
-            this->Internal->CheckBoxPixMaps->getPixmap(cs, active), Qt::DecorationRole);
+        //checkable = true;
+        theModel->setData(idx, checked, Qt::CheckStateRole);
         }
       }
-
-    this->Internal->IgnoreChange = false;
     }
+
 }
 
-void pqCheckableHeaderView::removeHeaderSection(const QModelIndex &parentIndex,
-    int first, int last)
+//----------------------------------------------------------------------------
+QVariant pqCheckableHeaderView::getCheckState(int section)
 {
-  if(parentIndex == this->rootIndex())
-    {
-    if(last >= this->Internal->Items.size())
-      {
-      last = this->Internal->Items.size() - 1;
-      }
-
-    if(first <= last && first >= 0)
-      {
-      for(int i = last; i >= first; i--)
-        {
-        this->Internal->Items.removeAt(i);
-        }
-      }
-    }
+  return this->Internal->checkState[section];
 }
-
-

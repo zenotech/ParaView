@@ -15,13 +15,15 @@
 #include "vtkSMProxyListDomain.h"
 
 #include "vtkObjectFactory.h"
-#include "vtkSmartPointer.h"
-#include "vtkSMProxy.h"
-#include "vtkSMProxyManager.h"
-#include "vtkSMProxyProperty.h"
 #include "vtkPVXMLElement.h"
+#include "vtkSmartPointer.h"
+#include "vtkSMPropertyHelper.h"
+#include "vtkSMProxy.h"
 #include "vtkSMProxyLocator.h"
+#include "vtkSMProxyProperty.h"
+#include "vtkSMSessionProxyManager.h"
 
+#include <cassert>
 #include <string>
 #include <vector>
 
@@ -55,6 +57,26 @@ vtkSMProxyListDomain::vtkSMProxyListDomain()
 vtkSMProxyListDomain::~vtkSMProxyListDomain()
 {
   delete this->Internals;
+}
+
+//-----------------------------------------------------------------------------
+void vtkSMProxyListDomain::CreateProxies(vtkSMSessionProxyManager* pxm)
+{
+  assert(pxm);
+
+  this->Internals->ProxyList.clear();
+  for (vtkSMProxyListDomainInternals::VectorOfProxyInfo::iterator iter =
+    this->Internals->ProxyTypeList.begin();
+    iter != this->Internals->ProxyTypeList.end(); ++iter)
+    {
+    vtkSMProxy* proxy = pxm->NewProxy(
+      iter->GroupName.c_str(), iter->ProxyName.c_str());
+    if (proxy)
+      {
+      this->Internals->ProxyList.push_back(proxy);
+      proxy->FastDelete();
+      }
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -103,17 +125,19 @@ const char* vtkSMProxyListDomain::GetProxyName(unsigned int cc)
 }
 
 //-----------------------------------------------------------------------------
-int vtkSMProxyListDomain::SetDefaultValues(vtkSMProperty* prop)
+int vtkSMProxyListDomain::SetDefaultValues(vtkSMProperty* prop, bool use_unchecked_values)
 {
   vtkSMProxyProperty* pp = vtkSMProxyProperty::SafeDownCast(prop);
   if (pp && this->GetNumberOfProxies() > 0)
     {
-    pp->RemoveAllProxies();
-    pp->AddProxy(this->GetProxy(0));
+    vtkSMPropertyHelper helper(prop);
+    helper.SetUseUnchecked(use_unchecked_values);
+    vtkSMProxy *values[1] = {this->GetProxy(0)};
+    helper.Set(values, 1);
     return 1;
     }
 
-  return this->Superclass::SetDefaultValues(prop);
+  return this->Superclass::SetDefaultValues(prop, use_unchecked_values);
 }
 
 //-----------------------------------------------------------------------------
@@ -276,6 +300,17 @@ int vtkSMProxyListDomain::LoadState(vtkPVXMLElement* element,
       }
     }
   return 1;
+}
+
+//-----------------------------------------------------------------------------
+void vtkSMProxyListDomain::SetProxies(vtkSMProxy** proxies, unsigned int count)
+{
+  vtkSMProxyListDomainInternals::VectorOfProxies newValues(proxies, proxies+count);
+  if (this->Internals->ProxyList != newValues)
+    {
+    this->Internals->ProxyList = newValues;
+    this->DomainModified();
+    }
 }
 
 //-----------------------------------------------------------------------------

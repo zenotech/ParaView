@@ -1,4 +1,8 @@
 {
+  "edition": "Enable-Python",
+  "requires": [
+    "Base"
+  ],
   "cmake":{
     "cache":[
       { "name":"PARAVIEW_ENABLE_PYTHON",
@@ -19,9 +23,14 @@
         { "path":"Testing" }
       ]
     },
+    { "path":"ParaViewCore/ClientServerCore/Core",
+      "patches": [
+        { "path": "ClientServerCore-remove-extraction.patch" }
+      ]
+    },
     { "path":"VTK/Wrapping/Python",
       "patches": [
-          { "path": "remove-references-to-ColorMaps.xml.patch" }
+        { "path": "remove-references-to-ColorMaps.xml.patch" }
       ]
     },
     { "name":"vtkFiltersProgrammable",
@@ -32,7 +41,7 @@
       "pythonwrap":true
     },
     { "name":"vtkmpi4py",
-      "path":"ThirdParty/mpi4py"
+      "path":"VTK/ThirdParty/mpi4py"
     },
     { "path":"VTK/Utilities/PythonInterpreter" },
     { "path":"VTK/Utilities/Python" },

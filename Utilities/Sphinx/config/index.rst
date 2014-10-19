@@ -23,12 +23,23 @@ Main modules
    The ParaView Python Package <paraview>
    simple <paraview.simple>
    servermanager <paraview.servermanager>
-   algortihm <paraview.vtk.algorithms>
+   algorithm <paraview.vtk.algorithms>
 
    coprocessing <paraview.coprocessing>
    benchmark <paraview.benchmark>
 
    Available readers, sources, writers, filters and animation cues <paraview.servermanager_proxies>
+
+API Changes
+===========
+
+This docuements changes to ParaView's Python APIs between different versions, starting
+with ParaView 4.2.0.
+
+.. toctree::
+   :maxdepth: 2
+
+   api-changes
 
 ParaViewWeb
 ==================

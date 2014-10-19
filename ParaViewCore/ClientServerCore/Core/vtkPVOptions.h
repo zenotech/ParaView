@@ -145,6 +145,19 @@ public:
   vtkGetMacro(EnableStackTrace, int);
   vtkSetMacro(EnableStackTrace, int);
 
+  // Description:
+  // Flag for disabling loading of options and settings stored by the
+  // application. Often used for testing.
+  vtkGetMacro(DisableRegistry, int);
+
+  // Description:
+  // XDisplay test on server processes during initialization sometimes happens
+  // too early and may result in remote rendering prematurely disabled. When
+  // this flag is set, ParaView will skip such X-display tests. Note, if the
+  // display is truly inaccessible when ParaView tries to connect to the server,
+  // we will indeed get runtimes errors, including segfaults.
+  vtkGetMacro(DisableXDisplayTests, int);
+
   enum ProcessTypeEnum
     {
     PARAVIEW = 0x2,
@@ -199,6 +212,7 @@ protected:
   char* StateFileName;  // loading state file(Bug #5711)
   char* TestPlugin; // to load plugins from command line for tests
   char* TestPluginPath;
+  int DisableXDisplayTests;
 
   // inline setters
   vtkSetStringMacro(ServerURL);
@@ -223,6 +237,7 @@ private:
   int SatelliteMessageIds;
   int PrintMonitors;
   int EnableStackTrace;
+  int DisableRegistry;
   int ForceMPIInitOnClient;
   int ForceNoMPIInitOnClient;
 

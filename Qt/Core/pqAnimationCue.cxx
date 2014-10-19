@@ -32,11 +32,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqAnimationCue.h"
 
 #include "vtkEventQtSlotConnect.h"
-#include "vtkProcessModule.h"
-#include "vtkSmartPointer.h"
 #include "vtkSMProxy.h"
-#include "vtkSMSessionProxyManager.h"
 #include "vtkSMProxyProperty.h"
+#include "vtkSMSessionProxyManager.h"
 
 #include <QList>
 #include <QtDebug>
@@ -44,73 +42,54 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqSMAdaptor.h"
 #include "pqServer.h"
 
-class pqAnimationCue::pqInternals
-{
-public:
-  vtkSmartPointer<vtkSMProxy> Manipulator;
-  vtkSmartPointer<vtkEventQtSlotConnect> VTKConnect;
-  pqInternals()
-    {
-    this->VTKConnect = vtkSmartPointer<vtkEventQtSlotConnect>::New();
-    }
-};
-
 //-----------------------------------------------------------------------------
 pqAnimationCue::pqAnimationCue(const QString& group, const QString& name,
     vtkSMProxy* proxy, pqServer* server, QObject* _parent/*=NULL*/)
 : pqProxy(group, name, proxy, server, _parent)
 {
-  this->ManipulatorType = "KeyFrameAnimationCueManipulator";
   this->KeyFrameType = "CompositeKeyFrame";
 
-  this->Internal = new pqAnimationCue::pqInternals();
-
-  if (proxy->GetProperty("Manipulator"))
-    {
-    this->Internal->VTKConnect->Connect(
-      proxy->GetProperty("Manipulator"), vtkCommand::ModifiedEvent,
-      this, SLOT(onManipulatorModified()));
-    }
-
+  vtkEventQtSlotConnect* connector = this->getConnector();
   if (proxy->GetProperty("AnimatedProxy"))
     {
-    this->Internal->VTKConnect->Connect(
+    connector->Connect(
       proxy->GetProperty("AnimatedProxy"), vtkCommand::ModifiedEvent,
       this, SIGNAL(modified()));
     }
   if (proxy->GetProperty("AnimatedPropertyName"))
     {
     // since some cue like that for Camera doesn't have this property.
-    this->Internal->VTKConnect->Connect(
+    connector->Connect(
       proxy->GetProperty("AnimatedPropertyName"), vtkCommand::ModifiedEvent,
       this, SIGNAL(modified()));
     }
 
   if (proxy->GetProperty("AnimatedElement"))
     {
-    this->Internal->VTKConnect->Connect(
+    connector->Connect(
       proxy->GetProperty("AnimatedElement"), vtkCommand::ModifiedEvent,
       this, SIGNAL(modified()));
     }
 
-  this->Internal->VTKConnect->Connect(
+  connector->Connect(
     proxy->GetProperty("Enabled"), vtkCommand::ModifiedEvent,
     this, SLOT(onEnabledModified()));
 
-  this->onManipulatorModified();
+  connector->Connect(
+    proxy, vtkCommand::ModifiedEvent,
+    this, SIGNAL(keyframesModified()));
 }
 
 //-----------------------------------------------------------------------------
 pqAnimationCue::~pqAnimationCue()
 {
-  delete this->Internal;
 }
 
 //-----------------------------------------------------------------------------
 void pqAnimationCue::addKeyFrameInternal(vtkSMProxy* keyframe)
 {
   this->proxyManager()->RegisterProxy("animation",
-    QString("KeyFrame%1").arg(keyframe->GetGlobalIDAsString()).toAscii().data(),
+    QString("KeyFrame%1").arg(keyframe->GetGlobalIDAsString()).toLatin1().data(),
     keyframe);
 }
 
@@ -120,12 +99,6 @@ void pqAnimationCue::removeKeyFrameInternal(vtkSMProxy* keyframe)
   vtkSMSessionProxyManager* pxm = this->proxyManager();
   pxm->UnRegisterProxy("animation",
     pxm->GetProxyName("animation", keyframe), keyframe);
-}
-
-//-----------------------------------------------------------------------------
-vtkSMProxy* pqAnimationCue::getManipulatorProxy() const
-{
-  return this->Internal->Manipulator;
 }
 
 //-----------------------------------------------------------------------------
@@ -148,7 +121,7 @@ vtkSMProperty* pqAnimationCue::getAnimatedProperty() const
       selfProxy->GetProperty("AnimatedPropertyName")).toString();
     if (pname != "")
       {
-      return proxy->GetProperty(pname.toAscii().data());
+      return proxy->GetProperty(pname.toLatin1().data());
       }
     }
 
@@ -160,31 +133,6 @@ int pqAnimationCue::getAnimatedPropertyIndex() const
 {
   return pqSMAdaptor::getElementProperty(
     this->getProxy()->GetProperty("AnimatedElement")).toInt();
-}
-
-//-----------------------------------------------------------------------------
-void pqAnimationCue::setDefaultPropertyValues()
-{
-  this->Superclass::setDefaultPropertyValues();
-
-  vtkSMProxy* proxy = this->getProxy();
-  if (!this->Internal->Manipulator && proxy->GetProperty("Manipulator"))
-    {
-    vtkSMSessionProxyManager* pxm = this->proxyManager();
-    vtkSMProxy* manip = 
-      pxm->NewProxy("animation_manipulators", 
-        this->ManipulatorType.toAscii().data());
-    this->addHelperProxy("Manipulator", manip);
-    manip->Delete();
-    pqSMAdaptor::setProxyProperty(proxy->GetProperty("Manipulator"),
-      manip);
-    }
-
-  // All cues are always normalized, this ensures that the
-  // Cue times are valid even when the scene times are changed.
-  pqSMAdaptor::setEnumerationProperty(proxy->GetProperty("TimeMode"),
-    "Normalized");
-  proxy->UpdateVTKObjects();
 }
 
 //-----------------------------------------------------------------------------
@@ -209,81 +157,34 @@ void pqAnimationCue::onEnabledModified()
 }
 
 //-----------------------------------------------------------------------------
-void pqAnimationCue::onManipulatorModified()
-{
-  vtkSMProxy* myproxy = this->getProxy();
-  vtkSMProxy* manip = 0;
-  if (!myproxy->GetProperty("Manipulator") && myproxy->GetProperty("KeyFrames"))
-    {
-    // Manipulator is an internal subproxy of this cue.
-    manip = myproxy;
-    }
-  else
-    {
-    manip = pqSMAdaptor::getProxyProperty(
-      this->getProxy()->GetProperty("Manipulator"));
-    }
-  
-  if (manip != this->Internal->Manipulator)
-    {
-    if (this->Internal->Manipulator)
-      {
-      this->Internal->VTKConnect->Disconnect(
-        this->Internal->Manipulator, 0, this, 0);
-      }
-
-    this->Internal->Manipulator = manip;
-
-    if (this->Internal->Manipulator)
-      {
-      this->Internal->VTKConnect->Connect(
-        this->Internal->Manipulator, vtkCommand::ModifiedEvent,
-        this, SIGNAL(keyframesModified()));
-      }
-
-    emit this->keyframesModified();
-    }
-}
-
-//-----------------------------------------------------------------------------
 int pqAnimationCue::getNumberOfKeyFrames() const
 {
-  if (this->Internal->Manipulator)
-    {
-    vtkSMProxyProperty* pp = vtkSMProxyProperty::SafeDownCast(
-      this->Internal->Manipulator->GetProperty("KeyFrames"));
-    return (pp? pp->GetNumberOfProxies(): 0);
-    }
-  return 0;
+  vtkSMProxyProperty* pp = vtkSMProxyProperty::SafeDownCast(
+    this->getProxy()->GetProperty("KeyFrames"));
+  return (pp? pp->GetNumberOfProxies(): 0);
 }
 
 //-----------------------------------------------------------------------------
 vtkSMProxy* pqAnimationCue::getKeyFrame(int index) const
 {
-  if (this->Internal->Manipulator)
+  vtkSMProxyProperty* pp = vtkSMProxyProperty::SafeDownCast(
+    this->getProxy()->GetProperty("KeyFrames"));
+  if (pp && index >=0 && (int)(pp->GetNumberOfProxies()) > index )
     {
-    vtkSMProxyProperty* pp = vtkSMProxyProperty::SafeDownCast(
-      this->Internal->Manipulator->GetProperty("KeyFrames"));
-    if (pp && index >=0 && (int)(pp->GetNumberOfProxies()) > index )
-      {
-      return pp->GetProxy(index);
-      }
+    return pp->GetProxy(index);
     }
-  return 0;
+  return NULL;
 }
 
 //-----------------------------------------------------------------------------
 QList<vtkSMProxy*> pqAnimationCue::getKeyFrames() const
 {
   QList<vtkSMProxy*> list;
-  if (this->Internal->Manipulator)
+  vtkSMProxyProperty* pp = vtkSMProxyProperty::SafeDownCast(
+    this->getProxy()->GetProperty("KeyFrames"));
+  for (unsigned int cc=0; pp && cc < pp->GetNumberOfProxies(); cc++)
     {
-    vtkSMProxyProperty* pp = vtkSMProxyProperty::SafeDownCast(
-      this->Internal->Manipulator->GetProperty("KeyFrames"));
-    for (unsigned int cc=0; pp && cc < pp->GetNumberOfProxies(); cc++)
-      {
-      list.push_back(pp->GetProxy(cc));
-      }
+    list.push_back(pp->GetProxy(cc));
     }
   return list;
 }
@@ -291,13 +192,6 @@ QList<vtkSMProxy*> pqAnimationCue::getKeyFrames() const
 //-----------------------------------------------------------------------------
 void pqAnimationCue::deleteKeyFrame(int index)
 {
-  if (!this->Internal->Manipulator)
-    {
-    qDebug() << "Cue does not have a KeyFrame manipulator. "
-      << "One cannot delete keyframes to this Cue.";
-    return;
-    }
-
   QList<vtkSMProxy*> keyframes = this->getKeyFrames();
   if (index <0 || index >= keyframes.size())
     {
@@ -308,35 +202,30 @@ void pqAnimationCue::deleteKeyFrame(int index)
   vtkSMProxy* keyframe = keyframes[index];
   keyframes.removeAt(index);
 
-  vtkSMProxyProperty* pp =vtkSMProxyProperty::SafeDownCast(
-    this->Internal->Manipulator->GetProperty("KeyFrames"));
-  pp->RemoveAllProxies();
-
+  std::vector<vtkSMProxy*> proxy_vector;
   foreach(vtkSMProxy* curKf, keyframes)
     {
-    pp->AddProxy(curKf);
+    proxy_vector.push_back(curKf);
     }
-  this->Internal->Manipulator->UpdateVTKObjects();
+
+  vtkSMProxyProperty* pp =vtkSMProxyProperty::SafeDownCast(
+    this->getProxy()->GetProperty("KeyFrames"));
+  pp->SetProxies(static_cast<unsigned int>(proxy_vector.size()),
+    (proxy_vector.size() > 0? &proxy_vector[0] : NULL));
+  this->getProxy()->UpdateVTKObjects();
   this->removeKeyFrameInternal(keyframe);
 }
 
 //-----------------------------------------------------------------------------
 vtkSMProxy* pqAnimationCue::insertKeyFrame(int index)
 {
-  if (!this->Internal->Manipulator)
-    {
-    qDebug() << "Cue does not have a KeyFrame manipulator. "
-      << "One cannot add keyframes to this Cue.";
-    return 0;
-    }
-
   vtkSMSessionProxyManager* pxm = this->proxyManager();
 
   // Get the current keyframes.
   QList<vtkSMProxy*> keyframes = this->getKeyFrames();
   
   vtkSMProxy* kf = pxm->NewProxy("animation_keyframes", 
-    this->KeyFrameType.toAscii().data());
+    this->KeyFrameType.toLatin1().data());
   if (!kf)
     {
     qDebug() << "Could not create new proxy " << this->KeyFrameType;
@@ -418,15 +307,17 @@ vtkSMProxy* pqAnimationCue::insertKeyFrame(int index)
   pqSMAdaptor::setElementProperty(kf->GetProperty("KeyTime"), keyTime);
   kf->UpdateVTKObjects();
 
-  vtkSMProxyProperty* pp =vtkSMProxyProperty::SafeDownCast(
-    this->Internal->Manipulator->GetProperty("KeyFrames"));
-  pp->RemoveAllProxies();
-
+  std::vector<vtkSMProxy*> proxy_vector;
   foreach(vtkSMProxy* curKf, keyframes)
     {
-    pp->AddProxy(curKf);
+    proxy_vector.push_back(curKf);
     }
-  this->Internal->Manipulator->UpdateVTKObjects();
+
+  vtkSMProxyProperty* pp =vtkSMProxyProperty::SafeDownCast(
+    this->getProxy()->GetProperty("KeyFrames"));
+  pp->SetProxies(static_cast<unsigned int>(proxy_vector.size()),
+    (proxy_vector.size() > 0? &proxy_vector[0] : NULL));
+  this->getProxy()->UpdateVTKObjects();
 
   kf->Delete();
   return kf;

@@ -43,13 +43,13 @@
 
         // Update stop method to use the connection
         stop = function() {
-         connection.session.call('vtk:exit');
+         connection.session.call('application.exit');
        }
      };
 
   // Try to launch the Viz process
   vtkWeb.smartConnect(config, start, function(code,reason){
-    alert(reason);
+    console.log("Inside smartConnect close callback.");
   });
   </script>
 </body>

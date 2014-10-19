@@ -44,19 +44,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkNetworkAccessManager.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
+#include "vtkProcessModule.h"
 #include "vtkPVOptions.h"
 #include "vtkPVServerInformation.h"
-#include "vtkProcessModule.h"
 #include "vtkSMCollaborationManager.h"
 #include "vtkSMMessage.h"
+#include "vtkSMParaViewPipelineController.h"
 #include "vtkSMProperty.h"
 #include "vtkSMPropertyHelper.h"
-#include "vtkSMPropertyIterator.h"
 #include "vtkSMProxy.h"
 #include "vtkSMProxyManager.h"
 #include "vtkSMProxySelectionModel.h"
-#include "vtkSMSession.h"
 #include "vtkSMSessionClient.h"
+#include "vtkSMSession.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMViewProxy.h"
 #include "vtkToolkits.h"
@@ -122,6 +122,29 @@ pqServer::pqServer(vtkIdType connectionID, vtkPVOptions* options, QObject* _pare
   this->IdleCollaborationTimer.setSingleShot(true);
   QObject::connect(&this->IdleCollaborationTimer, SIGNAL(timeout()),
                    this, SLOT(processServerNotification()));
+
+  // Monitor server crash for better error management
+  this->Internals->VTKConnect->Connect(
+    this->Session, vtkPVSessionBase::ConnectionLost,
+    this, SLOT(onConnectionLost(vtkObject*,ulong,void*,void*)));
+
+  // In case of Multi-clients connection, the client has to listen
+  // server notification so collaboration could happen
+  if (this->session()->IsMultiClients())
+    {
+    vtkSMSessionClient* currentSession = vtkSMSessionClient::SafeDownCast(this->session());
+    if(currentSession)
+      {
+      // Initialise the CollaborationManager to listen server notification
+      this->Internals->CollaborationCommunicator = currentSession->GetCollaborationManager();
+      this->Internals->VTKConnect->Connect(
+          currentSession->GetCollaborationManager(),
+          vtkCommand::AnyEvent,
+          this,
+          SLOT(onCollaborationCommunication(vtkObject*,ulong,void*,void*)));
+      }
+    this->setMonitorServerNotifications(true);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -159,97 +182,12 @@ void pqServer::setMonitorServerNotifications(bool val)
 }
 
 //-----------------------------------------------------------------------------
-void pqServer::initialize()
-{
-  vtkSMSessionProxyManager* pxm = this->proxyManager();
-  // Update ProxyManager based on its remote state
-  pxm->UpdateFromRemote();
-
-  // setup the active-view and active-sources selection models.
-  vtkSMProxySelectionModel* selmodel = pxm->GetSelectionModel("ActiveSources");
-  if (selmodel == NULL)
-    {
-    selmodel = vtkSMProxySelectionModel::New();
-    pxm->RegisterSelectionModel("ActiveSources", selmodel);
-    selmodel->FastDelete();
-    }
-  this->ActiveSources = selmodel;
-
-  selmodel = pxm->GetSelectionModel("ActiveView");
-  if (selmodel == NULL)
-    {
-    selmodel = vtkSMProxySelectionModel::New();
-    pxm->RegisterSelectionModel("ActiveView", selmodel);
-    selmodel->FastDelete();
-    }
-  this->ActiveView = selmodel;
-
-
-  // Setup the Connection TimeKeeper.
-  // Currently, we are keeping seperate times per connection. Once we start
-  // supporting multiple connections, we may want to the link the
-  // connection times together.
-  this->createTimeKeeper();
-
-  // Create the GlobalMapperPropertiesProxy.
-  vtkSMProxy* proxy = pxm->GetProxy("temp_prototypes", "GlobalMapperProperties");
-  if(proxy == NULL)
-    {
-    proxy = pxm->NewProxy("misc", "GlobalMapperProperties");
-    proxy->UpdateVTKObjects();
-    pxm->RegisterProxy("temp_prototypes", "GlobalMapperProperties", proxy);
-    proxy->FastDelete();
-    }
-  this->GlobalMapperPropertiesProxy = proxy;
-  this->updateGlobalMapperProperties();
-
-  // Create Strict Load Balancing Proxy
-  pqSettings* settings = pqApplicationCore::instance()->settings();
-  proxy = pxm->GetProxy("temp_prototypes", "StrictLoadBalancing");
-  if (proxy == NULL)
-    {
-    proxy = pxm->NewProxy("misc", "StrictLoadBalancing");
-    vtkSMPropertyHelper(proxy, "DisableExtentsTranslator").Set(
-      settings->value("strictLoadBalancing", false).toBool());
-    proxy->UpdateVTKObjects();
-
-    pxm->RegisterProxy("temp_prototypes", "StrictLoadBalancing", proxy);
-    proxy->FastDelete();
-    }
-
-  // Monitor server crash for better error management
-  this->Internals->VTKConnect->Connect(
-      this->session(),
-      vtkPVSessionBase::ConnectionLost,
-      this,
-      SLOT(onConnectionLost(vtkObject*,ulong,void*,void*)));
-
-  // In case of Multi-clients connection, the client has to listen
-  // server notification so collaboration could happen
-  if(this->session()->IsMultiClients())
-    {
-    vtkSMSessionClient* currentSession = vtkSMSessionClient::SafeDownCast(this->session());
-    if(currentSession)
-      {
-      // Initialise the CollaborationManager to listen server notification
-      this->Internals->CollaborationCommunicator = currentSession->GetCollaborationManager();
-      this->Internals->VTKConnect->Connect(
-          currentSession->GetCollaborationManager(),
-          vtkCommand::AnyEvent,
-          this,
-          SLOT(onCollaborationCommunication(vtkObject*,ulong,void*,void*)));
-      }
-    this->setMonitorServerNotifications(true);
-    }
-}
-
-//-----------------------------------------------------------------------------
 pqTimeKeeper* pqServer::getTimeKeeper() const
 {
-  if(!this->Internals->TimeKeeper)
+  if (!this->Internals->TimeKeeper)
     {
-    vtkSMSessionProxyManager* pxm = this->proxyManager();
-    vtkSMProxy* proxy = pxm->GetProxy("timekeeper", "TimeKeeper");
+    vtkNew<vtkSMParaViewPipelineController> controller;
+    vtkSMProxy* proxy = controller->FindTimeKeeper(this->session());
     pqServerManagerModel* smmodel =
         pqApplicationCore::instance()->getServerManagerModel();
     this->Internals->TimeKeeper = smmodel->findItem<pqTimeKeeper*>(proxy);
@@ -267,30 +205,15 @@ vtkSMSession* pqServer::session() const
 //-----------------------------------------------------------------------------
 vtkSMProxySelectionModel* pqServer::activeSourcesSelectionModel() const
 {
-  return this->ActiveSources;
+  vtkSMSessionProxyManager* pxm = this->proxyManager();
+  return pxm->GetSelectionModel("ActiveSources");
 }
 
 //-----------------------------------------------------------------------------
 vtkSMProxySelectionModel* pqServer::activeViewSelectionModel() const
 {
-  return this->ActiveView;
-}
-
-//-----------------------------------------------------------------------------
-void pqServer::createTimeKeeper()
-{
-  // Set Global Time keeper if needed.
-  if(this->getTimeKeeper() == NULL)
-    {
-    vtkSMSessionProxyManager* pxm = this->proxyManager();
-    vtkSMProxy* proxy = pxm->NewProxy("misc","TimeKeeper");
-    proxy->UpdateVTKObjects();
-    pxm->RegisterProxy("timekeeper", "TimeKeeper", proxy);
-    proxy->FastDelete();
-    pqServerManagerModel* smmodel =
-        pqApplicationCore::instance()->getServerManagerModel();
-    this->Internals->TimeKeeper = smmodel->findItem<pqTimeKeeper*>(proxy);
-    }
+  vtkSMSessionProxyManager* pxm = this->proxyManager();
+  return pxm->GetSelectionModel("ActiveView");
 }
 
 //-----------------------------------------------------------------------------
@@ -441,180 +364,6 @@ int pqServer::getHeartBeatTimeoutSetting()
       }
     }
   return 1*60*1000; // 1 minutes.
-}
-
-//-----------------------------------------------------------------------------
-void pqServer::setCoincidentTopologyResolutionMode(int mode)
-{
-  vtkSMPropertyHelper(this->GlobalMapperPropertiesProxy,
-    "Mode").Set(mode);
-  this->GlobalMapperPropertiesProxy->UpdateVTKObjects();
-}
-
-//-----------------------------------------------------------------------------
-void pqServer::setPolygonOffsetParameters(double factor, double units)
-{
-  vtkSMPropertyHelper helper(this->GlobalMapperPropertiesProxy,
-    "PolygonOffsetParameters");
-  helper.Set(0, factor);
-  helper.Set(1, units);
-  this->GlobalMapperPropertiesProxy->UpdateVTKObjects();
-}
-
-//-----------------------------------------------------------------------------
-void pqServer::setPolygonOffsetFaces(bool offset_faces)
-{
-  vtkSMPropertyHelper(this->GlobalMapperPropertiesProxy,
-    "PolygonOffsetFaces").Set(offset_faces? 1 : 0);
-  this->GlobalMapperPropertiesProxy->UpdateVTKObjects();
-}
-
-//-----------------------------------------------------------------------------
-void pqServer::setZShift(double shift)
-{
-  vtkSMPropertyHelper(this->GlobalMapperPropertiesProxy,
-    "ZShift").Set(shift);
-  this->GlobalMapperPropertiesProxy->UpdateVTKObjects();
-}
-
-//-----------------------------------------------------------------------------
-void pqServer::setGlobalImmediateModeRendering(bool val)
-{
-  vtkSMPropertyHelper(this->GlobalMapperPropertiesProxy,
-    "GlobalImmediateModeRendering").Set(val? 1 : 0);
-  this->GlobalMapperPropertiesProxy->UpdateVTKObjects();
-}
-
-//-----------------------------------------------------------------------------
-void pqServer::setCoincidentTopologyResolutionModeSetting(int mode)
-{
-  pqApplicationCore* core = pqApplicationCore::instance();
-  pqSettings* settings = core->settings();
-  settings->setValue("/server/GlobalMapperProperties/Mode", mode);
-
-  // update all existing servers.
-  pqServer::updateGlobalMapperProperties();
-}
-
-//-----------------------------------------------------------------------------
-int pqServer::coincidentTopologyResolutionModeSetting()
-{
-  pqApplicationCore* core = pqApplicationCore::instance();
-  pqSettings* settings = core->settings();
-  return settings->value("/server/GlobalMapperProperties/Mode",
-    VTK_RESOLVE_SHIFT_ZBUFFER).toInt();
-}
-
-//-----------------------------------------------------------------------------
-void pqServer::setPolygonOffsetParametersSetting(double factor, double units)
-{
-  pqApplicationCore* core = pqApplicationCore::instance();
-  pqSettings* settings = core->settings();
-  settings->setValue("/server/GlobalMapperProperties/PolygonOffsetFactor",
-    factor);
-  settings->setValue("/server/GlobalMapperProperties/PolygonOffsetUnits",
-    units);
-
-  // update all existing servers.
-  pqServer::updateGlobalMapperProperties();
-}
-
-//-----------------------------------------------------------------------------
-void pqServer::polygonOffsetParametersSetting(double &factor, double &units)
-{
-  pqApplicationCore* core = pqApplicationCore::instance();
-  pqSettings* settings = core->settings();
-  factor = settings->value("/server/GlobalMapperProperties/PolygonOffsetFactor",
-    1.0).toDouble();
-  units = settings->value("/server/GlobalMapperProperties/PolygonOffsetUnits",
-    1.0).toDouble();
-}
-
-//-----------------------------------------------------------------------------
-void pqServer::setPolygonOffsetFacesSetting(bool value)
-{
-  pqApplicationCore* core = pqApplicationCore::instance();
-  pqSettings* settings = core->settings();
-  settings->setValue("/server/GlobalMapperProperties/OffsetFaces", value);
-
-  // update all existing servers.
-  pqServer::updateGlobalMapperProperties();
-}
-
-//-----------------------------------------------------------------------------
-bool pqServer::polygonOffsetFacesSetting()
-{
-  pqApplicationCore* core = pqApplicationCore::instance();
-  pqSettings* settings = core->settings();
-  return settings->value("/server/GlobalMapperProperties/OffsetFaces",
-    true).toBool();
-}
-
-//-----------------------------------------------------------------------------
-void pqServer::setZShiftSetting(double shift)
-{
-  pqApplicationCore* core = pqApplicationCore::instance();
-  pqSettings* settings = core->settings();
-  settings->setValue("/server/GlobalMapperProperties/ZShift", shift);
-
-  // update all existing servers.
-  pqServer::updateGlobalMapperProperties();
-
-}
-
-//-----------------------------------------------------------------------------
-double pqServer::zShiftSetting()
-{
-  pqApplicationCore* core = pqApplicationCore::instance();
-  pqSettings* settings = core->settings();
-  return settings->value("/server/GlobalMapperProperties/ZShift",
-    2.0e-3).toDouble();
-}
-
-//-----------------------------------------------------------------------------
-void pqServer::setGlobalImmediateModeRenderingSetting(bool val)
-{
-  pqApplicationCore* core = pqApplicationCore::instance();
-  pqSettings* settings = core->settings();
-  settings->setValue(
-    "/server/GlobalMapperProperties/GlobalImmediateModeRendering", val);
-
-  // update all existing servers.
-  pqServer::updateGlobalMapperProperties();
-}
-
-//-----------------------------------------------------------------------------
-bool pqServer::globalImmediateModeRenderingSetting()
-{
-  pqApplicationCore* core = pqApplicationCore::instance();
-  pqSettings* settings = core->settings();
-  return settings->value(
-    "/server/GlobalMapperProperties/GlobalImmediateModeRendering",
-    false).toBool();
-}
-
-//-----------------------------------------------------------------------------
-void pqServer::updateGlobalMapperProperties()
-{
-  pqApplicationCore* core = pqApplicationCore::instance();
-  pqServerManagerModel* smmodel = core->getServerManagerModel();
-  QList<pqServer*> servers = smmodel->findItems<pqServer*>();
-  foreach (pqServer* server, servers)
-    {
-    server->setCoincidentTopologyResolutionMode(
-      pqServer::coincidentTopologyResolutionModeSetting());
-
-    double factor, units;
-    pqServer::polygonOffsetParametersSetting(factor, units);
-    server->setPolygonOffsetParameters(factor, units);
-
-    server->setPolygonOffsetFaces(pqServer::polygonOffsetFacesSetting());
-
-    server->setZShift(pqServer::zShiftSetting());
-
-    server->setGlobalImmediateModeRendering(
-      pqServer::globalImmediateModeRenderingSetting());
-    }
 }
 
 //-----------------------------------------------------------------------------

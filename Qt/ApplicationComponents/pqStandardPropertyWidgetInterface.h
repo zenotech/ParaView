@@ -53,13 +53,19 @@ public:
   /// return NULL without raising any errors (or messages).
   /// Supported types are:
   /// \li \c calculator : pqCalculatorWidget
+  /// \li \c camera_manipulator : pqCameraManipulatorWidget
+  /// \li \c color_palette_selector : pqColorPaletteSelectorWidget
   /// \li \c color_selector : pqColorSelectorPropertyWidget
+  /// \li \c color_selector_with_palette : pqColorSelectorPropertyWidget with palette menu
   /// \li \c command_button : pqCommandButtonPropertyWidget
   /// \li \c display_representation_selector : pqDisplayRepresentationPropertyWidget
   /// \li \c double_range : pqDoubleRangeSliderPropertyWidget
+  /// \li \c image_compressor_config : pqImageCompressorWidget
   /// \li \c list : pqListPropertyWidget
   /// \li \c texture_selector : pqTextureSelectorPropertyWidget
   /// \li \c transfer_function_editor : pqTransferFunctionWidgetPropertyWidget
+  /// \li \c viewtype_selector: pqViewTypePropertyWidget
+  /// \li \c glyph_scale_factor: pqGlyphScaleFactorPropertyWidget
   virtual pqPropertyWidget* createWidgetForProperty(
     vtkSMProxy *proxy, vtkSMProperty *property);
 
@@ -69,10 +75,13 @@ public:
   /// Supported types are:
   /// \li \c AnnotationsEditor : pqColorAnnotationsPropertyWidget
   /// \li \c ArrayStatus : pqArrayStatusPropertyWidget
+  /// \li \c BackgroundEditor : pqBackgroundPropertyWidget
   /// \li \c ColorEditor : pqColorEditorPropertyWidget
   /// \li \c ColorOpacityEditor : pqColorOpacityEditorWidget
   /// \li \c CubeAxes : pqCubeAxesPropertyWidget
   /// \li \c FontEditor : pqFontPropertyWidget
+  /// \li \c LightsEditor : pqLightsPropertyGroup
+  /// \li \c SeriesEditor : pqSeriesEditorPropertyWidget
   virtual pqPropertyWidget* createWidgetForPropertyGroup(
     vtkSMProxy *proxy, vtkSMPropertyGroup *group);
 
@@ -81,10 +90,11 @@ public:
   /// For unsupported/unknown, implementations should simply return NULL without
   /// raising any errors (or messages).
   /// Supported types are:
-  /// \li \c ClipScalarsDecorator : pqClipScalarsDecorator
   /// \li \c CTHArraySelectionDecorator : pqCTHArraySelectionDecorator
   /// \li \c EnableWidgetDecorator : pqEnableWidgetDecorator
+  /// \li \c ShowWidgetDecorator : pqShowWidgetDecorator
   /// \li \c InputDataTypeDecorator : pqInputDataTypeDecorator
+  /// \li \c GenericDecorator: pqGenericPropertyWidgetDecorator
   virtual pqPropertyWidgetDecorator* createWidgetDecorator(
     const QString& type, vtkPVXMLElement* config, pqPropertyWidget* widget);
 };

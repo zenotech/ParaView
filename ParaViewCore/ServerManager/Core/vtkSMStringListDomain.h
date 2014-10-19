@@ -28,7 +28,8 @@
 
 #include "vtkPVServerManagerCoreModule.h" //needed for exports
 #include "vtkSMDomain.h"
-
+#include <vector> //  needed for vector.
+class vtkStdString;
 //BTX
 struct vtkSMStringListDomainInternals;
 //ETX
@@ -52,27 +53,13 @@ public:
   int IsInDomain(const char* string, unsigned int& idx);
 
   // Description:
-  // Returns the number of strings in the domain.
-  unsigned int GetNumberOfStrings();
-
-  // Description:
   // Returns a string in the domain. The pointer may become
   // invalid once the domain has been modified.
   const char* GetString(unsigned int idx);
 
   // Description:
-  // Adds a new string to the domain.
-  unsigned int AddString(const char* string);
-
-  // Description:
-  // Removes a string from the domain.
-  // Returns the index of the removed string. Will return -1, if the string was
-  // not found.
-  virtual int RemoveString(const char* string);
-
-  // Description:
-  // Removes all strings from the domain.
-  virtual void RemoveAllStrings();
+  // Returns the number of strings in the domain.
+  unsigned int GetNumberOfStrings();
 
   // Description:
   // Update self checking the "unchecked" values of all required
@@ -92,7 +79,7 @@ public:
   // application must explicitly call this method to initialize the
   // property.
   // Returns 1 if the domain updated the property.
-  virtual int SetDefaultValues(vtkSMProperty*);
+  virtual int SetDefaultValues(vtkSMProperty*, bool use_unchecked_values);
 protected:
   vtkSMStringListDomain();
   ~vtkSMStringListDomain();
@@ -103,16 +90,18 @@ protected:
   virtual int ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement* element);
 
   virtual void ChildSaveState(vtkPVXMLElement* domainElement);
-  
-  // Load the state of the domain from the XML.
-  virtual int LoadState(vtkPVXMLElement* domainElement, 
-    vtkSMProxyLocator* loader);
 
-  vtkSMStringListDomainInternals* SLInternals;
+  // Description:
+  // Call to set the strings. Will fire DomainModifiedEvent if the domain values
+  // have indeed changed.
+  void SetStrings(const std::vector<vtkStdString>& strings);
+  const std::vector<vtkStdString>& GetStrings();
 
 private:
   vtkSMStringListDomain(const vtkSMStringListDomain&); // Not implemented
   void operator=(const vtkSMStringListDomain&); // Not implemented
+  
+  vtkSMStringListDomainInternals* SLInternals;
 };
 
 #endif

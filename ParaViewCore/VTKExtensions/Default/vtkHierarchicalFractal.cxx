@@ -15,7 +15,7 @@
 #include "vtkHierarchicalFractal.h"
 
 #include "vtkAMRBox.h"
-#include "vtkAMRUtilities.h"
+#include "vtkParallelAMRUtilities.h"
 #include "vtkAMRInformation.h"
 #include "vtkCellData.h"
 #include "vtkCompositeDataIterator.h"
@@ -541,7 +541,8 @@ int vtkHierarchicalFractal::RequestInformation(
     }
 
   vtkInformation *info=outputVector->GetInformationObject(0);
-  info->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),-1);
+  info->Set(CAN_HANDLE_PIECE_REQUEST(), 1);
+
   return 1;
 }
 
@@ -667,7 +668,7 @@ int vtkHierarchicalFractal::RequestData(
     this->AddBlockIdArray(output);
     vtkHierarchicalBoxDataSet *hset = vtkHierarchicalBoxDataSet::SafeDownCast(output);
     this->AddDepthArray(hset);
-    vtkAMRUtilities::BlankCells(hset,vtkMultiProcessController::GetGlobalController());
+    vtkParallelAMRUtilities::BlankCells(hset,vtkMultiProcessController::GetGlobalController());
     info->Set( vtkCompositeDataPipeline::COMPOSITE_DATA_META_DATA(),hset);
     }
   this->AddFractalArray(output);

@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqColorTableModel.h"
 #include "pqDataRepresentation.h"
 #include "pqOpacityTableModel.h"
+#include "pqPipelineRepresentation.h"
 #include "pqPropertiesPanel.h"
 #include "pqPropertyWidgetDecorator.h"
 #include "pqRescaleRange.h"
@@ -53,6 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMProperty.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMPVRepresentationProxy.h"
+#include "vtkSMRenderViewProxy.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMTransferFunctionProxy.h"
 #include "vtkVector.h"
@@ -125,12 +127,20 @@ public:
 
     this->Ui.ColorTable->setModel(&this->ColorTableModel);
     this->Ui.ColorTable->horizontalHeader()->setHighlightSections(false);
+#if QT_VERSION >= 0x050000
+    this->Ui.ColorTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+#else
     this->Ui.ColorTable->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
+#endif
     this->Ui.ColorTable->horizontalHeader()->setStretchLastSection(true);
 
     this->Ui.OpacityTable->setModel(&this->OpacityTableModel);
     this->Ui.OpacityTable->horizontalHeader()->setHighlightSections(false);
+#if QT_VERSION >= 0x050000
+    this->Ui.OpacityTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+#else
     this->Ui.OpacityTable->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
+#endif
     this->Ui.OpacityTable->horizontalHeader()->setStretchLastSection(true);
     }
 };
@@ -200,6 +210,10 @@ pqColorOpacityEditorWidget::pqColorOpacityEditorWidget(
   QObject::connect(
     ui.ResetRangeToDataOverTime, SIGNAL(clicked()),
     this, SLOT(resetRangeToDataOverTime()));
+
+  QObject::connect(
+    ui.ResetRangeToVisibleData, SIGNAL(clicked()),
+    this, SLOT(resetRangeToVisibleData()));
 
   QObject::connect(
     ui.InvertTransferFunctions, SIGNAL(clicked()),
@@ -557,6 +571,7 @@ void pqColorOpacityEditorWidget::resetRangeToData()
     }
   BEGIN_UNDO_SET("Reset transfer function ranges using data range");
   vtkSMPVRepresentationProxy::RescaleTransferFunctionToDataRange(repr->getProxy());
+  repr->renderViewEventually();
   emit this->changeFinished();
   END_UNDO_SET();
 }
@@ -584,9 +599,47 @@ void pqColorOpacityEditorWidget::resetRangeToDataOverTime()
     // disable auto-rescale of transfer function since the user has set on
     // explicitly (BUG #14371).
     this->setLockScalarRange(true);
+    repr->renderViewEventually();
     emit this->changeFinished();
     END_UNDO_SET();
     }
+}
+
+//-----------------------------------------------------------------------------
+void pqColorOpacityEditorWidget::resetRangeToVisibleData()
+{
+  pqPipelineRepresentation* repr = qobject_cast<pqPipelineRepresentation*>(
+    pqActiveObjects::instance().activeRepresentation());
+  if (!repr)
+    {
+    qCritical() << "No active representation.";
+    return;
+    }
+
+  vtkSMPVRepresentationProxy* repProxy =
+    vtkSMPVRepresentationProxy::SafeDownCast(repr->getProxy());
+  if (!repProxy)
+    {
+    return ;
+    }
+
+  pqView* activeView = pqActiveObjects::instance().activeView();
+  if (!activeView)
+    {
+    qCritical() << "No active view.";
+    return;
+    }
+
+  vtkSMRenderViewProxy* rvproxy = vtkSMRenderViewProxy::SafeDownCast(activeView->getViewProxy());
+  if (!rvproxy)
+    {
+    return;
+    }
+
+  BEGIN_UNDO_SET("Reset transfer function ranges using visible data");
+  vtkSMPVRepresentationProxy::RescaleTransferFunctionToVisibleRange(repProxy, rvproxy);
+  repr->renderViewEventually();
+  END_UNDO_SET();
 }
 
 //-----------------------------------------------------------------------------
@@ -617,6 +670,9 @@ void pqColorOpacityEditorWidget::resetRangeToCustom(double min, double max)
   // disable auto-rescale of transfer function since the user has set on
   // explicitly (BUG #14371).
   this->setLockScalarRange(true);
+  pqDataRepresentation* repr =
+    pqActiveObjects::instance().activeRepresentation();
+  repr->renderViewEventually();
   emit this->changeFinished();
   END_UNDO_SET();
 }

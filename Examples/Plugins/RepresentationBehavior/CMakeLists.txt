@@ -1,3 +1,4 @@
+# TODO: update this plugin to use the pipeline controller instead.
 # Create an auto-start plugin that will add custom representation behavior.
 # Typicialy when a representation will be created, the behavior will
 # try to set it representation to Surface and pick on of the scalar data array
@@ -9,9 +10,15 @@ IF(NOT ParaView_BINARY_DIR)
   INCLUDE(${PARAVIEW_USE_FILE})
 ENDIF(NOT ParaView_BINARY_DIR)
 
-QT4_WRAP_CPP(MOC_SRCS
-  pqRepresentationBehaviorStarter.h
-  pqSurfaceRepresentationBehavior.h)
+IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+  QT5_WRAP_CPP(MOC_SRCS
+    pqRepresentationBehaviorStarter.h
+    pqSurfaceRepresentationBehavior.h)
+ELSE ()
+  QT4_WRAP_CPP(MOC_SRCS
+    pqRepresentationBehaviorStarter.h
+    pqSurfaceRepresentationBehavior.h)
+ENDIF ()
 
 ADD_PARAVIEW_AUTO_START(
   IFACES

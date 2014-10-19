@@ -51,8 +51,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class pqLiveInsituVisualizationManager::pqInternals
 {
 public:
-  QPointer<pqServer> CatalystSession;
-  QPointer<pqServer> Session;
+  QPointer<pqServer> InsituSession;
+  QPointer<pqServer> DisplaySession;
   vtkWeakPointer<vtkSMLiveInsituLinkProxy> LiveInsituLinkProxy;
   QList<QPointer<pqPipelineSource> > ExtractSourceProxies;
 };
@@ -65,7 +65,7 @@ pqLiveInsituVisualizationManager::pqLiveInsituVisualizationManager(
 {
   Q_ASSERT(server != NULL);
 
-  this->Internals->Session = server;
+  this->Internals->DisplaySession = server;
 
   pqApplicationCore* core = pqApplicationCore::instance();
 
@@ -97,27 +97,39 @@ pqLiveInsituVisualizationManager::pqLiveInsituVisualizationManager(
   pqCoreUtilities::connect(adaptor, vtkCommand::UpdateEvent,
     this, SLOT(timestepsUpdated()));
   pqCoreUtilities::connect(adaptor, vtkCommand::ConnectionClosedEvent,
-    this, SIGNAL(catalystDisconnected()));
+    this, SIGNAL(insituDisconnected()));
   pqCoreUtilities::connect(adaptor, vtkCommand::ConnectionCreatedEvent,
-    this, SIGNAL(catalystConnected()));
+    this, SIGNAL(insituConnected()));
 
-  this->Internals->CatalystSession = catalyst;
+  this->Internals->InsituSession = catalyst;
   this->Internals->LiveInsituLinkProxy = adaptor;
+}
+
+//-----------------------------------------------------------------------------
+pqServer* pqLiveInsituVisualizationManager::insituSession() const
+{
+  return this->Internals->InsituSession;
+}
+
+//-----------------------------------------------------------------------------
+pqServer* pqLiveInsituVisualizationManager::displaySession() const
+{
+  return this->Internals->DisplaySession;
 }
 
 //-----------------------------------------------------------------------------
 pqLiveInsituVisualizationManager::~pqLiveInsituVisualizationManager()
 {
   pqApplicationCore* core = pqApplicationCore::instance();
-  if (core && this->Internals->CatalystSession && core->getObjectBuilder())
+  if (core && this->Internals->InsituSession && core->getObjectBuilder())
     {
-    core->getObjectBuilder()->removeServer(this->Internals->CatalystSession);
+    core->getObjectBuilder()->removeServer(this->Internals->InsituSession);
     }
 
   // Remove the "LiveInsituLink" proxy.
-  if (this->Internals->Session && this->Internals->LiveInsituLinkProxy)
+  if (this->Internals->DisplaySession && this->Internals->LiveInsituLinkProxy)
     {
-    vtkSMSessionProxyManager* pxm = this->Internals->Session->proxyManager();
+    vtkSMSessionProxyManager* pxm = this->Internals->DisplaySession->proxyManager();
     pxm->UnRegisterProxy("coprocessing", pxm->GetProxyName("coprocessing",
         this->Internals->LiveInsituLinkProxy),
       this->Internals->LiveInsituLinkProxy);
@@ -134,17 +146,24 @@ pqLiveInsituVisualizationManager::~pqLiveInsituVisualizationManager()
 }
 
 //-----------------------------------------------------------------------------
+vtkSMLiveInsituLinkProxy* pqLiveInsituVisualizationManager::getProxy() const
+{
+  return this->Internals->LiveInsituLinkProxy;
+}
+
+//-----------------------------------------------------------------------------
 bool pqLiveInsituVisualizationManager::hasExtracts(pqOutputPort* port) const
 {
   if (port == NULL ||
-    port->getServer() != this->Internals->CatalystSession)
+      port->getServer() != this->Internals->InsituSession ||
+      this->Internals->LiveInsituLinkProxy == NULL)
     {
     return false;
     }
 
   if (this->Internals->LiveInsituLinkProxy->HasExtract(
-      port->getSource()->getSMGroup().toAscii().data(),
-      port->getSource()->getSMName().toAscii().data(),
+      port->getSource()->getSMGroup().toLatin1().data(),
+      port->getSource()->getSMName().toLatin1().data(),
       port->getPortNumber()))
     {
     return true;
@@ -164,8 +183,8 @@ bool pqLiveInsituVisualizationManager::addExtract(pqOutputPort* port)
   pqPipelineSource* source = port->getSource();
 
   vtkSMProxy* proxy = this->Internals->LiveInsituLinkProxy->CreateExtract(
-    source->getSMGroup().toAscii().data(),
-    source->getSMName().toAscii().data(),
+    source->getSMGroup().toLatin1().data(),
+    source->getSMName().toLatin1().data(),
     port->getPortNumber());
 
   QString name;
@@ -179,8 +198,8 @@ bool pqLiveInsituVisualizationManager::addExtract(pqOutputPort* port)
     name = QString("Extract: %1").arg(source->getSMName());
     }
 
-  this->Internals->Session->proxyManager()->RegisterProxy(
-    "sources", name.toAscii().data(), proxy);
+  this->Internals->DisplaySession->proxyManager()->RegisterProxy(
+    "sources", name.toLatin1().data(), proxy);
 
   pqPipelineSource* pqproxy =
     pqApplicationCore::instance()->getServerManagerModel()->findItem<pqPipelineSource*>(proxy);
@@ -207,8 +226,9 @@ bool pqLiveInsituVisualizationManager::addExtract(pqOutputPort* port)
 //-----------------------------------------------------------------------------
 void pqLiveInsituVisualizationManager::sourceRemoved(pqPipelineSource* source)
 {
-  if (source->getServer() != this->Internals->Session ||
-    !source->property("CATALYST_EXTRACT").toBool())
+  if (source->getServer() != this->Internals->DisplaySession ||
+      ! source->property("CATALYST_EXTRACT").toBool() ||
+      this->Internals->LiveInsituLinkProxy == NULL)
     {
     return;
     }
@@ -231,4 +251,5 @@ void pqLiveInsituVisualizationManager::timestepsUpdated()
       }
     }
   this->Internals->ExtractSourceProxies.clear();
+  emit nextTimestepAvailable();
 }

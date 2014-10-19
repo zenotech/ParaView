@@ -38,14 +38,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Qt Includes.
 #include <QDoubleValidator>
+#include <QPointer>
 
 // ParaView Includes.
 #include "pqApplicationCore.h"
 #include "pqNamedWidgets.h"
 #include "pqPropertyManager.h"
-#include "pqSignalAdaptors.h"
 #include "pqUndoStack.h"
-#include "pqStandardColorLinkAdaptor.h"
 
 #include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMPropertyHelper.h"
@@ -55,17 +54,16 @@ class pqCubeAxesEditorDialog::pqInternal : public Ui::CubeAxesEditorDialog
 public:
   vtkSmartPointer<vtkSMProxy> Representation;
   pqPropertyManager* PropertyManager;
-  pqSignalAdaptorColor* ColorAdaptor;
+  QPointer<pqColorPaletteLinkHelper> PaletteLinkHelper;
   pqInternal()
     {
     this->PropertyManager = 0;
-    this->ColorAdaptor = 0;
     }
   ~pqInternal()
     {
     delete this->PropertyManager;
     this->PropertyManager = 0;
-    delete this->ColorAdaptor;
+    delete this->PaletteLinkHelper;
     }
 };
 
@@ -76,9 +74,6 @@ pqCubeAxesEditorDialog::pqCubeAxesEditorDialog(
 {
   this->Internal = new pqInternal();
   this->Internal->setupUi(this);
-  this->Internal->ColorAdaptor = new pqSignalAdaptorColor(
-    this->Internal->Color, "chosenColor",
-    SIGNAL(chosenColorChanged(const QColor&)), false);
   QObject::connect(this->Internal->Ok, SIGNAL(clicked()),
     this, SLOT(accept()), Qt::QueuedConnection);
   QObject::connect(this->Internal->Cancel, SIGNAL(clicked()),
@@ -116,16 +111,18 @@ void pqCubeAxesEditorDialog::setRepresentationProxy(vtkSMProxy* repr)
   delete this->Internal->PropertyManager;
   this->Internal->PropertyManager = new pqPropertyManager(this);
   this->Internal->Representation = repr;
+  delete this->Internal->PaletteLinkHelper;
+
   if (repr)
     {
     // set up links between the property manager and the widgets.
     pqNamedWidgets::link(this, repr, this->Internal->PropertyManager);
     this->Internal->PropertyManager->registerLink(
-      this->Internal->ColorAdaptor, "color",
-      SIGNAL(colorChanged(const QVariant&)),
+      this->Internal->Color,
+      "chosenColorRgbF",  SIGNAL(chosenColorChanged(const QColor&)),
       repr, repr->GetProperty("CubeAxesColor"));
-    new pqStandardColorLinkAdaptor(this->Internal->Color,
-      repr, "CubeAxesColor");
+    new pqColorPaletteLinkHelper(
+      this->Internal->Color, repr, "CubeAxesColor");
 
     //fill the ui elements with the correct object bounds
     double pvBounds[6];
@@ -215,6 +212,16 @@ void pqCubeAxesEditorDialog::setRepresentationProxy(vtkSMProxy* repr)
                              this->Internal->AxesOriginZ, this->Internal->AxesOriginZ);
       vtkSMPropertyHelper(repr,"UseAxesOrigin").Get(&axesOriginSelected, 1);
       this->onUseAxesOriginChange( (axesOriginSelected == 1) ? true : false );
+
+      // Link sticky axes option
+      PV_GROUPBOX_REGISTER(StickyAxes, "StickyAxes", 0);
+      QObject::connect( this->Internal->StickyAxes, SIGNAL(toggled(bool)),
+                        this, SLOT( onStickyAxesChange(bool)));
+      int stickyAxesSelected = 0;
+      vtkSMPropertyHelper(repr,"StickyAxes").Get(&stickyAxesSelected, 1);
+      this->onStickyAxesChange( (stickyAxesSelected == 1) ? true : false );
+
+      PV_GROUPBOX_REGISTER(CenterStickyAxes, "CenterStickyAxes", 0);
       }
     }
 }
@@ -279,4 +286,10 @@ void pqCubeAxesEditorDialog::onUseAxesOriginChange(bool enableAxesOrigin)
     this->Internal->CubeAxesYGridLines->setEnabled(true);
     this->Internal->CubeAxesZGridLines->setEnabled(true);
     }
+}
+
+//-----------------------------------------------------------------------------
+void pqCubeAxesEditorDialog::onStickyAxesChange(bool enableStickyAxes)
+{
+  this->Internal->CenterStickyAxes->setEnabled(enableStickyAxes);
 }

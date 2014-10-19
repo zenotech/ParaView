@@ -18,8 +18,10 @@
 #include "vtkIdTypeArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
+#include "vtkMultiProcessController.h"
 #include "vtkObjectFactory.h"
 #include "vtkPythonInterpreter.h"
+#include "vtkStdString.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStringArray.h"
 #include "vtkTable.h"
@@ -28,23 +30,39 @@
 #include <map>
 #include <vector>
 #include <vtksys/ios/sstream>
+#include <vtksys/SystemTools.hxx>
 
 vtkStandardNewMacro(vtkPythonAnnotationFilter);
 //----------------------------------------------------------------------------
 vtkPythonAnnotationFilter::vtkPythonAnnotationFilter()
+  : Expression(NULL),
+  ComputedAnnotationValue(NULL),
+  ArrayAssociation(vtkDataObject::FIELD),
+  DataTimeValid(false),
+  DataTime(0.0),
+  NumberOfTimeSteps(0),
+  TimeSteps(NULL),
+  TimeRangeValid(false),
+  CurrentInputDataObject(NULL)
 {
   this->SetNumberOfInputPorts(1);
-  this->AnnotationValue = 0;
-  this->PythonExpression = 0;
-  this->TimeInformations = 0;
+  this->TimeRange[0] = this->TimeRange[1] = 0.0;
 }
 
 //----------------------------------------------------------------------------
 vtkPythonAnnotationFilter::~vtkPythonAnnotationFilter()
 {
-  this->SetTimeInformations(0);
-  this->SetPythonExpression(0);
-  this->SetAnnotationValue(0);
+  this->SetExpression(0);
+  this->SetComputedAnnotationValue(0);
+}
+
+//----------------------------------------------------------------------------
+void vtkPythonAnnotationFilter::SetComputedAnnotationValue(const char* value)
+{
+  delete [] this->ComputedAnnotationValue;
+  // SystemTools handles NULL strings.
+  this->ComputedAnnotationValue = vtksys::SystemTools::DuplicateString(value);
+  // don't call this->Modified. This method gets called in RequestData().
 }
 
 //----------------------------------------------------------------------------
@@ -53,80 +71,68 @@ int vtkPythonAnnotationFilter::RequestData(
     vtkInformationVector** inputVector,
     vtkInformationVector* outputVector)
 {
-  // Meta-data
-  vtkDataObject* input = vtkDataObject::GetData(inputVector[0]);
-  vtkInformation* inputInfo = input ? input->GetInformation() : 0;
-  vtkInformation* outInfo = this->GetExecutive()->GetOutputInformation(0);
+  vtkDataObject* input = vtkDataObject::GetData(inputVector[0], 0);
+  assert(input != NULL);
 
+  // initialize variables.
+  this->DataTimeValid = false;
+  this->DataTime = 0.0;
+  this->TimeSteps = NULL;
+  this->NumberOfTimeSteps = 0;
+  this->TimeRangeValid = false;
+  this->TimeRange[0] = this->TimeRange[1] = 0.0;
+  this->SetComputedAnnotationValue(NULL);
+  this->CurrentInputDataObject = input;
 
-  // Extract time informations
+  // Extract time information
   vtksys_ios::ostringstream timeInfo;
-  if(inputInfo)
+  if (vtkInformation* dataInformation = input->GetInformation())
     {
-    timeInfo << ",";
-    // Time
-    if(inputInfo->Has(vtkDataObject::DATA_TIME_STEP()))
+    if (dataInformation->Has(vtkDataObject::DATA_TIME_STEP()))
       {
-      double time = inputInfo->Get(vtkDataObject::DATA_TIME_STEP());
-      timeInfo << time << ", ";
-      }
-    else
-      {
-      timeInfo << "0" << ", ";
-      }
-
-    // TimeSteps
-    if(outInfo->Has(vtkStreamingDemandDrivenPipeline::TIME_STEPS()))
-      {
-      const double* timeSteps =
-          outInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-      int len = outInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-      timeInfo << "[";
-      for(int i=0; i < len; i++)
-        {
-        timeInfo << timeSteps[i] << ", ";
-        }
-      timeInfo << "], ";
-      }
-    else
-      {
-      timeInfo << "[0, 1], ";
-      }
-
-    // TimeRange
-    if(outInfo->Has(vtkStreamingDemandDrivenPipeline::TIME_RANGE()))
-      {
-      double range[2];
-      outInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), range);
-      timeInfo << "[" << range[0] << ", " << range[1] << "]";
-      }
-    else
-      {
-      timeInfo << "[0, 1]";
+      this->DataTimeValid = true;
+      this->DataTime = dataInformation->Get(vtkDataObject::DATA_TIME_STEP());
       }
     }
-  this->SetTimeInformations(timeInfo.str().c_str());
 
+  vtkInformation* inputInfo = inputVector[0]->GetInformationObject(0);
+  if (inputInfo->Has(vtkStreamingDemandDrivenPipeline::TIME_STEPS()))
+    {
+    this->NumberOfTimeSteps = inputInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+    this->TimeSteps = inputInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+    }
 
-  // Execute the python script to process and generate the annotation
+  if (inputInfo->Has(vtkStreamingDemandDrivenPipeline::TIME_RANGE()))
+    {
+    this->TimeRangeValid = true;
+    inputInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), this->TimeRange);
+    }
+
   this->EvaluateExpression();
 
-  // Make sure a valid AnnotationValue is available
-  if(this->AnnotationValue == NULL || strlen(this->AnnotationValue) == 0)
+  // Make sure a valid ComputedAnnotationValue is available
+  if (this->ComputedAnnotationValue == NULL)
     {
-    this->SetAnnotationValue("Write a python expression like: 'Time index: %i' % t_index");
+    this->SetComputedAnnotationValue("(error)");
     }
 
   // Update the output data
   vtkStringArray* data = vtkStringArray::New();
   data->SetName("Text");
   data->SetNumberOfComponents(1);
-  data->InsertNextValue(this->AnnotationValue);
+  data->InsertNextValue(this->ComputedAnnotationValue);
 
   vtkTable* output = vtkTable::GetData(outputVector);
   output->AddColumn(data);
   data->FastDelete();
+  this->CurrentInputDataObject = NULL;
 
+  if (vtkMultiProcessController::GetGlobalController() &&
+    vtkMultiProcessController::GetGlobalController()->GetLocalProcessId() > 0)
+    {
+    // reset output on all ranks except the 0 root node.
+    output->Initialize();
+    }
   return 1;
 }
 
@@ -139,25 +145,32 @@ int vtkPythonAnnotationFilter::FillInputPortInformation(
 }
 
 //----------------------------------------------------------------------------
-void vtkPythonAnnotationFilter::EvaluateExpression()
+static std::string vtkGetReferenceAsString(void* ref)
 {
   // Set self to point to this
   char addrofthis[1024];
-  sprintf(addrofthis, "%p", this);
+  sprintf(addrofthis, "%p", ref);
   char *aplus = addrofthis;
-  if ((addrofthis[0] == '0') &&
-      ((addrofthis[1] == 'x') || addrofthis[1] == 'X'))
+  if ((addrofthis[0] == '0') && ((addrofthis[1] == 'x') || addrofthis[1] == 'X'))
     {
     aplus += 2; //skip over "0x"
     }
+  return std::string(aplus);
+}
 
+//----------------------------------------------------------------------------
+void vtkPythonAnnotationFilter::EvaluateExpression()
+{
   vtksys_ios::ostringstream stream;
-  stream << "from paraview import annotation as pv_ann" << endl
-         << "from vtkPVClientServerCoreCorePython import vtkPythonAnnotationFilter" << endl
-         << "me = vtkPythonAnnotationFilter('" << aplus << " ')" << endl
-         << "pv_ann.ComputeAnnotation(me, me.GetInputDataObject(0, 0), me.GetPythonExpression()"
-         << this->TimeInformations << ")" << endl
-         << "del me" << endl;
+  stream
+    << "def vtkPythonAnnotationFilter_EvaluateExpression():" << endl
+    << "    from paraview import annotation as pv_ann" << endl
+    << "    from vtkPVClientServerCoreCorePython import vtkPythonAnnotationFilter" << endl
+    << "    me = vtkPythonAnnotationFilter('" << vtkGetReferenceAsString(this) << " ')" << endl
+    << "    pv_ann.execute(me)" << endl
+    << "    del me" << endl
+    << "vtkPythonAnnotationFilter_EvaluateExpression()" << endl
+    << "del vtkPythonAnnotationFilter_EvaluateExpression" << endl;
 
 
   // ensure Python is initialized.

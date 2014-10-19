@@ -55,7 +55,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // BUG #13806, remove collective operations temporarily since they don't work
 // for composite datasets (esp. in parallel) as expected.
-#define REMOVE_COLLECTIVE_CLAUSES
+//#define REMOVE_COLLECTIVE_CLAUSES
+
+// Disable PROCESSID. This was cause major issues with collective operations.
+#define REMOVE_PROCESSID
 
 class pqQueryClauseWidget::pqInternals : public Ui::pqQueryClauseWidget
 {
@@ -64,11 +67,12 @@ public:
     {
     QString ArrayName;
     int ComponentNo;
-    ArrayInfo(const QString& name, int comp)
-      : ArrayName(name), ComponentNo(comp)
+    int NumberOfComponents;
+    ArrayInfo(const QString& name, int comp, int num_comps)
+      : ArrayName(name), ComponentNo(comp), NumberOfComponents(num_comps)
       {
       }
-    ArrayInfo() : ComponentNo(0) {}
+    ArrayInfo() : ComponentNo(0), NumberOfComponents(1) {}
     };
 
   // key == index in the combo-box
@@ -195,7 +199,8 @@ void pqQueryClauseWidget::populateSelectionCriteria(
     for (int cc=0; cc < attrInfo->GetNumberOfArrays(); cc++)
       {
       vtkPVArrayInformation* arrayInfo = attrInfo->GetArrayInformation(cc);
-      if (arrayInfo->GetNumberOfComponents() > 1)
+      int number_of_components = arrayInfo->GetNumberOfComponents();
+      if (number_of_components > 1)
         {
         this->Internals->criteria->addItem(
               QString("%1 (Magnitude)").arg(arrayInfo->GetName()),
@@ -203,7 +208,7 @@ void pqQueryClauseWidget::populateSelectionCriteria(
 
         int item_index = (this->Internals->criteria->count()-1);
         this->Internals->Arrays.insert(item_index,
-                                       pqInternals::ArrayInfo(arrayInfo->GetName(), -1));
+          pqInternals::ArrayInfo(arrayInfo->GetName(), -1, number_of_components));
 
         for (int kk=0; kk < arrayInfo->GetNumberOfComponents(); kk++)
           {
@@ -212,7 +217,7 @@ void pqQueryClauseWidget::populateSelectionCriteria(
                 THRESHOLD);
           item_index = (this->Internals->criteria->count()-1);
           this->Internals->Arrays.insert(item_index,
-                                         pqInternals::ArrayInfo(arrayInfo->GetName(), kk));
+            pqInternals::ArrayInfo(arrayInfo->GetName(), kk, number_of_components));
           }
         }
       else
@@ -221,7 +226,7 @@ void pqQueryClauseWidget::populateSelectionCriteria(
                                            THRESHOLD);
         int item_index = (this->Internals->criteria->count()-1);
         this->Internals->Arrays.insert(item_index,
-                                       pqInternals::ArrayInfo(arrayInfo->GetName(), 0));
+          pqInternals::ArrayInfo(arrayInfo->GetName(), 0, number_of_components));
         }
       }
     }
@@ -395,6 +400,9 @@ void pqQueryClauseWidget::updateDependentClauseWidgets()
   bool multi_process = (server->getNumberOfPartitions() > 1);
   bool multi_block = false;
   bool amr = false;
+#ifdef REMOVE_PROCESSID
+  multi_process = false;
+#endif
 
   vtkPVDataInformation* dataInfo = this->producer()->getDataInformation();
   if (dataInfo->GetCompositeDataSetType() == VTK_MULTIBLOCK_DATA_SET)
@@ -599,7 +607,7 @@ vtkSMProxy* pqQueryClauseWidget::newSelectionSource()
 //-----------------------------------------------------------------------------
 void pqQueryClauseWidget::addSelectionQualifiers(vtkSMProxy* selSource)
 {
-  CriteriaType criteria_type = this->currentCriteriaType(); 
+  CriteriaType criteria_type = this->currentCriteriaType();
   if (criteria_type == INVALID)
     {
     return;
@@ -633,15 +641,20 @@ void pqQueryClauseWidget::addSelectionQualifiers(vtkSMProxy* selSource)
   case THRESHOLD:
     pqInternals::ArrayInfo info = this->Internals->Arrays[
         this->Internals->criteria->currentIndex()];
-    if(info.ComponentNo == -1)
+    if (info.ComponentNo == -1)
       {
       // Magnitude
       fieldName.append("mag(").append(info.ArrayName).append(")");
       }
-    else
+    else if (info.NumberOfComponents > 1)
       {
       fieldName.append(info.ArrayName)
           .append("[:,").append(QString::number(info.ComponentNo)).append("]");
+      }
+    else
+      {
+      Q_ASSERT(info.ComponentNo == 0 && info.NumberOfComponents == 1);
+      fieldName.append(info.ArrayName);
       }
     break;
     }
@@ -663,16 +676,16 @@ void pqQueryClauseWidget::addSelectionQualifiers(vtkSMProxy* selSource)
       }
     break;
   case LIST_OF_VALUES:
-    if(query.isEmpty()) query = "contains(%1,[%2])";
     if (!this->Internals->value->text().isEmpty())
       {
-      query = query.arg(fieldName, this->Internals->value->text());
-      QStringList parts = this->Internals->value->text().split(',',
-        QString::SkipEmptyParts);
+      QStringList queryList;
+      QStringList parts = this->Internals->value->text().split(',', QString::SkipEmptyParts);
       foreach (QString part, parts)
         {
         values << part;
+        queryList << (QString("(%1 == %2)").arg(fieldName).arg(part));
         }
+      if (query.isEmpty()) query = queryList.join(" | ");
       }
     break;
 
@@ -728,27 +741,27 @@ void pqQueryClauseWidget::addSelectionQualifiers(vtkSMProxy* selSource)
       }
     break;
   case SINGLE_VALUE_MIN:
-    if(query.isEmpty()) query = "%1  == global_min(%1)";
+    if(query.isEmpty()) query = "%1  == min(%1)";
     query = query.arg(fieldName);
     ok_no_value = true;
     break;
   case SINGLE_VALUE_MAX:
-    if(query.isEmpty()) query = "%1  == global_max(%1)";
+    if(query.isEmpty()) query = "%1  == max(%1)";
     query = query.arg(fieldName);
     ok_no_value = true;
     break;
   case SINGLE_VALUE_LE_MEAN:
-    if(query.isEmpty()) query = "%1  <= global_mean(%1)";
+    if(query.isEmpty()) query = "%1  <= mean(%1)";
     query = query.arg(fieldName);
     ok_no_value = true;
     break;
   case SINGLE_VALUE_GE_MEAN:
-    if(query.isEmpty()) query = "%1  >= global_mean(%1)";
+    if(query.isEmpty()) query = "%1  >= mean(%1)";
     query = query.arg(fieldName);
     ok_no_value = true;
     break;
   case SINGLE_VALUE_MEAN_WITH_TOLERANCE:
-    if(query.isEmpty()) query = "abs(%1 - global_mean(%1)) < %2";
+    if(query.isEmpty()) query = "abs(%1 - mean(%1)) < %2";
     if (!this->Internals->value->text().isEmpty())
       {
       values << this->Internals->value->text();
@@ -766,7 +779,7 @@ void pqQueryClauseWidget::addSelectionQualifiers(vtkSMProxy* selSource)
   switch (criteria_type)
     {
   case QUERY:
-      vtkSMPropertyHelper(selSource, "QueryString").Set(values[0].toString().toAscii().constData());
+      vtkSMPropertyHelper(selSource, "QueryString").Set(values[0].toString().toLatin1().constData());
       break;
 
   case BLOCK:
@@ -782,7 +795,7 @@ void pqQueryClauseWidget::addSelectionQualifiers(vtkSMProxy* selSource)
   case GLOBALID:
   case THRESHOLD:
     this->LastQuery = query;
-    vtkSMPropertyHelper(selSource, "QueryString").Set(query.toAscii().constData());
+    vtkSMPropertyHelper(selSource, "QueryString").Set(query.toLatin1().constData());
     break;
   case AMR_LEVEL:
       {

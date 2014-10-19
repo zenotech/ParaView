@@ -41,7 +41,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqCoreUtilities.h"
 #include "pqItemViewSearchWidget.h"
 #include "pqOptions.h"
-#include "pqPQLookupTableManager.h"
 #include "pqQuickLaunchDialog.h"
 #include "pqSelectionManager.h"
 #include "pqSetName.h"
@@ -85,9 +84,6 @@ pqPVApplicationCore::pqPVApplicationCore(
   // that is being done from the GUI.
 #endif
   
-  // Lookuptable management will soon enough move to the server manager.
-  this->setLookupTableManager(new pqPQLookupTableManager(this));
-
   QObject::connect(&pqActiveObjects::instance(),
     SIGNAL(serverChanged(pqServer*)),
     this->AnimationManager, SLOT(onActiveServerChanged(pqServer*)));
@@ -115,6 +111,7 @@ void pqPVApplicationCore::registerForQuicklaunch(QWidget* menu)
 //-----------------------------------------------------------------------------
 void pqPVApplicationCore::quickLaunch()
 {
+  emit this->aboutToShowQuickLaunch();
   if (this->QuickLaunchMenus.size() > 0)
     {
     pqQuickLaunchDialog dialog(pqCoreUtilities::mainWidget());
@@ -215,7 +212,7 @@ bool pqPVApplicationCore::eventFilter ( QObject * obj, QEvent * event_ )
       files.append(fileEvent->file());
 
       // By default we always update the options
-      this->Options->SetParaViewDataName(files[0].toAscii().data());
+      this->Options->SetParaViewDataName(files[0].toLatin1().data());
 
       // If the application is already started just load the data
       if(vtkProcessModule::GetProcessModule()->GetSession())

@@ -38,10 +38,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqObjectBuilder.h"
 #include "pqServerManagerModel.h"
 #include "pqUndoStack.h"
-#include "pqViewFrameActionGroupInterface.h"
+#include "pqViewFrameActionsInterface.h"
 #include "pqViewFrame.h"
 #include "pqView.h"
 #include "vtkCommand.h"
+#include "vtkNew.h"
+#include "vtkSMParaViewPipelineControllerWithRendering.h"
 #include "vtkSMProperty.h"
 #include "vtkSMViewLayoutProxy.h"
 #include "vtkSMViewProxy.h"
@@ -70,9 +72,23 @@ public:
   vtkWeakPointer<vtkSMViewLayoutProxy> LayoutManager;
   QPointer<pqViewFrame> ActiveFrame;
 
-  pqInternals() : ObserverId(0)
-    {
+  // Set to true to place views in a separate popout widget.
+  bool Popout;
+  QWidget PopoutFrame;
+  bool DecorationsVisibleBeforeCapture;
 
+  pqInternals(QWidget* self) :
+    ObserverId(0),
+    Popout(false),
+    PopoutFrame(self),
+    SavedButtons(pqViewFrame::NoButton)
+    {
+    this->PopoutFrame.setWindowFlags(Qt::Window|
+      Qt::CustomizeWindowHint|
+      Qt::WindowTitleHint|
+      Qt::WindowMaximizeButtonHint|
+      Qt::WindowCloseButtonHint);
+    this->DecorationsVisibleBeforeCapture = false;
     }
 
   ~pqInternals()
@@ -88,21 +104,21 @@ public:
     pqViewFrame* frame = qobject_cast<pqViewFrame*>(wdg);
     if (frame)
       {
+      this->SavedButtons = frame->standardButtons();
       frame->setStandardButtons(pqViewFrame::Restore);
       }
     if (this->MaximizedWidget)
       {
       this->MaximizedWidget->setStandardButtons(
-        pqViewFrame::SplitVertical |
-        pqViewFrame::SplitHorizontal |
-        pqViewFrame::Maximize |
-        pqViewFrame::Close);
+        this->SavedButtons);
+      this->SavedButtons = pqViewFrame::NoButton;
       }
     this->MaximizedWidget = frame;
     }
 
 private:
   QPointer<pqViewFrame> MaximizedWidget;
+  pqViewFrame::StandardButtons SavedButtons;
 };
 
 //-----------------------------------------------------------------------------
@@ -119,6 +135,21 @@ namespace
     return NULL;
     }
 
+  void ConnectFrameToView(pqViewFrame* frame, pqView* pqview)
+    {
+    Q_ASSERT(frame);
+    // if pqview == NULL, then the frame is either being assigned to a empty
+    // view, or pqview for a view-proxy just isn't present yet.
+    // it's possible that pqview is NULL, if the view proxy hasnt been registered
+    // yet. This happens often when initialization state is being loaded in
+    // collaborative sessions.
+    if (pqview != NULL)
+      {
+      QWidget* viewWidget = pqview->getWidget();
+      frame->setCentralWidget(viewWidget);
+      viewWidget->setParent(frame);
+      }
+    }
 
   /// A simple subclass of QBoxLayout mimicking the layout style of a QSplitter
   /// with just 2 widgets.
@@ -173,7 +204,7 @@ public:
 //-----------------------------------------------------------------------------
 pqMultiViewWidget::pqMultiViewWidget(QWidget * parentObject, Qt::WindowFlags f)
 : Superclass(parentObject, f),
-  Internals( new pqInternals()),
+  Internals( new pqInternals(this)),
   DecorationsVisible(true)
 {
   qApp->installEventFilter(this);
@@ -216,9 +247,7 @@ void pqMultiViewWidget::viewAdded(pqView* view)
     pqViewFrame* frame = this->Internals->ViewFrames[view->getViewProxy()];
     if (frame)
       {
-      QWidget* viewWidget = view->getWidget();
-      frame->setCentralWidget(viewWidget);
-      viewWidget->setParent(frame);
+      ConnectFrameToView(frame, view);
       }
     else
       {
@@ -261,7 +290,10 @@ bool pqMultiViewWidget::eventFilter(QObject* caller, QEvent* evt)
   if (evt->type() == QEvent::MouseButtonPress)
     {
     QWidget* wdg = qobject_cast<QWidget*>(caller);
-    if (wdg && this->isAncestorOf(wdg))
+    if (wdg &&
+      ( (!this->Internals->Popout && this->isAncestorOf(wdg)) ||
+        (this->Internals->Popout && this->Internals->PopoutFrame.isAncestorOf(wdg)))
+      )
       {
       // If the new widget that is getting the focus is a child widget of any of the
       // frames, then the frame should be made active.
@@ -275,6 +307,13 @@ bool pqMultiViewWidget::eventFilter(QObject* caller, QEvent* evt)
           }
         }
       }
+    }
+  else if (evt->type() == QEvent::Close &&
+    caller == &this->Internals->PopoutFrame)
+    {
+    // the popout-frame is being closed. We interpret that as "un-popping" the
+    // frame.
+    this->togglePopout();
     }
 
   return this->Superclass::eventFilter(caller, evt);
@@ -408,23 +447,17 @@ pqViewFrame* pqMultiViewWidget::newFrame(vtkSMProxy* view)
   // it's possible that pqview is NULL, if the view proxy hasnt been registered
   // yet. This happens often when initialization state is being loaded in
   // collaborative sessions.
-  if (view && pqview)
-    {
-    QWidget* viewWidget = pqview->getWidget();
-    frame->setCentralWidget(viewWidget);
-    viewWidget->setParent(frame);
-    }
+  ConnectFrameToView(frame, pqview);
 
-  // Search for view frame action group plugins and allow them to decide
+  // Search for view frame actions plugins and allow them to decide
   // whether to add their actions to this view type's frame or not.
   pqInterfaceTracker* tracker =
     pqApplicationCore::instance()->interfaceTracker();
-  foreach (pqViewFrameActionGroupInterface* agi,
-    tracker->interfaces<pqViewFrameActionGroupInterface*>())
+  foreach (pqViewFrameActionsInterface* vfai,
+    tracker->interfaces<pqViewFrameActionsInterface*>())
     {
-    agi->connect(frame, pqview);
+    vfai->frameConnected(frame, pqview);
     }
-
   return frame;
 }
 
@@ -559,21 +592,43 @@ void pqMultiViewWidget::reload()
       widget->setParent(cleaner);
       }
     }
+
+  // if popout is true, we add the widgets to the PopoutFrame, rather that
+  // ourselves.
+  QWidget* parentWdg = this->Internals->Popout?
+    &this->Internals->PopoutFrame : this;
+
   int max_index=0;
-  QWidget* child = this->createWidget(0, vlayout, this, max_index);
+  QWidget* child = this->createWidget(0, vlayout, parentWdg, max_index);
   delete cleaner;
   cleaner = NULL;
-
-  delete this->layout();
 
   // resize Widgets to remove any obsolete indices. These indices weren't
   // touched at all during the last call to createWidget().
   this->Internals->Widgets.resize(max_index+1);
 
-  QVBoxLayout* vbox = new QVBoxLayout(this);
+  delete parentWdg->layout();
+  QVBoxLayout* vbox = new QVBoxLayout(parentWdg);
   vbox->setContentsMargins(0, 0, 0, 0);
   vbox->addWidget(child);
-  this->setLayout(vbox);
+
+  if (this->Internals->Popout)
+    {
+    // if the PopoutFrame is being shown for the first time, we resize it to
+    // match this widgets size so that it doesn't end up too small.
+    if (!this->Internals->PopoutFrame.property(
+        "pqMultiViewWidget::SizeInitialized").isValid())
+      {
+      this->Internals->PopoutFrame.setProperty(
+        "pqMultiViewWidget::SizeInitialized", true);
+      this->Internals->PopoutFrame.resize(this->size());
+      }
+    this->Internals->PopoutFrame.show();
+    }
+  else
+    {
+    this->Internals->PopoutFrame.hide();
+    }
 
   int maximized_cell = vlayout->GetMaximizedCell();
   this->Internals->setMaximizedWidget(NULL);
@@ -746,6 +801,7 @@ int pqMultiViewWidget::prepareForCapture(int dx, int dy)
   int magnification =  pqView::computeMagnification(requestedSize, mySize);
   this->setMaximumSize(mySize);
   this->resize(mySize);
+  this->Internals->DecorationsVisibleBeforeCapture = this->isDecorationsVisible();
   this->setDecorationsVisible(false);
   pqEventDispatcher::processEventsAndWait(1);
   return magnification;
@@ -755,7 +811,7 @@ int pqMultiViewWidget::prepareForCapture(int dx, int dy)
 void pqMultiViewWidget::cleanupAfterCapture()
 {
   this->setMaximumSize(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
-  this->setDecorationsVisible(true);
+  this->setDecorationsVisible(this->Internals->DecorationsVisibleBeforeCapture);
 }
 
 //-----------------------------------------------------------------------------
@@ -765,6 +821,18 @@ vtkImageData* pqMultiViewWidget::captureImage(int dx, int dy)
   vtkImageData* image = this->layoutManager()->CaptureWindow(magnification);
   this->cleanupAfterCapture();
   return image;
+}
+
+//-----------------------------------------------------------------------------
+bool pqMultiViewWidget::writeImage(
+  const QString& filename, int dx, int dy, int quality)
+{
+  int magnification = this->prepareForCapture(dx, dy);
+  vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
+  bool status = controller->WriteImage(this->layoutManager(),
+    filename.toLatin1().data(), magnification, quality);
+  this->cleanupAfterCapture();
+  return status;
 }
 
 //-----------------------------------------------------------------------------
@@ -821,4 +889,12 @@ void pqMultiViewWidget::reset()
 QList<vtkSMViewProxy*> pqMultiViewWidget::viewProxies() const
 {
   return this->Internals->ViewFrames.keys();
+}
+
+//-----------------------------------------------------------------------------
+bool pqMultiViewWidget::togglePopout()
+{
+  this->Internals->Popout = this->Internals->Popout? false:  true;
+  this->reload();
+  return this->Internals->Popout;
 }

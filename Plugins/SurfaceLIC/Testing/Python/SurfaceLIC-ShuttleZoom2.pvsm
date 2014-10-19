@@ -1810,21 +1810,21 @@
     </Proxy>
     <Proxy group="sources" type="XMLMultiBlockDataReader" id="4602" servers="1">
       <Property name="FileName" id="4602.FileName" number_of_elements="1">
-        <Element index="0" value="${DataDir}/Data/shuttle-surf.vtm"/>
+        <Element index="0" value="${DataDir}/shuttle-surf.vtm"/>
         <Domain name="files" id="4602.FileName.files"/>
       </Property>
       <Property name="FileNameInfo" id="4602.FileNameInfo" number_of_elements="1">
-        <Element index="0" value="${DataDir}/Data/shuttle-surf.vtm"/>
+        <Element index="0" value="${DataDir}/shuttle-surf.vtm"/>
       </Property>
       <Property name="TimestepValues" id="4602.TimestepValues"/>
     </Proxy>
     <Proxy group="sources" type="XMLMultiBlockDataReader" id="4624" servers="1">
       <Property name="FileName" id="4624.FileName" number_of_elements="1">
-        <Element index="0" value="${DataDir}/Data/shuttle-surf.vtm"/>
+        <Element index="0" value="${DataDir}/shuttle-surf.vtm"/>
         <Domain name="files" id="4624.FileName.files"/>
       </Property>
       <Property name="FileNameInfo" id="4624.FileNameInfo" number_of_elements="1">
-        <Element index="0" value="${DataDir}/Data/shuttle-surf.vtm"/>
+        <Element index="0" value="${DataDir}/shuttle-surf.vtm"/>
       </Property>
       <Property name="TimestepValues" id="4624.TimestepValues"/>
     </Proxy>
@@ -2081,9 +2081,9 @@
         <Element index="0" value="1"/>
         <Domain name="bool" id="4816.UseGradientBackground.bool"/>
       </Property>
-      <Property name="UseInteractiveRenderingForSceenshots" id="4816.UseInteractiveRenderingForSceenshots" number_of_elements="1">
+      <Property name="UseInteractiveRenderingForScreenshots" id="4816.UseInteractiveRenderingForScreenshots" number_of_elements="1">
         <Element index="0" value="0"/>
-        <Domain name="bool" id="4816.UseInteractiveRenderingForSceenshots.bool"/>
+        <Domain name="bool" id="4816.UseInteractiveRenderingForScreenshots.bool"/>
       </Property>
       <Property name="UseLight" id="4816.UseLight" number_of_elements="1">
         <Element index="0" value="1"/>

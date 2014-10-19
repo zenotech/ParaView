@@ -32,9 +32,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqQuadView.h"
 
 #include "pqCoreUtilities.h"
+#include "pqDataRepresentation.h"
 #include "pqProxy.h"
 #include "pqQVTKWidget.h"
-#include "pqRepresentation.h"
 #include "pqUndoStack.h"
 #include "vtkPVDataInformation.h"
 #include "vtkPVQuadRenderView.h"
@@ -77,9 +77,10 @@ protected:
 
 //-----------------------------------------------------------------------------
 pqQuadView::pqQuadView(
-   const QString& viewType, const QString& group, const QString& name,
-    vtkSMViewProxy* viewProxy, pqServer* server, QObject* p)
-  : Superclass(viewType, group, name, viewProxy, server, p)
+   const QString& group, const QString& name,
+    vtkSMProxy* viewProxy, pqServer* server, QObject* p)
+  : Superclass(pqQuadView::quadViewType(), group, name,
+    vtkSMViewProxy::SafeDownCast(viewProxy), server, p)
 {
   this->ObserverId =
       pqCoreUtilities::connect(
@@ -263,12 +264,22 @@ void pqQuadView::resetDefaultSettings()
 void pqQuadView::resetSliceOrigin()
 {
   // We only reset slice origin when only one representation is registered and visible
-  if( this->getRepresentations().size() == 1 &&
-      this->getNumberOfVisibleRepresentations() == 1)
+  QList<pqDataRepresentation*> visible_dreprs;
+  foreach (pqRepresentation* repr, this->getRepresentations())
+    {
+    if (pqDataRepresentation* drepr = qobject_cast<pqDataRepresentation*>(repr))
+      {
+      if (drepr->isVisible())
+        {
+        visible_dreprs.push_back(drepr);
+        }
+      }
+    }
+
+  if (visible_dreprs.size() == 1)
     {
     vtkSMRepresentationProxy* representation =
-        vtkSMRepresentationProxy::SafeDownCast(
-          this->getRepresentation(0)->getProxy());
+        vtkSMRepresentationProxy::SafeDownCast(visible_dreprs[0]->getProxy());
     double * bounds =
         representation->GetRepresentedDataInformation()->GetBounds();
 

@@ -37,9 +37,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class pqLiveInsituVisualizationManager;
 
-/// @ingroup Reactions
 /// Reaction for connecting to Catalyst CoProcessing Engine for Live-Data
 /// Visualization.
+/// @ingroup Reactions
+/// @ingroup LiveInsitu
 class PQAPPLICATIONCOMPONENTS_EXPORT pqCatalystConnectReaction : public pqReaction
 {
   Q_OBJECT
@@ -50,10 +51,6 @@ public:
 
   /// Connect to Catalyst 
   bool connect();
-
-protected slots:
-  /// called when Catalyst disconnects. We clean up the Catalyst connection.
-  void onCatalystDisconnected();
 
 protected:
   /// Called when the action is triggered.
@@ -66,9 +63,6 @@ protected:
 
 private:
   Q_DISABLE_COPY(pqCatalystConnectReaction)
-
-  typedef QMap<void*, QPointer<pqLiveInsituVisualizationManager> > ManagersType;
-  ManagersType Managers;
 };
 
 #endif

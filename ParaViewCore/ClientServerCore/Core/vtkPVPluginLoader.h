@@ -32,6 +32,8 @@ class vtkPVPlugin;
 class vtkStringArray;
 class vtkPVPlugin;
 
+typedef bool (*vtkPluginLoadFunction)(const char*);
+
 class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVPluginLoader : public vtkObject
 {
 public:
@@ -90,6 +92,10 @@ public:
   // Returns the status of most recent LoadPlugin call.
   vtkGetMacro(Loaded, bool);
 
+  // Description:
+  // Sets the function used to load static plugins.
+  static void SetStaticPluginLoadFunction(vtkPluginLoadFunction function);
+
 protected:
   vtkPVPluginLoader();
   ~vtkPVPluginLoader();
@@ -117,8 +123,18 @@ protected:
 private:
   vtkPVPluginLoader(const vtkPVPluginLoader&); // Not implemented.
   void operator=(const vtkPVPluginLoader&); // Not implemented.
+
+  static vtkPluginLoadFunction StaticPluginLoadFunction;
 };
 
-
+//BTX
+// Implementation of Schwartz counter idiom to ensure that the plugin library
+// unloading doesn't happen before the ParaView application is finalized.
+static class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVPluginLoaderCleanerInitializer
+{
+public:
+  vtkPVPluginLoaderCleanerInitializer();
+  ~vtkPVPluginLoaderCleanerInitializer();
+} vtkPVPluginLoaderCleanerInitializerInstance; // object here in header.
+//ETX
 #endif
-

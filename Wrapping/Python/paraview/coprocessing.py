@@ -5,7 +5,7 @@ pipeline. Additionally, this module has several other utility functions that are
 approriate for co-processing.
 """
 
-from paraview import simple
+from paraview import simple, servermanager
 from vtkPVVTKExtensionsCorePython import *
 import math
 
@@ -21,8 +21,8 @@ def IsInModulo(timestep, frequencyArray):
 
         isFM = (timestep % 2 == 0) or (timestep % 3 == 0) or (timestep % 7 == 0)
     """
-    for freqency in frequencyArray:
-        if (timestep % freqency == 0):
+    for frequency in frequencyArray:
+        if frequency > 0 and (timestep % frequency == 0):
             return True
     return False
 
@@ -36,8 +36,10 @@ class CoProcessor(object):
         self.__PipelineCreated = False
         self.__ProducersMap = {}
         self.__WritersList = []
+        self.__ExporterList = []
         self.__ViewsList = []
         self.__EnableLiveVisualization = False
+        self.__LiveVisualizationFrequency = 1;
         self.__LiveVisualizationLink = None
         pass
 
@@ -54,11 +56,18 @@ class CoProcessor(object):
         self.__Frequencies = frequencies
 
 
-    def EnableLiveVisualization(self, enable):
+    def EnableLiveVisualization(self, enable, frequency = 1):
         """Call this method to enable live-visualization. When enabled,
         DoLiveVisualization() will communicate with ParaView server if possible
-        for live visualization"""
+        for live visualization. Frequency specifies how often the
+        communication happens (default is every second)."""
         self.__EnableLiveVisualization = enable
+        self.__LiveVisualizationFrequency = frequency
+        if (enable):
+            for currentFrequencies in self.__Frequencies.itervalues():
+                if not frequency in currentFrequencies:
+                    currentFrequencies.append(frequency)
+                    currentFrequencies.sort()
 
     def CreatePipeline(self, datadescription):
         """This methods must be overridden by subclasses to create the
@@ -77,13 +86,6 @@ class CoProcessor(object):
 
         timestep = datadescription.GetTimeStep()
         num_inputs = datadescription.GetNumberOfInputDescriptions()
-        # first set all inputs to be off and set to on as needed.
-        # we don't use vtkCPInputDataDescription::Reset() because
-        # that will reset any field names that were added in.
-        for cc in range(num_inputs):
-            datadescription.GetInputDescription(cc).AllFieldsOff()
-            datadescription.GetInputDescription(cc).GenerateMeshOff()
-
         for cc in range(num_inputs):
             input_name = datadescription.GetInputDescriptionName(cc)
 
@@ -114,10 +116,16 @@ class CoProcessor(object):
            write-frequencies set on the writers."""
         timestep = datadescription.GetTimeStep()
         for writer in self.__WritersList:
-            if (timestep % writer.cpFrequency) == 0 or \
+            frequency = writer.parameters.GetProperty(
+                "WriteFrequency").GetElement(0)
+            fileName = writer.parameters.GetProperty("FileName").GetElement(0)
+            if (timestep % frequency) == 0 or \
                     datadescription.GetForceOutput() == True:
-                writer.FileName = writer.cpFileName.replace("%t", str(timestep))
+                writer.FileName = fileName.replace("%t", str(timestep))
                 writer.UpdatePipeline(datadescription.GetTime())
+
+        for exporter in self.__ExporterList:
+            exporter.UpdatePipeline(datadescription.GetTime())
 
     def WriteImages(self, datadescription, rescale_lookuptable=False):
         """This method will update all views, if present and write output
@@ -125,8 +133,8 @@ class CoProcessor(object):
         timestep = datadescription.GetTimeStep()
 
         for view in self.__ViewsList:
-            if timestep % view.cpFrequency == 0 or \
-                                            datadescription.GetForceOutput() == True:
+            if (view.cpFrequency and timestep % view.cpFrequency == 0) or \
+               datadescription.GetForceOutput() == True:
                 fname = view.cpFileName
                 fname = fname.replace("%t", str(timestep))
                 if view.cpFitToScreen != 0:
@@ -146,37 +154,53 @@ class CoProcessor(object):
            for live-visualization. Call this method only if you want to support
            live-visualization with your co-processing module."""
 
-        if not self.__EnableLiveVisualization:
-           return
+        if (not self.__EnableLiveVisualization or
+            (datadescription.GetTimeStep() %
+             self.__LiveVisualizationFrequency) != 0):
+            return
 
         # make sure the live insitu is initialized
         if not self.__LiveVisualizationLink:
            # Create the vtkLiveInsituLink i.e.  the "link" to the visualization processes.
-           from paraview import servermanager
            self.__LiveVisualizationLink = servermanager.vtkLiveInsituLink()
 
-           # Tell vtkLiveInsituLink what host/port must it connect to for the visualization
-           # process.
+           # Tell vtkLiveInsituLink what host/port must it connect to
+           # for the visualization process.
            self.__LiveVisualizationLink.SetHostname(hostname)
            self.__LiveVisualizationLink.SetInsituPort(int(port))
 
            # Initialize the "link"
-           self.__LiveVisualizationLink.SimulationInitialize(servermanager.ActiveConnection.Session.GetSessionProxyManager())
+           self.__LiveVisualizationLink.InsituInitialize(servermanager.ActiveConnection.Session.GetSessionProxyManager())
 
         time = datadescription.GetTime()
+        timeStep = datadescription.GetTimeStep()
 
-        # For every new timestep, update the simulation state before proceeding.
-        self.__LiveVisualizationLink.SimulationUpdate(time)
+        # stay in the loop while the simulation is paused
+        while True:
+            # Update the simulation state, extracts and simulationPaused
+            # from ParaView Live
+            self.__LiveVisualizationLink.InsituUpdate(time, timeStep)
 
-        # sources need to be updated by insitu code. vtkLiveInsituLink never updates
-        # the pipeline, it simply uses the data available at the end of the pipeline,
-        # if any.
-        from paraview import simple
-        for source in simple.GetSources().values():
-           source.UpdatePipeline(time)
+            # sources need to be updated by insitu
+            # code. vtkLiveInsituLink never updates the pipeline, it
+            # simply uses the data available at the end of the
+            # pipeline, if any.
+            from paraview import simple
+            for source in simple.GetSources().values():
+                source.UpdatePipeline(time)
 
-        # push extracts to the visualization process.
-        self.__LiveVisualizationLink.SimulationPostProcess(time)
+            # push extracts to the visualization process.
+            self.__LiveVisualizationLink.InsituPostProcess(time, timeStep)
+
+            if (self.__LiveVisualizationLink.GetSimulationPaused()):
+                # This blocks until something changes on ParaView Live
+                # and then it continues the loop. Returns != 0 if LIVE side
+                # disconnects
+                if (self.__LiveVisualizationLink.WaitForLiveChange()):
+                    break;
+            else:
+                break
+
 
     def CreateProducer(self, datadescription, inputname):
         """Creates a producer proxy for the grid. This method is generally used in
@@ -204,21 +228,69 @@ class CoProcessor(object):
         producer.UpdatePipeline()
         return producer
 
-    def CreateWriter(self, proxy_ctor, filename, freq):
-        """Creates a writer proxy. This method is generally used in
-           CreatePipeline() to create writers. All writes created as such will
+    def RegisterExporter(self, exporter):
+        """
+        Registers a python object that will be responsible to export any
+        kind of data. That exporter needs to provide the following set of
+        methods:
+            UpdatePipeline(time)
+            Finalize()
+
+        It will be the responsability of the exporter to skip timestep inside
+        the UpdatePipeline(time) method when the given time does not match the
+        targetted frequency.
+
+        The coprocessing engine will automatically call UpdatePipeline(time)
+        for each timestep on each registered exporter.
+        Once the simulation is done, the Finalize() method will then be called
+        to all exporter.
+        """
+        self.__ExporterList.append(exporter)
+
+    def RegisterWriter(self, writer, filename, freq):
+        """Registers a writer proxy. This method is generally used in
+           CreatePipeline() to register writers. All writes created as such will
            write the output files appropriately in WriteData() is called."""
-        writer = proxy_ctor()
+        writerParametersProxy = self.WriterParametersProxy(
+            writer, filename, freq)
+
         writer.FileName = filename
-        writer.add_attribute("cpFrequency", freq)
-        writer.add_attribute("cpFileName", filename)
+        writer.add_attribute("parameters", writerParametersProxy)
         self.__WritersList.append(writer)
+
         return writer
 
-    def CreateView(self, proxy_ctor, filename, freq, fittoscreen, magnification, width, height):
-        """Create a CoProcessing view for image capture with extra meta-data
-           such as magnification, size and frequency."""
-        view = proxy_ctor()
+    def WriterParametersProxy(self, writer, filename, freq):
+        """Creates a client only proxy that will be synchronized with ParaView
+        Live, allowing a user to set the filename and frequency.
+        """
+        controller = servermanager.ParaViewPipelineController()
+        # assume that a client only proxy with the same name as a writer
+        # is available in "insitu_writer_paramters"
+
+        # Since coprocessor sometimes pass writer as a custom object and not
+        # a proxy, we need to handle that. Just creating any arbitrary writer
+        # proxy to store the parameters it acceptable. So let's just do that
+        # when the writer is not a proxy.
+        writerIsProxy = isinstance(writer, servermanager.Proxy)
+        helperName = writer.GetXMLName() if writerIsProxy else "XMLPImageDataWriter"
+        proxy = servermanager.ProxyManager().NewProxy(
+            "insitu_writer_parameters", helperName)
+        controller.PreInitializeProxy(proxy)
+        if writerIsProxy:
+            proxy.GetProperty("Input").SetInputConnection(
+                0, writer.Input.SMProxy, 0)
+        proxy.GetProperty("FileName").SetElement(0, filename)
+        proxy.GetProperty("WriteFrequency").SetElement(0, freq)
+        controller.PostInitializeProxy(proxy)
+        controller.RegisterPipelineProxy(proxy)
+        return proxy
+
+    def RegisterView(self, view, filename, freq, fittoscreen, magnification, width, height):
+        """Register a view for image capture with extra meta-data such
+        as magnification, size and frequency."""
+        if not isinstance(view, servermanager.Proxy):
+            raise RuntimeError, "Invalid 'view' argument passed to RegisterView."
         view.add_attribute("cpFileName", filename)
         view.add_attribute("cpFrequency", freq)
         view.add_attribute("cpFileName", filename)
@@ -227,6 +299,32 @@ class CoProcessor(object):
         view.ViewSize = [ width, height ]
         self.__ViewsList.append(view)
         return view
+
+    def CreateWriter(self, proxy_ctor, filename, freq):
+        """ **** DEPRECATED!!! Use RegisterWriter instead ****
+           Creates a writer proxy. This method is generally used in
+           CreatePipeline() to create writers. All writes created as such will
+           write the output files appropriately in WriteData() is called."""
+        writer = proxy_ctor()
+        return self.RegisterWriter(writer, filename, freq)
+
+    def CreateView(self, proxy_ctor, filename, freq, fittoscreen, magnification, width, height):
+        """ **** DEPRECATED!!! Use RegisterView instead ****
+           Create a CoProcessing view for image capture with extra meta-data
+           such as magnification, size and frequency."""
+        view = proxy_ctor()
+        return self.RegisterView(view, filename, freq, fittoscreen, magnification, width, height)
+
+    def Finalize(self):
+        for writer in self.__WritersList:
+            if hasattr(writer, 'Finalize'):
+                writer.Finalize()
+        for view in self.__ViewsList:
+            if hasattr(view, 'Finalize'):
+                view.Finalize()
+        for exporter in self.__ExporterList:
+            if hasattr(view, 'Finalize'):
+                exporter.Finalize()
 
     def RescaleDataRange(self, view, time):
         """DataRange can change across time, sometime we want to rescale the

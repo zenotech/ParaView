@@ -32,6 +32,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqTreeWidget.h"
 
+#include "vtkPVXMLElement.h"
+#include "vtkSMProperty.h"
+#include "vtkSMPropertyGroup.h"
+
 #include <QApplication>
 #include <QPainter>
 #include <QStyle>
@@ -85,7 +89,8 @@ QPixmap pqTreeWidget::pixmap(Qt::CheckState cs, bool active)
 
 //-----------------------------------------------------------------------------
 pqTreeWidget::pqTreeWidget(QWidget* p)
-  : QTreeWidget(p)
+  : QTreeWidget(p),
+    MaximumRowCountBeforeScrolling(10)
 {
   QStyleOptionButton option;
   QRect r = this->style()->subElementRect(QStyle::SE_CheckBoxIndicator, 
@@ -99,16 +104,20 @@ pqTreeWidget::pqTreeWidget(QWidget* p)
     this->CheckPixmaps[i]->fill(QColor(0,0,0,0));
     QPainter painter(this->CheckPixmaps[i]);
     option.state = pqTreeWidgetPixmapStyle[i];
-    
+
     this->style()->drawPrimitive(QStyle::PE_IndicatorCheckBox, &option, 
                          &painter, this);
     }
-  
+
   QObject::connect(this->header(), SIGNAL(sectionClicked(int)),
                    this, SLOT(doToggle(int)),
                    Qt::QueuedConnection);
-  
+
+#if QT_VERSION >= 0x050000
+  this->header()->setSectionsClickable(true);
+#else
   this->header()->setClickable(true);
+#endif
 
   QObject::connect(this->model(), SIGNAL(dataChanged(QModelIndex, QModelIndex)),
                    this, SLOT(updateCheckState()));
@@ -266,7 +275,7 @@ void pqTreeWidget::doToggle(int column)
 //-----------------------------------------------------------------------------
 int pqTreeWidget::itemCount(QTreeWidgetItem* item) const
 {
-  int maxItemHint = 10;
+  int maxItemHint = this->MaximumRowCountBeforeScrolling;
   int numItems = item? item->childCount() : this->topLevelItemCount();
   int count = numItems;
   for (int cc=0; cc < numItems; cc++)
@@ -289,7 +298,7 @@ QSize pqTreeWidget::sizeHint() const
   // lets show X items before we get a scrollbar
   // probably want to make this a member variable
   // that a caller has access to
-  int maxItemHint = 10;
+  int maxItemHint = this->MaximumRowCountBeforeScrolling;
   // for no items, let's give a space of X pixels
   int minItemHeight = 20;
 
@@ -329,6 +338,36 @@ void pqTreeWidget::invalidateLayout()
   // invalidate() is not enough, we need to reset the cache of the 
   // QWidgetItemV2, so sizeHint() could be recomputed.
   this->updateGeometry();
+}
+
+//-----------------------------------------------------------------------------
+void pqTreeWidget::setMaximumRowCountBeforeScrolling(vtkSMPropertyGroup *smpropertygroup)
+{
+  this->setMaximumRowCountBeforeScrolling(smpropertygroup->GetHints());
+}
+
+//-----------------------------------------------------------------------------
+void pqTreeWidget::setMaximumRowCountBeforeScrolling(vtkSMProperty *smproperty)
+{
+  this->setMaximumRowCountBeforeScrolling(smproperty->GetHints());
+}
+
+//-----------------------------------------------------------------------------
+void pqTreeWidget::setMaximumRowCountBeforeScrolling(vtkPVXMLElement* hints)
+{
+  if (hints)
+    {
+    vtkPVXMLElement* element = hints->FindNestedElementByName("WidgetHeight");
+    if (element)
+      {
+      const char* rowCount = element->GetAttribute("number_of_rows");
+      if (rowCount)
+        {
+        this->setMaximumRowCountBeforeScrolling(
+          QString(rowCount).toInt());
+        }
+      }
+    }
 }
 
 //-----------------------------------------------------------------------------

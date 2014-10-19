@@ -42,15 +42,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqTabbedMultiViewWidget.h"
 #include "pqView.h"
 #include "vtkImageData.h"
-#include "vtkPVXMLElement.h"
 #include "vtkSmartPointer.h"
-
-#include "vtkPVConfig.h"
-#ifdef PARAVIEW_ENABLE_PYTHON
-#include "pqPythonManager.h"
-#include "pqPythonDialog.h"
-#include "pqPythonShell.h"
-#endif
+#include "vtkSMSessionProxyManager.h"
 
 #include <QDebug>
 #include <QFileInfo>
@@ -141,13 +134,22 @@ void pqSaveScreenshotReaction::saveScreenshot()
   QSize size = ssDialog.viewSize();
   QString palette = ssDialog.palette();
 
-  // temporarily load the color palette chosen by the user.
-  vtkSmartPointer<vtkPVXMLElement> currentPalette;
-  pqApplicationCore* core = pqApplicationCore::instance();
-  if (!palette.isEmpty())
+  vtkSMSessionProxyManager* pxm =
+    pqActiveObjects::instance().activeServer()->proxyManager();
+  vtkSMProxy* colorPalette = pxm->GetProxy(
+    "global_properties", "ColorPalette");
+  vtkSmartPointer<vtkSMProxy> clone;
+  if (colorPalette && !palette.isEmpty())
     {
-    currentPalette.TakeReference(core->getCurrrentPalette());
-    core->loadPalette(palette);
+    // save current property values
+    clone.TakeReference(pxm->NewProxy(colorPalette->GetXMLGroup(),
+        colorPalette->GetXMLName()));
+    clone->Copy(colorPalette);
+
+    vtkSMProxy* chosenPalette =
+      pxm->NewProxy("palettes", palette.toLatin1().data());
+    colorPalette->Copy(chosenPalette);
+    chosenPalette->Delete();
     }
 
   int stereo = ssDialog.getStereoMode();
@@ -159,16 +161,23 @@ void pqSaveScreenshotReaction::saveScreenshot()
   pqSaveScreenshotReaction::saveScreenshot(file,
     size, ssDialog.quality(), ssDialog.saveAllViews());
 
-  // restore palette.
-  if (!palette.isEmpty())
+  // restore color palette.
+  if (clone)
     {
-    core->loadPalette(currentPalette);
+    colorPalette->Copy(clone);
     }
 
+  // restore stereo
   if (stereo)
     {
     pqRenderViewBase::setStereo(0);
-    core->render();
+    }
+
+  // check if need to render to clear the changes we did
+  // while saving the screenshot.
+  if (clone || stereo)
+    {
+    pqApplicationCore::instance()->render();
     }
 }
 
@@ -176,50 +185,34 @@ void pqSaveScreenshotReaction::saveScreenshot()
 void pqSaveScreenshotReaction::saveScreenshot(
   const QString& filename, const QSize& size, int quality, bool all_views)
 {
-  pqTabbedMultiViewWidget* viewManager = qobject_cast<pqTabbedMultiViewWidget*>(
-    pqApplicationCore::instance()->manager("MULTIVIEW_WIDGET"));
-  if (!viewManager)
-    {
-    qCritical("Could not locate pqTabbedMultiViewWidget. "
-      "If using custom-widget as the "
-      "central widget, you cannot use pqSaveScreenshotReaction.");
-    return;
-    }
-  pqView* view = pqActiveObjects::instance().activeView();
-  vtkSmartPointer<vtkImageData> img;
   if (all_views)
     {
-    img.TakeReference(
-      viewManager->captureImage(size.width(), size.height()));
-    }
-  else if (view)
-    {
-    img.TakeReference(view->captureImage(size));
-    }
-
-  if (img.GetPointer() == NULL)
-    {
-    qCritical() << "Save Image failed.";
+    pqTabbedMultiViewWidget* viewManager = qobject_cast<pqTabbedMultiViewWidget*>(
+      pqApplicationCore::instance()->manager("MULTIVIEW_WIDGET"));
+    if (!viewManager)
+      {
+      qCritical("Could not locate pqTabbedMultiViewWidget. "
+        "If using custom-widget as the "
+        "central widget, you cannot use pqSaveScreenshotReaction.");
+      return;
+      }
+    if (!viewManager->writeImage(filename, size.width(), size.height(), quality))
+      {
+      qCritical() << "Save Image failed.";
+      }
     }
   else
     {
-    pqImageUtil::saveImage(img, filename, quality);
+    if (pqView* view = pqActiveObjects::instance().activeView())
+      {
+      if (!view->writeImage(filename, size, quality))
+        {
+        qCritical() << "Save Image failed.";
+        }
+      }
+    else
+      {
+      qCritical() << "No active view present. Save screenshot failed.";
+      }
     }
-
-#ifdef PARAVIEW_ENABLE_PYTHON
-  pqPythonManager* manager = pqPVApplicationCore::instance()->pythonManager();
-  if (manager && manager->canStopTrace())
-    {
-    QString allViewsStr = all_views ? "True" : "False";
-    QString script =
-    "try:\n"
-    "  paraview.smtrace\n"
-    "  paraview.smtrace.trace_save_screenshot('%1', (%2, %3), %4)\n"
-    "except AttributeError: pass\n";
-    script = script.arg(filename).arg(size.width()).arg(size.height()).arg(allViewsStr);
-    pqPythonShell* shell = manager->pythonShellDialog()->shell();
-    shell->executeScript(script);
-    return;
-    }
-#endif
 }

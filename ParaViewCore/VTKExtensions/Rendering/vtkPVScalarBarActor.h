@@ -60,6 +60,37 @@ public:
   vtkBooleanMacro(AutomaticLabelFormat, int);
 
   // Description:
+  // If true (the default), tick marks will be drawn.
+  vtkGetMacro(DrawTickMarks, int);
+  vtkSetMacro(DrawTickMarks, int);
+  vtkBooleanMacro(DrawTickMarks, int);
+
+  // Description:
+  // Set whether the range endpoints (minimum and maximum) are added
+  // as labels alongside other value labels.
+  vtkGetMacro(AddRangeLabels, int);
+  vtkSetMacro(AddRangeLabels, int);
+  vtkBooleanMacro(AddRangeLabels, int);
+
+  // Description:
+  // Set the C-style format string for the range labels.
+  vtkGetStringMacro(RangeLabelFormat);
+  vtkSetStringMacro(RangeLabelFormat);
+
+  // Description:
+  // Set the title justification. Valid values are VTK_TEXT_LEFT,
+  // VTK_TEXT_CENTERED, and VTK_TEXT_RIGHT.
+  vtkGetMacro(TitleJustification, int);
+  vtkSetClampMacro(TitleJustification, int, VTK_TEXT_LEFT, VTK_TEXT_RIGHT);
+
+  // Description:
+  // Set whether the scalar data range endpoints (minimum and maximum)
+  // are added as annotations.
+  vtkGetMacro(AddRangeAnnotations, int);
+  vtkSetMacro(AddRangeAnnotations, int);
+  vtkBooleanMacro(AddRangeAnnotations, int);
+
+  // Description:
   // Release any graphics resources that are being consumed by this actor.
   // The parameter window could be used to determine which graphic
   // resources to release.
@@ -120,6 +151,11 @@ protected:
 
   double AspectRatio;
   int AutomaticLabelFormat;
+  int DrawTickMarks;
+  int AddRangeLabels;
+
+  char* RangeLabelFormat;
+
   vtkTexture* ScalarBarTexture;
   vtkPolyData* TickMarks;
   vtkPolyDataMapper2D* TickMarksMapper;
@@ -129,6 +165,14 @@ protected:
   // Space, in pixels, between the labels and the bar itself.  Currently set in
   // PositionTitle.
   int LabelSpace;
+
+  // Description:
+  // The justification/alignment of the title.
+  int TitleJustification;
+
+  // Description:
+  // Flag to add minimum and maximum as annotations
+  int AddRangeAnnotations;
 
 private:
   vtkPVScalarBarActor(const vtkPVScalarBarActor &);     // Not implemented.

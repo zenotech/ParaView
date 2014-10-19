@@ -17,12 +17,13 @@
 #include "vtkCommand.h"
 #include "vtkPVXMLElement.h"
 #include "vtkSMProperty.h"
-#include "vtkSMProxy.h"
-#include "vtkWeakPointer.h"
 #include "vtkSMSession.h"
+#include "vtkSMSourceProxy.h"
+#include "vtkSMUncheckedPropertyHelper.h"
+#include "vtkStdString.h"
+#include "vtkWeakPointer.h"
 
 #include <map>
-#include "vtkStdString.h"
 #include <assert.h>
 
 struct vtkSMDomainInternals
@@ -34,6 +35,9 @@ struct vtkSMDomainInternals
   typedef 
   std::map<vtkStdString, vtkWeakPointer<vtkSMProperty> > PropertyMap;
   PropertyMap RequiredProperties;
+
+  // This is the property that has this domain.
+  vtkWeakPointer<vtkSMProperty> DomainProperty;
 };
 
 //---------------------------------------------------------------------------
@@ -137,6 +141,29 @@ int vtkSMDomain::ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement* element
 }
 
 //---------------------------------------------------------------------------
+vtkPVDataInformation* vtkSMDomain::GetInputDataInformation(
+  const char* function, int /*index=0*/)
+{
+  vtkSMProperty* inputProperty = this->GetRequiredProperty(function);
+  if (!inputProperty)
+    {
+    return NULL;
+    }
+
+  vtkSMUncheckedPropertyHelper helper(inputProperty);
+  if (helper.GetNumberOfElements() > 0)
+    {
+    vtkSMSourceProxy* sp = vtkSMSourceProxy::SafeDownCast(helper.GetAsProxy(0));
+    if (sp)
+      {
+      return sp->GetDataInformation(helper.GetOutputPort());
+      }
+    }
+
+  return NULL;
+}
+
+//---------------------------------------------------------------------------
 void vtkSMDomain::AddRequiredProperty(vtkSMProperty *prop,
                                       const char *function)
 {
@@ -187,10 +214,23 @@ void vtkSMDomain::SaveState(vtkPVXMLElement* parent, const char* uid)
 }
 
 //---------------------------------------------------------------------------
+vtkSMProperty* vtkSMDomain::GetProperty()
+{
+  return this->Internals->DomainProperty;
+}
+
+//---------------------------------------------------------------------------
+void vtkSMDomain::SetProperty(vtkSMProperty* prop)
+{
+  this->Internals->DomainProperty = prop;
+}
+
+//---------------------------------------------------------------------------
 void vtkSMDomain::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "XMLName: " << (this->XMLName ? this->XMLName : "(null)") 
      << endl;
   os << indent << "IsOptional: " << this->IsOptional << endl;
+  os << indent << "Property: " << this->Internals->DomainProperty.GetPointer() << endl;
 }

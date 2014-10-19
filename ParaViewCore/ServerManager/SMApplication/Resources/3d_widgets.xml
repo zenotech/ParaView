@@ -356,7 +356,7 @@
       scalar bar including a widget to control the position and orientation of
       the scalar bar.</Documentation>
       <IntVectorProperty command="SetEnabled"
-                         default_values="0"
+                         default_values="1"
                          name="Enabled"
                          number_of_elements="1"
                          panel_visibility="never" >
@@ -368,6 +368,16 @@
                          name="UseNonCompositedRenderer"
                          number_of_elements="1"
                          panel_visibility="never"></IntVectorProperty>
+      <IntVectorProperty default_values="0"
+                         name="LockPosition"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Set this to 1 if you don't want the application to change the scalar bar position
+          when placing automatically.
+        </Documentation>
+      </IntVectorProperty>
       <SubProxy>
         <Proxy name="Prop2D"
                proxygroup="3d_widget_representations"
@@ -391,6 +401,7 @@
           <PropertyGroup label="Title Texts">
             <Property name="Title" />
             <Property name="ComponentTitle" />
+            <Property name="TitleJustification" />
           </PropertyGroup>
 
           <!-- properties for Title -->
@@ -402,7 +413,8 @@
             <Property name="TitleBold" function="Bold" />
             <Property name="TitleItalic" function="Italics"/>
             <Property name="TitleShadow" function="Shadow" />
-            <Property name="TitleFontSize" function="Size" />
+            <Property name="TitleFontSize" function="Size"
+                      number_of_elements="1" default_values="7" />
           </PropertyGroup>
 
           <!-- properties for Label -->
@@ -414,20 +426,29 @@
             <Property name="LabelBold" function="Bold" />
             <Property name="LabelItalic" function="Italics" />
             <Property name="LabelShadow" function="Shadow" />
-            <Property name="LabelFontSize" function="Size" />
+            <Property name="LabelFontSize" function="Size"
+                      number_of_elements="1" default_values="7"/>
+          </PropertyGroup>
+
+          <PropertyGroup label="Labels">
+            <Property name="AutomaticLabelFormat" />
+            <Property name="LabelFormat" />
+            <Property name="NumberOfLabels" />
+            <Property name="DrawTickMarks" />
+            <Property name="DrawTickLabels" />
+            <Property name="AddRangeLabels" />
+            <Property name="RangeLabelFormat" />
           </PropertyGroup>
 
           <PropertyGroup label="Annotations">
             <Property name="DrawAnnotations" />
+            <Property name="AddRangeAnnotations" />
             <Property name="DrawNanAnnotation" />
             <Property name="NanAnnotation" />
-            <Property name="TextPosition" panel_visibility="never" />
+            <Property name="TextPosition" />
           </PropertyGroup>
 
           <PropertyGroup label="Miscellaneous">
-            <Property name="AutomaticLabelFormat" />
-            <Property name="LabelFormat" />
-            <Property name="NumberOfLabels" />
             <Property name="AspectRatio" />
           </PropertyGroup>
         </ExposedProperties>
@@ -1083,7 +1104,7 @@
         <BooleanDomain name="bool" />
       </IntVectorProperty>
       <DoubleVectorProperty command="SetPosition"
-                            default_values="0.87 0.25"
+                            default_values="0.85 0.05"
                             information_property="PositionInfo"
                             name="Position"
                             number_of_elements="2">
@@ -1097,7 +1118,7 @@
         <SimpleDoubleInformationHelper />
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetPosition2"
-                            default_values="0.13 0.5"
+                            default_values="0.12 0.43"
                             information_property="Position2Info"
                             name="Position2"
                             number_of_elements="2">
@@ -1110,44 +1131,6 @@
                             name="Position2Info">
         <SimpleDoubleInformationHelper />
       </DoubleVectorProperty>
-      <IntVectorProperty command="SetShowVerticalBorder"
-                         default_values="0"
-                         information_property="ShowVerticalBorderInfo"
-                         name="ShowVerticalBorder"
-                         number_of_elements="1">
-        <EnumerationDomain name="enum">
-          <Entry text="BORDER_OFF"
-                 value="0" />
-          <Entry text="BORDER_ON"
-                 value="1" />
-          <Entry text="BORDER_ACTIVE"
-                 value="2" />
-        </EnumerationDomain>
-      </IntVectorProperty>
-      <IntVectorProperty command="GetShowVerticalBorder"
-                         information_only="1"
-                         name="ShowVerticalBorderInfo">
-        <SimpleIntInformationHelper />
-      </IntVectorProperty>
-      <IntVectorProperty command="SetShowHorizontalBorder"
-                         default_values="2"
-                         information_property="ShowHorizontalBorderInfo"
-                         name="ShowHorizontalBorder"
-                         number_of_elements="1">
-        <EnumerationDomain name="enum">
-          <Entry text="BORDER_OFF"
-                 value="0" />
-          <Entry text="BORDER_ON"
-                 value="1" />
-          <Entry text="BORDER_ACTIVE"
-                 value="2" />
-        </EnumerationDomain>
-      </IntVectorProperty>
-      <IntVectorProperty command="GetShowHorizontalBorder"
-                         information_only="1"
-                         name="ShowHorizontalBorderInfo">
-        <SimpleIntInformationHelper />
-      </IntVectorProperty>
       <IntVectorProperty command="SetOrientation"
                          default_values="1"
                          information_property="OrientationInfo"

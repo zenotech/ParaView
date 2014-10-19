@@ -18,8 +18,12 @@ vtk_module(vtkPVVTKExtensionsDefault
     vtkPVVTKExtensionsCore
     vtkPVVTKExtensionsRendering
     vtkIOParallel
+    vtkIOParallelXML
     ${_dependencies}
-    vtknetcdf
   PRIVATE_DEPENDS
+    vtkIOInfovis
+    vtknetcdf
     vtksys
+  KIT
+    vtkPVExtensions
 )

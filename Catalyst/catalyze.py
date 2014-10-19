@@ -39,18 +39,56 @@ def _get_argument_parser():
 
   return parser
 
-def filter_proxies(fin, fout, proxies):
+def edition_name(dir):
+  base = os.path.basename(dir)
+  if not base:
+    base = os.path.basename(os.path.dirname(dir))
+  return base
+
+def filter_proxies(fin, fout, proxies, all_proxies):
   root = ET.fromstring(fin.read())
   if not root.tag == 'ServerManagerConfiguration':
     raise RuntimeError('Invalid ParaView XML file input')
   new_tree = ET.Element('ServerManagerConfiguration')
+  proxy_tags = (
+    'CameraProxy',
+    'ChartRepresentationProxy',
+    'ComparativeViewProxy',
+    'ContextViewProxy',
+    'MultiSliceViewProxy',
+    'NullProxy',
+    'ParallelCoordinatesRepresentationProxy',
+    'PlotMatrixViewProxy',
+    'Proxy',
+    'PVRepresentationProxy',
+    'PSWriterProxy',
+    'PWriterProxy',
+    'PythonViewProxy',
+    'RenderViewProxy',
+    'RepresentationProxy',
+    'SourceProxy',
+    'SpreadSheetRepresentationProxy',
+    'TimeKeeperProxy',
+    'TransferFunctionProxy',
+    'ViewLayoutProxy',
+    'WriterProxy')
   def is_wanted(proxy):
-    return 'name' in proxy.attrib and \
+    return proxy.tag in proxy_tags and \
+           'name' in proxy.attrib and \
            proxy.attrib['name'] in proxies
   for group in root.iter('ProxyGroup'):
-    new_proxies = []
-    for proxytag in ('SourceProxy', 'NullProxy', 'Proxy'):
-      new_proxies += filter(is_wanted, group.iter(proxytag))
+    new_proxies = filter(is_wanted, list(group))
+    for proxy in new_proxies:
+      removed_subproxies = []
+      for subproxy in proxy.iter('SubProxy'):
+        for p in subproxy.iter('Proxy'):
+          if p.attrib['proxyname'] not in all_proxies:
+            removed_subproxies.append(p.attrib['name'])
+            proxy.remove(subproxy)
+            break
+      for reptype in proxy.iter('RepresentationType'):
+        if reptype.attrib['subproxy'] in removed_subproxies:
+          proxy.remove(reptype)
     if new_proxies:
       new_group = ET.Element(group.tag, group.attrib)
       map(new_group.append, new_proxies)
@@ -110,9 +148,12 @@ def patch_path(config, path_entry):
 
 def run_patches(config, path_entry):
   work_dir = config.output_dir
+  editions = map(edition_name, config.input_dirs)
 
   try:
     for patch in path_entry['patches']:
+      if 'if-edition' in patch and patch['if-edition'] not in editions:
+        continue
       p = subprocess.Popen(['patch', '-p1'], cwd=work_dir, stdin=subprocess.PIPE)
       patch_path = os.path.join(config.current_input_dir, patch['path'])
       with open(patch_path) as patch_file:
@@ -207,6 +248,7 @@ def create_cmake_script(config, manifest_list):
 
   # ClientServer wrap
   cmake_script += 'cmake \\\n'
+  cmake_script += '  --no-warn-unused-cli\\\n'
   cmake_script += '  -DPARAVIEW_CS_MODULES:STRING="%s" \\\n' % (';'.join(cs_modules))
   # Python modules
   cmake_script+='  -DVTK_WRAP_PYTHON_MODULES:STRING="%s" \\\n' % (';'.join(python_modules))
@@ -222,7 +264,7 @@ def create_cmake_script(config, manifest_list):
 
   cmake_script+='  -DPARAVIEW_GIT_DESCRIBE="%s" \\\n' % version.strip()
 
-  cmake_script += ' $@\n'
+  cmake_script += ' "$@"\n'
 
   file = os.path.join(config.output_dir, 'cmake.sh')
 
@@ -248,6 +290,8 @@ def cmake_cache(config, manifest_list):
 
 def process(config):
 
+  editions = set()
+  all_editions = set(map(edition_name, config.input_dirs))
   all_manifests = []
   all_proxies = []
   for input_dir in config.input_dirs:
@@ -255,6 +299,20 @@ def process(config):
     with open(os.path.join(input_dir, 'manifest.json'), 'r') as fp:
       manifest = json.load(fp)
       config.current_input_dir  = input_dir
+      editions.add(manifest['edition'])
+      if manifest.has_key('requires'):
+        required = set(manifest['requires'])
+        diff = required.difference(editions)
+        if len(diff):
+          missing = ', '.join(list(diff))
+          raise RuntimeError('Missing required editions: %s' % missing)
+      if manifest.has_key('after'):
+        after = set(manifest['after'])
+        adiff = after.difference(editions)
+        diff = adiff.intersection(all_editions)
+        if len(diff):
+          missing = ', '.join(list(diff))
+          raise RuntimeError('Editions must come before %s: %s' % (manifest['edition'], missing))
       if manifest.has_key('paths'):
         copy_paths(config, manifest['paths'])
       if manifest.has_key('modules'):
@@ -265,12 +323,15 @@ def process(config):
       all_manifests.append(manifest)
 
   proxy_map = {}
+  _all_proxies = []
   for proxies in all_proxies:
     for proxy in proxies:
       path = proxy['path']
       if path not in proxy_map:
         proxy_map[path] = []
       proxy_map[path] += proxy['proxies']
+      _all_proxies += proxy['proxies']
+  all_proxies = set(_all_proxies)
 
   for proxy_file, proxies in proxy_map.items():
     input_path = os.path.join(config.repo, proxy_file)
@@ -281,7 +342,7 @@ def process(config):
 
     with open(input_path, 'r') as fin:
       with open(output_path, 'w+') as fout:
-        filter_proxies(fin, fout, set(proxies))
+        filter_proxies(fin, fout, set(proxies), all_proxies)
 
   create_cmake_script(config, all_manifests)
 
@@ -301,6 +362,8 @@ def main():
   config.repo = path.strip()
 
   # cleanup output directory.
+  if os.path.exists(os.path.join(config.output_dir, '.git')):
+    error('Refusing to output into a git repository')
   shutil.rmtree(config.output_dir, ignore_errors=True)
 
   process(config)

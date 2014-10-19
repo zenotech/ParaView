@@ -41,6 +41,8 @@ set(Module_SRCS
   pqPythonScriptEditor.h
   pqPythonShell.cxx
   pqPythonShell.h
+  pqPythonSyntaxHighlighter.cxx
+  pqPythonSyntaxHighlighter.h
 )
 
 set (Module_MOC_HDRS
@@ -50,6 +52,7 @@ set (Module_MOC_HDRS
   pqPythonManager.h
   pqPythonScriptEditor.h
   pqPythonShell.h
+  pqPythonSyntaxHighlighter.h
 )
 
 set (Module_UI_FILES
@@ -65,8 +68,13 @@ include_directories(
 #-------------------------------------------------------------------------
 set(${vtk-module}_NO_HeaderTest 1)
 
-qt4_wrap_cpp(__Module_MOC_SRCS ${Module_MOC_HDRS})
-qt4_wrap_ui(__Module_UI_SRCS ${Module_UI_FILES})
+if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+  qt5_wrap_cpp(__Module_MOC_SRCS ${Module_MOC_HDRS})
+  qt5_wrap_ui(__Module_UI_SRCS ${Module_UI_FILES})
+else ()
+  qt4_wrap_cpp(__Module_MOC_SRCS ${Module_MOC_HDRS})
+  qt4_wrap_ui(__Module_UI_SRCS ${Module_UI_FILES})
+endif ()
 
 SOURCE_GROUP("Resources" FILES
   ${Module_UI_FILES}

@@ -18,22 +18,77 @@
 #include "vtkCommand.h"
 #include "vtkErrorCode.h"
 #include "vtkImageData.h"
+#include "vtkMath.h"
+#include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPVOptions.h"
-#include "vtkPVRenderView.h"
 #include "vtkPVView.h"
-#include "vtkRenderWindow.h"
 #include "vtkPVXMLElement.h"
 #include "vtkProcessModule.h"
-#include "vtkSMPropertyHelper.h"
+#include "vtkRenderWindow.h"
+#include "vtkRenderer.h"
+#include "vtkRendererCollection.h"
+#include "vtkSMParaViewPipelineControllerWithRendering.h"
+#include "vtkSMProperty.h"
 #include "vtkSMProxyManager.h"
 #include "vtkSMRepresentationProxy.h"
 #include "vtkSMSession.h"
 #include "vtkSMSessionProxyManager.h"
+#include "vtkSMUncheckedPropertyHelper.h"
 #include "vtkSMUtilities.h"
 #include "vtkSmartPointer.h"
 
 #include <assert.h>
+
+namespace
+{
+  const char* vtkGetRepresentationNameFromHints(
+    const char* viewType, vtkPVXMLElement* hints, int port)
+    {
+    if (!hints)
+      {
+      return NULL;
+      }
+
+    for (unsigned int cc=0, max=hints->GetNumberOfNestedElements(); cc<max; ++cc)
+      {
+      vtkPVXMLElement* child = hints->GetNestedElement(cc);
+      if (child == NULL || child->GetName() == NULL)
+        {
+        continue;
+        }
+
+      // LEGACY: support DefaultRepresentations hint.
+      // <Hints>
+      //    <DefaultRepresentations representation="Foo" />
+      // </Hints>
+      if (strcmp(child->GetName(), "DefaultRepresentations") == 0)
+        {
+        return child->GetAttribute("representation");
+        }
+
+      // <Hints>
+      //    <Representation port="outputPort" view="ViewName" type="ReprName" />
+      // </Hints>
+      else if (strcmp(child->GetName(), "Representation") == 0 &&
+        // has an attribute "view" that matches the viewType.
+        child->GetAttribute("view") &&
+        strcmp(child->GetAttribute("view"), viewType) == 0)
+        {
+        // if port is present, it must match "port".
+        int xmlPort;
+        if (child->GetScalarAttribute("port", &xmlPort) == 0 ||
+          xmlPort == port)
+          {
+          return child->GetAttribute("type");
+          }
+        }
+      }
+    return NULL;
+    }
+};
+
+bool vtkSMViewProxy::TransparentBackground = false;
 
 vtkStandardNewMacro(vtkSMViewProxy);
 //----------------------------------------------------------------------------
@@ -126,16 +181,14 @@ void vtkSMViewProxy::StillRender()
   // bug 0013947
   // on Mac OSX don't render into invalid drawable, all subsequent
   // OpenGL calls fail with invalid framebuffer operation.
-  vtkPVRenderView *rv
-    = dynamic_cast<vtkPVRenderView*>(this->GetClientSideObject());
-
-  if (rv && !rv->GetRenderWindow()->IsDrawable())
+  if (this->IsContextReadyForRendering() == false)
     {
     return;
     }
 
   int interactive = 0;
   this->InvokeEvent(vtkCommand::StartEvent, &interactive);
+  this->GetSession()->PrepareProgress();
   // We call update separately from the render. This is done so that we don't
   // get any synchronization issues with GUI responding to the data-updated
   // event by making some data information requests(for example). If those
@@ -156,6 +209,7 @@ void vtkSMViewProxy::StillRender()
     }
 
   this->PostRender(interactive==1);
+  this->GetSession()->CleanupPendingProgress();
   this->InvokeEvent(vtkCommand::EndEvent, &interactive);
 }
 
@@ -164,6 +218,7 @@ void vtkSMViewProxy::InteractiveRender()
 {
   int interactive = 1;
   this->InvokeEvent(vtkCommand::StartEvent, &interactive);
+  this->GetSession()->PrepareProgress();
 
   // Interactive render will not call Update() at all. It's expected that you
   // must have either called a StillRender() or an Update() before triggering an
@@ -184,6 +239,7 @@ void vtkSMViewProxy::InteractiveRender()
     }
 
   this->PostRender(interactive==1);
+  this->GetSession()->CleanupPendingProgress();
   this->InvokeEvent(vtkCommand::EndEvent, &interactive);
 }
 
@@ -238,22 +294,125 @@ void vtkSMViewProxy::Update()
 
 //----------------------------------------------------------------------------
 vtkSMRepresentationProxy* vtkSMViewProxy::CreateDefaultRepresentation(
-  vtkSMProxy* vtkNotUsed(proxy), int vtkNotUsed(opport))
+  vtkSMProxy* proxy, int outputPort)
 {
+  assert("The session should be valid" && this->Session);
+
+  vtkSMSourceProxy* producer = vtkSMSourceProxy::SafeDownCast(proxy);
+  if (
+    (producer == NULL) ||
+    (outputPort < 0) ||
+    (static_cast<int>(producer->GetNumberOfOutputPorts()) <= outputPort) ||
+    (producer->GetSession() != this->GetSession()))
+    {
+    return NULL;
+    }
+
+  // Update with time from the view to ensure we have up-to-date data.
+  double view_time = vtkSMPropertyHelper(this, "ViewTime").GetAsDouble();
+  producer->UpdatePipeline(view_time);
+
+  const char* representationType =
+    this->GetRepresentationType(producer, outputPort);
+  if (!representationType)
+    {
+    return NULL;
+    }
+
+  vtkSMSessionProxyManager* pxm = this->GetSessionProxyManager();
+  vtkSmartPointer<vtkSMProxy> p;
+  p.TakeReference(pxm->NewProxy("representations", representationType));
+  vtkSMRepresentationProxy* repr = vtkSMRepresentationProxy::SafeDownCast(p);
+  if (repr)
+    {
+    repr->Register(this);
+    return repr;
+    }
+  vtkWarningMacro("Failed to create representation (representations,"
+    << representationType <<").");
+  return NULL;
+}
+
+//----------------------------------------------------------------------------
+const char* vtkSMViewProxy::GetRepresentationType(
+  vtkSMSourceProxy* producer, int outputPort)
+{
+  assert(producer &&
+         static_cast<int>(producer->GetNumberOfOutputPorts()) > outputPort);
+
+  // Process producer hints to see if indicates what type of representation
+  // to create for this view.
+  if (const char* reprName = vtkGetRepresentationNameFromHints(
+      this->GetXMLName(), producer->GetHints(), outputPort))
+    {
+    return reprName;
+    }
+
+  // check if we have default representation name specified in XML.
   if (this->DefaultRepresentationName)
     {
-    assert("The session should be valid" && this->Session);
     vtkSMSessionProxyManager* pxm = this->GetSessionProxyManager();
-    vtkSmartPointer<vtkSMProxy> p;
-    p.TakeReference(pxm->NewProxy("representations", this->DefaultRepresentationName));
-    vtkSMRepresentationProxy* repr = vtkSMRepresentationProxy::SafeDownCast(p);
-    if (repr)
+    vtkSMProxy* prototype = pxm->GetPrototypeProxy(
+      "representations", this->DefaultRepresentationName);
+    if (prototype)
       {
-      repr->Register(this);
-      return repr;
+      vtkSMProperty* inputProp = prototype->GetProperty("Input");
+      vtkSMUncheckedPropertyHelper helper(inputProp);
+      helper.Set(producer, outputPort);
+      bool acceptable = (inputProp->IsInDomains() > 0);
+      helper.SetNumberOfElements(0);
+
+      if (acceptable)
+        {
+        return this->DefaultRepresentationName;
+        }
       }
     }
-  return 0;
+
+  return NULL;
+}
+
+//----------------------------------------------------------------------------
+bool vtkSMViewProxy::CanDisplayData(vtkSMSourceProxy* producer, int outputPort)
+{
+  if (producer == NULL || outputPort < 0 ||
+      static_cast<int>(producer->GetNumberOfOutputPorts()) <= outputPort ||
+      producer->GetSession() != this->GetSession())
+    {
+    return false;
+    }
+
+  const char* type = this->GetRepresentationType(producer, outputPort);
+  if (type != NULL)
+    {
+    vtkSMSessionProxyManager* pxm = this->GetSessionProxyManager();
+    return (pxm->GetPrototypeProxy("representations", type) != NULL);
+    }
+
+  return false;
+}
+
+//----------------------------------------------------------------------------
+vtkSMRepresentationProxy* vtkSMViewProxy::FindRepresentation(
+  vtkSMSourceProxy* producer, int outputPort)
+{
+  vtkSMPropertyHelper helper (this, "Representations");
+  for (unsigned int cc=0, max=helper.GetNumberOfElements(); cc < max; ++cc)
+    {
+    vtkSMRepresentationProxy* repr =
+      vtkSMRepresentationProxy::SafeDownCast(helper.GetAsProxy(cc));
+    if (repr &&
+      repr->GetProperty("Input"))
+      {
+      vtkSMPropertyHelper helper2(repr, "Input");
+      if (helper2.GetAsProxy() == producer &&
+          static_cast<int>(helper2.GetOutputPort()) == outputPort)
+        {
+        return repr;
+        }
+      }
+    }
+  return NULL;
 }
 
 //----------------------------------------------------------------------------
@@ -273,8 +432,195 @@ int vtkSMViewProxy::ReadXMLAttributes(
   return 1;
 }
 
+class vtkSMViewProxy::vtkRendererSaveInfo
+{
+public:
+  vtkRendererSaveInfo(vtkRenderer* renderer)
+    : Gradient(renderer->GetGradientBackground())
+    , Textured(renderer->GetTexturedBackground())
+    , Red(renderer->GetBackground()[0])
+    , Green(renderer->GetBackground()[1])
+    , Blue(renderer->GetBackground()[2])
+  {
+  }
+
+  const bool Gradient;
+  const bool Textured;
+  const double Red;
+  const double Green;
+  const double Blue;
+private:
+  vtkRendererSaveInfo(const vtkRendererSaveInfo&); // Not implemented
+  void operator=(const vtkRendererSaveInfo&); // Not implemented
+};
+
 //----------------------------------------------------------------------------
 vtkImageData* vtkSMViewProxy::CaptureWindow(int magnification)
+{
+  vtkRenderWindow* window = this->GetRenderWindow();
+
+  if (window && this->TransparentBackground)
+    {
+    vtkRendererCollection* renderers = window->GetRenderers();
+    vtkRenderer* renderer = renderers->GetFirstRenderer();
+    while (renderer)
+      {
+      if (renderer->GetErase())
+        {
+        // Found a background-writing renderer.
+        break;
+        }
+
+      renderer = renderers->GetNextItem();
+      }
+
+    if (!renderer)
+      {
+      // No renderer?
+      return NULL;
+      }
+
+    vtkRendererSaveInfo* info = this->PrepareRendererBackground(renderer, 255, 255, 255, true);
+    vtkImageData* captureWhite = this->CaptureWindowSingle(magnification);
+
+    this->PrepareRendererBackground(renderer, 0, 0, 0, false);
+    vtkImageData* captureBlack = this->CaptureWindowSingle(magnification);
+
+    vtkImageData* capture = vtkImageData::New();
+    capture->CopyStructure(captureWhite);
+    capture->AllocateScalars(VTK_UNSIGNED_CHAR, 4);
+
+    const unsigned char* white;
+    const unsigned char* black;
+    unsigned char* out;
+    vtkIdType whiteStep[3];
+    vtkIdType blackStep[3];
+    vtkIdType outStep[3];
+
+    white = static_cast<const unsigned char*>(captureWhite->GetScalarPointerForExtent(captureWhite->GetExtent()));
+    black = static_cast<const unsigned char*>(captureBlack->GetScalarPointerForExtent(captureBlack->GetExtent()));
+    out = static_cast<unsigned char*>(capture->GetScalarPointerForExtent(capture->GetExtent()));
+
+    captureWhite->GetIncrements(whiteStep[0], whiteStep[1], whiteStep[2]);
+    captureBlack->GetIncrements(blackStep[0], blackStep[1], blackStep[2]);
+    capture->GetIncrements(outStep[0], outStep[1], outStep[2]);
+
+    int* extent = capture->GetExtent();
+
+    for (int i = extent[4]; i <= extent[5]; ++i)
+      {
+      const unsigned char* whiteRow = white;
+      const unsigned char* blackRow = black;
+      unsigned char* outRow = out;
+
+      for (int j = extent[2]; j <= extent[3]; ++j)
+        {
+        const unsigned char* whitePx = whiteRow;
+        const unsigned char* blackPx = blackRow;
+        unsigned char* outPx = outRow;
+
+        for (int k = extent[0]; k <= extent[1]; ++k)
+          {
+          if (whitePx[0] == blackPx[0] &&
+              whitePx[1] == blackPx[1] &&
+              whitePx[2] == blackPx[2])
+            {
+            outPx[0] = whitePx[0];
+            outPx[1] = whitePx[1];
+            outPx[2] = whitePx[2];
+            outPx[3] = 255;
+            }
+          else
+            {
+            // Some kind of translucency; use values from the black capture.
+            // The opacity is the derived from the V difference of the HSV
+            // colors.
+            double whiteHSV[3];
+            double blackHSV[3];
+
+            vtkMath::RGBToHSV(whitePx[0] / 255., whitePx[1] / 255., whitePx[2] / 255.,
+                              whiteHSV + 0, whiteHSV + 1, whiteHSV + 2);
+            vtkMath::RGBToHSV(blackPx[0] / 255., blackPx[1] / 255., blackPx[2] / 255.,
+                              blackHSV + 0, blackHSV + 1, blackHSV + 2);
+            double alpha = 1. - (whiteHSV[2] - blackHSV[2]);
+
+            outPx[0] = static_cast<unsigned char>(blackPx[0] / alpha);
+            outPx[1] = static_cast<unsigned char>(blackPx[1] / alpha);
+            outPx[2] = static_cast<unsigned char>(blackPx[2] / alpha);
+            outPx[3] = static_cast<unsigned char>(255 * alpha);
+            }
+
+          whitePx += whiteStep[0];
+          blackPx += blackStep[0];
+          outPx += outStep[0];
+          }
+
+        whiteRow += whiteStep[1];
+        blackRow += blackStep[1];
+        outRow += outStep[1];
+        }
+
+      white += whiteStep[2];
+      black += blackStep[2];
+      out += outStep[2];
+
+      if (white[0] == black[0] &&
+          white[1] == black[1] &&
+          white[2] == black[2])
+        {
+        out[0] = white[0];
+        out[1] = white[1];
+        out[2] = white[2];
+        out[3] = 1;
+        }
+      else
+        {
+        }
+      }
+
+    this->RestoreRendererBackground(renderer, info);
+
+    captureWhite->Delete();
+    captureBlack->Delete();
+    return capture;
+    }
+
+  // Fall back to using no transparency.
+  return this->CaptureWindowSingle(magnification);
+}
+
+//----------------------------------------------------------------------------
+vtkSMViewProxy::vtkRendererSaveInfo* vtkSMViewProxy::PrepareRendererBackground(
+  vtkRenderer* renderer,
+  double r, double g, double b, bool save)
+{
+  vtkRendererSaveInfo* info = NULL;
+
+  if (save)
+    {
+    info = new vtkRendererSaveInfo(renderer);
+    }
+
+  renderer->SetGradientBackground(false);
+  renderer->SetTexturedBackground(false);
+  renderer->SetBackground(r, g, b);
+
+  return info;
+}
+
+//----------------------------------------------------------------------------
+void vtkSMViewProxy::RestoreRendererBackground(vtkRenderer* renderer,
+                                               vtkRendererSaveInfo* info)
+{
+  renderer->SetGradientBackground(info->Gradient);
+  renderer->SetTexturedBackground(info->Textured);
+  renderer->SetBackground(info->Red, info->Green, info->Blue);
+
+  delete info;
+}
+
+//----------------------------------------------------------------------------
+vtkImageData* vtkSMViewProxy::CaptureWindowSingle(int magnification)
 {
   if (this->ObjectsCreated)
     {
@@ -339,16 +685,50 @@ void vtkSMViewProxy::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+
 //----------------------------------------------------------------------------
-bool vtkSMViewProxy::HasDirtyRepresentation()
+void vtkSMViewProxy::SetTransparentBackground(bool val)
 {
-  return this->NeedsUpdate;
+  vtkSMViewProxy::TransparentBackground = val;
 }
+
 //----------------------------------------------------------------------------
-vtkRenderWindow* vtkSMViewProxy::GetRenderWindow()
+bool vtkSMViewProxy::IsContextReadyForRendering()
 {
-  this->CreateVTKObjects();
-  vtkPVRenderView* rv = vtkPVRenderView::SafeDownCast(
-    this->GetClientSideObject());
-  return rv? rv->GetRenderWindow() : NULL;
+  if (vtkRenderWindow* window = this->GetRenderWindow())
+    {
+    return window->IsDrawable();
+    }
+  return true;
+}
+
+
+//----------------------------------------------------------------------------
+bool vtkSMViewProxy::HideOtherRepresentationsIfNeeded(vtkSMProxy* repr)
+{
+  if (repr == NULL ||
+    this->GetHints() == NULL ||
+    this->GetHints()->FindNestedElementByName("ShowOneRepresentationAtATime") == NULL)
+    {
+    return false;
+    }
+
+  vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
+
+  bool modified = false;
+  vtkSMPropertyHelper helper(this, "Representations");
+  for (unsigned int cc=0, max=helper.GetNumberOfElements(); cc < max; ++cc)
+    {
+    vtkSMRepresentationProxy* arepr =
+      vtkSMRepresentationProxy::SafeDownCast(helper.GetAsProxy(cc));
+    if (arepr && arepr != repr)
+      {
+      if (vtkSMPropertyHelper(arepr, "Visibility", /*quiet*/true).GetAsInt() == 1)
+        {
+        controller->Hide(arepr, this);
+        modified = true;
+        }
+      }
+    }
+  return modified;
 }

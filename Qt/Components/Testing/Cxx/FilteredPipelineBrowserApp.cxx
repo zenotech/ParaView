@@ -15,22 +15,21 @@
 
 #include "pqApplicationCore.h"
 #include "pqCoreTestUtility.h"
-#include "pqInterfaceTracker.h"
 #include "pqObjectBuilder.h"
 #include "pqOptions.h"
 #include "pqPipelineSource.h"
 #include "pqPipelineAnnotationFilterModel.h"
 #include "pqServer.h"
-#include "pqStandardViewModules.h"
 #include "vtkProcessModule.h"
+
+#include <QToolBar>
+#include <QAction>
 
 MainPipelineWindow::MainPipelineWindow()
 {
   // Init ParaView
   pqApplicationCore* core = pqApplicationCore::instance();
   pqObjectBuilder* ob = core->getObjectBuilder();
-  pqInterfaceTracker* pgm = pqApplicationCore::instance()->interfaceTracker();
-  pgm->addInterface(new pqStandardViewModules(pgm));
 
   // Set Filter/Annotation list
   this->FilterNames.append("No filtering");
@@ -64,6 +63,12 @@ MainPipelineWindow::MainPipelineWindow()
   createPipelineWithAnnotation(server);
 
   QTimer::singleShot(100, this, SLOT(processTest()));
+
+  QToolBar *tb = new QToolBar("Options", this);
+  this->addToolBar(tb);
+
+  QAction* actn = tb->addAction("Settings");
+  this->connect(actn, SIGNAL(triggered()), SLOT(showSettings()));
 }
 
 //-----------------------------------------------------------------------------
@@ -132,20 +137,20 @@ void MainPipelineWindow::createPipelineWithAnnotation(pqServer* server)
   vtkSMSourceProxy::SafeDownCast(groupDS->getProxy())->UpdatePipeline();
 
   // Setup annotations:
-  wavelet->getProxy()->SetAnnotation(this->FilterNames.at(1).toAscii().data(), "-");
-  clip1->getProxy()->SetAnnotation(this->FilterNames.at(1).toAscii().data(), "-");
-  clip2->getProxy()->SetAnnotation(this->FilterNames.at(1).toAscii().data(), "-");
+  wavelet->getProxy()->SetAnnotation(this->FilterNames.at(1).toLatin1().data(), "-");
+  clip1->getProxy()->SetAnnotation(this->FilterNames.at(1).toLatin1().data(), "-");
+  clip2->getProxy()->SetAnnotation(this->FilterNames.at(1).toLatin1().data(), "-");
 
-  append->getProxy()->SetAnnotation(this->FilterNames.at(2).toAscii().data(), "-");
-  groupDS->getProxy()->SetAnnotation(this->FilterNames.at(2).toAscii().data(), "-");
+  append->getProxy()->SetAnnotation(this->FilterNames.at(2).toLatin1().data(), "-");
+  groupDS->getProxy()->SetAnnotation(this->FilterNames.at(2).toLatin1().data(), "-");
 
-  wavelet->getProxy()->SetAnnotation(this->FilterNames.at(3).toAscii().data(), "-");
-  clip1->getProxy()->SetAnnotation(this->FilterNames.at(3).toAscii().data(), "-");
-  clip2->getProxy()->SetAnnotation(this->FilterNames.at(3).toAscii().data(), "-");
-  append->getProxy()->SetAnnotation(this->FilterNames.at(3).toAscii().data(), "-");
+  wavelet->getProxy()->SetAnnotation(this->FilterNames.at(3).toLatin1().data(), "-");
+  clip1->getProxy()->SetAnnotation(this->FilterNames.at(3).toLatin1().data(), "-");
+  clip2->getProxy()->SetAnnotation(this->FilterNames.at(3).toLatin1().data(), "-");
+  append->getProxy()->SetAnnotation(this->FilterNames.at(3).toLatin1().data(), "-");
 
-  wavelet->getProxy()->SetAnnotation(this->FilterNames.at(4).toAscii().data(), "-");
-  cone->getProxy()->SetAnnotation(this->FilterNames.at(4).toAscii().data(), "-");
+  wavelet->getProxy()->SetAnnotation(this->FilterNames.at(4).toLatin1().data(), "-");
+  cone->getProxy()->SetAnnotation(this->FilterNames.at(4).toLatin1().data(), "-");
 
   // Tooltip
   wavelet->getProxy()->SetAnnotation("tooltip", "1+3+4");
@@ -155,6 +160,23 @@ void MainPipelineWindow::createPipelineWithAnnotation(pqServer* server)
   append->getProxy()->SetAnnotation("tooltip", "2+3");
   groupDS->getProxy()->SetAnnotation("tooltip", "2");
 }
+
+#include "pqActiveObjects.h"
+#include "pqProxyWidgetDialog.h"
+#include "vtkSMSessionProxyManager.h"
+
+//-----------------------------------------------------------------------------
+void MainPipelineWindow::showSettings()
+{
+  pqServer* server = pqActiveObjects::instance().activeServer();
+  vtkSMSessionProxyManager* pxm = server->proxyManager();
+
+  vtkSMProxy* optionsProxy = pxm->NewProxy("settings", "GeneralSettings");
+  pqProxyWidgetDialog dialog(optionsProxy, this);
+  dialog.exec();
+  optionsProxy->Delete();
+}
+
 //-----------------------------------------------------------------------------
 int main(int argc, char** argv)
 {

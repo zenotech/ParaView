@@ -30,7 +30,11 @@
 #include "vtkPVArrayInformation.h"
 #include "vtkPVDataInformation.h"
 #include "vtkPVDataSetAttributesInformation.h"
+#include "vtkSMChartSeriesSelectionDomain.h"
+#include "vtkSMProperty.h"
+#include "vtkSMPropertyHelper.h"
 #include "vtkSMProxyManager.h"
+#include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMSourceProxy.h"
 
 #include "pqActiveView.h"
@@ -387,7 +391,7 @@ void pqSLACManager::checkActionEnabled()
 //-----------------------------------------------------------------------------
 void pqSLACManager::showField(QString name)
 {
-  this->showField(name.toAscii().data());
+  this->showField(name.toLatin1().data());
 }
 
 void pqSLACManager::showField(const char *name)
@@ -423,7 +427,8 @@ void pqSLACManager::showField(const char *name)
   this->CurrentFieldName = name;
 
   // Set the field to color by.
-  repr->setColorField(QString("%1 (point)").arg(name));
+  vtkSMPVRepresentationProxy::SetScalarColoring(
+    repr->getProxy(), name, vtkDataObject::POINT);
 
   // Adjust the color map to be rainbow.
   pqScalarsToColors *lut = repr->getLookupTable();
@@ -472,7 +477,7 @@ void pqSLACManager::showField(const char *name)
     if (!rangeData)
       {
       QString magName = QString("%1_M").arg(name);
-      rangeData = ranges->GetColumnByName(magName.toAscii().data());
+      rangeData = ranges->GetColumnByName(magName.toLatin1().data());
       }
 
     this->CurrentFieldRangeKnown = true;
@@ -541,36 +546,31 @@ void pqSLACManager::updatePlotField()
 
   if (fieldName == "Solid Color") fieldName = "efield";
 
-  // Get the information property that lists all the available series (as well
-  // as their current visibility).
-  QList<QVariant> visibilityInfo = pqSMAdaptor::getMultipleElementProperty(
-                                reprProxy->GetProperty("SeriesVisibilityInfo"));
-
   // Iterate over all the series.  Turn them all off except the one associated
   // with the viewed mesh.
+  vtkSMChartSeriesSelectionDomain* domain =
+    vtkSMChartSeriesSelectionDomain::SafeDownCast(
+    reprProxy->GetProperty("SeriesVisibility")->FindDomain("vtkSMChartSeriesSelectionDomain"));
+  if (domain == NULL) { return; }
+
   QList<QVariant> visibility;
-  for (int i = 0; i < visibilityInfo.size(); i += 2)
+  for (unsigned int i=0; i <  domain->GetNumberOfStrings(); i++)
     {
-    QString seriesName = visibilityInfo[i].toString();
-    if ((fieldName == seriesName) || (fieldName + " (Magnitude)" == seriesName))
+    QString seriesName = domain->GetString(i);
+    if ((fieldName == seriesName) || (fieldName + "_Magnitude" == seriesName))
       {
       fieldName = seriesName;
       visibility << seriesName << 1;
 
-      QList<QVariant> color;
-      color << seriesName << 0.0 << 0.0 << 0.0;
-      pqSMAdaptor::setMultipleElementProperty(
-                                  reprProxy->GetProperty("SeriesColor"), color);
+      double color[3] = {0.0, 0.0, 0.0};
+      vtkSMPropertyHelper(reprProxy, "SeriesColor").SetStatus(
+        seriesName.toLatin1().data(), color, 3);
 
-      QList<QVariant> lineThickness;
-      lineThickness << seriesName << 1;
-      pqSMAdaptor::setMultipleElementProperty(
-                  reprProxy->GetProperty("SeriesLineThickness"), lineThickness);
+      vtkSMPropertyHelper(reprProxy, "SeriesLineThickness").SetStatus(
+        seriesName.toLatin1().data(), 1);
 
-      QList<QVariant> lineStyle;
-      lineStyle << seriesName << 1;
-      pqSMAdaptor::setMultipleElementProperty(
-                          reprProxy->GetProperty("SeriesLineStyle"), lineStyle);
+      vtkSMPropertyHelper(reprProxy, "SeriesLineStyle").SetStatus(
+        seriesName.toLatin1().data(), 1);
       }
     else
       {
@@ -586,10 +586,8 @@ void pqSLACManager::updatePlotField()
 
   pqSMAdaptor::setElementProperty(viewProxy->GetProperty("ShowLegend"), 0);
 
-  QList<QVariant> axisTitles;
-  axisTitles << fieldName << "" << "" << "";
-  pqSMAdaptor::setMultipleElementProperty(viewProxy->GetProperty("AxisTitle"),
-                                          axisTitles);
+  pqSMAdaptor::setElementProperty(viewProxy->GetProperty("LeftAxisTitle"),
+                                  fieldName);
 
   if (this->CurrentFieldRangeKnown)
     {
@@ -725,13 +723,12 @@ void pqSLACManager::createPlotOverZ()
 {
   pqApplicationCore *core = pqApplicationCore::instance();
   pqObjectBuilder *builder = core->getObjectBuilder();
-  pqUndoStack *stack = core->getUndoStack();
   pqDisplayPolicy *displayPolicy = core->getDisplayPolicy();
 
   pqPipelineSource *meshReader = this->getMeshReader();
   if (!meshReader) return;
 
-  if (stack) stack->beginUndoSet("Plot Over Z");
+  BEGIN_UNDO_SET("Plot Over Z");
 
   // Determine view.  Do this before deleting existing pipeline objects.
   pqView *plotView = this->getPlotView();
@@ -785,12 +782,10 @@ void pqSLACManager::createPlotOverZ()
     pqSMAdaptor::setElementProperty(lineProxy->GetProperty("Resolution"), 1000);
     lineProxy->UpdateVTKObjects();
     }
+  plotFilter->updatePipeline();
 
   // Make representation
-  pqDataRepresentation *repr;
-  repr = displayPolicy->createPreferredRepresentation(
-                                 plotFilter->getOutputPort(0), plotView, false);
-  repr->setVisible(true);
+  displayPolicy->setRepresentationVisibility(plotFilter->getOutputPort(0), plotView, true);
 
   this->updatePlotField();
 
@@ -799,7 +794,7 @@ void pqSLACManager::createPlotOverZ()
   meshReader->setModifiedState(pqProxy::UNMODIFIED);
   plotFilter->setModifiedState(pqProxy::UNMODIFIED);
 
-  if (stack) stack->endUndoSet();
+  END_UNDO_SET();
 }
 
 //-----------------------------------------------------------------------------
@@ -807,36 +802,36 @@ void pqSLACManager::toggleBackgroundBW()
 {
   pqRenderView *view = this->getMeshRenderView();
   if (!view) return;
+
   vtkSMProxy *viewProxy = view->getProxy();
-
-  QList<QVariant> oldBackground;
-  QList<QVariant> newBackground;
-
-  oldBackground = pqSMAdaptor::getMultipleElementProperty(
-                                          viewProxy->GetProperty("Background"));
-  if (   (oldBackground[0].toDouble() == 0.0)
-      && (oldBackground[1].toDouble() == 0.0)
-      && (oldBackground[2].toDouble() == 0.0) )
+  vtkSMProperty* smProperty = viewProxy->GetProperty("Background");
+  if (!smProperty)
     {
-    newBackground << 1.0 << 1.0 << 1.0;
+    return;
     }
-  else if (   (oldBackground[0].toDouble() == 1.0)
-           && (oldBackground[1].toDouble() == 1.0)
-           && (oldBackground[2].toDouble() == 1.0) )
+
+  double color[3];
+  vtkSMPropertyHelper helper(smProperty);
+  helper.Get(color, 3);
+
+  if (   (color[0] == 0.0)
+      && (color[1] == 0.0)
+      && (color[2] == 0.0) )
     {
-    const int *defaultBackground = view->defaultBackgroundColor();
-    newBackground << defaultBackground[0]/255.0
-                  << defaultBackground[1]/255.0
-                  << defaultBackground[2]/255.0;
+    color[0] = color[1] = color[2] = 1.0;
+    helper.Set(color, 3);
+    }
+  else if (   (color[0] == 1.0)
+           && (color[1] == 1.0)
+           && (color[2] == 1.0) )
+    {
+    smProperty->ResetToXMLDefaults();
     }
   else
     {
-    newBackground << 0.0 << 0.0 << 0.0;
+    color[0] = color[1] = color[2] = 0.0;
+    helper.Set(color, 3);
     }
-
-  pqSMAdaptor::setMultipleElementProperty(viewProxy->GetProperty("Background"),
-                                          newBackground);
-
   viewProxy->UpdateVTKObjects();
   view->render();
 }

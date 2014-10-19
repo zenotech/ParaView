@@ -52,8 +52,7 @@ vtkStandardNewMacro(vtkPVExtractSelection);
 //----------------------------------------------------------------------------
 vtkPVExtractSelection::vtkPVExtractSelection()
 {
-  this->SetNumberOfOutputPorts(2);
-  this->Inverse = 0;
+  this->SetNumberOfOutputPorts(3);
 }
 
 //----------------------------------------------------------------------------
@@ -69,7 +68,7 @@ int vtkPVExtractSelection::FillOutputPortInformation(
     {
     info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataObject");
     }
-  else
+  else // for port 1, 2
     {
     info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkSelection");
     }
@@ -128,6 +127,12 @@ int vtkPVExtractSelection::RequestData(
     return 1;
     }
 
+  if (vtkSelection* output2 = vtkSelection::GetData(outputVector, 2))
+    {
+    // See vtkPVSingleOutputExtractSelection to know why this check is needed.
+    output2->ShallowCopy(sel);
+    }
+
   if (sel->GetNumberOfNodes() >= 1 && sel->GetNode(0)->GetContentType() == vtkSelectionNode::QUERY)
     {
 #ifdef PARAVIEW_ENABLE_PYTHON
@@ -142,7 +147,6 @@ int vtkPVExtractSelection::RequestData(
     pythonExtractSelection->SetInputData(0, localInputDO);
     pythonExtractSelection->SetInputData(1, localSel);
     pythonExtractSelection->SetPreserveTopology(this->PreserveTopology);
-    pythonExtractSelection->SetInverse(this->Inverse);
 
     pythonExtractSelection->Update();
 
@@ -180,8 +184,7 @@ int vtkPVExtractSelection::RequestData(
   // so to add support for vtkGraph selection in ParaView the filter will have
   // to be extended. This requires test cases in ParaView to confirm it functions
   // as expected.
-  vtkSelection *output = vtkSelection::SafeDownCast(
-    outputVector->GetInformationObject(1)->Get(vtkDataObject::DATA_OBJECT()));
+  vtkSelection *output = vtkSelection::GetData(outputVector, 1);
 
   output->Initialize();
 

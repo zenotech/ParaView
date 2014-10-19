@@ -39,6 +39,12 @@ public:
   vtkTypeMacro(vtkSMArraySelectionDomain, vtkSMStringListDomain);
   void PrintSelf(ostream& os, vtkIndent indent);
 
+  // Description:
+  // Since this domain relies on an information only property to get the default
+  // status, we override this method to copy the values the info property as the
+  // default array selection.
+  virtual int SetDefaultValues(vtkSMProperty*, bool use_unchecked_values);
+
 protected:
   vtkSMArraySelectionDomain();
   ~vtkSMArraySelectionDomain();

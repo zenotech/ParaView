@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "vtkEventQtSlotConnect.h"
 #include "vtkPVXMLElement.h"
+#include "vtkSmartPointer.h"
 #include "vtkSMProperty.h"
 #include "vtkSMPropertyIterator.h"
 #include "vtkSMProxy.h"
@@ -40,10 +41,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMProxyManager.h"
 #include "vtkSMSession.h"
 #include "vtkSMSessionProxyManager.h"
-#include "vtkSmartPointer.h"
+#include "vtkSMTrace.h"
 
 #include "pqApplicationCore.h"
-#include "pqHelperProxyRegisterUndoElement.h"
 #include "pqServer.h"
 #include "pqServerManagerModel.h"
 #include "pqServerManagerObserver.h"
@@ -97,7 +97,6 @@ pqProxy::~pqProxy()
                       this,
                       SLOT(onProxyUnRegistered(const QString&, const QString&, vtkSMProxy*)));
 
-  this->clearHelperProxies();
   delete this->Internal;
 }
 
@@ -125,8 +124,8 @@ void pqProxy::addHelperProxy(const QString& key, vtkSMProxy* proxy)
       this->getProxy()->GetGlobalIDAsString());
 
     vtkSMSessionProxyManager* pxm = this->proxyManager();
-    pxm->RegisterProxy(groupname.toAscii().data(), 
-      key.toAscii().data(), proxy);
+    pxm->RegisterProxy(groupname.toLatin1().data(),
+      key.toLatin1().data(), proxy);
     }
 }
 
@@ -147,10 +146,10 @@ void pqProxy::removeHelperProxy(const QString& key, vtkSMProxy* proxy)
     QString groupname = QString("pq_helper_proxies.%1").arg(
       this->getProxy()->GetGlobalIDAsString());
     vtkSMSessionProxyManager* pxm = this->proxyManager();
-    const char* name = pxm->GetProxyName(groupname.toAscii().data(), proxy);
+    const char* name = pxm->GetProxyName(groupname.toLatin1().data(), proxy);
     if (name)
       {
-      pxm->UnRegisterProxy(groupname.toAscii().data(), name, proxy);
+      pxm->UnRegisterProxy(groupname.toLatin1().data(), name, proxy);
       }
     }
 }
@@ -163,55 +162,12 @@ void pqProxy::updateHelperProxies() const
   vtkSMProxyIterator* iter = vtkSMProxyIterator::New();
   iter->SetModeToOneGroup();
   iter->SetSession(this->getProxy()->GetSession());
-  for (iter->Begin(groupname.toAscii().data()); !iter->IsAtEnd(); iter->Next())
+  for (iter->Begin(groupname.toLatin1().data()); !iter->IsAtEnd(); iter->Next())
     {
     this->addInternalHelperProxy(QString(iter->GetKey()), iter->GetProxy());
     }
   iter->Delete();
 }
-
-//-----------------------------------------------------------------------------
-void pqProxy::clearHelperProxies()
-{
-  if ( this->getServer() && this->getServer()->session() &&
-       !this->getServer()->session()->IsMultiClients())
-    {
-    // This is sort-of-a-hack to ensure that when this operation (delete)
-    // is undo, all the helper proxies are discovered correctly. This needs to
-    // happen only when all helper proxies are still around.
-    pqHelperProxyRegisterUndoElement* elem =
-        pqHelperProxyRegisterUndoElement::New();
-    elem->SetOperationTypeToUndo(); // Undo deletion
-    elem->RegisterHelperProxies(this);
-    ADD_UNDO_ELEM(elem);
-    elem->Delete();
-    }
-
-  vtkSMSessionProxyManager* pxm = this->proxyManager();
-  if (pxm)
-    {
-    QString groupname = QString("pq_helper_proxies.%1").arg(
-      this->getProxy()->GetGlobalIDAsString());
-
-    pqProxyInternal::ProxyListsType::iterator iter
-      = this->Internal->ProxyLists.begin();
-    for (;iter != this->Internal->ProxyLists.end(); ++iter)
-      {
-      foreach(vtkSMProxy* proxy, iter.value())
-        {
-        const char* name = pxm->GetProxyName(
-          groupname.toAscii().data(), proxy);
-        if (name)
-          {
-          pxm->UnRegisterProxy(groupname.toAscii().data(), name, proxy);
-          }
-        }
-      }
-    }
-
-  this->Internal->ProxyLists.clear();
-}
-
 
 //-----------------------------------------------------------------------------
 QList<QString> pqProxy::getHelperKeys() const
@@ -261,11 +217,12 @@ void pqProxy::rename(const QString& newname)
 {
   if(newname != this->SMName)
     {
+    SM_SCOPED_TRACE(RenameProxy).arg("proxy", this->getProxy());
     vtkSMSessionProxyManager* pxm = this->proxyManager();
-    pxm->RegisterProxy(this->getSMGroup().toAscii().data(),
-      newname.toAscii().data(), this->getProxy());
-    pxm->UnRegisterProxy(this->getSMGroup().toAscii().data(),
-      this->getSMName().toAscii().data(), this->getProxy());
+    pxm->RegisterProxy(this->getSMGroup().toLatin1().data(),
+      newname.toLatin1().data(), this->getProxy());
+    pxm->UnRegisterProxy(this->getSMGroup().toLatin1().data(),
+      this->getSMName().toLatin1().data(), this->getProxy());
     this->SMName = newname;
     }
 }
@@ -312,62 +269,6 @@ void pqProxy::setModifiedState(ModifiedState modified)
     this->Modified = modified;
     emit this->modifiedStateChanged(this);
     }
-}
-
-//-----------------------------------------------------------------------------
-void pqProxy::setDefaultPropertyValues()
-{
-  vtkSMProxy* proxy = this->getProxy();
-
-  // If this is a compound proxy, its property values will be set from XML
-  // This seems like a hack. Need some graceful solution.
-  if(proxy->IsA("vtkSMCompoundSourceProxy"))
-    {
-    return;
-    }
-
-  // since some domains rely on information properties,
-  // it is essential that we update the property information 
-  // before resetting values.
-  proxy->UpdatePropertyInformation();
-
-  vtkSMPropertyIterator* iter = proxy->NewPropertyIterator();
-  for (iter->Begin(); !iter->IsAtEnd(); iter->Next())
-    {
-    vtkSMProperty* smproperty = iter->GetProperty();
-
-    if (!smproperty->GetInformationOnly())
-      {
-      vtkPVXMLElement* propHints = iter->GetProperty()->GetHints();
-      if (propHints && propHints->FindNestedElementByName("NoDefault"))
-        {
-        // Don't reset properties that request overriding of default mechanism.
-        continue;
-        }
-      iter->GetProperty()->ResetToDefault();
-      }
-    }
-
-  // Since domains may depend on defaul values of other properties to be set,
-  // we iterate over the properties once more. We need a better mechanism for this.
-  for (iter->Begin(); !iter->IsAtEnd(); iter->Next())
-    {
-    vtkSMProperty* smproperty = iter->GetProperty();
-
-    if (!smproperty->GetInformationOnly())
-      {
-      vtkPVXMLElement* propHints = iter->GetProperty()->GetHints();
-      if (propHints && propHints->FindNestedElementByName("NoDefault"))
-        {
-        // Don't reset properties that request overriding of default mechanism.
-        continue;
-        }
-      iter->GetProperty()->ResetToDefault();
-      }
-    }
-
-  iter->Delete();
-  proxy->UpdateVTKObjects();
 }
 
 //-----------------------------------------------------------------------------

@@ -41,19 +41,25 @@ extern "C" {
 
 #include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
+#include "pqDeleteReaction.h"
+#include "pqLoadDataReaction.h"
 #include "pqHelpReaction.h"
-#include "pqObjectInspectorWidget.h"
 #include "pqOptions.h"
 #include "pqParaViewBehaviors.h"
 #include "pqParaViewMenuBuilders.h"
-#include "pqPropertiesPanel.h"
+#include "pqSettings.h"
 #include "vtkProcessModule.h"
+#include "vtkPVGeneralSettings.h"
 #include "vtkPVPlugin.h"
 
 #ifndef BUILD_SHARED_LIBS
 # include "pvStaticPluginsInit.h"
 #endif
 
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QUrl>
+#include <QMimeData>
 
 #include "ParaViewDocumentationInitializer.h"
 
@@ -99,6 +105,7 @@ ParaViewMainWindow::ParaViewMainWindow()
   this->setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
   this->setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
 
+
   this->tabifyDockWidget(
     this->Internals->colorMapEditorDock,
     this->Internals->memoryInspectorDock);
@@ -121,43 +128,76 @@ ParaViewMainWindow::ParaViewMainWindow()
   this->tabifyDockWidget(this->Internals->animationViewDock,
     this->Internals->statisticsDock);
 
-  pqOptions* options = pqOptions::SafeDownCast(
-    vtkProcessModule::GetProcessModule()->GetOptions());
+  // setup properties dock
+  this->tabifyDockWidget(
+    this->Internals->propertiesDock,
+    this->Internals->viewPropertiesDock);
+  this->tabifyDockWidget(
+    this->Internals->propertiesDock,
+    this->Internals->displayPropertiesDock);
+  this->tabifyDockWidget(this->Internals->propertiesDock,
+    this->Internals->informationDock);
 
-  if(!options->GetUseOldPanels())
+  pqSettings *settings = pqApplicationCore::instance()->settings();
+  int propertiesPanelMode = settings->value(
+    "GeneralSettings.PropertiesPanelMode", vtkPVGeneralSettings::ALL_IN_ONE).toInt();
+  switch (propertiesPanelMode)
     {
-    this->removeDockWidget(this->Internals->objectInspectorDock);
-    this->removeDockWidget(this->Internals->displayDock);
-    delete this->Internals->objectInspectorDock;
-    delete this->Internals->displayDock;
-    this->Internals->objectInspectorDock = 0;
-    this->Internals->displayDock = 0;
+  case vtkPVGeneralSettings::SEPARATE_DISPLAY_PROPERTIES:
+    delete this->Internals->viewPropertiesPanel;
+    delete this->Internals->viewPropertiesDock;
+    this->Internals->viewPropertiesPanel = NULL;
+    this->Internals->viewPropertiesDock = NULL;
 
-    this->tabifyDockWidget(this->Internals->propertiesDock, this->Internals->informationDock);
-    this->Internals->propertiesDock->show();
-    this->Internals->propertiesDock->raise();
+    this->Internals->propertiesPanel->setPanelMode(
+      pqPropertiesPanel::SOURCE_PROPERTIES|pqPropertiesPanel::VIEW_PROPERTIES);
+    break;
 
-    // Enable help from the properties panel.
-    QObject::connect(this->Internals->propertiesPanel,
-                     SIGNAL(helpRequested(const QString&, const QString&)),
-                     this, SLOT(showHelpForProxy(const QString&, const QString&)));
+  case vtkPVGeneralSettings::SEPARATE_VIEW_PROPERTIES:
+    delete this->Internals->displayPropertiesPanel;
+    delete this->Internals->displayPropertiesDock;
+    this->Internals->displayPropertiesPanel = NULL;
+    this->Internals->displayPropertiesDock = NULL;
+
+    this->Internals->propertiesPanel->setPanelMode(
+      pqPropertiesPanel::SOURCE_PROPERTIES|pqPropertiesPanel::DISPLAY_PROPERTIES);
+    break;
+
+  case vtkPVGeneralSettings::ALL_SEPARATE:
+    this->Internals->propertiesPanel->setPanelMode(
+      pqPropertiesPanel::SOURCE_PROPERTIES);
+    break;
+
+  case vtkPVGeneralSettings::ALL_IN_ONE:
+  default:
+    delete this->Internals->viewPropertiesPanel;
+    delete this->Internals->viewPropertiesDock;
+    this->Internals->viewPropertiesPanel = NULL;
+    this->Internals->viewPropertiesDock = NULL;
+
+    delete this->Internals->displayPropertiesPanel;
+    delete this->Internals->displayPropertiesDock;
+    this->Internals->displayPropertiesPanel = NULL;
+    this->Internals->displayPropertiesDock = NULL;
+    break;
     }
-  else
-    {
-    this->removeDockWidget(this->Internals->propertiesDock);
-    delete this->Internals->propertiesDock;
-    this->Internals->propertiesDock = 0;
 
-    this->tabifyDockWidget(this->Internals->objectInspectorDock, this->Internals->displayDock);
-    this->tabifyDockWidget(this->Internals->objectInspectorDock, this->Internals->informationDock);
-    this->Internals->objectInspectorDock->raise();
+  this->Internals->propertiesDock->show();
+  this->Internals->propertiesDock->raise();
 
-    // Enable help from the object inspector.
-    QObject::connect(this->Internals->objectInspector,
-      SIGNAL(helpRequested(const QString&, const QString&)),
-      this, SLOT(showHelpForProxy(const QString&, const QString&)));
-    }
- 
+  // Enable help from the properties panel.
+  QObject::connect(this->Internals->propertiesPanel,
+    SIGNAL(helpRequested(const QString&, const QString&)),
+    this, SLOT(showHelpForProxy(const QString&, const QString&)));
+
+  /// hook delete to pqDeleteReaction.
+  QAction* tempDeleteAction = new QAction(this);
+  pqDeleteReaction* handler = new pqDeleteReaction(tempDeleteAction);
+  handler->connect(this->Internals->propertiesPanel,
+    SIGNAL(deleteRequested(pqPipelineSource*)),
+    SLOT(deleteSource(pqPipelineSource*)));
+
+  // setup color editor
   /// Provide access to the color-editor panel for the application.
   pqApplicationCore::instance()->registerManager(
     "COLOR_EDITOR_PANEL", this->Internals->colorMapEditorDock);
@@ -174,6 +214,9 @@ ParaViewMainWindow::ParaViewMainWindow()
 
   // Populate Tools menu.
   pqParaViewMenuBuilders::buildToolsMenu(*this->Internals->menuTools);
+
+  // Populate Catalyst menu.
+  pqParaViewMenuBuilders::buildCatalystMenu(*this->Internals->menu_Catalyst);
 
   // setup the context menu for the pipeline browser.
   pqParaViewMenuBuilders::buildPipelineBrowserContextMenu(
@@ -194,11 +237,6 @@ ParaViewMainWindow::ParaViewMainWindow()
   // Final step, define application behaviors. Since we want all ParaView
   // behaviors, we use this convenience method.
   new pqParaViewBehaviors(this, this);
-
-  // load static plugins
-#ifndef BUILD_SHARED_LIBS
-  paraview_static_plugins_init();
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -212,4 +250,37 @@ void ParaViewMainWindow::showHelpForProxy(const QString& groupname, const
   QString& proxyname)
 {
   pqHelpReaction::showProxyHelp(groupname, proxyname);
+}
+
+//-----------------------------------------------------------------------------
+void ParaViewMainWindow::dragEnterEvent(QDragEnterEvent *evt)
+{
+  evt->acceptProposedAction();
+}
+
+//-----------------------------------------------------------------------------
+void ParaViewMainWindow::dropEvent(QDropEvent *evt)
+{
+  QList<QUrl> urls = evt->mimeData()->urls();
+  if (urls.isEmpty())
+    {
+    return;
+    }
+
+  QList<QString> files;
+
+  foreach(QUrl url,urls)
+    {
+    if(!url.toLocalFile().isEmpty())
+      {
+      files.append(url.toLocalFile());
+      }
+    }
+
+  // If we have no file we return
+  if(files.empty() || files.first().isEmpty())
+    {
+    return;
+    }
+  pqLoadDataReaction::loadData(files);
 }

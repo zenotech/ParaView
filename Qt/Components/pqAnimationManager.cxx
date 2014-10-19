@@ -35,11 +35,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "vtkMath.h"
 #include "vtkNew.h"
+#include "vtkProcessModule.h"
 #include "vtkPVServerInformation.h"
 #include "vtkPVXMLElement.h"
-#include "vtkProcessModule.h"
 #include "vtkRenderWindow.h"
 #include "vtkSMAnimationSceneGeometryWriter.h"
+#include "vtkSmartPointer.h"
+#include "vtkSMParaViewPipelineController.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMProxy.h"
 #include "vtkSMProxyIterator.h"
@@ -48,8 +50,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMSession.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMStringVectorProperty.h"
+#include "vtkSMTrace.h"
 #include "vtkSMViewProxy.h"
-#include "vtkSmartPointer.h"
+#include "vtkWeakPointer.h"
 
 #include <QIntValidator>
 #include <QFileInfo>
@@ -193,11 +196,7 @@ void pqAnimationManager::onActiveServerChanged(pqServer* server)
     }
 
   this->Internals->ActiveServer = server;
-  if (server && !this->getActiveScene())
-    {
-    this->createActiveScene();
-    emit this->activeServerChanged(server);
-    }
+  emit this->activeServerChanged(server);
   emit this->activeSceneChanged(this->getActiveScene());
 }
 
@@ -216,29 +215,6 @@ pqAnimationScene* pqAnimationManager::getScene(pqServer* server) const
     }
   return 0;
 }
-
-//-----------------------------------------------------------------------------
-pqAnimationScene* pqAnimationManager::createActiveScene() 
-{
-  if (this->Internals->ActiveServer)
-    {
-    pqObjectBuilder* builder = 
-      pqApplicationCore::instance()->getObjectBuilder();
-    pqAnimationScene* scene = builder->createAnimationScene(
-      this->Internals->ActiveServer);
-    
-    // this will result in a call to onProxyAdded() and proper
-    // signals will be emitted.
-    if (!scene)
-      {
-      qDebug() << "Failed to create scene proxy.";
-      }
-    this->updateViewModules();
-    return this->getActiveScene();
-    }
-  return 0;
-}
-
 
 //-----------------------------------------------------------------------------
 pqAnimationCue* pqAnimationManager::getCue(
@@ -519,6 +495,10 @@ bool pqAnimationManager::saveAnimation()
       {
       stereo = VTK_STEREO_CHECKERBOARD;
       }
+    else if (stereoMode == "Side By Side Horizontal")
+      {
+      stereo = VTK_STEREO_SPLITVIEWPORT_HORIZONTAL;
+      }
     else if (stereoMode == "Left Eye Only")
       {
       stereo = VTK_STEREO_LEFT;
@@ -653,7 +633,7 @@ bool pqAnimationManager::saveAnimation()
 
     vtkSMProxy* writer = pxm->NewProxy("writers", "AnimationSceneImageWriter");
     pxm->RegisterProxy("animation", "writer", writer);
-    vtkSMPropertyHelper(writer, "FileName").Set(filename.toAscii().data());
+    vtkSMPropertyHelper(writer, "FileName").Set(filename.toLatin1().data());
     vtkSMPropertyHelper(writer, "Magnification").Set(magnification);
     vtkSMPropertyHelper(writer, "FrameRate").Set(dialogUI.frameRate->value());
     vtkSMPropertyHelper(writer, "Compression").Set(compression);
@@ -679,7 +659,8 @@ bool pqAnimationManager::saveAnimation()
     // Make sure we delete all the view before disconnecting
     vtkNew<vtkSMProxyIterator> proxyIter;
     proxyIter->SetSession(server->session());
-    std::vector<vtkSMViewProxy*> viewToDelete;
+    typedef std::vector<vtkWeakPointer<vtkSMViewProxy> > VectorOfViews;
+    VectorOfViews viewToDelete;
     for (proxyIter->Begin(); !proxyIter->IsAtEnd(); proxyIter->Next())
       {
       vtkSMViewProxy* view = vtkSMViewProxy::SafeDownCast(proxyIter->GetProxy());
@@ -689,10 +670,11 @@ bool pqAnimationManager::saveAnimation()
         viewToDelete.push_back(view);
         }
       }
-    for(std::vector<vtkSMViewProxy*>::iterator it = viewToDelete.begin();
-        it != viewToDelete.end(); it++)
+
+    vtkNew<vtkSMParaViewPipelineController> controller;
+    foreach (vtkSMViewProxy* view, viewToDelete)
       {
-      pxm->UnRegisterProxy(*it);
+      controller->UnRegisterViewProxy(view, /*unregister_representations*/ false);
       }
 
     // Disconnect from the server
@@ -710,13 +692,22 @@ bool pqAnimationManager::saveAnimation()
   emit this->writeAnimation(filename, magnification, dialogUI.frameRate->value());
 
   vtkSMAnimationSceneImageWriter* writer = pqAnimationSceneImageWriter::New();
-  writer->SetFileName(filename.toAscii().data());
+  writer->SetFileName(filename.toLatin1().data());
   writer->SetMagnification(magnification);
   writer->SetAnimationScene(sceneProxy);
   writer->SetFrameRate(dialogUI.frameRate->value());
   writer->SetCompression(compression);
   writer->SetPlaybackTimeWindow(playbackTimeWindow);
   writer->SetStartFileCount(startFrameCount);
+
+  SM_SCOPED_TRACE(SaveCameras).arg("proxy", sceneProxy);
+  SM_SCOPED_TRACE(CallFunction)
+    .arg("WriteAnimation")
+    .arg(filename.toLatin1().data())
+    .arg("Magnification", magnification)
+    .arg("Compression", writer->GetCompression())
+    .arg("FrameRate", writer->GetFrameRate())
+    .arg("comment", "save animation images/movie");
 
   pqProgressManager* progress_manager = 
     pqApplicationCore::instance()->getProgressManager();
@@ -785,9 +776,16 @@ bool pqAnimationManager::saveGeometry(const QString& filename,
     {
     return false;
     }
+
+  SM_SCOPED_TRACE(CallFunction)
+    .arg("WriteAnimationGeometry")
+    .arg(filename.toLatin1().data())
+    .arg("view", view->getProxy())
+    .arg("comment", "save animation geometry from a view");
+
   vtkSMProxy* sceneProxy = scene->getProxy();
   vtkSMAnimationSceneGeometryWriter* writer = vtkSMAnimationSceneGeometryWriter::New();
-  writer->SetFileName(filename.toAscii().data());
+  writer->SetFileName(filename.toLatin1().data());
   writer->SetAnimationScene(sceneProxy);
   writer->SetViewModule(view->getProxy());
   bool status = writer->Save();
@@ -817,15 +815,6 @@ void pqAnimationManager::saveSettings()
   // Save the most recently used file extension to QSettings.
   pqSettings* settings = pqApplicationCore::instance()->settings();
   settings->setValue("extensions/AnimationExtension", this->AnimationExtension);
-}
-
-//-----------------------------------------------------------------------------
-void pqAnimationManager::updateApplicationSettings()
-{
-  foreach (QPointer<pqAnimationScene> scene, this->Internals->Scenes.values())
-    {
-    scene->updateApplicationSettings();
-    }
 }
 
 //-----------------------------------------------------------------------------

@@ -15,14 +15,19 @@
 #include "vtkCPCxxHelper.h"
 
 #include "vtkInitializationHelper.h"
+#include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkProcessModule.h"
 #include "vtkPVConfig.h" // Required to get build options for paraview
 #include "vtkPVOptions.h"
 #include "vtkSMObject.h"
+#include "vtkSMParaViewPipelineController.h"
 #include "vtkSMProperty.h"
 #include "vtkSMProxyManager.h"
 #include "vtkSMSession.h"
+
+// for PARAVIEW_INSTALL_DIR and PARAVIEW_BINARY_DIR variables
+#include "vtkCPConfig.h"
 
 #include <assert.h>
 #include <string>
@@ -71,8 +76,12 @@ vtkCPCxxHelper* vtkCPCxxHelper::New()
 
     // Since when coprocessing, we have no information about the executable, we
     // make one up using the current working directory.
-    std::string self_dir = vtksys::SystemTools::GetCurrentWorkingDirectory(/*collapse=*/true);
-    std::string programname = self_dir + "/unknown_exe";
+    //std::string self_dir = vtksys::SystemTools::GetCurrentWorkingDirectory(/*collapse=*/true);
+#if defined(_WIN32) && defined(CMAKE_INTDIR)
+    std::string programname = PARAVIEW_BINARY_DIR "/bin/" CMAKE_INTDIR "/unknown_exe";
+# else
+    std::string programname =  PARAVIEW_BINARY_DIR "/bin/unknown_exe";
+#endif
 
     int argc = 1;
     char** argv = new char*[1];
@@ -81,6 +90,9 @@ vtkCPCxxHelper* vtkCPCxxHelper::New()
     vtkCPCxxHelper::Instance->Options = vtkPVOptions::New();
     vtkCPCxxHelper::Instance->Options->SetSymmetricMPIMode(1);
 
+    // Disable vtkSMSettings processing for Catalyst applications.
+    vtkInitializationHelper::SetLoadSettingsFilesDuringInitialization(false);
+
     vtkInitializationHelper::Initialize(
         argc, argv, vtkProcessModule::PROCESS_BATCH,
         vtkCPCxxHelper::Instance->Options);
@@ -88,7 +100,12 @@ vtkCPCxxHelper* vtkCPCxxHelper::New()
     // Setup default session.
     vtkIdType connectionId = vtkSMSession::ConnectToSelf();
     assert(connectionId != 0);
-    (void)connectionId;
+
+    // initialize the session for a ParaView session.
+    vtkNew<vtkSMParaViewPipelineController> controller;
+    vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
+    controller->InitializeSession(vtkSMSession::SafeDownCast(
+        pm->GetSession(connectionId)));
 
     delete []argv[0];
     delete []argv;

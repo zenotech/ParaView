@@ -19,7 +19,6 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkNew.h"
 #include "vtkProcessModule.h"
 #include "vtkPVDataInformation.h"
-#include "vtkPVFileInformation.h"
 #include "vtkPVServerOptions.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMProxyManager.h"
@@ -28,7 +27,7 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 
-int main(int argc, char* argv[])
+int TestMultipleSessions(int argc, char* argv[])
 {
   vtkNew<vtkPVOptions> options;
   vtkInitializationHelper::Initialize(argc, argv,

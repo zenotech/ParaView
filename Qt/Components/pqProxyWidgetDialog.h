@@ -35,12 +35,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QDialog>
 #include "pqComponentsModule.h"
 
-class QAbstractButton;
 class vtkSMProxy;
 
 /// pqProxyWidgetDialog is used to show properties of any proxy in a dialog. It
 /// simply wraps the pqProxyWidget for the proxy in a dialog with Apply,
-/// Cancel, and Ok buttons.
+/// Cancel, and Ok buttons. Tool buttons (QPushButtons with only icons) are
+/// also provided to save the currently applied settings as default properties
+/// as well as to reset the defaults to the application defaults.
 class PQCOMPONENTS_EXPORT pqProxyWidgetDialog : public QDialog
 {
   Q_OBJECT
@@ -50,9 +51,15 @@ public:
   pqProxyWidgetDialog(vtkSMProxy* proxy, const QStringList& properties, QWidget* parent=0);
   virtual ~pqProxyWidgetDialog();
 
+  /// Returns whether that dialog has any visible widgets.
+  bool hasVisibleWidgets() const;
+
 protected slots:
-  /// slot to handle "Apply".
-  void buttonClicked(QAbstractButton*);
+  /// slot to enable appropriate buttons when changes are available
+  virtual void onChangeAvailable();
+
+  /// slot to handle accepted() signals
+  virtual void onAccepted();
 
 private:
   Q_DISABLE_COPY(pqProxyWidgetDialog)

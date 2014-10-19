@@ -33,28 +33,29 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqAlwaysConnectedBehavior.h"
 #include "pqApplicationCore.h"
+#include "pqApplyBehavior.h"
 #include "pqAutoLoadPluginXMLBehavior.h"
 #include "pqCollaborationBehavior.h"
 #include "pqCommandLineOptionsBehavior.h"
 #include "pqCrashRecoveryBehavior.h"
 #include "pqDataTimeStepBehavior.h"
 #include "pqDefaultViewBehavior.h"
-#include "pqDeleteBehavior.h"
 #include "pqFixPathsInStateFilesBehavior.h"
 #include "pqInterfaceTracker.h"
 #include "pqObjectPickingBehavior.h"
-#include "pqPVNewSourceBehavior.h"
 #include "pqPersistentMainWindowStateBehavior.h"
 #include "pqPipelineContextMenuBehavior.h"
 #include "pqPluginActionGroupBehavior.h"
 #include "pqPluginDockWidgetsBehavior.h"
+#include "pqPluginSettingsBehavior.h"
+#include "pqPropertiesPanel.h"
 #include "pqQtMessageHandlerBehavior.h"
 #include "pqSpreadSheetVisibilityBehavior.h"
-#include "pqStandardViewModules.h"
-#include "pqUndoRedoBehavior.h"
-#include "pqVerifyRequiredPluginBehavior.h"
-#include "pqViewFrameActionsBehavior.h"
 #include "pqStandardPropertyWidgetInterface.h"
+#include "pqStandardViewFrameActionsImplementation.h"
+#include "pqUndoRedoBehavior.h"
+#include "pqUndoStack.h"
+#include "pqVerifyRequiredPluginBehavior.h"
 #include "pqViewStreamingBehavior.h"
 
 #include <QShortcut>
@@ -68,10 +69,11 @@ pqParaViewBehaviors::pqParaViewBehaviors(
   // Register ParaView interfaces.
   pqInterfaceTracker* pgm = pqApplicationCore::instance()->interfaceTracker();
 
-  // * adds support for standard paraview views.
-  pgm->addInterface(new pqStandardViewModules(pgm));
-
+  // Register standard types of property widgets.
   pgm->addInterface(new pqStandardPropertyWidgetInterface(pgm));
+
+  // Register standard types of view-frame actions.
+  pgm->addInterface(new pqStandardViewFrameActionsImplementation(pgm));
 
   // Load plugins distributed with application.
   pqApplicationCore::instance()->loadDistributedPlugins();
@@ -79,15 +81,12 @@ pqParaViewBehaviors::pqParaViewBehaviors(
   // Define application behaviors.
   new pqQtMessageHandlerBehavior(this);
   new pqDataTimeStepBehavior(this);
-  new pqViewFrameActionsBehavior(this);
   new pqSpreadSheetVisibilityBehavior(this);
   new pqPipelineContextMenuBehavior(this);
   new pqObjectPickingBehavior(this);
   new pqDefaultViewBehavior(this);
-  new pqAlwaysConnectedBehavior(this);
-  new pqPVNewSourceBehavior(this);
-  new pqDeleteBehavior(this);
   new pqUndoRedoBehavior(this);
+  new pqAlwaysConnectedBehavior(this);
   new pqCrashRecoveryBehavior(this);
   new pqAutoLoadPluginXMLBehavior(this);
   new pqPluginDockWidgetsBehavior(mainWindow);
@@ -98,6 +97,13 @@ pqParaViewBehaviors::pqParaViewBehaviors(
   new pqPersistentMainWindowStateBehavior(mainWindow);
   new pqCollaborationBehavior(this);
   new pqViewStreamingBehavior(this);
+  new pqPluginSettingsBehavior(this);
+
+  pqApplyBehavior* applyBehavior = new pqApplyBehavior(this);
+  foreach (pqPropertiesPanel* ppanel, mainWindow->findChildren<pqPropertiesPanel*>())
+    {
+    applyBehavior->registerPanel(ppanel);
+    }
 
   // Setup quick-launch shortcuts.
   QShortcut *ctrlSpace = new QShortcut(Qt::CTRL + Qt::Key_Space,
@@ -112,5 +118,7 @@ pqParaViewBehaviors::pqParaViewBehaviors(
     mainWindow);
   QObject::connect(ctrlF, SIGNAL(activated()),
     pqApplicationCore::instance(), SLOT(startSearch()));
+
+  CLEAR_UNDO_STACK();
 }
 

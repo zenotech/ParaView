@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqOptions.h"
 #include "pqPVApplicationCore.h"
 #include "pqSettings.h"
+#include "vtkInitializationHelper.h"
 #include "vtkPVPluginTracker.h"
 
 #ifdef Q_WS_X11
@@ -90,14 +91,14 @@ bool pq@BPC_NAME@Initializer::Initialize(int argc, char* argv[])
 
 #ifndef BUILD_SHARED_LIBS
 @ui_resource_init@
-#endif  
+#endif
 
   pqSettings *settings = this->PVApp->settings();
   bool show_splash = false;
-  if (!this->PVApp->getOptions()->GetDisableRegistry() &&
-      settings->value("disableSplashScreen", true).toBool() == false)
+  if (!this->PVApp->getOptions()->GetDisableRegistry())
     {
-    show_splash = true;
+    show_splash = settings->value(
+      "GeneralSettings.ShowSplashScreen", true).toBool();
     }
 
   if(show_splash)
@@ -130,7 +131,7 @@ bool pq@BPC_NAME@Initializer::Initialize(int argc, char* argv[])
     }
   plugin_xml.append("</Plugins>\n");
   vtkPVPluginTracker::GetInstance()->LoadPluginConfigurationXMLFromString(
-    plugin_xml.toAscii().data());
+    plugin_xml.toLatin1().data());
 
   // Load optional plugins.
   plugin_string = "@BPC_OPTIONAL_PLUGINS@";
@@ -143,7 +144,7 @@ bool pq@BPC_NAME@Initializer::Initialize(int argc, char* argv[])
     }
   plugin_xml.append("</Plugins>\n");
   vtkPVPluginTracker::GetInstance()->LoadPluginConfigurationXMLFromString(
-    plugin_xml.toAscii().data());
+    plugin_xml.toLatin1().data());
 
 #if @BPC_HAS_GUI_CONFIGURATION_XMLS@
   // Load configuration xmls after all components have been instantiated.
@@ -157,12 +158,13 @@ bool pq@BPC_NAME@Initializer::Initialize(int argc, char* argv[])
     }
 #endif
   this->MainWindow->setWindowTitle("@BPC_TITLE@");
-  
-  // give GUI components time to update before the mainwindow is shown
-  QApplication::instance()->processEvents();
-  this->MainWindow->show();
 
-  QApplication::instance()->processEvents();
+  // We used to call processEvents() here. We removed it, since that results in
+  // timers (esp. pqCommandLineOptionsBehavior::playTests(), or
+  // pqServer::processServerNotification()) timers could timeout here and that
+  // causes test failures. Any case, the UI will update when the main event loop
+  // resumes hence these processEvents are fairly useless.
+  this->MainWindow->show();
   if (show_splash)
     {
     this->Splash->finish(this->MainWindow);

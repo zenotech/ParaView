@@ -19,8 +19,11 @@
 #include "vtkPVServerManagerCoreModule.h" //needed for exports
 #include "vtkSMObject.h"
 
+class vtkPVXMLElement;
+class vtkSMDocumentation;
 class vtkSMProperty;
 class vtkSMPropertyGroupInternals;
+class vtkSMProxy;
 
 class VTKPVSERVERMANAGERCORE_EXPORT vtkSMPropertyGroup : public vtkSMObject
 {
@@ -80,13 +83,38 @@ public:
   vtkSMProperty* GetProperty(const char* function) const;
 
   // Description:
+  // Given property in the group, returns its function. Will return NULL if the
+  // property is not present in this group.
+  const char* GetFunction(vtkSMProperty* property) const;
+
+  // Description:
   // Returns the number of properties in the group.
   unsigned int GetNumberOfProperties() const;
+
+  // Description:
+  // Returns the documentation for this proxy.
+  vtkGetObjectMacro(Documentation, vtkSMDocumentation);
+  
+  // Description:
+  // The server manager configuration XML may define <Hints /> element for
+  // a property. Hints are metadata associated with the property. The
+  // Server Manager does not (and should not) interpret the hints. Hints
+  // provide a mechanism to add GUI pertinant information to the server
+  // manager XML.  Returns the XML element for the hints associated with
+  // this property, if any, otherwise returns NULL.
+  vtkGetObjectMacro(Hints, vtkPVXMLElement);
 
 protected:
   vtkSMPropertyGroup();
   ~vtkSMPropertyGroup();
 
+  friend class vtkSMProxy;
+  virtual int ReadXMLAttributes(vtkSMProxy* parent, vtkPVXMLElement* element);
+
+  void SetHints(vtkPVXMLElement* hints);
+  vtkPVXMLElement* Hints;
+
+  vtkSMDocumentation* Documentation;
 private:
   vtkSMPropertyGroup(const vtkSMPropertyGroup&); // Not implemented
   void operator=(const vtkSMPropertyGroup&); // Not implemented

@@ -42,7 +42,7 @@ set (Module_SRCS
   vtkSIDirectoryProxy.cxx
   vtkSIDoubleMapProperty.cxx
   vtkSIDoubleVectorProperty.cxx
-  vtkSIFileSeriesReaderProxy.cxx
+  vtkSIMetaReaderProxy.cxx
   vtkSIIdTypeVectorProperty.cxx
   vtkSIInputProperty.cxx
   vtkSIIntVectorProperty.cxx
@@ -82,14 +82,13 @@ set (${vtk-module}_HDRS
 #------------------------------------------------------------------------------
 # Generate the protbuf message file.
 #------------------------------------------------------------------------------
-get_target_property(PROTOC_LOCATION protoc_compiler LOCATION)
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/vtkPVMessage.pb.h
            ${CMAKE_CURRENT_BINARY_DIR}/vtkPVMessage.pb.cc
     
     COMMAND protoc_compiler
            "--cpp_out=dllexport_decl=VTKPVSERVERIMPLEMENTATIONCORE_EXPORT:${CMAKE_CURRENT_BINARY_DIR}"
-           --proto_path "@CMAKE_CURRENT_SOURCE_DIR@"
+           --proto_path "${CMAKE_CURRENT_SOURCE_DIR}"
            "${CMAKE_CURRENT_SOURCE_DIR}/vtkPVMessage.proto"
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/vtkPVMessage.proto protoc_compiler
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}

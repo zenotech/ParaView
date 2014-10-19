@@ -94,31 +94,22 @@ void pqComparativeContextView::initialize()
 }
 
 //-----------------------------------------------------------------------------
-vtkContextView* pqComparativeContextView::getVTKChartView() const
+vtkContextView* pqComparativeContextView::getVTKContextView() const
 {
   return vtkSMContextViewProxy::SafeDownCast(this->getViewProxy())
       ->GetContextView();
 }
 
 //-----------------------------------------------------------------------------
-QWidget* pqComparativeContextView::getWidget()
+vtkSMContextViewProxy* pqComparativeContextView::getContextViewProxy() const
 {
-  return this->Widget;
+ return vtkSMContextViewProxy::SafeDownCast(this->getViewProxy());
 }
 
 //-----------------------------------------------------------------------------
-void pqComparativeContextView::setDefaultPropertyValues()
+QWidget* pqComparativeContextView::getWidget()
 {
-  this->Superclass::setDefaultPropertyValues();
-
-  vtkPVServerInformation* serverInfo = this->getServer()->getServerInformation();
-  if (serverInfo && serverInfo->GetTileDimensions()[0])
-    {
-    // change default layout to match the tile displays.
-    vtkSMPropertyHelper(this->getProxy(),"Dimensions")
-        .Set(serverInfo->GetTileDimensions(), 2);
-    this->getProxy()->UpdateVTKObjects();
-    }
+  return this->Widget;
 }
 
 //-----------------------------------------------------------------------------

@@ -16,7 +16,7 @@ if (NOT EXISTS ${Eigen_DIR})
     "SQTK Set Eigen_DIR to the path to your Eigen install." )
 endif ()
 
-include_directories(${Eigen_DIR})
+include_directories(SYSTEM ${Eigen_DIR})
 
 # prevent intel compilers from errouniously using intrinsics packaged
 # with gcc
@@ -47,7 +47,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
       endif()
     endforeach()
     if (NOT INTEL_XMMINTRIN)
-      message(WARNING "The Intel compiler may need EXTRA_INTEL_INCLUDES set to the directory containing xmmintrin.h")
+      message(STATUS "The Intel compiler may need EXTRA_INTEL_INCLUDES set to the directory containing xmmintrin.h")
       message(STATUS "CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
       message(STATUS "INTEL_COMP_ROOT=${INTEL_COMP_ROOT}")
       message(STATUS "INTEL_COMP_VERSION=${INTEL_COMP_VERSION}")

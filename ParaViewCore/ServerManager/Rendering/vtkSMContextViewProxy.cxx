@@ -25,13 +25,17 @@
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPVContextView.h"
+#include "vtkPVDataInformation.h"
+#include "vtkPVXMLElement.h"
+#include "vtkProcessModule.h"
 #include "vtkRenderWindow.h"
 #include "vtkRenderWindowInteractor.h"
 #include "vtkSMPropertyHelper.h"
+#include "vtkSMSourceProxy.h"
 #include "vtkSMUtilities.h"
+#include "vtkStructuredData.h"
 #include "vtkWeakPointer.h"
 #include "vtkWindowToImageFilter.h"
-#include "vtkProcessModule.h"
 
 //****************************************************************************
 // vtkSMContextViewInteractorStyle makes it possible for us to call
@@ -65,12 +69,16 @@ private:
 vtkStandardNewMacro(vtkSMContextViewInteractorStyle);
 //****************************************************************************
 
+namespace {
+const char* XY_CHART_VIEW = "XYChartView";
+}
 
 vtkStandardNewMacro(vtkSMContextViewProxy);
 //----------------------------------------------------------------------------
 vtkSMContextViewProxy::vtkSMContextViewProxy()
 {
   this->ChartView = NULL;
+  this->SkipPlotableCheck = false;
 }
 
 //----------------------------------------------------------------------------
@@ -158,6 +166,13 @@ vtkImageData* vtkSMContextViewProxy::CaptureWindowInternal(int magnification)
   window->SwapBuffersOff();
 
   this->StillRender();
+
+  // This is a hack. The only reason we do this is so that in symmetric-batch
+  // mode, when the vtkWindowToImageFilter tries to grab frame buffers on the
+  // satellites, it doesn't die. In reality, we shouldn't grab the frame buffers
+  // at all on satellites. We still need to call
+  // vtkWindowToImageFilter::Update() otherwise we can end up with mismatched
+  // renders esp when magnification > 1.
   this->GetContextView()->Render();
 
   vtkSmartPointer<vtkWindowToImageFilter> w2i =
@@ -187,13 +202,15 @@ vtkImageData* vtkSMContextViewProxy::CaptureWindowInternal(int magnification)
   return capture;
 }
 
-static void update_property(vtkAxis* axis, vtkSMProperty* prop)
+static void update_property(vtkAxis* axis, vtkSMProperty* propMin,
+                            vtkSMProperty* propMax)
 {
-  if (axis && prop)
+  if (axis && propMin && propMax)
     {
     double range[2];
     axis->GetUnscaledRange(range);
-    vtkSMPropertyHelper(prop).Set(range, 2);
+    vtkSMPropertyHelper(propMin).Set(range[0]);
+    vtkSMPropertyHelper(propMax).Set(range[1]);
     }
 }
 
@@ -204,14 +221,32 @@ void vtkSMContextViewProxy::CopyAxisRangesFromChart()
   if (chartXY)
     {
     update_property(
-      chartXY->GetAxis(vtkAxis::LEFT), this->GetProperty("LeftAxisRange"));
+      chartXY->GetAxis(vtkAxis::LEFT),
+      this->GetProperty("LeftAxisRangeMinimum"),
+      this->GetProperty("LeftAxisRangeMaximum"));
     update_property(
-      chartXY->GetAxis(vtkAxis::RIGHT), this->GetProperty("RightAxisRange"));
-    update_property(
-      chartXY->GetAxis(vtkAxis::TOP), this->GetProperty("TopAxisRange"));
-    update_property(
-      chartXY->GetAxis(vtkAxis::BOTTOM), this->GetProperty("BottomAxisRange"));
+      chartXY->GetAxis(vtkAxis::BOTTOM),
+      this->GetProperty("BottomAxisRangeMinimum"),
+      this->GetProperty("BottomAxisRangeMaximum"));
+    if (this->GetXMLName() == XY_CHART_VIEW)
+      {
+      update_property(
+        chartXY->GetAxis(vtkAxis::RIGHT),
+        this->GetProperty("RightAxisRangeMinimum"),
+        this->GetProperty("RightAxisRangeMaximum"));
+      update_property(
+        chartXY->GetAxis(vtkAxis::TOP),
+        this->GetProperty("TopAxisRangeMinimum"),
+        this->GetProperty("TopAxisRangeMaximum"));
+      }
+    // HACK: This overcomes a issue where we mark the chart modified, in Render.
+    // We seems to be lacking a mechanism in vtkSMProxy to say "here's the
+    // new property value, however it's already set on the server side too,
+    // so no need to push it or mark pipelines dirty".
+    int prev = this->InMarkModified;
+    this->InMarkModified = 1;
     this->UpdateVTKObjects();
+    this->InMarkModified = prev;
     }
 }
 
@@ -221,47 +256,115 @@ void vtkSMContextViewProxy::OnInteractionEvent()
   vtkChartXY *chartXY = vtkChartXY::SafeDownCast(this->GetContextItem());
   if (chartXY)
     {
-    // On interaction, we ensure that the axis range properties reflect the
-    // values that the user ended up picking due to the interactions. Thus, even
-    // when user picks custom ranges for charts, he can still interact with the
-    // view, we just update the custom range that was specified.
+    // Charts by default update axes ranges as needed. On interaction, we force
+    // the chart to preserve the user-selected ranges.
     this->CopyAxisRangesFromChart();
+    vtkSMPropertyHelper(this, "LeftAxisUseCustomRange").Set(1);
+    vtkSMPropertyHelper(this, "BottomAxisUseCustomRange").Set(1);
+    if (this->GetXMLName() == XY_CHART_VIEW)
+      {
+      vtkSMPropertyHelper(this, "RightAxisUseCustomRange").Set(1);
+      vtkSMPropertyHelper(this, "TopAxisUseCustomRange").Set(1);
+      }
     this->UpdateVTKObjects();
     this->InvokeEvent(vtkCommand::InteractionEvent);
+
+    // Note: OnInteractionEvent gets called before this->StillRender() gets called
+    // as a consequence of this interaction.
     }
+}
+
+//-----------------------------------------------------------------------------
+void vtkSMContextViewProxy::PostRender(bool interactive)
+{
+  // BUG# 14899. Ensure that the axis ranges are up-to-date after each render
+  // ensuring that the property has the property values (similar in spirit to
+  // the camera properties on the Render View).
+  this->CopyAxisRangesFromChart();
+  this->Superclass::PostRender(interactive);
 }
 
 //-----------------------------------------------------------------------------
 void vtkSMContextViewProxy::ResetDisplay()
 {
-  // To simulate reset display, we turn-off using of custom ranges temporarily,
-  // compute the bounds and then restore the state.
   vtkChartXY *chartXY = vtkChartXY::SafeDownCast(this->GetContextItem());
   if (chartXY)
     {
-    bool axis_behavior_fixed[4] = {false, false, false, false};
-    for (int cc=0; cc < 4; cc++)
+    // simply unlock all the axes ranges. That results in the chart determine
+    // new ranges to use in the Update call.
+    vtkSMPropertyHelper(this, "LeftAxisUseCustomRange").Set(0);
+    vtkSMPropertyHelper(this, "BottomAxisUseCustomRange").Set(0);
+    if (this->GetXMLName() == XY_CHART_VIEW)
       {
-      vtkAxis* axis = chartXY->GetAxis(cc);
-      if (axis && axis->GetBehavior() == vtkAxis::FIXED)
-        {
-        axis_behavior_fixed[cc] = true;
-        axis->SetBehavior(vtkAxis::AUTO);
-        }
+      vtkSMPropertyHelper(this, "RightAxisUseCustomRange").Set(0);
+      vtkSMPropertyHelper(this, "TopAxisUseCustomRange").Set(0);
       }
-    this->StillRender();
-    chartXY->RecalculateBounds();
-    this->CopyAxisRangesFromChart();
     this->UpdateVTKObjects();
-    for (int cc=0; cc < 4; cc++)
+    }
+}
+
+//----------------------------------------------------------------------------
+bool vtkSMContextViewProxy::CanDisplayData(vtkSMSourceProxy* producer, int outputPort)
+{
+  if (!this->Superclass::CanDisplayData(producer, outputPort))
+    {
+    return false;
+    }
+
+  if (this->SkipPlotableCheck)
+    {
+    // When SkipPlotableCheck is true, we only rely on the representation to
+    // select whether it can accept the data produce by the producer. That check
+    // happens in Superclass.
+    return true;
+    }
+
+  if (producer->GetHints() &&
+    producer->GetHints()->FindNestedElementByName("Plotable"))
+    {
+    return true;
+    }
+
+  vtkPVDataInformation* dataInfo = producer->GetDataInformation(outputPort);
+  if (dataInfo->DataSetTypeIsA("vtkTable"))
+    {
+    return true;
+    }
+  // also accept 1D structured datasets.
+  if (dataInfo->DataSetTypeIsA("vtkImageData") ||
+    dataInfo->DataSetTypeIsA("vtkRectilinearGrid"))
+    {
+    int extent[6];
+    dataInfo->GetExtent(extent);
+    int temp[6]={0, 0, 0, 0, 0, 0};
+    int dimensionality = vtkStructuredData::GetDataDimension(
+      vtkStructuredData::SetExtent(extent, temp));
+    if (dimensionality == 1)
       {
-      vtkAxis* axis = chartXY->GetAxis(cc);
-      if (axis && axis_behavior_fixed[cc])
-        {
-        axis->SetBehavior(vtkAxis::FIXED);
-        }
+      return true;
       }
     }
+  return false;
+}
+
+//----------------------------------------------------------------------------
+vtkSelection* vtkSMContextViewProxy::GetCurrentSelection()
+{
+  vtkPVContextView* pvview = vtkPVContextView::SafeDownCast(
+    this->GetClientSideObject());
+  return pvview ? pvview->GetSelection() : NULL;
+}
+
+//----------------------------------------------------------------------------
+int vtkSMContextViewProxy::ReadXMLAttributes(vtkSMSessionProxyManager* pm, vtkPVXMLElement* element)
+{
+  int tmp;
+  if (element && element->GetScalarAttribute("skip_plotable_check", &tmp))
+    {
+    this->SkipPlotableCheck = (tmp == 1);
+    }
+
+  return this->Superclass::ReadXMLAttributes(pm, element);
 }
 
 //----------------------------------------------------------------------------

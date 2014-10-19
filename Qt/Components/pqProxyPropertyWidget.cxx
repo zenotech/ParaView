@@ -37,14 +37,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqProxySelectionWidget.h"
 #include "pqSelectionInputWidget.h"
 #include "vtkPVXMLElement.h"
-#include "vtkSMDomainIterator.h"
 #include "vtkSMProperty.h"
 #include "vtkSMProxyListDomain.h"
 
 pqProxyPropertyWidget::pqProxyPropertyWidget(vtkSMProperty *smProperty,
                                              vtkSMProxy *smProxy,
                                              QWidget *parentObject)
-  : pqPropertyWidget(smProxy, parentObject)
+  : pqPropertyWidget(smProxy, parentObject),
+  HideWidgetsInDefaultView(false)
 {
   QVBoxLayout *vbox = new QVBoxLayout;
   vbox->setMargin(0);
@@ -57,12 +57,14 @@ pqProxyPropertyWidget::pqProxyPropertyWidget(vtkSMProperty *smProperty,
     pqSelectionInputWidget* siw = new pqSelectionInputWidget(this);
     siw->setObjectName(smProxy->GetPropertyName(smProperty));
     vbox->addWidget(siw);
-
     this->SelectionInputWidget = siw;
-
     this->addPropertyLink(siw, "selection",
       SIGNAL(selectionChanged(pqSMProxy)), smProperty);
-    
+
+    // call this after the above property link is setup so that we don't
+    // override the default value.
+    siw->initializeDefaultValueIfNeeded();
+
     this->connect(siw, SIGNAL(selectionChanged(pqSMProxy)),
       this, SIGNAL(changeAvailable()));
     this->connect(siw, SIGNAL(selectionChanged(pqSMProxy)),
@@ -77,13 +79,8 @@ pqProxyPropertyWidget::pqProxyPropertyWidget(vtkSMProperty *smProperty,
   else
     {
     // find the domain
-    vtkSMProxyListDomain *domain = 0;
-    vtkSMDomainIterator *domainIter = smProperty->NewDomainIterator();
-    for (domainIter->Begin(); !domainIter->IsAtEnd() && domain == NULL; domainIter->Next())
-      {
-      domain = vtkSMProxyListDomain::SafeDownCast(domainIter->GetDomain());
-      }
-    domainIter->Delete();
+    vtkSMProxyListDomain *domain = vtkSMProxyListDomain::SafeDownCast(
+      smProperty->FindDomain("vtkSMProxyListDomain"));
 
     if (domain)
       {
@@ -110,6 +107,14 @@ pqProxyPropertyWidget::pqProxyPropertyWidget(vtkSMProperty *smProperty,
       // don't show label for the proxy selection widget
       this->setShowLabel(false);
 
+
+      // If selected_proxy_panel_visibility="advanced" hint is specified, we
+      // only show the widgets for the selected proxy in advanced mode.
+      vtkPVXMLElement* hints = smProperty->GetHints()?
+        smProperty->GetHints()->FindNestedElementByName("ProxyPropertyWidget") : NULL;
+      this->HideWidgetsInDefaultView = (hints &&
+        strcmp(hints->GetAttributeOrDefault("selected_proxy_panel_visibility", ""), "advanced") == 0);
+
       PV_DEBUG_PANELS() << "pqProxySelectionWidget for a "
                     << "ProxyListDomain (" << domain->GetXMLName() << ")";
       }
@@ -118,6 +123,7 @@ pqProxyPropertyWidget::pqProxyPropertyWidget(vtkSMProperty *smProperty,
   this->setLayout(vbox);
 }
 
+//-----------------------------------------------------------------------------
 void pqProxyPropertyWidget::apply()
 {
   if (this->SelectionInputWidget)
@@ -138,6 +144,17 @@ void pqProxyPropertyWidget::apply()
     }
 }
 
+//-----------------------------------------------------------------------------
+void pqProxyPropertyWidget::reset()
+{
+  if (this->ProxySelectionWidget)
+    {
+    this->ProxySelectionWidget->reset();
+    }
+  this->Superclass::reset();
+}
+
+//-----------------------------------------------------------------------------
 void pqProxyPropertyWidget::select()
 {
   if (this->ProxySelectionWidget)
@@ -146,10 +163,20 @@ void pqProxyPropertyWidget::select()
     }
 }
 
+//-----------------------------------------------------------------------------
 void pqProxyPropertyWidget::deselect()
 {
   if (this->ProxySelectionWidget)
     {
     this->ProxySelectionWidget->deselect();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void pqProxyPropertyWidget::updateWidget(bool showing_advanced_properties)
+{
+  if (this->ProxySelectionWidget && this->HideWidgetsInDefaultView)
+    {
+    this->ProxySelectionWidget->setSelectedProxyWidgetVisibility(showing_advanced_properties);
     }
 }

@@ -42,10 +42,7 @@
 #include "vtkPVServerManagerCoreModule.h" //needed for exports
 #include "vtkSMEnumerationDomain.h"
 
-class vtkPVDataSetAttributesInformation;
-class vtkSMInputArrayDomain;
-class vtkSMProxyProperty;
-class vtkSMSourceProxy;
+class vtkPVDataInformation;
 
 class VTKPVSERVERMANAGERCORE_EXPORT vtkSMFieldDataDomain : public vtkSMEnumerationDomain
 {
@@ -63,7 +60,7 @@ public:
   // Description:
   // Overridden to ensure that the property's default value is valid for the
   // enumeration, if not it will be set to the first enumeration value.
-  virtual int SetDefaultValues(vtkSMProperty*);
+  virtual int SetDefaultValues(vtkSMProperty*, bool use_unchecked_values);
 
 protected:
   vtkSMFieldDataDomain();
@@ -92,11 +89,8 @@ private:
 
   // Description:
   // Utility functions called by Update()
-  int CheckForArray(vtkSMSourceProxy* sp, int outputport,
-                    vtkPVDataSetAttributesInformation* info,
-                    vtkSMInputArrayDomain* iad);
-  void Update(vtkSMSourceProxy* sp, vtkSMInputArrayDomain* iad, int outputport);
-  void Update(vtkSMProxyProperty* pp, vtkSMSourceProxy* sp, int outputport);
+  void UpdateDomainEntries(
+    int acceptable_association, vtkPVDataInformation* dataInfo);
 
   vtkSMFieldDataDomain(const vtkSMFieldDataDomain&); // Not implemented
   void operator=(const vtkSMFieldDataDomain&); // Not implemented

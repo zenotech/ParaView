@@ -91,7 +91,7 @@ int vtkPConvertSelection::RequestData(vtkInformation* request,
   vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
   vtkSelection* input = vtkSelection::GetData(inInfo);
 
-  vtkDataObject* data = vtkDataObject::GetData(inputVector[1], 0);
+  // vtkDataObject* data = vtkDataObject::GetData(inputVector[1], 0);
 
   vtkSelection* output = vtkSelection::GetData(outputVector, 0);
 
@@ -105,22 +105,16 @@ int vtkPConvertSelection::RequestData(vtkInformation* request,
 
   ::vtkTrimTree(newInput, myId);
 
-  vtkDataSet* ds = vtkDataSet::SafeDownCast(data);
-  vtkCompositeDataSet* cds = vtkCompositeDataSet::SafeDownCast(data);
-  if ( (ds && ds->GetNumberOfPoints() > 0) ||
-    (cds && cds->GetNumberOfPoints() > 0))
+  // This is needed since vtkConvertSelection simply shallow copies input to
+  // output and raises errors when "data" is empty.
+  input->Register(this);
+  inInfo->Set(vtkDataObject::DATA_OBJECT(), newInput);
+  int ret = this->Superclass::RequestData(request, inputVector, outputVector);
+  inInfo->Set(vtkDataObject::DATA_OBJECT(), input);
+  input->UnRegister(this);
+  if (!ret)
     {
-    // This is needed since vtkConvertSelection simply shallow copies input to
-    // output and raises errors when "data" is empty.
-    input->Register(this);
-    inInfo->Set(vtkDataObject::DATA_OBJECT(), newInput);
-    int ret = this->Superclass::RequestData(request, inputVector, outputVector);
-    inInfo->Set(vtkDataObject::DATA_OBJECT(), input);
-    input->UnRegister(this);
-    if (!ret)
-      {
-      return 0;
-      }
+    return 0;
     }
 
   // Now add process id to the generated output.

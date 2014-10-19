@@ -99,15 +99,14 @@ target_link_libraries(vtkPVServerManagerApplication
 # Setup SM xmls. 
 #------------------------------------------------------------------------------
 SET(requestedResourceFiles
-  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/catalyst.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/filters.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/sources.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/readers.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/utilities.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/rendering.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/views_and_representations.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Resources/3d_widgets.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/filters.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Resources/internal_writers.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/readers.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/rendering.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/sources.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/utilities.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/views_and_representations.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Resources/writers.xml
   ${module_sm_xmls}
   )
@@ -126,11 +125,10 @@ endforeach()
 set (PARAVIEW_SERVERMANAGER_XMLS ${resourceFiles}
     CACHE INTERNAL "Server Manager XMLs")
 
-get_target_property(kwprocessXML_location kwProcessXML LOCATION)
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/vtkSMGeneratedModules.h
   DEPENDS ${resourceFiles} kwProcessXML
-  COMMAND ${kwprocessXML_location}
+  COMMAND kwProcessXML
        ${CMAKE_CURRENT_BINARY_DIR}/vtkSMGeneratedModules.h
        vtkSMDefaultModules Interface GetInterfaces
        ${resourceFiles}

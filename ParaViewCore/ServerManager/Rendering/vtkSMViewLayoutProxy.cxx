@@ -18,15 +18,18 @@
 #include "vtkCommand.h"
 #include "vtkImageData.h"
 #include "vtkMemberFunctionCommand.h"
+#include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPVXMLElement.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMMessage.h"
 #include "vtkSMPropertyHelper.h"
+#include "vtkSMProxyIterator.h"
 #include "vtkSMProxyLocator.h"
 #include "vtkSMProxyProperty.h"
 #include "vtkSMSession.h"
 #include "vtkSMSessionProxyManager.h"
+#include "vtkSMTrace.h"
 #include "vtkSMUtilities.h"
 #include "vtkSMViewProxy.h"
 #include "vtkWeakPointer.h"
@@ -201,6 +204,36 @@ private:
     }
 };
 
+//============================================================================
+double vtkSMViewLayoutProxy::MultiViewImageBorderColor[3] = {0.0, 0.0, 0.0};
+int vtkSMViewLayoutProxy::MultiViewImageBorderWidth = 0;
+
+//----------------------------------------------------------------------------
+void vtkSMViewLayoutProxy::SetMultiViewImageBorderColor(double r, double g, double b)
+{
+  vtkSMViewLayoutProxy::MultiViewImageBorderColor[0] = std::max(0.0, std::min(1.0, r));
+  vtkSMViewLayoutProxy::MultiViewImageBorderColor[1] = std::max(0.0, std::min(1.0, g));
+  vtkSMViewLayoutProxy::MultiViewImageBorderColor[2] = std::max(0.0, std::min(1.0, b));
+}
+//----------------------------------------------------------------------------
+void vtkSMViewLayoutProxy::SetMultiViewImageBorderWidth(int width)
+{
+  vtkSMViewLayoutProxy::MultiViewImageBorderWidth = std::max(0, width);
+}
+
+//----------------------------------------------------------------------------
+const double* vtkSMViewLayoutProxy::GetMultiViewImageBorderColor()
+{
+  return vtkSMViewLayoutProxy::MultiViewImageBorderColor;
+}
+
+//----------------------------------------------------------------------------
+int vtkSMViewLayoutProxy::GetMultiViewImageBorderWidth()
+{
+  return vtkSMViewLayoutProxy::MultiViewImageBorderWidth;
+}
+
+//============================================================================
 vtkStandardNewMacro(vtkSMViewLayoutProxy);
 //----------------------------------------------------------------------------
 vtkSMViewLayoutProxy::vtkSMViewLayoutProxy() :
@@ -426,6 +459,8 @@ int vtkSMViewLayoutProxy::LoadXMLState(
       cell.ViewProxy = NULL;
       }
     }
+
+  this->UpdateViewPositions();
   return 1;
 }
 
@@ -459,6 +494,13 @@ int vtkSMViewLayoutProxy::Split(int location, int direction, double fraction)
       << ". Must be in the range [0, 1]");
     return 0;
     }
+
+  SM_SCOPED_TRACE(CallMethod)
+    .arg(this)
+    .arg(direction == VERTICAL? "SplitVertical" : "SplitHorizontal")
+    .arg(location)
+    .arg(fraction)
+    .arg("comment", "split cell");
 
   cell.Direction = (direction == VERTICAL)? VERTICAL : HORIZONTAL;
   cell.SplitFraction = fraction;
@@ -510,6 +552,13 @@ bool vtkSMViewLayoutProxy::AssignView(int location, vtkSMViewProxy* view)
     return false;
     }
 
+  SM_SCOPED_TRACE(CallMethod)
+    .arg(this)
+    .arg("AssignView")
+    .arg(location)
+    .arg(view)
+    .arg("assign view to a paricular cell in the layout");
+
   if (cell.ViewProxy == view)
     {
     // nothing to do.
@@ -536,6 +585,19 @@ int vtkSMViewLayoutProxy::AssignViewToAnyCell(
   if (!view)
     {
     return 0;
+    }
+
+  int cur_location = this->GetViewLocation(view);
+  if (cur_location != -1)
+    {
+    // already assigned to a frame. return that index.
+    SM_SCOPED_TRACE(CallMethod)
+      .arg(this)
+      .arg("AssignView")
+      .arg(cur_location)
+      .arg(view)
+      .arg("comment", "place view in the layout");
+    return cur_location;
     }
 
   if (location_hint < 0)
@@ -634,6 +696,13 @@ bool vtkSMViewLayoutProxy::SwapCells(int location1, int location2)
     return false;
     }
 
+  SM_SCOPED_TRACE(CallMethod)
+    .arg(this)
+    .arg("SwapCells")
+    .arg(location1)
+    .arg(location2)
+    .arg("comment", "swap view locations");
+
   vtkInternals::Cell &cell1 = this->Internals->KDTree[location1];
   vtkInternals::Cell &cell2 = this->Internals->KDTree[location2];
   if (cell1.Direction == NONE && cell2.Direction == NONE)
@@ -675,6 +744,12 @@ bool vtkSMViewLayoutProxy::Collapse(int location)
     // sure, trying to collapse the root node...whatever!!!
     return true;
     }
+
+  SM_SCOPED_TRACE(CallMethod)
+    .arg(this)
+    .arg("Collapse")
+    .arg(location)
+    .arg("comment", "close an empty frame");
 
   int parent = (location - 1) / 2;
   int sibling = ((location % 2) == 0)? (2*parent + 1) : (2*parent + 2);
@@ -814,6 +889,14 @@ bool vtkSMViewLayoutProxy::SetSplitFraction(int location, double val)
     return false;
     }
 
+
+  SM_SCOPED_TRACE(CallMethod)
+    .arg(this)
+    .arg("SetSplitFraction")
+    .arg(location)
+    .arg(val)
+    .arg("comment", "resize frame");
+
   if (this->Internals->KDTree[location].SplitFraction != val)
     {
     this->Internals->KDTree[location].SplitFraction = val;
@@ -920,6 +1003,8 @@ vtkImageData* vtkSMViewLayoutProxy::CaptureWindow(int magnification)
     return NULL;
     }
 
+  this->UpdateState();
+
   int extent[6] = {VTK_INT_MAX, VTK_INT_MIN,
     VTK_INT_MAX, VTK_INT_MIN, VTK_INT_MAX, VTK_INT_MIN};
 
@@ -957,17 +1042,46 @@ vtkImageData* vtkSMViewLayoutProxy::CaptureWindow(int magnification)
   image->SetExtent(extent);
   image->AllocateScalars(VTK_UNSIGNED_CHAR, 3);
 
-  unsigned char* image_data = 
+  unsigned char* image_data =
     reinterpret_cast<unsigned char*>(image->GetScalarPointer());
   std::fill(
     image_data, image_data + image->GetNumberOfPoints() * 3,
     static_cast<unsigned char>(0));
-  
+
+  unsigned char color[3];
+  color[0] = static_cast<unsigned char>(vtkSMViewLayoutProxy::MultiViewImageBorderColor[0] *  0xff);
+  color[1] = static_cast<unsigned char>(vtkSMViewLayoutProxy::MultiViewImageBorderColor[1] *  0xff);
+  color[2] = static_cast<unsigned char>(vtkSMViewLayoutProxy::MultiViewImageBorderColor[2] *  0xff);
   for (size_t cc=0; cc < images.size(); cc++)
     {
-    vtkSMUtilities::Merge(image, images[cc]);
+    vtkSMUtilities::Merge(image, images[cc],
+      vtkSMViewLayoutProxy::MultiViewImageBorderWidth, color);
     }
+
   return image;
+}
+
+//----------------------------------------------------------------------------
+vtkSMViewLayoutProxy* vtkSMViewLayoutProxy::FindLayout(
+  vtkSMViewProxy* view, const char* reggroup/*=layouts*/)
+{
+  if (!view)
+    {
+    return NULL;
+    }
+  vtkSMSessionProxyManager* pxm = view->GetSessionProxyManager();
+  vtkNew<vtkSMProxyIterator> iter;
+  iter->SetSessionProxyManager(pxm);
+  iter->SetModeToOneGroup();
+  for (iter->Begin(reggroup); !iter->IsAtEnd(); iter->Next())
+    {
+    vtkSMViewLayoutProxy* layout = vtkSMViewLayoutProxy::SafeDownCast(iter->GetProxy());
+    if (layout != NULL && layout->GetViewLocation(view) != -1)
+      {
+      return layout;
+      }
+    }
+  return NULL;
 }
 
 //----------------------------------------------------------------------------

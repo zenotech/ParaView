@@ -61,6 +61,7 @@ set (Module_SRCS
   vtkPVPluginsInformation.cxx
   vtkPVPluginTracker.cxx
   vtkPVProgressHandler.cxx
+  vtkPVPythonInformation.cxx
   vtkPVPythonModule.cxx
   vtkPVPythonOptions.cxx
   vtkPVPythonPluginInterface.cxx
@@ -81,7 +82,6 @@ set (Module_SRCS
 
 if (PARAVIEW_ENABLE_PYTHON)
   list(APPEND Module_SRCS
-    vtkPythonAnimationCue.cxx
     vtkPythonExtractSelection.cxx
     vtkPythonProgrammableFilter.cxx
     vtkPythonAnnotationFilter.cxx

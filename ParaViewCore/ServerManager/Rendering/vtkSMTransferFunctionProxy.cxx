@@ -16,10 +16,17 @@
 
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
+#include "vtkPVArrayInformation.h"
 #include "vtkPVXMLElement.h"
 #include "vtkPVXMLParser.h"
+#include "vtkScalarsToColors.h"
 #include "vtkSMPropertyHelper.h"
+#include "vtkSMProxyManager.h"
+#include "vtkSMPVRepresentationProxy.h"
+#include "vtkSMScalarBarWidgetRepresentationProxy.h"
 #include "vtkSMStringVectorProperty.h"
+#include "vtkSMTrace.h"
+#include "vtkSMTransferFunctionManager.h"
 #include "vtkTuple.h"
 
 #include <algorithm>
@@ -107,26 +114,41 @@ bool vtkSMTransferFunctionProxy::RescaleTransferFunction(
     return true;
     }
 
+  if (vtkSMProperty* sriProp = this->GetProperty("ScalarRangeInitialized"))
+    {
+    // mark the range as initialized.
+    vtkSMPropertyHelper helper(sriProp);
+    bool rangeInitialized = helper.GetAsInt() != 0;
+    helper.Set(1);
+    if (!rangeInitialized)
+      {
+      // don't extend the LUT if the current data range is invalid.
+      extend = false;
+      }
+    }
+
   if (num_elements == 4)
     {
+    // Only 1 control point in the property. We'll add 2 points, however.
+    vtkTuple<double, 4> points[2];
+    cntrlPoints.Get(points[0].GetData(), 4);
+    points[1] = points[0];
     if (extend)
       {
-      vtkTuple<double, 4> points[2];
-      cntrlPoints.Get(points[0].GetData(), 4);
-      points[1] = points[0];
-
       rangeMin = std::min(rangeMin, points[0].GetData()[0]);
       rangeMax = std::max(rangeMax, points[0].GetData()[0]);
-      points[0].GetData()[0] = rangeMin;
-      points[1].GetData()[0] = rangeMax;
-      cntrlPoints.Set(points[0].GetData(), 8);
       }
-    else
-      {
-      // trivial case with only 1 point. Set it to the center of the range.
-      cntrlPoints.Set(0, (rangeMin + rangeMax)/2.0);
-      }
+    points[0].GetData()[0] = rangeMin;
+    points[1].GetData()[0] = rangeMax;
+    cntrlPoints.Set(points[0].GetData(), 8);
     this->UpdateVTKObjects();
+
+    SM_SCOPED_TRACE(CallMethod)
+      .arg(this)
+      .arg("RescaleTransferFunction")
+      .arg(rangeMin)
+      .arg(rangeMax)
+      .arg("comment", "Rescale transfer function");
     return true;
     }
 
@@ -151,6 +173,13 @@ bool vtkSMTransferFunctionProxy::RescaleTransferFunction(
     // nothing to do.
     return true;
     }
+
+  SM_SCOPED_TRACE(CallMethod)
+    .arg(this)
+    .arg("RescaleTransferFunction")
+    .arg(rangeMin)
+    .arg(rangeMax)
+    .arg("comment", "Rescale transfer function");
 
   // determine if the interpolation has to happen in log-space.
   bool log_space =
@@ -191,6 +220,52 @@ bool vtkSMTransferFunctionProxy::RescaleTransferFunction(
 }
 
 //----------------------------------------------------------------------------
+bool vtkSMTransferFunctionProxy::RescaleTransferFunctionToDataRange(bool extend)
+{
+  double range[2] = {VTK_DOUBLE_MAX, VTK_DOUBLE_MIN};
+  int component = -1;
+  if (vtkSMPropertyHelper(this, "VectorMode").GetAsInt() == vtkScalarsToColors::COMPONENT)
+    {
+    component = vtkSMPropertyHelper(this, "VectorComponent").GetAsInt();
+    }
+
+  for (unsigned int cc=0, max=this->GetNumberOfConsumers(); cc < max; ++cc)
+    {
+    vtkSMProxy* proxy = this->GetConsumerProxy(cc);
+    // consumers could be subproxy of something; so, we locate the true-parent
+    // proxy for a proxy.
+    proxy = proxy? proxy->GetTrueParentProxy() : NULL;
+    vtkSMPVRepresentationProxy* consumer = vtkSMPVRepresentationProxy::SafeDownCast(proxy);
+    if (consumer &&
+      // consumer is visible.
+      vtkSMPropertyHelper(consumer, "Visibility", true).GetAsInt() == 1 &&
+      // consumer is using scalar coloring.
+      consumer->GetUsingScalarColoring())
+      {
+      vtkPVArrayInformation* arrayInfo = consumer->GetArrayInformationForColorArray();
+      if (!arrayInfo || (component >= 0 && arrayInfo->GetNumberOfComponents() <= component))
+        {
+        // skip if no arrayInfo available of doesn't have enough components.
+        continue;
+        }
+
+      double cur_range[2];
+      arrayInfo->GetComponentRange(component, cur_range);
+      if (cur_range[0] <= cur_range[1])
+        {
+        range[0] = cur_range[0] < range[0]? cur_range[0] : range[0];
+        range[1] = cur_range[1] > range[1]? cur_range[1] : range[1];
+        }
+      }
+    }
+  if (range[0] <= range[1])
+    {
+    return this->RescaleTransferFunction(range[0], range[1], extend);
+    }
+  return false;
+}
+
+//----------------------------------------------------------------------------
 bool vtkSMTransferFunctionProxy::InvertTransferFunction(vtkSMProxy* proxy)
 {
   vtkSMTransferFunctionProxy* ctf =
@@ -206,6 +281,11 @@ bool vtkSMTransferFunctionProxy::InvertTransferFunction()
     {
     return false;
     }
+
+  SM_SCOPED_TRACE(CallMethod)
+    .arg(this)
+    .arg("InvertTransferFunction")
+    .arg("comment", "invert the transfer function");
 
   vtkSMPropertyHelper cntrlPoints(controlPointsProperty);
   unsigned int num_elements = cntrlPoints.GetNumberOfElements();
@@ -249,6 +329,8 @@ bool vtkSMTransferFunctionProxy::InvertTransferFunction()
       x = range[1] - (x - range[0]);
       }
     }
+  // sort again to ensure that the property value is set as min->max.
+  std::sort(points.begin(), points.end(), StrictWeakOrdering());
   cntrlPoints.Set(points[0].GetData(), num_elements);
   this->UpdateVTKObjects();
   return true;
@@ -263,6 +345,13 @@ bool vtkSMTransferFunctionProxy::MapControlPointsToLogSpace(
     {
     return false;
     }
+
+  SM_SCOPED_TRACE(CallMethod)
+    .arg(this)
+    .arg(inverse? "MapControlPointsToLinearSpace" : "MapControlPointsToLogSpace")
+    .arg("comment",
+      inverse? "convert from log to linear" : "convert to log space");
+
 
   vtkSMPropertyHelper cntrlPoints(controlPointsProperty);
   unsigned int num_elements = cntrlPoints.GetNumberOfElements();
@@ -302,7 +391,7 @@ bool vtkSMTransferFunctionProxy::MapControlPointsToLogSpace(
       {
       // log-to-linear
       double norm = log10(x/range[0]) / log10(range[1]/range[0]);
-      x = range[0] + norm * (range[1] - range[0]);  
+      x = range[0] + norm * (range[1] - range[0]);
       }
     else
       {
@@ -321,7 +410,7 @@ bool vtkSMTransferFunctionProxy::MapControlPointsToLogSpace(
 bool vtkSMTransferFunctionProxy::ApplyColorMap(const char* text)
 {
   vtkNew<vtkPVXMLParser> parser;
-  if (parser->Parse(text))
+  if (!parser->Parse(text))
     {
     return false;
     }
@@ -338,7 +427,7 @@ bool vtkSMTransferFunctionProxy::ApplyColorMap(vtkPVXMLElement* xml)
     return false;
     }
 
-  bool indexedLookup = 
+  bool indexedLookup =
     (strcmp(xml->GetAttributeOrDefault("indexedLookup", "false"), "true") == 0);
   vtkSMPropertyHelper(this, "IndexedLookup").Set(indexedLookup? 1 : 0);
 
@@ -356,7 +445,7 @@ bool vtkSMTransferFunctionProxy::ApplyColorMap(vtkPVXMLElement* xml)
       vtkSMPropertyHelper(this, "HSVWrap").Set(0);
       vtkSMPropertyHelper(this, "ColorSpace").Set(colorSpace.c_str());
       }
-    } 
+    }
 
   vtkPVXMLElement* nanElement = xml->FindNestedElementByName("NaN");
   if (nanElement && nanElement->GetAttribute("r") &&
@@ -591,6 +680,20 @@ bool vtkSMTransferFunctionProxy::SaveColorMap(vtkPVXMLElement* xml)
 }
 
 //----------------------------------------------------------------------------
+bool vtkSMTransferFunctionProxy::IsScalarBarVisible(vtkSMProxy* view)
+{
+  if (vtkSMProxy* sbProxy = this->FindScalarBarRepresentation(view))
+    {
+    if (vtkSMPropertyHelper(sbProxy, "Visibility").GetAsInt() == 1)
+      {
+      return true;
+      }
+    }
+
+  return false;
+}
+
+//----------------------------------------------------------------------------
 vtkSMProxy* vtkSMTransferFunctionProxy::FindScalarBarRepresentation(vtkSMProxy* view)
 {
   if (!view || !view->GetProperty("Representations"))
@@ -613,6 +716,29 @@ vtkSMProxy* vtkSMTransferFunctionProxy::FindScalarBarRepresentation(vtkSMProxy* 
       }
     }
   return NULL;
+}
+
+//----------------------------------------------------------------------------
+bool vtkSMTransferFunctionProxy::UpdateScalarBarsComponentTitle(
+  vtkPVArrayInformation* info)
+{
+  // find all scalar bars for this transfer function and update their titles.
+  for (unsigned int cc=0, max = this->GetNumberOfConsumers(); cc < max; ++cc)
+    {
+    vtkSMProxy* consumer = this->GetConsumerProxy(cc);
+    while (consumer && consumer->GetParentProxy())
+      {
+      consumer = consumer->GetParentProxy();
+      }
+
+    vtkSMScalarBarWidgetRepresentationProxy* sb =
+      vtkSMScalarBarWidgetRepresentationProxy::SafeDownCast(consumer);
+    if (sb)
+      {
+      sb->UpdateComponentTitle(info);
+      }
+    }
+  return true;
 }
 
 //----------------------------------------------------------------------------

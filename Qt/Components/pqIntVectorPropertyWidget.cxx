@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -44,7 +44,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMPropertyHelper.h"
 
 #include "pqIntRangeWidget.h"
+#include "pqLabel.h"
 #include "pqLineEdit.h"
+#include "pqProxyWidget.h"
 #include "pqSignalAdaptorCompositeTreeWidget.h"
 #include "pqSignalAdaptorSelectionTreeWidget.h"
 #include "pqSignalAdaptors.h"
@@ -68,7 +70,9 @@ pqIntVectorPropertyWidget::pqIntVectorPropertyWidget(vtkSMProperty *smproperty,
     {
     return;
     }
-  
+
+  bool useDocumentationForLabels = pqProxyWidget::useDocumentationForLabels(smProxy);
+
   // find the domain
   vtkSmartPointer<vtkSMDomain> domain;
   vtkSMDomainIterator *domainIter = ivp->NewDomainIterator();
@@ -88,12 +92,23 @@ pqIntVectorPropertyWidget::pqIntVectorPropertyWidget(vtkSMProperty *smproperty,
 
   if(vtkSMBooleanDomain::SafeDownCast(domain))
     {
-    QCheckBox *checkBox = new QCheckBox(smproperty->GetXMLLabel(), this);
+    QCheckBox *checkBox = new QCheckBox(
+      useDocumentationForLabels? "" : smproperty->GetXMLLabel(), this);
     checkBox->setObjectName("CheckBox");
     this->addPropertyLink(checkBox, "checked", SIGNAL(toggled(bool)), ivp);
     this->setChangeAvailableAsChangeFinished(true);
     layoutLocal->addWidget(checkBox);
 
+    if (useDocumentationForLabels)
+      {
+      pqLabel* label = new pqLabel(
+        QString("<p>%1</p>").arg(pqProxyWidget::documentationText(smproperty)));
+      label->setObjectName("CheckBoxLabel");
+      label->setWordWrap(true);
+      label->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+      label->connect(label, SIGNAL(clicked()), checkBox, SLOT(click()));
+      layoutLocal->addWidget(label, /*stretch=*/1);
+      }
     this->setShowLabel(false);
 
     PV_DEBUG_PANELS() << "QCheckBox for an IntVectorProperty with a BooleanDomain";
@@ -109,6 +124,7 @@ pqIntVectorPropertyWidget::pqIntVectorPropertyWidget(vtkSMProperty *smproperty,
       treeWidget->setObjectName("TreeWidget");
       treeWidget->setColumnCount(1);
       treeWidget->setRootIsDecorated(false);
+      treeWidget->setMaximumRowCountBeforeScrolling(smproperty);
 
       QTreeWidgetItem* header = new QTreeWidgetItem();
       header->setData(0, Qt::DisplayRole, smproperty->GetXMLLabel());
@@ -125,7 +141,7 @@ pqIntVectorPropertyWidget::pqIntVectorPropertyWidget(vtkSMProperty *smproperty,
       adaptor->setObjectName("SelectionTreeWidgetAdaptor");
       this->addPropertyLink(adaptor, "values", SIGNAL(valuesChanged()),
                             smproperty);
-      
+
       layoutLocal->addWidget(treeWidget);
       this->setChangeAvailableAsChangeFinished(true);
       this->setShowLabel(false);
@@ -161,12 +177,13 @@ pqIntVectorPropertyWidget::pqIntVectorPropertyWidget(vtkSMProperty *smproperty,
   else if(vtkSMCompositeTreeDomain::SafeDownCast(domain))
     {
     pqTreeWidget *treeWidget = new pqTreeWidget(this);
-
     treeWidget->setObjectName("TreeWidget");
     treeWidget->setHeaderLabel(smproperty->GetXMLLabel());
+    treeWidget->setMaximumRowCountBeforeScrolling(smproperty);
 
     pqSignalAdaptorCompositeTreeWidget *adaptor =
-      new pqSignalAdaptorCompositeTreeWidget(treeWidget, ivp);
+      new pqSignalAdaptorCompositeTreeWidget(treeWidget, ivp,
+        /*autoUpdateVisibility=*/true);
     adaptor->setObjectName("CompositeTreeAdaptor");
 
     pqTreeWidgetSelectionHelper* helper =

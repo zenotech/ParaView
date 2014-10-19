@@ -52,20 +52,16 @@ public:
 
   /// \returns the internal vtkContextView which provides the implementation for
   /// the chart rendering.
-  virtual vtkContextView* getVTKChartView() const;
+  virtual vtkContextView* getVTKContextView() const;
+
+  /// Returns the context view proxy associated with this object.
+  virtual vtkSMContextViewProxy* getContextViewProxy() const;
 
   /// \returns the comparative view proxy.
   vtkSMComparativeViewProxy* getComparativeViewProxy() const;
 
   /// Returns the proxy of the root plot view in the comparative view.
   virtual vtkSMViewProxy* getViewProxy() const;
-
-  /// Sets default values for the underlying proxy.
-  /// This is during the initialization stage of the pqProxy
-  /// for proxies created by the GUI itself i.e.
-  /// for proxies loaded through state or created by python client
-  /// this method won't be called.
-  virtual void setDefaultPropertyValues();
 
 protected slots:
   /// Called when the layout on the comparative vis changes.

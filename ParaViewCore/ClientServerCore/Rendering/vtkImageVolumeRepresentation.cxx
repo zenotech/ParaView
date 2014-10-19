@@ -21,8 +21,10 @@
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkMath.h"
+#include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkOutlineSource.h"
+#include "vtkPExtentTranslator.h"
 #include "vtkPolyDataMapper.h"
 #include "vtkPVCacheKeeper.h"
 #include "vtkPVLODVolume.h"
@@ -52,14 +54,13 @@ vtkImageVolumeRepresentation::vtkImageVolumeRepresentation()
   this->OutlineSource = vtkOutlineSource::New();
   this->OutlineMapper = vtkPolyDataMapper::New();
 
-  this->ColorArrayName = 0;
-  this->ColorAttributeType = POINT_DATA;
   this->Cache = vtkImageData::New();
 
   this->CacheKeeper->SetInputData(this->Cache);
   this->Actor->SetLODMapper(this->OutlineMapper);
 
   vtkMath::UninitializeBounds(this->DataBounds);
+  this->DataSize = 0;
 }
 
 //----------------------------------------------------------------------------
@@ -71,8 +72,6 @@ vtkImageVolumeRepresentation::~vtkImageVolumeRepresentation()
   this->OutlineSource->Delete();
   this->OutlineMapper->Delete();
   this->CacheKeeper->Delete();
-
-  this->SetColorArrayName(0);
 
   this->Cache->Delete();
 }
@@ -98,13 +97,24 @@ int vtkImageVolumeRepresentation::ProcessViewRequest(
   if (request_type == vtkPVView::REQUEST_UPDATE())
     {
     vtkPVRenderView::SetPiece(inInfo, this,
-      this->OutlineSource->GetOutputDataObject(0));
+      this->OutlineSource->GetOutputDataObject(0),
+      this->DataSize);
+    // BUG #14792.
+    // We report this->DataSize explicitly since the data being "delivered" is
+    // not the data that should be used to make rendering decisions based on
+    // data size.
     outInfo->Set(vtkPVRenderView::NEED_ORDERED_COMPOSITING(), 1);
 
     vtkPVRenderView::SetGeometryBounds(inInfo, this->DataBounds);
 
     vtkImageVolumeRepresentation::PassOrderedCompositingInformation(
       this, inInfo);
+
+    vtkPVRenderView::SetRequiresDistributedRendering(inInfo, this, true);
+    }
+  else if (request_type == vtkPVView::REQUEST_UPDATE_LOD())
+    {
+    vtkPVRenderView::SetRequiresDistributedRenderingLOD(inInfo, this, true);
     }
   else if (request_type == vtkPVView::REQUEST_RENDER())
     {
@@ -126,26 +136,27 @@ void vtkImageVolumeRepresentation::PassOrderedCompositingInformation(
   // The KdTree generation code that uses the image cuts needs to be updated
   // bigtime. But due to time shortage, I'm leaving the old code as is. We
   // will get back to it later.
+  (void)inInfo;
   if (self->GetNumberOfInputConnections(0) == 1)
     {
     vtkAlgorithmOutput* connection = self->GetInputConnection(0, 0);
     vtkAlgorithm* inputAlgo = connection->GetProducer();
     vtkStreamingDemandDrivenPipeline* sddp =
       vtkStreamingDemandDrivenPipeline::SafeDownCast(inputAlgo->GetExecutive());
-    vtkExtentTranslator* translator =
-      sddp->GetExtentTranslator(connection->GetIndex());
 
     int extent[6] = {1, -1, 1, -1, 1, -1};
     sddp->GetWholeExtent(sddp->GetOutputInformation(connection->GetIndex()),
       extent);
-
     double origin[3], spacing[3];
     vtkImageData* image = vtkImageData::SafeDownCast(
       inputAlgo->GetOutputDataObject(connection->GetIndex()));
     image->GetOrigin(origin);
     image->GetSpacing(spacing);
+
+    vtkNew<vtkPExtentTranslator> translator;
+    translator->GatherExtents(image);
     vtkPVRenderView::SetOrderedCompositingInformation(
-      inInfo, self, translator, extent, origin, spacing);
+      inInfo, self, translator.GetPointer(), extent, origin, spacing);
     }
 }
 
@@ -154,6 +165,7 @@ int vtkImageVolumeRepresentation::RequestData(vtkInformation* request,
     vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   vtkMath::UninitializeBounds(this->DataBounds);
+  this->DataSize = 0;
 
   // Pass caching information to the cache keeper.
   this->CacheKeeper->SetCachingEnabled(this->GetUseCache());
@@ -176,6 +188,8 @@ int vtkImageVolumeRepresentation::RequestData(vtkInformation* request,
         this->CacheKeeper->GetOutputDataObject(0))->GetBounds());
     this->OutlineSource->GetBounds(this->DataBounds);
     this->OutlineSource->Update();
+
+    this->DataSize = this->CacheKeeper->GetOutputDataObject(0)->GetActualMemorySize();
     }
   else
     {
@@ -234,19 +248,34 @@ bool vtkImageVolumeRepresentation::RemoveFromView(vtkView* view)
 //----------------------------------------------------------------------------
 void vtkImageVolumeRepresentation::UpdateMapperParameters()
 {
-  this->VolumeMapper->SelectScalarArray(this->ColorArrayName);
-  switch (this->ColorAttributeType)
+  const char* colorArrayName = NULL;
+  int fieldAssociation = vtkDataObject::FIELD_ASSOCIATION_POINTS;
+
+  vtkInformation *info = this->GetInputArrayInformation(0);
+  if (info &&
+    info->Has(vtkDataObject::FIELD_ASSOCIATION()) &&
+    info->Has(vtkDataObject::FIELD_NAME()))
     {
-  case CELL_DATA:
+    colorArrayName = info->Get(vtkDataObject::FIELD_NAME());
+    fieldAssociation = info->Get(vtkDataObject::FIELD_ASSOCIATION());
+    }
+
+  this->VolumeMapper->SelectScalarArray(colorArrayName);
+  switch (fieldAssociation)
+    {
+  case vtkDataObject::FIELD_ASSOCIATION_CELLS:
     this->VolumeMapper->SetScalarMode(VTK_SCALAR_MODE_USE_CELL_FIELD_DATA);
     break;
 
-  case POINT_DATA:
+  case vtkDataObject::FIELD_ASSOCIATION_POINTS:
   default:
     this->VolumeMapper->SetScalarMode(VTK_SCALAR_MODE_USE_POINT_FIELD_DATA);
     break;
     }
+
   this->Actor->SetMapper(this->VolumeMapper);
+  // this is necessary since volume mappers don't like empty arrays.
+  this->Actor->SetVisibility(colorArrayName != NULL && colorArrayName[0] != 0);
 }
 
 //----------------------------------------------------------------------------

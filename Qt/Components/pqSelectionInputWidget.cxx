@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "vtkEventQtSlotConnect.h"
 #include "vtkSelection.h"
+#include "vtkSelectionNode.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMProxyIterator.h"
 #include "vtkSMProxyManager.h"
@@ -49,13 +50,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqProxy.h"
 #include "pqSelectionManager.h"
 #include "pqSMAdaptor.h"
-#include "pqTimer.h"
 
 #include <string>
 
 #include "ui_pqSelectionInputWidget.h"
 class pqSelectionInputWidget::UI : public Ui::pqSelectionInputWidget { };
 
+namespace {
+  /// given vtkSelectionNode::SelectionField, returns a string for it.
+  const char* getSelectionFieldTypeAsString(int fieldType)
+    {
+    switch (fieldType)
+      {
+    case vtkSelectionNode::CELL:
+      return "Cells";
+    case vtkSelectionNode::POINT:
+      return "Points";
+    case vtkSelectionNode::FIELD:
+      return "Fields (not supported)";
+    case vtkSelectionNode::VERTEX:
+      return "Vertices";
+    case vtkSelectionNode::EDGE:
+      return "Edges";
+    case vtkSelectionNode::ROW:
+      return "Rows";
+    default:
+      return "Unknown (not supported)";
+      }
+    }
+}
 //-----------------------------------------------------------------------------
 pqSelectionInputWidget::pqSelectionInputWidget(QWidget* _parent)
   : QWidget(_parent)
@@ -74,8 +97,6 @@ pqSelectionInputWidget::pqSelectionInputWidget(QWidget* _parent)
     QObject::connect(selMan, SIGNAL(selectionChanged(pqOutputPort*)),
                      this, SLOT(onActiveSelectionChanged()));
     }
-
-  pqTimer::singleShot(10, this, SLOT(initializeWidget()));
 }
 
 //-----------------------------------------------------------------------------
@@ -98,13 +119,17 @@ void pqSelectionInputWidget::updateLabels()
 
   int fieldType = pqSMAdaptor::getElementProperty(
                        this->SelectionSource->GetProperty("FieldType")).toInt();
- 
+
+  const char* fieldTypeAsString = getSelectionFieldTypeAsString(fieldType);
+
   const char* xmlname = this->SelectionSource->GetXMLName();
   QString text = QString("Type: ");
   QTextStream columnValues(&text, QIODevice::ReadWrite);
   if(strcmp(xmlname, "FrustumSelectionSource") == 0)
-    {  
-    columnValues << "Frustum Selection" << endl << endl << "Values:" << endl ;
+    {
+    columnValues << "Frustum Selection" << endl
+      << "Elements: " << fieldTypeAsString << endl
+      << endl << "Values:" << endl ;
     vtkSMProperty* dvp = this->SelectionSource->GetProperty("Frustum");
     QList<QVariant> value = pqSMAdaptor::getMultipleElementProperty(dvp);
     for (int cc=0; cc <value.size(); cc++)
@@ -118,7 +143,9 @@ void pqSelectionInputWidget::updateLabels()
     }
   else if (strcmp(xmlname, "GlobalIDSelectionSource") == 0)
     {
-    columnValues << "Global ID Selection" << endl << endl << endl;
+    columnValues << "Global ID Selection" << endl
+      << "Elements: " << fieldTypeAsString << endl
+      << endl << endl;
     QList<QVariant> value = pqSMAdaptor::getMultipleElementProperty(
       this->SelectionSource->GetProperty("IDs"));
     columnValues << "Global ID" << endl;
@@ -129,8 +156,8 @@ void pqSelectionInputWidget::updateLabels()
     }
   else if(strcmp(xmlname, "IDSelectionSource") == 0)
     {
-    columnValues << QString("%1 ID Selection").arg(
-      fieldType == 0? "Cell" : "Point") << endl << endl << endl;
+    columnValues << QString("ID Selection") << endl
+      << "Elements: " << fieldTypeAsString << endl << endl << endl;
     columnValues << "Process ID" << "\t\t" << "Index" << endl;
     vtkSMProperty* idvp = this->SelectionSource->GetProperty("IDs");
     QList<QVariant> value = pqSMAdaptor::getMultipleElementProperty(idvp);
@@ -145,9 +172,9 @@ void pqSelectionInputWidget::updateLabels()
     }
   else if(strcmp(xmlname, "CompositeDataIDSelectionSource") == 0)
     {
-    columnValues << QString("%1 ID Selection").arg(
-      fieldType == 0? "Cell" : "Point") << endl << endl << endl;
-    columnValues  << "Composite ID" 
+    columnValues << QString("ID Selection") << endl
+      << "Elements: " << fieldTypeAsString << endl << endl << endl;
+    columnValues  << "Composite ID"
       << "\t" << "Process ID" << "\t\t" << "Index" << endl;
     vtkSMProperty* idvp = this->SelectionSource->GetProperty("IDs");
     QList<QVariant> value = pqSMAdaptor::getMultipleElementProperty(idvp);
@@ -162,8 +189,8 @@ void pqSelectionInputWidget::updateLabels()
     }
   else if(strcmp(xmlname, "HierarchicalDataIDSelectionSource") == 0)
     {
-    columnValues << QString("%1 ID Selection").arg(
-      fieldType == 0? "Cell" : "Point") << endl << endl << endl;
+    columnValues << QString("ID Selection") << endl
+      << "Elements: " << fieldTypeAsString << endl << endl << endl;
     columnValues  << "Level" << "\t\t" << "Dataset" << "\t\t" 
       << "Index" << endl;
     vtkSMProperty* idvp = this->SelectionSource->GetProperty("IDs");
@@ -206,10 +233,11 @@ void pqSelectionInputWidget::updateLabels()
   else if (strcmp(xmlname, "ThresholdSelectionSource") == 0)
     {
     columnValues << "Threshold Selection" << endl;
+    columnValues << "Elements: " << fieldTypeAsString << endl;
     columnValues << "Array: " 
       << pqSMAdaptor::getElementProperty(
         this->SelectionSource->GetProperty("ArrayName")).toString() 
-      << (fieldType == 0? " (cell)" : " (point)") << endl << endl;
+      << endl << endl;
     QList<QVariant> values = pqSMAdaptor::getMultipleElementProperty(
       this->SelectionSource->GetProperty("Thresholds"));
     for (int cc=0; cc <values.size(); cc++)
@@ -231,7 +259,8 @@ void pqSelectionInputWidget::updateLabels()
     columnValues << "Query" << endl;
     this->SelectionSource->UpdatePropertyInformation();
     columnValues << vtkSMPropertyHelper(
-      this->SelectionSource, "UserFriendlyText").GetAsString();
+      this->SelectionSource, "UserFriendlyText").GetAsString() << endl
+      << "Elements: " << fieldTypeAsString;
     }
   else
     {
@@ -243,7 +272,7 @@ void pqSelectionInputWidget::updateLabels()
 }
 
 //-----------------------------------------------------------------------------
-void pqSelectionInputWidget::initializeWidget()
+void pqSelectionInputWidget::initializeDefaultValueIfNeeded()
 {
   if (!this->SelectionSource)
     {
@@ -281,8 +310,7 @@ void pqSelectionInputWidget::copyActiveSelection()
   vtkSMSessionProxyManager* pxm = activeSelection->GetSessionProxyManager();
   vtkSMProxy* newSource = pxm->NewProxy(activeSelection->GetXMLGroup(),
                                         activeSelection->GetXMLName());
-  newSource->Copy(activeSelection, 0,
-                  vtkSMProxy::COPY_PROXY_PROPERTY_VALUES_BY_CLONING);
+  newSource->Copy(activeSelection);
   newSource->UpdateVTKObjects();
   this->setSelection(newSource);
   newSource->Delete();

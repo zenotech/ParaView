@@ -1,3 +1,8 @@
+set (__dependencies)
+if (PARAVIEW_ENABLE_PYTHON)
+  list (APPEND __dependencies vtkPythonInterpreter)
+endif ()
+
 vtk_module(vtkPVServerManagerCore
   GROUPS
     ParaViewCore
@@ -9,6 +14,15 @@ vtk_module(vtkPVServerManagerCore
     vtkPVServerImplementationCore
   PRIVATE_DEPENDS
     vtksys
+    vtkjsoncpp
+    vtkpugixml
+    ${__dependencies}
   TEST_LABELS
     PARAVIEW
+  TEST_DEPENDS
+    vtkPVServerManagerApplication
+  KIT
+    vtkPVServerManager
+
 )
+unset (__dependencies)

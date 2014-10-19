@@ -19,6 +19,7 @@
 #include "vtkCommand.h"
 #include "vtkDebugLeaks.h"
 #include "vtkGarbageCollector.h"
+#include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkProcessModule.h"
 #include "vtkPVInstantiator.h"
@@ -39,12 +40,12 @@
 #include "vtkSMStateLocator.h"
 
 #include <algorithm>
+#include <assert.h>
+#include <set>
 #include <string>
 #include <vector>
 #include <vtksys/ios/sstream>
 #include <vtksys/RegularExpression.hxx>
-#include <assert.h>
-#include <vtkNew.h>
 
 //---------------------------------------------------------------------------
 // Observer for modified event of the property
@@ -129,8 +130,6 @@ vtkSMProxy::vtkSMProxy()
   this->Deprecated = 0;
 
   this->State = new vtkSMMessage();
-
-  this->ParentProxyCount = 0;
 }
 
 //---------------------------------------------------------------------------
@@ -431,7 +430,7 @@ void vtkSMProxy::SetPropertyModifiedFlag(const char* name, int flag)
     }
 
   this->InvokeEvent(vtkCommand::PropertyModifiedEvent, (void*)name);
-  
+
   vtkSMProperty* prop = it->second.Property.GetPointer();
   if (prop->GetInformationOnly())
     {
@@ -461,6 +460,30 @@ void vtkSMProxy::MarkAllPropertiesAsModified()
     // Not the most efficient way to set the flag, but probably the safest.
     this->SetPropertyModifiedFlag(it->first.c_str(), 1);
     }
+}
+
+//---------------------------------------------------------------------------
+void vtkSMProxy::ResetPropertiesToXMLDefaults()
+{
+  vtkSmartPointer<vtkSMPropertyIterator> iter;
+  iter.TakeReference(this->NewPropertyIterator());
+
+  // iterate over properties and reset them to default.
+  for (iter->Begin(); !iter->IsAtEnd(); iter->Next())
+    {
+    vtkSMProperty* smproperty = iter->GetProperty();
+    if (!smproperty->GetInformationOnly())
+      {
+      vtkPVXMLElement* propHints = iter->GetProperty()->GetHints();
+      if (propHints && propHints->FindNestedElementByName("NoDefault"))
+        {
+        // Don't reset properties that request overriding of the default mechanism.
+        continue;
+        }
+      iter->GetProperty()->ResetToXMLDefaults();
+      }
+    }
+  this->UpdateVTKObjects();
 }
 
 //---------------------------------------------------------------------------
@@ -900,6 +923,29 @@ vtkSMProxy* vtkSMProxy::GetSubProxy(const char* name)
 }
 
 //---------------------------------------------------------------------------
+bool vtkSMProxy::GetIsSubProxy()
+{
+  return this->ParentProxy != NULL;
+}
+
+//---------------------------------------------------------------------------
+vtkSMProxy* vtkSMProxy::GetParentProxy()
+{
+  return this->ParentProxy.GetPointer();
+}
+
+//---------------------------------------------------------------------------
+vtkSMProxy* vtkSMProxy::GetTrueParentProxy()
+{
+  vtkSMProxy* self = this;
+  while (self->GetParentProxy())
+    {
+    self = self->GetParentProxy();
+    }
+  return self;
+}
+
+//---------------------------------------------------------------------------
 void vtkSMProxy::AddSubProxy( const char* name, vtkSMProxy* proxy,
                               int override)
 {
@@ -918,7 +964,7 @@ void vtkSMProxy::AddSubProxy( const char* name, vtkSMProxy* proxy,
     }
 
   this->Internals->SubProxies[name] = proxy;
-  proxy->ParentProxyCount++; 
+  proxy->ParentProxy = this;
 
   proxy->AddObserver(vtkCommand::PropertyModifiedEvent,this->SubProxyObserver);
   proxy->AddObserver(vtkCommand::UpdatePropertyEvent,  this->SubProxyObserver);
@@ -964,7 +1010,7 @@ void vtkSMProxy::RemoveSubProxy(const char* name)
 
   if (subProxy.GetPointer())
     {
-    subProxy->ParentProxyCount--;
+    subProxy->ParentProxy = NULL;
     // Now, remove any shared property links for the subproxy.
     vtkSMProxyInternals::SubProxyLinksType::iterator iter2 =
       this->Internals->SubProxyLinks.begin();
@@ -1354,67 +1400,59 @@ vtkSMProperty* vtkSMProxy::NewProperty(const char* name,
   return property;
 }
 
+
+//---------------------------------------------------------------------------
+class vtkSMProxyPropertyLinkObserver : public vtkCommand
+{
+public:
+  vtkWeakPointer<vtkSMProperty> Output;
+  typedef vtkCommand Superclass;
+  virtual const char* GetClassNameInternal() const
+    { return "vtkSMProxyPropertyLinkObserver"; }
+  static vtkSMProxyPropertyLinkObserver* New()
+    {
+      return new vtkSMProxyPropertyLinkObserver();
+    }
+  virtual void Execute(vtkObject* caller, unsigned long event, void* calldata)
+    {
+    (void)event;
+    (void)calldata;
+    vtkSMProperty* input = vtkSMProperty::SafeDownCast(caller);
+     if (input && this->Output)
+      {
+      // this will copy both checked and unchecked property values.
+      this->Output->Copy(input);
+      }
+    }
+};
+
+//---------------------------------------------------------------------------
+void vtkSMProxy::LinkProperty(vtkSMProperty* input, vtkSMProperty* output)
+{
+  if (input == output || input == NULL || output == NULL)
+    {
+    vtkErrorMacro("Invalid call to vtkSMProxy::LinkProperty. Check arguments.");
+    return;
+    }
+
+  vtkSMProxyPropertyLinkObserver* observer = vtkSMProxyPropertyLinkObserver::New();
+  observer->Output = output;
+  input->AddObserver(vtkCommand::PropertyModifiedEvent, observer);
+  input->AddObserver(vtkCommand::UncheckedPropertyModifiedEvent, observer);
+  observer->FastDelete();
+}
+
 //---------------------------------------------------------------------------
 vtkSMPropertyGroup* vtkSMProxy::NewPropertyGroup(vtkPVXMLElement* groupElem)
 {
   vtkSMPropertyGroup *group = vtkSMPropertyGroup::New();
+  if (!group->ReadXMLAttributes(this, groupElem))
+    {
+    group->Delete();
+    return NULL;
+    }
 
   // FIXME: should we use group-name as the "key" for the property groups?
-  const char *groupName = groupElem->GetAttribute("name");
-  if(groupName)
-    {
-    group->SetName(groupName);
-    }
-
-  const char *groupLabel = groupElem->GetAttribute("label");
-  if(groupLabel)
-    {
-    group->SetXMLLabel(groupLabel);
-    }
-
-  // this is deprecated attribute that's replaced by "panel_widget". We still
-  // process it for backwards compatibility.
-  const char *groupType = groupElem->GetAttribute("type");
-  if(groupType)
-    {
-    vtkWarningMacro("Found deprecated attribute 'type' of PropertyGroup. "
-      "Please use 'panel_widget' instead.");
-    group->SetPanelWidget(groupType);
-    }
-
-  groupType = groupElem->GetAttribute("panel_widget");
-  if(groupType)
-    {
-    group->SetPanelWidget(groupType);
-    }
-
-  const char *panelVisibility = groupElem->GetAttribute("panel_visibility");
-  if(panelVisibility)
-    {
-    group->SetPanelVisibility(panelVisibility);
-    }
-
-  for (unsigned int k = 0; k < groupElem->GetNumberOfNestedElements(); k++)
-    {
-    vtkPVXMLElement* elem = groupElem->GetNestedElement(k);
-
-    // if elem has "exposed_name", use that to locate the property, else use the
-    // "name".
-    const char* propname = elem->GetAttribute("exposed_name")?
-      elem->GetAttribute("exposed_name") : elem->GetAttribute("name");
-    vtkSMProperty* property = propname? this->GetProperty(propname) : NULL;
-    if (!property)
-      {
-      vtkWarningMacro("Failed to locate property '" <<
-        (propname? propname : "(none)") << "' for PropertyGroup. Skipping.");
-      }
-    else
-      {
-      group->AddProperty(
-        elem->GetAttribute("function"), property);
-      }
-    }
-
   this->Internals->PropertyGroups.push_back(group);
   group->Delete();
 
@@ -1560,9 +1598,14 @@ int vtkSMProxy::CreateSubProxiesAndProperties(vtkSMSessionProxyManager* pm,
                            << (pname?pname:"(none"));
             return 0;
             }
+          // Here, we turn on DoNotModifyProperty to ensure that we don't mark
+          // the properties modified as we are processing them e.g. setting
+          // panel-visibilities, etc.
+          subproxy->DoNotModifyProperty = 1;
           this->AddSubProxy(name, subproxy, override);
           this->SetupSharedProperties(subproxy, propElement);
           this->SetupExposedProperties(name, propElement);
+          subproxy->DoNotModifyProperty = 0;
           subproxy->Delete();
           }
         }
@@ -1615,15 +1658,25 @@ vtkSMProperty* vtkSMProxy::SetupExposedProperty(vtkPVXMLElement* propertyElement
                       << "' on subproxy '" << subproxy_name << "'");
       return 0;
       }
+    const std::string propertyName(prop->GetXMLName());
     if (!prop->ReadXMLAttributes(subproxy, propertyElement))
       {
+      prop->SetXMLName(propertyName.c_str());
       return 0;
       }
+    prop->SetXMLName(propertyName.c_str());
     }
   this->ExposeSubProxyProperty(subproxy_name, name, exposed_name, override);
 
   vtkSMProxy* subproxy = this->GetSubProxy(subproxy_name);
   vtkSMProperty *prop = subproxy->GetProperty(name);
+
+  if (!prop)
+    {
+    vtkWarningMacro("Failed to locate property '" << name
+                    << "' on subproxy '" << subproxy_name << "': " << this->XMLName);
+    return 0;
+    }
 
   // override panel_visibility with that of the exposed property
   const char *panel_visibility = propertyElement->GetAttribute("panel_visibility");
@@ -1689,9 +1742,14 @@ void vtkSMProxy::SetupExposedProperties(const char* subproxy_name,
         vtkPVXMLElement *groupElement = propertyElement;
         for (unsigned int k = 0; k < groupElement->GetNumberOfNestedElements(); k++)
           {
-          this->SetupExposedProperty(groupElement->GetNestedElement(k), subproxy_name);
+          vtkPVXMLElement* subElem = groupElement->GetNestedElement(k);
+          if (strcmp(subElem->GetName(), "Hints") == 0)
+            {
+            continue;
+            }
+          this->SetupExposedProperty(subElem, subproxy_name);
           }
-     
+
         // Now create the group.
         this->NewPropertyGroup(groupElement);
         }
@@ -1787,6 +1845,13 @@ void vtkSMProxy::Copy(vtkSMProxy* src, const char* exceptionClass,
     return;
     }
 
+  if (proxyPropertyCopyFlag != COPY_PROXY_PROPERTY_VALUES_BY_REFERENCE)
+    {
+    vtkWarningMacro("COPY_PROXY_PROPERTY_VALUES_BY_CLONING is no longer supported."
+      " Using COPY_PROXY_PROPERTY_VALUES_BY_REFERENCE instead.");
+    proxyPropertyCopyFlag = COPY_PROXY_PROPERTY_VALUES_BY_REFERENCE;
+    }
+
   vtkSMPropertyIterator* iter = this->NewPropertyIterator();
   for(iter->Begin(); !iter->IsAtEnd(); iter->Next())
     {
@@ -1804,11 +1869,6 @@ void vtkSMProxy::Copy(vtkSMProxy* src, const char* exceptionClass,
             vtkSMProxy::COPY_PROXY_PROPERTY_VALUES_BY_REFERENCE)
             {
             dest->Copy(source);
-            }
-          else
-            {
-            pp->DeepCopy(source, exceptionClass, 
-              vtkSMProxy::COPY_PROXY_PROPERTY_VALUES_BY_CLONING);
             }
           }
         }
@@ -2083,9 +2143,8 @@ void vtkSMProxy::LoadState( const vtkSMMessage* message,
        (subProxy->GlobalID != subProxyMsg->global_id() ||
        !this->Session->GetRemoteObject(subProxyMsg->global_id())))
       {
-      vtkErrorMacro("Invalid Proxy for message"
-                    << "Parent Proxy - Group: " << this->XMLGroup
-                    << " - Name: " << this->XMLName << endl
+      vtkErrorMacro("Invalid Proxy for message " << endl
+                    << "Parent Proxy : (" << this->XMLGroup << "," << this->XMLName << ")" << endl
                     << "SubProxy - XMLName: " << subProxy->GetXMLName()
                     << " - SubProxyName: " << subProxyMsg->name().c_str()
                     << " - Id: " << subProxy->GlobalID << endl

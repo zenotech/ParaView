@@ -137,6 +137,11 @@
        </item>
        <item>
         <property name="text">
+         <string>Side By Side Horizontal</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
          <string>Left Eye Only</string>
         </property>
        </item>
@@ -282,8 +287,11 @@ p, li { white-space: pre-wrap; }
   <tabstop>spinBoxNumberOfFrames</tabstop>
   <tabstop>width</tabstop>
   <tabstop>height</tabstop>
+  <tabstop>startTime</tabstop>
+  <tabstop>endTime</tabstop>
   <tabstop>lockAspect</tabstop>
   <tabstop>stereoMode</tabstop>
+  <tabstop>compression</tabstop>
   <tabstop>checkBoxDisconnect</tabstop>
  </tabstops>
  <resources>

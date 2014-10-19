@@ -1,6 +1,6 @@
 <ServerManagerConfiguration>
    <ProxyGroup name="views">
-      <QuadViewProxy name="QuadView" class="vtkPVQuadRenderView"
+      <QuadViewProxy name="QuadView" label="Quad View" class="vtkPVQuadRenderView"
          processes="client|renderserver|dataserver"
          base_proxygroup="views" base_proxyname="RenderView">
          <Documentation>
@@ -8,40 +8,12 @@
           showing slices from a 3D dataset.
          </Documentation>
 
-         <IntVectorProperty command="SetLabelFontSize"
-                            default_values="20"
-                            name="LabelFontSize"
-                            number_of_elements="1">
-         </IntVectorProperty>
-
-         <DoubleVectorProperty name="SplitLocation"
-                               command="SetSplitRatio"
-                               number_of_elements="2"
-                               default_values="50 50"/>
-
-         <IntVectorProperty command="SetShowCubeAxes"
-                            default_values="0"
-                            name="ShowCubeAxes"
-                            number_of_elements="1">
-         </IntVectorProperty>
-
-         <IntVectorProperty command="SetShowOutline"
-                            default_values="1"
-                            name="ShowOutline"
-                            number_of_elements="1">
-         </IntVectorProperty>
-
-         <IntVectorProperty command="SetSliceOrientationAxesVisibility"
-                            default_values="0"
-                            name="SliceOrientationAxesVisibility"
-                            number_of_elements="1">
-         </IntVectorProperty>
-
          <IntVectorProperty command="SetSizeTopLeft"
                             default_values="400 400"
                             ignore_synchronization="1"
                             name="ViewSizeTopLeft"
                             number_of_elements="2"
+                            panel_visibility="never"
                             state_ignored="1">
            <Hints>
              <NoDefault />
@@ -53,6 +25,7 @@
                             ignore_synchronization="1"
                             name="ViewSizeBottomLeft"
                             number_of_elements="2"
+                            panel_visibility="never"
                             state_ignored="1">
            <Hints>
              <NoDefault />
@@ -64,6 +37,7 @@
                             ignore_synchronization="1"
                             name="ViewSizeTopRight"
                             number_of_elements="2"
+                            panel_visibility="never"
                             state_ignored="1">
            <Hints>
              <NoDefault />
@@ -75,6 +49,7 @@
                             ignore_synchronization="1"
                             name="ViewSizeBottomRight"
                             number_of_elements="2"
+                            panel_visibility="never"
                             state_ignored="1">
            <Hints>
              <NoDefault />
@@ -86,6 +61,7 @@
                             name="ViewSize"
                             number_of_elements="2"
                             state_ignored="1"
+                            panel_visibility="never"
                             override="1" >
            <Hints>
              <NoDefault />
@@ -100,6 +76,7 @@
                          default_values="0 0"
                          name="ViewPosition"
                          number_of_elements="2"
+                         panel_visibility="never"
                          override="1">
         <Hints>
           <NoDefault />
@@ -113,16 +90,20 @@
                                repeat_command="1"
                                set_number_command="SetNumberOfSliceX"
                                number_of_elements_per_command="1"
+                               panel_visibility="never"
                                use_index="1"/>
 
          <DoubleVectorProperty name="XSlicesNormal"
+                               label="X Slice Normal"
                                command="SetViewNormalTopLeft"
                                number_of_elements="3"
+                               panel_visibility="advanced"
                                default_values="1 0 0"/>
 
          <DoubleVectorProperty name="XSlicesOrigin"
                                command="SetSliceXOrigin"
                                number_of_elements="3"
+                               panel_visibility="never"
                                default_values="0 0 0"/>
 
          <DoubleVectorProperty name="YSlicesValues"
@@ -130,16 +111,20 @@
                                repeat_command="1"
                                set_number_command="SetNumberOfSliceY"
                                number_of_elements_per_command="1"
+                               panel_visibility="never"
                                use_index="1"/>
 
          <DoubleVectorProperty name="YSlicesNormal"
+                               label="Y Slice Normal"
                                command="SetViewNormalTopRight"
                                number_of_elements="3"
+                               panel_visibility="advanced"
                                default_values="0 1 0"/>
 
          <DoubleVectorProperty name="YSlicesOrigin"
                                command="SetSliceYOrigin"
                                number_of_elements="3"
+                               panel_visibility="never"
                                default_values="0 0 0"/>
 
          <DoubleVectorProperty name="ZSlicesValues"
@@ -147,31 +132,38 @@
                                repeat_command="1"
                                set_number_command="SetNumberOfSliceZ"
                                number_of_elements_per_command="1"
+                               panel_visibility="never"
                                use_index="1"/>
 
          <DoubleVectorProperty name="ZSlicesNormal"
+                               label="Z Slice Normal"
                                command="SetViewNormalBottomLeft"
                                number_of_elements="3"
+                               panel_visibility="advanced"
                                default_values="0 0 1"/>
 
          <DoubleVectorProperty name="ZSlicesOrigin"
                                command="SetSliceZOrigin"
                                number_of_elements="3"
+                               panel_visibility="never"
                                default_values="0 0 0"/>
 
          <DoubleVectorProperty name="TopLeftViewUp"
                                command="SetViewUpTopLeft"
                                number_of_elements="3"
+                               panel_visibility="advanced"
                                default_values="0 1 0"/>
 
          <DoubleVectorProperty name="TopRightViewUp"
                                command="SetViewUpTopRight"
                                number_of_elements="3"
+                               panel_visibility="advanced"
                                default_values="-1 0 0"/>
 
          <DoubleVectorProperty name="BottomLeftViewUp"
                                command="SetViewUpBottomLeft"
                                number_of_elements="3"
+                               panel_visibility="advanced"
                                default_values="0 1 0"/>
 
          <ProxyProperty command="AddRepresentationToTopLeft"
@@ -239,10 +231,71 @@
                    </DoubleVectorProperty>
             </Proxy>
             <ExposedProperties>
-              <Property exposed_name="SlicesCenter" name="WorldPosition"/>
+              <Property exposed_name="SlicesCenter" name="WorldPosition"
+                        label="Slices Center"
+                        panel_visibility="advanced"/>
             </ExposedProperties>
          </SubProxy>
+         <IntVectorProperty command="SetLabelFontSize"
+                            default_values="20"
+                            name="LabelFontSize"
+                            panel_visibility="default"
+                            number_of_elements="1">
+         </IntVectorProperty>
 
+         <DoubleVectorProperty name="SplitLocation"
+                               command="SetSplitRatio"
+                               number_of_elements="2"
+                               panel_visibility="never"
+                               default_values="50 50"/>
+
+
+         <IntVectorProperty command="SetShowOutline"
+                            default_values="1"
+                            name="ShowOutline"
+                            label="Show Outline in 3D View"
+                            panel_visibility="default"
+                            number_of_elements="1">
+           <BooleanDomain name="bool" />
+         </IntVectorProperty>
+
+         <IntVectorProperty command="SetShowCubeAxes"
+                            default_values="0"
+                            name="ShowCubeAxes"
+                            panel_visibility="default"
+                            number_of_elements="1">
+           <BooleanDomain name="bool" />
+         </IntVectorProperty>
+
+         <IntVectorProperty command="SetSliceOrientationAxesVisibility"
+                            default_values="0"
+                            name="SliceOrientationAxesVisibility"
+                            label="Show Orientation Axes"
+                            panel_visibility="default"
+                            number_of_elements="1">
+           <BooleanDomain name="bool" />
+         </IntVectorProperty>
+
+         <PropertyGroup label="Slice Normals">
+           <Property name="XSlicesNormal"/>
+           <Property name="YSlicesNormal"/>
+           <Property name="ZSlicesNormal"/>
+         </PropertyGroup>
+
+         <PropertyGroup label="Slice View-Ups">
+           <Property name="TopLeftViewUp"/>
+           <Property name="TopRightViewUp"/>
+           <Property name="BottomLeftViewUp"/>
+         </PropertyGroup>
+         <PropertyGroup label="Slice Origin">
+           <Property name="SlicesCenter"/>
+         </PropertyGroup>
+         <PropertyGroup label="Miscellaneous">
+           <Property name="LabelFontSize"/>
+           <Property name="ShowOutline" />
+           <Property name="ShowCubeAxes"/>
+           <Property name="SliceOrientationAxesVisibility"/>
+         </PropertyGroup>
       </QuadViewProxy>
    </ProxyGroup>
 

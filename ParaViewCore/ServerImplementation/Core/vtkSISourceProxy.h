@@ -50,18 +50,8 @@ public:
   virtual void UpdatePipeline(int port, double time, bool doTime);
 
   // Description:
-  // When using streaming, this method is called instead on UpdatePipeline().
-  virtual void UpdateStreamingPipeline(
-    int pass, int num_of_passes, double resolution,
-    int port, double time, bool doTime);
-
-  // Description:
   // setups extract selection proxies.
   virtual void SetupSelectionProxy(int port, vtkSIProxy* extractSelection);
-
-  // Description:
-  // Disables the creation of an extents translator.
-  static void SetDisableExtentsTranslator(bool value);
 
   // Description:
   // Allow to shut down pipeline execution. This is particulary useful for
@@ -95,17 +85,6 @@ protected:
   virtual bool InitializeOutputPort(vtkAlgorithm* alo, int port);
 
   // Description:
-  // Create the extent translator (sources with no inputs only).
-  // Needs to be before "ExtractPieces" because translator propagates.
-  // Returns true if the translator was created.
-  bool CreateTranslatorIfNecessary(vtkAlgorithm* algo, int port);
-
-  // Description:
-  // Insert a filter to extract (and redistribute) unstructured
-  // pieces if the source cannot generate pieces.
-  void InsertExtractPiecesIfNecessary(vtkAlgorithm* algo, int port);
-
-  // Description:
   // Insert a filter to create the Post Filter
   // so that filters can request data conversions
   void InsertPostFilterIfNecessary(vtkAlgorithm* algo, int port);
@@ -127,7 +106,6 @@ private:
   class vtkInternals;
   vtkInternals* Internals;
   bool PortsCreated;
-  static bool DisableExtentsTranslator;
   //ETX
 };
 

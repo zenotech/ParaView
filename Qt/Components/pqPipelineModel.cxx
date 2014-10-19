@@ -29,11 +29,10 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
-
 #include "pqPipelineModel.h"
 
-#include "pqApplicationCore.h"
-#include "pqDisplayPolicy.h"
+#include "pqBoxChartView.h"
+#include "pqLiveInsituManager.h"
 #include "pqLiveInsituVisualizationManager.h"
 #include "pqOutputPort.h"
 #include "pqPipelineFilter.h"
@@ -43,17 +42,46 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqServerManagerObserver.h"
 #include "pqSpreadSheetView.h"
 #include "pqUndoStack.h"
+#include "pqXYBagChartView.h"
 #include "pqXYBarChartView.h"
 #include "pqXYChartView.h"
+#include "pqXYFunctionalBagChartView.h"
+#include "pqXYHistogramChartView.h"
+#include "vtkCommand.h"
+#include "vtkNew.h"
+#include "vtkPVXMLElement.h"
+#include "vtkSMLiveInsituLinkProxy.h"
+#include "vtkSMParaViewPipelineControllerWithRendering.h"
+#include "vtkSMPropertyHelper.h"
+#include "vtkSMSourceProxy.h"
+#include "vtkSMViewProxy.h"
 
 #include <QApplication>
+#include <QFont>
 #include <QString>
 #include <QStyle>
+#include <QSignalMapper>
 #include <QtDebug>
-#include "QVTKWidget.h"
 
-#include "vtkPVXMLElement.h"
-#include "vtkSMProxy.h"
+class ModifiedLiveInsituLink : public vtkCommand
+{
+public:
+  ModifiedLiveInsituLink(pqServer* insituSession,
+                         pqPipelineModel* pipelineModel) :
+    InsituServer(insituSession), PipelineModel(pipelineModel)
+  {
+  }
+  virtual void Execute(
+    vtkObject* vtkNotUsed(caller), unsigned long, void* vtkNotUsed(data))
+  {
+    this->PipelineModel->updateData(this->InsituServer);
+  }
+
+private:
+  pqServer* InsituServer;
+  pqPipelineModel* PipelineModel;
+};
+
 
 //-----------------------------------------------------------------------------
 class pqPipelineModelDataItem : public QObject
@@ -65,16 +93,26 @@ public:
     SERVER,
     LINK,
     GEOMETRY,
+    BAGCHART,
     BARCHART,
+    BOXCHART,
+    FUNCTIONALBAGCHART,
+    HISTOGRAMCHART,
     LINECHART,
     TABLE,
     INDETERMINATE,
     EYEBALL,
     EYEBALL_GRAY,
-    CATALYST_EXTRACT,
-    CATALYST_EXTRACT_GRAY,
+    INSITU_EXTRACT,
+    INSITU_EXTRACT_GRAY,
+    INSITU_SERVER_RUNNING,
+    INSITU_SERVER_PAUSED,
+    INSITU_BREAKPOINT,
+    INSITU_WRITER_PARAMETERS,
     LAST
     };
+
+  static vtkNew<vtkSMParaViewPipelineControllerWithRendering> Controller;
 public:
   pqPipelineModel* Model;
   pqPipelineModelDataItem* Parent;
@@ -177,7 +215,14 @@ public:
     switch (this->Type)
       {
     case pqPipelineModel::Server:
-      return SERVER;
+      {
+      pqServer* server = qobject_cast<pqServer*>(this->Object);
+      vtkSMLiveInsituLinkProxy* proxy = pqLiveInsituManager::linkProxy(server);
+      return proxy ?
+        ((vtkSMPropertyHelper(proxy, "SimulationPaused").GetAs<int>() == 1)?
+         INSITU_SERVER_PAUSED : INSITU_SERVER_RUNNING):
+        SERVER;
+      }
 
     case pqPipelineModel::Proxy:
         {
@@ -255,6 +300,14 @@ public:
         }
       break;
 
+      case pqPipelineModel::Server:
+        {
+        pqServer* server = qobject_cast<pqServer*>(this->Object);
+        newIcon = (pqLiveInsituManager::isInsituServer(server) ?
+                   this->getBreakpointVisibilityIcon() : LAST);
+        }
+        break;
+
     default:
       break;
       }
@@ -286,74 +339,95 @@ public:
     }
 
 private:
+  IconType getBreakpointVisibilityIcon() const
+  {
+    pqLiveInsituManager* server = pqLiveInsituManager::instance();
+    return (server->hasBreakpoint() ? INSITU_BREAKPOINT : LAST);
+  }
+
   IconType getVisibilityIcon(pqOutputPort* port, pqView* view) const
     {
+    if (!port) { return LAST; }
+
     // I'm not a huge fan of this hacky way we are dealing with catalyst. We'll
     // have to come back and cleanly address how the pqPipelineModel deals with
     // "visibility" in a more generic, session-centric way.
-    if (port && port->getServer() &&
-        port->getServer()->getResource().scheme() == "catalyst")
+    if (pqLiveInsituManager::isInsituServer(port->getServer()))
       {
-      pqLiveInsituVisualizationManager* mgr=
-        qobject_cast<pqLiveInsituVisualizationManager*>(
-          port->getServer()->property(
-            "LiveInsituVisualizationManager").value<QObject*>());
+      if (pqLiveInsituManager::isWriterParametersProxy(port->getSourceProxy()))
+        {
+        return LAST;
+        }
+      pqLiveInsituVisualizationManager* mgr =
+        pqLiveInsituManager::managerFromInsitu(port->getServer());
       if (mgr)
         {
-        return mgr->hasExtracts(port)? CATALYST_EXTRACT :CATALYST_EXTRACT_GRAY;
+        return mgr->hasExtracts(port)? INSITU_EXTRACT :INSITU_EXTRACT_GRAY;
         }
+      return LAST;
       }
 
-    // If no view is present, it implies that a suitable type of view
-    // will be created.
-    pqApplicationCore* core = pqApplicationCore::instance();
-    pqDisplayPolicy* policy = core->getDisplayPolicy();
-    if (policy)
+    if (!view)
       {
-      switch (policy->getVisibility(view, port))
-        {
-      case pqDisplayPolicy::Visible:
-        return EYEBALL;
-
-      case pqDisplayPolicy::Hidden:
-        return EYEBALL_GRAY;
-
-      case pqDisplayPolicy::NotApplicable:
-      default:
-        break;
-        }
+      // If no view is present, it implies that a suitable type of view
+      // will be created.
+      return EYEBALL_GRAY;
       }
-    return LAST;
+    if (this->Controller->GetVisibility(port->getSourceProxy(),
+        port->getPortNumber(), view->getViewProxy()))
+      {
+      return EYEBALL;
+      }
+    return view->getViewProxy()->CanDisplayData(port->getSourceProxy(),
+      port->getPortNumber())? EYEBALL_GRAY : LAST;
     }
   IconType getIconType(pqOutputPort* port) const
     {
-    if (port->getSource()->property("CATALYST_EXTRACT").toBool())
+    if (port->getSource()->property("INSITU_EXTRACT").toBool())
       {
-      return CATALYST_EXTRACT;
+      return INSITU_EXTRACT;
+      }
+    else if (pqLiveInsituManager::isWriterParametersProxy(
+               port->getSourceProxy()))
+      {
+      return INSITU_WRITER_PARAMETERS;
       }
 
-    pqApplicationCore* core = pqApplicationCore::instance();
-    pqDisplayPolicy* policy = core->getDisplayPolicy();
-    if (policy)
+    QString type = this->Controller->GetPreferredViewType(
+      port->getSourceProxy(), port->getPortNumber());
+    if (type == pqXYBagChartView::XYBagChartViewType())
       {
-      QString type = policy->getPreferredViewType(
-        port, false);
-      if (type == pqXYBarChartView::XYBarChartViewType())
-        {
-        return BARCHART;
-        }
-      if (type == pqXYChartView::XYChartViewType())
-        {
-        return LINECHART;
-        }
-      if (type == pqSpreadSheetView::spreadsheetViewType())
-        {
-        return TABLE;
-        }
+      return BAGCHART;
+      }
+    if (type == pqXYBarChartView::XYBarChartViewType())
+      {
+      return BARCHART;
+      }
+    if (type == pqBoxChartView::chartViewType())
+      {
+      return BOXCHART;
+      }
+    if (type == pqXYFunctionalBagChartView::XYFunctionalBagChartViewType())
+      {
+      return FUNCTIONALBAGCHART;
+      }
+    if (type == pqXYHistogramChartView::XYHistogramChartViewType())
+      {
+      return HISTOGRAMCHART;
+      }
+    if (type == pqXYChartView::XYChartViewType())
+      {
+      return LINECHART;
+      }
+    if (type == pqSpreadSheetView::spreadsheetViewType())
+      {
+      return TABLE;
       }
     return GEOMETRY;
     }
 };
+
+vtkNew<vtkSMParaViewPipelineControllerWithRendering> pqPipelineModelDataItem::Controller;
 
 //-----------------------------------------------------------------------------
 class pqPipelineModelInternal
@@ -383,6 +457,11 @@ void pqPipelineModel::constructor()
   this->Editable = true;
   this->View = NULL;
 
+  QObject::connect(pqLiveInsituManager::instance(),
+                   SIGNAL(connectionInitiated(pqServer*)),
+                   this,
+                   SLOT(onInsituConnectionInitiated(pqServer*)));
+
   // Initialize the pixmap list.
   this->PixmapList = new QPixmap[pqPipelineModelDataItem::LAST+1];
 
@@ -392,7 +471,15 @@ void pqPipelineModel::constructor()
     ":/pqWidgets/Icons/pqLinkBack16.png");
   this->PixmapList[pqPipelineModelDataItem::GEOMETRY].load(
     ":/pqWidgets/Icons/pq3DView16.png");
+  this->PixmapList[pqPipelineModelDataItem::BAGCHART].load(
+    ":/pqWidgets/Icons/pqBagChart16.png");
   this->PixmapList[pqPipelineModelDataItem::BARCHART].load(
+    ":/pqWidgets/Icons/pqHistogram16.png");
+  this->PixmapList[pqPipelineModelDataItem::BOXCHART].load(
+    ":/pqWidgets/Icons/pqBoxChart16.png");
+  this->PixmapList[pqPipelineModelDataItem::FUNCTIONALBAGCHART].load(
+    ":/pqWidgets/Icons/pqFunctionalBagChart16.png");
+  this->PixmapList[pqPipelineModelDataItem::HISTOGRAMCHART].load(
     ":/pqWidgets/Icons/pqHistogram16.png");
   this->PixmapList[pqPipelineModelDataItem::LINECHART].load(
     ":/pqWidgets/Icons/pqLineChart16.png");
@@ -404,15 +491,24 @@ void pqPipelineModel::constructor()
     ":/pqWidgets/Icons/pqEyeball16.png");
   this->PixmapList[pqPipelineModelDataItem::EYEBALL_GRAY].load(
     ":/pqWidgets/Icons/pqEyeballd16.png");
-  this->PixmapList[pqPipelineModelDataItem::CATALYST_EXTRACT].load(
+  this->PixmapList[pqPipelineModelDataItem::INSITU_EXTRACT].load(
     ":/pqWidgets/Icons/pqLinkIn16.png");
-  this->PixmapList[pqPipelineModelDataItem::CATALYST_EXTRACT_GRAY].load(
+  this->PixmapList[pqPipelineModelDataItem::INSITU_EXTRACT_GRAY].load(
     ":/pqWidgets/Icons/pqLinkIn16d.png");
+  this->PixmapList[pqPipelineModelDataItem::INSITU_SERVER_RUNNING].load(
+    ":/pqWidgets/Icons/pqInsituServerRunning16.png");
+  this->PixmapList[pqPipelineModelDataItem::INSITU_SERVER_PAUSED].load(
+    ":/pqWidgets/Icons/pqInsituServerPaused16.png");
+  this->PixmapList[pqPipelineModelDataItem::INSITU_BREAKPOINT].load(
+    ":/pqWidgets/Icons/pqInsituBreakpoint16.png");
+  this->PixmapList[pqPipelineModelDataItem::INSITU_WRITER_PARAMETERS].load(
+    ":/pqWidgets/Icons/pqSave32.png");
 }
 
 //-----------------------------------------------------------------------------
 pqPipelineModel::pqPipelineModel(QObject *p)
-  : QAbstractItemModel(p)
+  : QAbstractItemModel(p),
+    LinkCallback(NULL)
 {
   this->constructor();
 }
@@ -421,7 +517,8 @@ pqPipelineModel::pqPipelineModel(QObject *p)
 pqPipelineModel::pqPipelineModel(
   const pqPipelineModel &other,
   QObject *parentObject)
-: QAbstractItemModel(parentObject)
+  : QAbstractItemModel(parentObject),
+    LinkCallback(NULL)
 {
   this->constructor();
   this->Internal->Root = other.Internal->Root;
@@ -431,7 +528,8 @@ pqPipelineModel::pqPipelineModel(
 //-----------------------------------------------------------------------------
 pqPipelineModel::pqPipelineModel(const pqServerManagerModel &other,
     QObject *parentObject)
-  : QAbstractItemModel(parentObject)
+  : QAbstractItemModel(parentObject),
+    LinkCallback(NULL)
 {
   this->constructor();
 
@@ -480,6 +578,37 @@ pqPipelineModel::~pqPipelineModel()
   if (this->PixmapList)
     {
     delete [] this->PixmapList;
+    }
+  if (this->LinkCallback)
+    {
+    this->LinkCallback->Delete();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void pqPipelineModel::onInsituConnectionInitiated(pqServer* displaySession)
+{
+  pqLiveInsituVisualizationManager* manager =
+    pqLiveInsituManager::instance()->managerFromDisplay(displaySession);
+  vtkSMLiveInsituLinkProxy* proxy =
+    pqLiveInsituManager::linkProxy(manager->insituSession());
+  if (manager && proxy)
+    {
+    if (this->LinkCallback)
+      {
+      this->LinkCallback->Delete();
+      }
+    this->LinkCallback =
+      new ModifiedLiveInsituLink(manager->insituSession(), this);
+    proxy->AddObserver (vtkCommand::ModifiedEvent, this->LinkCallback);
+    QObject::connect(
+      pqLiveInsituManager::instance(),
+      SIGNAL(breakpointAdded(pqServer*)),
+      this, SLOT(updateDataServer(pqServer*)));
+    QObject::connect(
+      pqLiveInsituManager::instance(),
+      SIGNAL(breakpointRemoved(pqServer*)),
+      this, SLOT(updateDataServer(pqServer*)));
     }
 }
 
@@ -727,7 +856,7 @@ QVariant pqPipelineModel::data(const QModelIndex &idx, int role) const
         {
         return QVariant(
             source->getProxy()->HasAnnotation(
-                this->FilterRoleAnnotationKey.toAscii().data()));
+                this->FilterRoleAnnotationKey.toLatin1().data()));
         }
       return QVariant(true);
       }
@@ -1270,10 +1399,11 @@ void pqPipelineModel::delayedUpdateVisibilityTimeout()
 }
 
 //-----------------------------------------------------------------------------
-void pqPipelineModel::updateVisibility(pqPipelineSource* source)
+void pqPipelineModel::updateVisibility(pqPipelineSource* source,
+                                       ItemType type /* = Proxy */)
 {
   pqPipelineModelDataItem* item = this->getDataItem(source,
-    &this->Internal->Root, pqPipelineModel::Proxy);
+    &this->Internal->Root, type);
   if (item)
     {
     item->updateVisibilityIcon(this->View, false);
@@ -1293,10 +1423,11 @@ void pqPipelineModel::updateVisibility(pqPipelineSource* source)
 }
 
 //-----------------------------------------------------------------------------
-void pqPipelineModel::updateData(pqServerManagerModelItem* source)
+void pqPipelineModel::updateData(pqServerManagerModelItem* source,
+                                 ItemType type /* = Proxy */)
 {
-  pqPipelineModelDataItem* item = this->getDataItem(source,
-    &this->Internal->Root, pqPipelineModel::Proxy);
+  pqPipelineModelDataItem* item = this->getDataItem(
+    source, &this->Internal->Root, type);
   if (item)
     {
     item->updateVisibilityIcon(this->View, false);
@@ -1314,6 +1445,12 @@ void pqPipelineModel::updateData(pqServerManagerModelItem* source)
       this->itemDataChanged(child);
       }
     }
+}
+
+//-----------------------------------------------------------------------------
+void pqPipelineModel::updateDataServer(pqServer* server)
+{
+  updateData(server, Invalid);
 }
 
 //-----------------------------------------------------------------------------

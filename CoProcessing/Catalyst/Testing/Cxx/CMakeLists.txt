@@ -1,20 +1,29 @@
-vtk_module_test_executable(SimpleDriver SimpleDriver.cxx)
-vtk_module_test_executable(SimpleDriver2 SimpleDriver2.cxx)
-vtk_module_test_executable(AdaptorDriver
+include(ParaViewTestingMacros)
+
+paraview_add_test_cxx(${vtk-module}CxxTests tests
+  NO_DATA NO_VALID NO_OUTPUT
+  SimpleDriver.cxx
+  SimpleDriver2.cxx
   AdaptorDriver.cxx
-  vtkCustomUnstructuredGridBuilder.cxx)
+  )
 
 # the CoProcessingTestOutputs needs to be run with ${MPIEXEC} if
 # the executable was built with MPI because certain machines only
 # allow running MPI programs with the proper ${MPIEXEC}
 if (NOT PARAVIEW_USE_MPI)
-  vtk_module_test_executable(CoProcessingTestOutputs CoProcessingTestOutputs.cxx)
-  add_test(NAME vtkPVCatalystCxx-CoProcessingTestOutputs
-    COMMAND CoProcessingTestOutputs)
-  set_tests_properties(vtkPVCatalystCxx-CoProcessingTestOutputs
-    PROPERTIES LABELS "PARAVIEW;CATALYST")
+  vtk_add_test_cxx(${vtk-module}CxxTests extra_tests
+    NO_DATA NO_VALID NO_OUTPUT
+    CoProcessingTestOutputs.cxx)
+  list(APPEND tests
+    ${extra_tests})
 else()
-  vtk_add_test_mpi(CoProcessingTestOutputs)
-  set_tests_properties(vtkPVCatalystCxx-MPI-CoProcessingTestOutputs
-    PROPERTIES LABELS "PARAVIEW;CATALYST")
+  paraview_add_test_mpi(${vtk-module}Cxx-MPI mpi_tests
+    NO_DATA NO_VALID NO_OUTPUT
+    CoProcessingTestOutputs.cxx
+    SubController.cxx
+    )
+  vtk_test_mpi_executable(${vtk-module}Cxx-MPI mpi_tests)
 endif()
+
+vtk_test_cxx_executable(${vtk-module}CxxTests tests
+  vtkCustomUnstructuredGridBuilder.cxx)

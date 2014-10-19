@@ -10,19 +10,27 @@ if (NOT PARAVIEW_BUILD_QT_GUI)
     "with PARAVIEW_BUILD_QT_GUI set to TRUE")
 endif()
 
-SET (SOURCE_FILES 
+SET (SOURCE_FILES
   DemoApp1.cxx
   myMainWindow.cxx
   myMainWindow.h
 )
 
-QT4_WRAP_CPP(MOC_SRCS
-  myMainWindow.h
-)
-
-QT4_WRAP_UI(UI_BUILT_SOURCES
-  myMainWindow.ui
-)
+if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+  QT5_WRAP_CPP(MOC_SRCS
+    myMainWindow.h
+  )
+  QT5_WRAP_UI(UI_BUILT_SOURCES
+    myMainWindow.ui
+  )
+else ()
+  QT4_WRAP_CPP(MOC_SRCS
+    myMainWindow.h
+  )
+  QT4_WRAP_UI(UI_BUILT_SOURCES
+    myMainWindow.ui
+  )
+endif ()
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30,3 +38,7 @@ include_directories(
 
 add_executable(DemoApp1 ${SOURCE_FILES} ${MOC_SRCS} ${UI_BUILT_SOURCES})
 target_link_libraries(DemoApp1 pqApplicationComponents)
+if(PARAVIEW_QT_VERSION VERSION_GREATER "4")
+  set_target_properties(DemoApp1 PROPERTIES
+    COMPILE_FLAGS "${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
+endif()

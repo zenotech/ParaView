@@ -299,7 +299,11 @@ public:
     {
     this->Ui.setupUi(self);
     this->Ui.Table->setModel(&this->Model);
+#if QT_VERSION >= 0x050000
+    this->Ui.Table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+#else
     this->Ui.Table->horizontalHeader()->setResizeMode(QHeaderView::ResizeToContents);
+#endif
     this->Ui.Table->horizontalHeader()->setStretchLastSection(true);
     this->Ui.Table->horizontalHeader()->hide();
 
@@ -383,7 +387,7 @@ void pqScalarValueListPropertyWidget::add()
 //-----------------------------------------------------------------------------
 void pqScalarValueListPropertyWidget::editPastLastRow()
 {
-  QModelIndex idx = this->Internals->Model.addRow(
+  this->Internals->Model.addRow(
     this->Internals->Ui.Table->currentIndex());
   emit this->scalarsChanged();
 }
@@ -393,6 +397,11 @@ void pqScalarValueListPropertyWidget::remove()
 {
   QModelIndexList indexes =
     this->Internals->Ui.Table->selectionModel()->selectedIndexes();
+  if( indexes.size() == 0 )
+    {
+    // Nothing selected. Nothing to remove
+    return;
+    }
   QModelIndex idx = this->Internals->Model.removeListedRows(indexes);
   this->Internals->Ui.Table->setCurrentIndex(idx);
   emit this->scalarsChanged();
@@ -421,39 +430,9 @@ void pqScalarValueListPropertyWidget::addRange()
     return;
     }
 
-  const double from = dialog.from();
-  const double to = dialog.to();
-  const int steps = dialog.steps();
-  const bool logarithmic = dialog.logarithmic();
-
-  if (steps < 2 || from == to)
-    {
-    return;
-    }
-
   QVariantList value = this->Internals->Model.value().toList();
+  value += dialog.getRange();
 
-  if (logarithmic)
-    {
-    const double sign = from < 0 ? -1.0 : 1.0;
-    const double log_from = std::log10(std::abs(from ? from : 1.0e-6 * (from - to)));
-    const double log_to = std::log10(std::abs(to ? to : 1.0e-6 * (to - from)));
-
-    for (int i = 0; i != steps; i++)
-      {
-      const double mix = static_cast<double>(i) / static_cast<double>(steps - 1);
-      value.push_back(
-        sign * pow(10.0, (1.0 - mix) * log_from + (mix) * log_to));
-      }
-    }
-  else
-    {
-    for (int i = 0; i != steps; i++)
-      {
-      const double mix = static_cast<double>(i) / static_cast<double>(steps - 1);
-      value.push_back((1.0 - mix) * from + (mix) * to);
-      }
-    }
   this->Internals->Model.setValue(value);
   emit this->scalarsChanged();
 }
@@ -464,7 +443,9 @@ void pqScalarValueListPropertyWidget::setRangeDomain(
 {
   this->Internals->VTKRangeConnector->Disconnect();
   this->Internals->RangeDomain = smRangeDomain;
-  if (smRangeDomain)
+  if (smRangeDomain && 
+      (smRangeDomain->GetMinimumExists(0) || 
+       smRangeDomain->GetMinimumExists(0)))
     {
     this->Internals->VTKRangeConnector->Connect(
       smRangeDomain, vtkCommand::DomainModifiedEvent,

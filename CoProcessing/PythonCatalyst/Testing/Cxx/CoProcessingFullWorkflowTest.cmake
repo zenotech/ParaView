@@ -30,12 +30,12 @@ endif()
 
 execute_process_with_echo(COMMAND
     ${PARAVIEW_EXECUTABLE} -dr
-    --test-plugin=CoProcessingPlugin
+    --test-plugin=CatalystScriptGeneratorPlugin
     --test-directory=${COPROCESSING_TEST_DIR}
     --test-script=${PARAVIEW_TEST_XML}
     --exit
   RESULT_VARIABLE rv)
-if(NOT rv EQUAL 0)
+if(rv)
   message(FATAL_ERROR "ParaView return value was ${rv}")
 endif()
 
@@ -46,13 +46,13 @@ endif()
 
 message("Running pvpython")
 execute_process_with_echo(COMMAND
-  ${PVPYTHON_EXECUTABLE}
+  ${PVPYTHON_EXECUTABLE} -dr
   ${COPROCESSING_DRIVER_SCRIPT}
   ${COPROCESSING_TEST_DIR}/cptest.py 1
   WORKING_DIRECTORY ${COPROCESSING_TEST_DIR}
-  RESULT_VARIABLE failed)
-if(failed)
-  message(FATAL_ERROR "pvpython return value was = '${failed}' ")
+  RESULT_VARIABLE rv)
+if(rv)
+  message(FATAL_ERROR "pvpython return value was = '${rv}' ")
 endif()
 
 if(NOT EXISTS "${COPROCESSING_IMAGE_TESTER}")
@@ -60,20 +60,20 @@ if(NOT EXISTS "${COPROCESSING_IMAGE_TESTER}")
 endif()
 
 message("${COPROCESSING_IMAGE_TESTER} ${COPROCESSING_TEST_DIR}/image_0.png -V
-  ${COPROCESSING_DATA_DIR}/Baseline/CPFullWorkflow.png -T
+  ${COPROCESSING_DATA_DIR}/CPFullWorkflow.png -T
   ${COPROCESSING_TEST_DIR}")
 execute_process_with_echo(COMMAND
-  ${COPROCESSING_IMAGE_TESTER} ${COPROCESSING_TEST_DIR}/image_0.png 20 -V ${COPROCESSING_DATA_DIR}/Baseline/CPFullWorkflow.png -T ${COPROCESSING_TEST_DIR}
-  RESULT_VARIABLE failed)
-if(failed)
-  message(FATAL_ERROR "CoProcessingCompareImageTester return value was = '${failed}' ")
+  ${COPROCESSING_IMAGE_TESTER} ${COPROCESSING_TEST_DIR}/image_0.png 20 -V ${COPROCESSING_DATA_DIR}/CPFullWorkflow.png -T ${COPROCESSING_TEST_DIR}
+  RESULT_VARIABLE rv)
+if(rv)
+  message(FATAL_ERROR "CoProcessingCompareImageTester return value was = '${rv}' ")
 endif()
 
 execute_process_with_echo(COMMAND
-  ${PVPYTHON_EXECUTABLE}
+  ${PVPYTHON_EXECUTABLE} -dr
   ${COPROCESSING_OUTPUTCHECK_SCRIPT}
   ${COPROCESSING_TEST_DIR}/filename_0.pvtp
-  RESULT_VARIABLE failed)
-if(failed)
-  message(FATAL_ERROR "vtkpython return value was = '${failed}' ")
+  RESULT_VARIABLE rv)
+if(rv)
+  message(FATAL_ERROR "vtkpython return value was = '${rv}' ")
 endif()

@@ -19,14 +19,23 @@ endif(PARAVIEW_ENABLE_QT_SUPPORT)
 
 if (Module_vtkRenderingCore)
   list(APPEND __dependencies
+    vtkChartsCore
+    vtkCommonColor
+    vtkCommonComputationalGeometry
+    vtkFiltersExtraction
+    vtkFiltersGeneric
+    vtkFiltersHyperTree
+    vtkFiltersParallel
+    vtkFiltersParallelMPI
+    vtkIOExport
+    vtkIOImage
+    vtkIOXML
+    vtkInteractionStyle
+    vtkParallelMPI
     vtkRenderingAnnotation
     vtkRenderingCore
     vtkRenderingParallel
-    vtkFiltersParallel
-    vtkChartsCore
-    vtkCommonComputationalGeometry
-    vtkicet
-    vtkParallelMPI)
+    vtkicet)
 endif ()
 
 vtk_module(vtkPVVTKExtensionsRendering
@@ -50,4 +59,6 @@ vtk_module(vtkPVVTKExtensionsRendering
 
   TEST_LABELS
     PARAVIEW
+  KIT
+    vtkPVExtensions
 )

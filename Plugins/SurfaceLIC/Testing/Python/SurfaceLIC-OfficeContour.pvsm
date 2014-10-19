@@ -2647,10 +2647,10 @@
     </Proxy>
     <Proxy group="sources" type="LegacyVTKFileReader" id="5148" servers="1">
       <Property name="FileNameInfo" id="5148.FileNameInfo" number_of_elements="1">
-        <Element index="0" value="${DataDir}/Data/office.binary.vtk"/>
+        <Element index="0" value="${DataDir}/office.binary.vtk"/>
       </Property>
       <Property name="FileNames" id="5148.FileNames" number_of_elements="1">
-        <Element index="0" value="${DataDir}/Data/office.binary.vtk"/>
+        <Element index="0" value="${DataDir}/office.binary.vtk"/>
         <Domain name="files" id="5148.FileNames.files"/>
       </Property>
       <Property name="TimestepValues" id="5148.TimestepValues"/>
@@ -2910,9 +2910,9 @@
         <Element index="0" value="0"/>
         <Domain name="bool" id="5358.UseGradientBackground.bool"/>
       </Property>
-      <Property name="UseInteractiveRenderingForSceenshots" id="5358.UseInteractiveRenderingForSceenshots" number_of_elements="1">
+      <Property name="UseInteractiveRenderingForScreenshots" id="5358.UseInteractiveRenderingForScreenshots" number_of_elements="1">
         <Element index="0" value="0"/>
-        <Domain name="bool" id="5358.UseInteractiveRenderingForSceenshots.bool"/>
+        <Domain name="bool" id="5358.UseInteractiveRenderingForScreenshots.bool"/>
       </Property>
       <Property name="UseLight" id="5358.UseLight" number_of_elements="1">
         <Element index="0" value="1"/>

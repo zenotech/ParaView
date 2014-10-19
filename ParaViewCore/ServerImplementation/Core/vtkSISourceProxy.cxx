@@ -24,9 +24,7 @@
 #include "vtkInformation.h"
 #include "vtkMultiProcessController.h"
 #include "vtkObjectFactory.h"
-#include "vtkPriorityHelper.h"
 #include "vtkProcessModule.h"
-#include "vtkPVExtentTranslator.h"
 #include "vtkPVInstantiator.h"
 #include "vtkPVPostFilter.h"
 #include "vtkPVXMLElement.h"
@@ -39,8 +37,6 @@
 #include <vtksys/ios/sstream>
 
 #include <assert.h>
-
-bool vtkSISourceProxy::DisableExtentsTranslator = false;
 
 //*****************************************************************************
 class vtkSISourceProxy::vtkInternals
@@ -159,26 +155,6 @@ bool vtkSISourceProxy::InitializeOutputPort(vtkAlgorithm* algo, int port)
 {
   // Save the output port in internal data-structure.
   this->Internals->OutputPorts[port] = algo->GetOutputPort(port);
-  this->CreateTranslatorIfNecessary(algo, port);
-
-  int num_of_required_inputs = 0;
-  int numInputs = algo->GetNumberOfInputPorts();
-  for (int cc=0; cc < numInputs; cc++)
-    {
-    vtkInformation* info = algo->GetInputPortInformation(cc);
-    if (info && !info->Has(vtkAlgorithm::INPUT_IS_OPTIONAL()))
-      {
-      num_of_required_inputs++;
-      }
-    }
-
-  if (algo->IsA("vtkPVEnSightMasterServerReader") == 0 &&
-    algo->IsA("vtkPVUpdateSuppressor") == 0 &&
-    algo->IsA("vtkMPIMoveData") == 0 &&
-    num_of_required_inputs == 0)
-    {
-    this->InsertExtractPiecesIfNecessary(algo, port);
-    }
 
   if (strcmp("vtkPVCompositeDataPipeline", this->ExecutiveName) == 0)
     {
@@ -187,129 +163,6 @@ bool vtkSISourceProxy::InitializeOutputPort(vtkAlgorithm* algo, int port)
     this->InsertPostFilterIfNecessary(algo, port);
     }
   return true;
-}
-
-//----------------------------------------------------------------------------
-// Create the extent translator (sources with no inputs only).
-// Needs to be before "ExtractPieces" because translator propagates.
-bool vtkSISourceProxy::CreateTranslatorIfNecessary(vtkAlgorithm* algo, int port)
-{
-  if(this->DisableExtentsTranslator)
-    {
-    return false;
-    }
-
-  // Do not overwrite custom extent translators.
-  // PVExtent translator should really be the default,
-  // Then we would not need to do this.
-  vtkStreamingDemandDrivenPipeline* sddp =
-    vtkStreamingDemandDrivenPipeline::SafeDownCast(algo->GetExecutive());
-  assert(sddp != NULL);
-  vtkExtentTranslator* translator = sddp->GetExtentTranslator(port);
-  if (strcmp(translator->GetClassName(), "vtkExtentTranslator") == 0)
-    {
-    vtkPVExtentTranslator* pvtranslator = vtkPVExtentTranslator::New();
-    pvtranslator->SetOriginalSource(algo);
-    pvtranslator->SetPortIndex(port);
-    sddp->SetExtentTranslator(port, pvtranslator);
-    pvtranslator->Delete();
-    }
-  return true;
-}
-
-//----------------------------------------------------------------------------
-void vtkSISourceProxy::InsertExtractPiecesIfNecessary(
-  vtkAlgorithm*, int port)
-{
-  vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
-
-  vtkAlgorithmOutput* outputPort = this->Internals->OutputPorts[port];
-  vtkAlgorithm* algorithm = outputPort->GetProducer();
-  assert(algorithm != NULL);
-
-  algorithm->UpdateInformation();
-  vtkStreamingDemandDrivenPipeline* sddp =
-    vtkStreamingDemandDrivenPipeline::SafeDownCast(
-      algorithm->GetExecutive());
-  vtkDataObject* outputDO = algorithm->GetOutputDataObject(outputPort->GetIndex());
-  if (outputDO == NULL || sddp == NULL)
-    {
-    vtkErrorMacro("Missing data information.");
-    return;
-    }
-
-  if (pm->GetNumberOfLocalPartitions() == 1)
-    {
-    // Don't add anything if we are only using one processes.
-    return;
-    }
-  if (sddp->GetMaximumNumberOfPieces(outputPort->GetIndex()) != 1)
-    {
-    // The source can already produce pieces.
-    return;
-    }
-
-  const char* extractPiecesClass  = 0;
-  if (outputDO->IsA("vtkPolyData"))
-    {
-    // Transmit is more efficient, but has the possiblity of hanging.
-    // It will hang if all procs do not  call execute.
-    if (getenv("PV_LOCK_SAFE") != NULL)
-      {
-      extractPiecesClass = "vtkExtractPolyDataPiece";
-      }
-    else
-      {
-      extractPiecesClass = "vtkTransmitPolyDataPiece";
-      }
-    }
-  else if (outputDO->IsA("vtkUnstructuredGrid"))
-    {
-    // Transmit is more efficient, but has the possiblity of hanging.
-    // It will hang if all procs do not  call execute.
-    if (getenv("PV_LOCK_SAFE") != NULL)
-      {
-      extractPiecesClass = "vtkExtractUnstructuredGridPiece";
-      }
-    else
-      {
-      extractPiecesClass = "vtkTransmitUnstructuredGridPiece";
-      }
-    }
-  else if (outputDO->IsA("vtkHierarchicalBoxDataSet") ||
-           outputDO->IsA("vtkOverlappingAMR") ||
-           outputDO->IsA("vtkNonOverlappingAMR") ||
-           outputDO->IsA("vtkMultiBlockDataSet"))
-    {
-    extractPiecesClass = "vtkExtractPiece";
-    }
-
-  // If no filter is to be inserted, just return.
-  if (extractPiecesClass == NULL)
-    {
-    return;
-    }
-
-  vtkAlgorithm* extractPieces = vtkAlgorithm::SafeDownCast(
-    this->GetInterpreter()->NewInstance(extractPiecesClass));
-  if (!extractPieces)
-    {
-    vtkErrorMacro("Failed to create " << extractPiecesClass);
-    return;
-    }
-
-  // Set the right executive
-  vtkCompositeDataPipeline* exec = vtkCompositeDataPipeline::New();
-  extractPieces->SetExecutive(exec);
-  exec->FastDelete();
-
-  this->Internals->ExtractPieces[port] = extractPieces;
-  extractPieces->FastDelete();
-  extractPieces->SetInputConnection(outputPort);
-
-  // update the OutputPorts so that the output port from extract-pieces is
-  // now used as the output port from this proxy.
-  this->Internals->OutputPorts[port] = extractPieces->GetOutputPort(0);
 }
 
 //----------------------------------------------------------------------------
@@ -421,47 +274,6 @@ void vtkSISourceProxy::UpdatePipeline(int port, double time, bool doTime)
 }
 
 //----------------------------------------------------------------------------
-void vtkSISourceProxy::UpdateStreamingPipeline(
-  int pass, int num_of_passes, double resolution,
-  int port, double time, bool doTime)
-{
-  if(this->DisablePipelineExecution)
-    {
-    return;
-    }
-
-  vtkAlgorithm* algo = this->GetOutputPort(port)->GetProducer();
-  assert(algo);
-  algo->UpdateInformation();
-
-  int processid =
-    vtkMultiProcessController::GetGlobalController()->GetLocalProcessId();
-  int numprocs =
-    vtkMultiProcessController::GetGlobalController()->GetNumberOfProcesses();
-
-  vtkPriorityHelper* helper = vtkPriorityHelper::New();
-  helper->SetInputConnection(this->GetOutputPort(port));
-  helper->SetSplitUpdateExtent(
-    port,//algorithm's output port
-    processid, //processor
-    numprocs, //numprocessors
-    pass, //pass
-    num_of_passes, //number of passes
-    resolution //resolution
-  );
-
-  algo->UpdateInformation();
-  if (doTime)
-    {
-    vtkStreamingDemandDrivenPipeline* sddp =
-      vtkStreamingDemandDrivenPipeline::SafeDownCast(algo->GetExecutive());
-    sddp->SetUpdateTimeStep(port, time);
-    }
-  helper->Update();
-  helper->Delete();
-}
-
-//----------------------------------------------------------------------------
 void vtkSISourceProxy::UpdatePipelineInformation()
 {
   if(this->DisablePipelineExecution)
@@ -495,12 +307,6 @@ void vtkSISourceProxy::SetupSelectionProxy(int port, vtkSIProxy* extractSelectio
   vtkAlgorithm* algo = vtkAlgorithm::SafeDownCast(
     extractSelection->GetVTKObject());
   algo->SetInputConnection(this->GetOutputPort(port));
-}
-
-//----------------------------------------------------------------------------
-void vtkSISourceProxy::SetDisableExtentsTranslator(bool value)
-{
-  DisableExtentsTranslator = value;
 }
 
 //----------------------------------------------------------------------------

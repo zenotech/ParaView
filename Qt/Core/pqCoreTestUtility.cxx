@@ -58,6 +58,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqFlatTreeViewEventPlayer.h"
 #include "pqFlatTreeViewEventTranslator.h"
 #include "pqImageUtil.h"
+#include "pqLineEditEventPlayer.h"
 #include "pqOptions.h"
 #include "pqQVTKWidgetEventPlayer.h"
 #include "pqQVTKWidgetEventTranslator.h"
@@ -95,7 +96,7 @@ bool saveImage(vtkWindowToImageFilter* Capture, const QFileInfo& File)
 {
   WriterT* const writer = WriterT::New();
   writer->SetInputConnection(Capture->GetOutputPort());
-  writer->SetFileName(File.filePath().toAscii().data());
+  writer->SetFileName(File.filePath().toLatin1().data());
   writer->Write();
   const bool result = writer->GetErrorCode() == vtkErrorCode::NoError;
   writer->Delete();
@@ -134,6 +135,8 @@ pqCoreTestUtility::pqCoreTestUtility(QObject* p) :
   this->eventTranslator()->addWidgetEventTranslator(
        new pqConsoleWidgetEventTranslator(this));
 
+  this->eventPlayer()->addWidgetEventPlayer(
+       new pqLineEditEventPlayer(this));
   this->eventPlayer()->addWidgetEventPlayer(
        new pqQVTKWidgetEventPlayer(this));
   this->eventPlayer()->addWidgetEventPlayer(
@@ -225,9 +228,9 @@ bool pqCoreTestUtility::CompareImage(vtkRenderWindow* RenderWindow,
 {
   vtkSmartPointer<vtkTesting> testing = vtkSmartPointer<vtkTesting>::New();
   testing->AddArgument("-T");
-  testing->AddArgument(TempDirectory.toAscii().data());
+  testing->AddArgument(TempDirectory.toLatin1().data());
   testing->AddArgument("-V");
-  testing->AddArgument(ReferenceImage.toAscii().data());
+  testing->AddArgument(ReferenceImage.toLatin1().data());
   testing->SetRenderWindow(RenderWindow);
   if (testing->RegressionTest(Threshold) == vtkTesting::PASSED)
     {
@@ -243,9 +246,9 @@ bool pqCoreTestUtility::CompareImage(vtkImageData* testImage,
 {
   vtkSmartPointer<vtkTesting> testing = vtkSmartPointer<vtkTesting>::New();
   testing->AddArgument("-T");
-  testing->AddArgument(TempDirectory.toAscii().data());
+  testing->AddArgument(TempDirectory.toLatin1().data());
   testing->AddArgument("-V");
-  testing->AddArgument(ReferenceImage.toAscii().data());
+  testing->AddArgument(ReferenceImage.toLatin1().data());
   vtkSmartPointer<vtkTrivialProducer> tp = vtkSmartPointer<vtkTrivialProducer>::New();
   tp->SetOutput(testImage);
   if (testing->RegressionTest(tp, Threshold) == vtkTesting::PASSED)
@@ -381,12 +384,12 @@ bool pqCoreTestUtility::CompareImage(const QString& testPNGImage,
   const QString& tempDirectory)
 {
   vtkNew<vtkPNGReader> reader;
-  if (!reader->CanReadFile(testPNGImage.toAscii().data()))
+  if (!reader->CanReadFile(testPNGImage.toLatin1().data()))
     {
-    output << "Cannot read file : " << testPNGImage.toAscii().data() << endl;
+    output << "Cannot read file : " << testPNGImage.toLatin1().data() << endl;
     return false;
     }
-  reader->SetFileName(testPNGImage.toAscii().data());
+  reader->SetFileName(testPNGImage.toLatin1().data());
   reader->Update();
   return pqCoreTestUtility::CompareImage(reader->GetOutput(),
     referenceImage, threshold, output, tempDirectory); 

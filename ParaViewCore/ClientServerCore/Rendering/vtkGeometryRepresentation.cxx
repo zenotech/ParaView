@@ -129,9 +129,6 @@ vtkGeometryRepresentation::vtkGeometryRepresentation()
   compositeAttributes->Delete();
 
   this->RequestGhostCellsIfNeeded = true;
-
-  this->ColorArrayName = 0;
-  this->ColorAttributeType = VTK_SCALAR_MODE_DEFAULT;
   this->Ambient = 0.0;
   this->Diffuse = 1.0;
   this->Specular = 0.0;
@@ -140,8 +137,6 @@ vtkGeometryRepresentation::vtkGeometryRepresentation()
   this->SuppressLOD = false;
   this->DebugString = 0;
   this->SetDebugString(this->GetClassName());
-
-  this->AllowSpecularHighlightingWithScalarColoring = false;
 
   vtkMath::UninitializeBounds(this->DataBounds);
 
@@ -161,7 +156,6 @@ vtkGeometryRepresentation::~vtkGeometryRepresentation()
   this->LODMapper->Delete();
   this->Actor->Delete();
   this->Property->Delete();
-  this->SetColorArrayName(0);
 }
 
 //----------------------------------------------------------------------------
@@ -171,13 +165,18 @@ void vtkGeometryRepresentation::SetupDefaults()
   this->Decimator->SetCopyCellData(1);
   this->Decimator->SetUseInternalTriangles(0);
   this->Decimator->SetNumberOfDivisions(10, 10, 10);
-  
+
   this->LODOutlineFilter->SetUseOutline(1);
 
-  vtkPVGeometryFilter::SafeDownCast(this->GeometryFilter)->SetUseOutline(0);
-  vtkPVGeometryFilter::SafeDownCast(this->GeometryFilter)->SetNonlinearSubdivisionLevel(1);
-  vtkPVGeometryFilter::SafeDownCast(this->GeometryFilter)->SetPassThroughCellIds(1);
-  vtkPVGeometryFilter::SafeDownCast(this->GeometryFilter)->SetPassThroughPointIds(1);
+  vtkPVGeometryFilter *geomFilter = vtkPVGeometryFilter::SafeDownCast(this->GeometryFilter);
+  if (geomFilter)
+    {
+    geomFilter->SetUseOutline(0);
+    geomFilter->SetTriangulate(0);
+    geomFilter->SetNonlinearSubdivisionLevel(1);
+    geomFilter->SetPassThroughCellIds(1);
+    geomFilter->SetPassThroughPointIds(1);
+    }
 
   this->MultiBlockMaker->SetInputConnection(this->GeometryFilter->GetOutputPort());
   this->CacheKeeper->SetInputConnection(this->MultiBlockMaker->GetOutputPort());
@@ -238,7 +237,7 @@ int vtkGeometryRepresentation::ProcessViewRequest(
     vtkPVRenderView::MarkAsRedistributable(inInfo, this);
 
     // Tell the view if this representation needs ordered compositing. We need
-    // ordered compositing when rendering translucent geometry. 
+    // ordered compositing when rendering translucent geometry.
     if (this->Actor->HasTranslucentPolygonalGeometry())
       {
       // We need to extend this condition to consider translucent LUTs once we
@@ -272,7 +271,7 @@ int vtkGeometryRepresentation::ProcessViewRequest(
         this->LODOutlineFilter->Update();
         // Pass along the LOD geometry to the view so that it can deliver it to
         // the rendering node as and when needed.
-        vtkPVRenderView::SetPieceLOD(inInfo, this, 
+        vtkPVRenderView::SetPieceLOD(inInfo, this,
           this->LODOutlineFilter->GetOutputDataObject(0));
         }
       else
@@ -292,7 +291,7 @@ int vtkGeometryRepresentation::ProcessViewRequest(
 
         // Pass along the LOD geometry to the view so that it can deliver it to
         // the rendering node as and when needed.
-        vtkPVRenderView::SetPieceLOD(inInfo, this, 
+        vtkPVRenderView::SetPieceLOD(inInfo, this,
           this->Decimator->GetOutputDataObject(0));
         }
       }
@@ -404,8 +403,7 @@ int vtkGeometryRepresentation::RequestData(vtkInformation* request,
   else
     {
     vtkNew<vtkMultiBlockDataSet> placeholder;
-    vtkPVGeometryFilter::SafeDownCast(
-      this->GeometryFilter)->SetInputData(0, placeholder.GetPointer());
+    this->GeometryFilter->SetInputDataObject(0, placeholder.GetPointer());
     }
   this->CacheKeeper->Update();
 
@@ -519,33 +517,56 @@ void vtkGeometryRepresentation::SetRepresentation(const char* type)
 }
 
 //----------------------------------------------------------------------------
+const char* vtkGeometryRepresentation::GetColorArrayName()
+{
+  vtkInformation *info = this->GetInputArrayInformation(0);
+  if (info &&
+    info->Has(vtkDataObject::FIELD_ASSOCIATION()) &&
+    info->Has(vtkDataObject::FIELD_NAME()))
+    {
+    return info->Get(vtkDataObject::FIELD_NAME());
+    }
+  return NULL;
+}
+
+//----------------------------------------------------------------------------
 void vtkGeometryRepresentation::UpdateColoringParameters()
 {
   bool using_scalar_coloring = false;
-  if (this->ColorArrayName && this->ColorArrayName[0])
-    {
-    this->Mapper->SetScalarVisibility(1);
-    this->LODMapper->SetScalarVisibility(1);
-    this->Mapper->SelectColorArray(this->ColorArrayName);
-    this->LODMapper->SelectColorArray(this->ColorArrayName);
-    this->Mapper->SetUseLookupTableScalarRange(1);
-    this->LODMapper->SetUseLookupTableScalarRange(1);
-    switch (this->ColorAttributeType)
-      {
-    case CELL_DATA:
-      this->Mapper->SetScalarMode(VTK_SCALAR_MODE_USE_CELL_FIELD_DATA);
-      this->LODMapper->SetScalarMode(VTK_SCALAR_MODE_USE_CELL_FIELD_DATA);
-      break;
 
-    case POINT_DATA:
-    default:
-      this->Mapper->SetScalarMode(VTK_SCALAR_MODE_USE_POINT_FIELD_DATA);
-      this->LODMapper->SetScalarMode(VTK_SCALAR_MODE_USE_POINT_FIELD_DATA);
-      break;
+  vtkInformation *info = this->GetInputArrayInformation(0);
+  if (info &&
+    info->Has(vtkDataObject::FIELD_ASSOCIATION()) &&
+    info->Has(vtkDataObject::FIELD_NAME()))
+    {
+    const char* colorArrayName = info->Get(vtkDataObject::FIELD_NAME());
+    int fieldAssociation = info->Get(vtkDataObject::FIELD_ASSOCIATION());
+    if (colorArrayName && colorArrayName[0])
+      {
+      this->Mapper->SetScalarVisibility(1);
+      this->LODMapper->SetScalarVisibility(1);
+      this->Mapper->SelectColorArray(colorArrayName);
+      this->LODMapper->SelectColorArray(colorArrayName);
+      this->Mapper->SetUseLookupTableScalarRange(1);
+      this->LODMapper->SetUseLookupTableScalarRange(1);
+      switch (fieldAssociation)
+        {
+      case vtkDataObject::FIELD_ASSOCIATION_CELLS:
+        this->Mapper->SetScalarMode(VTK_SCALAR_MODE_USE_CELL_FIELD_DATA);
+        this->LODMapper->SetScalarMode(VTK_SCALAR_MODE_USE_CELL_FIELD_DATA);
+        break;
+
+      case vtkDataObject::FIELD_ASSOCIATION_POINTS:
+      default:
+        this->Mapper->SetScalarMode(VTK_SCALAR_MODE_USE_POINT_FIELD_DATA);
+        this->LODMapper->SetScalarMode(VTK_SCALAR_MODE_USE_POINT_FIELD_DATA);
+        break;
+        }
+      using_scalar_coloring = true;
       }
-    using_scalar_coloring = true;
     }
-  else
+
+  if (!using_scalar_coloring)
     {
     this->Mapper->SetScalarVisibility(0);
     this->LODMapper->SetScalarVisibility(0);
@@ -564,12 +585,6 @@ void vtkGeometryRepresentation::UpdateColoringParameters()
     {
     diffuse = 0.0;
     ambient = 1.0;
-    specular = 0.0;
-    }
-  else if (using_scalar_coloring && !this->AllowSpecularHighlightingWithScalarColoring)
-    {
-    // Disable specular highlighting if coloring by scalars.
-    specular = 0.0;
     }
 
   this->Property->SetAmbient(ambient);
@@ -601,12 +616,6 @@ void vtkGeometryRepresentation::UpdateColoringParameters()
     this->Actor->GetPropertyKeys()->Set(vtkShadowMapBakerPass::OCCLUDER(), 0);
     this->Actor->GetPropertyKeys()->Remove(vtkShadowMapBakerPass::RECEIVER());
     }
-}
-
-//----------------------------------------------------------------------------
-void vtkGeometryRepresentation::SetAllowSpecularHighlightingWithScalarColoring(int allow)
-{
-  this->AllowSpecularHighlightingWithScalarColoring = allow > 0 ? true : false;
 }
 
 //----------------------------------------------------------------------------
@@ -764,6 +773,19 @@ void vtkGeometryRepresentation::SetUseOutline(int val)
   if (vtkPVGeometryFilter::SafeDownCast(this->GeometryFilter))
     {
     vtkPVGeometryFilter::SafeDownCast(this->GeometryFilter)->SetUseOutline(val);
+    }
+
+  // since geometry filter needs to execute, we need to mark the representation
+  // modified.
+  this->MarkModified();
+}
+
+//----------------------------------------------------------------------------
+void vtkGeometryRepresentation::SetTriangulate(int val)
+{
+  if (vtkPVGeometryFilter::SafeDownCast(this->GeometryFilter))
+    {
+    vtkPVGeometryFilter::SafeDownCast(this->GeometryFilter)->SetTriangulate(val);
     }
 
   // since geometry filter needs to execute, we need to mark the representation

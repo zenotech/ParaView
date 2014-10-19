@@ -33,6 +33,7 @@ set (Module_SRCS
   vtkAMROutlineRepresentation.cxx
   vtkAMRStreamingPriorityQueue.cxx
   vtkAMRStreamingVolumeRepresentation.cxx
+  vtkCacheSizeKeeper.cxx
   vtkCaveSynchronizedRenderers.cxx
   vtkChartRepresentation.cxx
   vtkChartSelectionRepresentation.cxx
@@ -50,7 +51,9 @@ set (Module_SRCS
   vtkMoleculeRepresentation.cxx
   vtkMPIMoveData.cxx
   vtkOutlineRepresentation.cxx
-  vtkPVBarChartView.cxx
+  vtkPExtentTranslator.cxx
+  vtkPVBagChartRepresentation.cxx
+  vtkPVBoxChartRepresentation.cxx
   vtkPVCacheKeeper.cxx
   vtkPVCacheKeeperPipeline.cxx
   vtkPVCacheSizeInformation.cxx
@@ -62,19 +65,19 @@ set (Module_SRCS
   vtkPVDataRepresentationPipeline.cxx
   vtkPVDisplayInformation.cxx
   vtkPVHardwareSelector.cxx
+  vtkPVHistogramChartRepresentation.cxx
   vtkPVImageSliceMapper.cxx
   vtkPVImplicitPlaneRepresentation.cxx
   vtkPVLastSelectionInformation.cxx
-  vtkPVLineChartView.cxx
   vtkPVMultiSliceView.cxx
   vtkPVOpenGLExtensionsInformation.cxx
-  vtkPVParallelCoordinatesChartView.cxx
   vtkPVParallelCoordinatesRepresentation.cxx
   vtkPVPlotMatrixRepresentation.cxx
   vtkPVPlotMatrixView.cxx
   vtkPVProminentValuesInformation.cxx
   vtkPVRayCastPickingHelper.cxx
   vtkPVRenderView.cxx
+  vtkPVRenderViewSettings.cxx
   vtkPVRepresentedDataInformation.cxx
   vtkPVSelectionInformation.cxx
   vtkPVStreamingPiecesInformation.cxx
@@ -88,15 +91,15 @@ set (Module_SRCS
   vtkSpreadSheetRepresentation.cxx
   vtkSpreadSheetView.cxx
   vtkStructuredGridVolumeRepresentation.cxx
+  vtkTableExtentTranslator.cxx
   vtkTextSourceRepresentation.cxx
   vtkThreeSliceFilter.cxx
   vtkUnstructuredGridVolumeRepresentation.cxx
   vtkXYChartRepresentation.cxx
 )
 
-if (PARAVIEW_ENABLE_PYTHON AND PARAVIEW_ENABLE_MATPLOTLIB)
+if (PARAVIEW_ENABLE_PYTHON)
   list(APPEND Module_SRCS
-    vtkMatplotlibUtilities.cxx
     vtkPythonRepresentation.cxx
     vtkPythonView.cxx)
 endif()
@@ -107,11 +110,16 @@ if (PARAVIEW_USE_ICE_T)
     vtkIceTSynchronizedRenderers.cxx)
 endif()
 
-#set_source_files_properties(
-#  WRAP_EXCLUDE
-#  )
+set_source_files_properties(
+  vtkCacheSizeKeeper
+
+  # No need to wrap vtkPExtentTranslator, its an internal class.
+  vtkPExtentTranslator
+  WRAP_EXCLUDE
+)
 
 set_source_files_properties(
+  vtkCacheSizeKeeper
   vtkPVContextView
   vtkPVDataRepresentation
   vtkPVSynchronizedRenderWindows

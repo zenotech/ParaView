@@ -3,18 +3,23 @@
 
 #include <stdio.h>
 
-#include <QTimer>
-#include <QWidget>
+#include <QDebug>
 #include <QKeyEvent>
 #include <QMouseEvent>
+#include <QTimer>
+#include <QWidget>
 
 int QTestApp::Error = 0;
 
 QTestApp::QTestApp(int _argc, char** _argv)
 {
+#if QT_VERSION >= 0x050000
+  qInstallMessageHandler(QTestApp::messageHandler);
+#else
   qInstallMsgHandler(QTestApp::messageHandler);
-  
-  // CMake generated driver removes argv[0], 
+#endif
+
+  // CMake generated driver removes argv[0],
   // so let's put a dummy back in
   this->Argv.append("qTestApp");
   for(int i=0; i<_argc; i++)
@@ -28,22 +33,52 @@ QTestApp::QTestApp(int _argc, char** _argv)
   this->Argc = this->Argvp.size();
   App = new QApplication(this->Argc, this->Argvp.data());
 }
-  
+
 QTestApp::~QTestApp()
 {
   delete App;
+#if QT_VERSION >= 0x050000
+  qInstallMessageHandler(0);
+#else
   qInstallMsgHandler(0);
+#endif
 }
 
 int QTestApp::exec()
 {
   if(QCoreApplication::arguments().contains("--exit"))
     {
-    QTimer::singleShot(100, QApplication::instance(), 
+    QTimer::singleShot(100, QApplication::instance(),
                        SLOT(quit()));
     }
   return Error + QApplication::exec();
 }
+
+#if QT_VERSION >= 0x050000
+
+void QTestApp::messageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+  QByteArray localMsg = msg.toLocal8Bit();
+  switch(type)
+  {
+  case QtDebugMsg:
+    fprintf(stderr, "Debug: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+    break;
+  case QtWarningMsg:
+    fprintf(stderr, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+    Error++;
+    break;
+  case QtCriticalMsg:
+    fprintf(stderr, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+    Error++;
+    break;
+  case QtFatalMsg:
+    fprintf(stderr, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+    abort();
+  }
+}
+
+#else
 
 void QTestApp::messageHandler(QtMsgType type, const char *msg)
 {
@@ -66,6 +101,8 @@ void QTestApp::messageHandler(QtMsgType type, const char *msg)
   }
 }
 
+#endif
+
 void QTestApp::delay(int ms)
 {
   if(ms > 0)
@@ -82,51 +119,65 @@ bool QTestApp::simulateEvent(QWidget* w, QEvent* e)
   return status;
 }
 
-void QTestApp::keyUp(QWidget* w, Qt::Key key, Qt::KeyboardModifiers mod, int ms)
+QString QTestApp::keyToAscii(Qt::Key key, Qt::KeyboardModifiers mod)
 {
-  if(!w)
-    return;
-  delay(ms);
   QString text;
   char off = 'a';
   if(mod & Qt::ShiftModifier)
     off = 'A';
   if(key >= Qt::Key_A && key <= Qt::Key_Z)
     {
-    text.append(QChar::fromAscii(key - Qt::Key_A + off));
+    text.append(QLatin1Char(key - Qt::Key_A + off));
     }
-  QKeyEvent e(QEvent::KeyRelease, key, mod, text);
+  return text;
+}
+
+void QTestApp::keyUp(QWidget* w, Qt::Key key,
+                     Qt::KeyboardModifiers mod, int ms)
+{
+  if(!w)
+    return;
+  delay(ms);
+  QKeyEvent e(QEvent::KeyRelease, key, mod, keyToAscii(key, mod));
   if(!simulateEvent(w, &e))
     {
     qWarning("keyUp not handled\n");
     }
 }
 
-void QTestApp::keyDown(QWidget* w, Qt::Key key, Qt::KeyboardModifiers mod, int ms)
+void QTestApp::keyDown(QWidget* w, Qt::Key key,
+                       Qt::KeyboardModifiers mod, int ms)
 {
   if(!w)
     return;
   delay(ms);
-  QString text;
-  char off = 'a';
-  if(mod & Qt::ShiftModifier)
-    off = 'A';
-  if(key >= Qt::Key_A && key <= Qt::Key_Z)
-    {
-    text.append(QChar::fromAscii(key - Qt::Key_A + off));
-    }
-  QKeyEvent e(QEvent::KeyPress, key, mod, text);
+  QKeyEvent e(QEvent::KeyPress, key, mod, keyToAscii(key, mod));
   if(!simulateEvent(w, &e))
     {
     qWarning("keyDown not handled\n");
     }
 }
 
-void QTestApp::keyClick(QWidget* w, Qt::Key key, Qt::KeyboardModifiers mod, int ms)
+void QTestApp::keyClick(QWidget* w, Qt::Key key,
+                        Qt::KeyboardModifiers mod, int ms)
 {
   delay(ms);
   keyDown(w, key, mod, 0);
   keyUp(w, key, mod, 0);
+}
+
+void QTestApp::keyClicks(QWidget* w, const QString& text,
+                         Qt::KeyboardModifiers mod, int ms)
+{
+  for (int i = 0; i < text.length(); ++i)
+    {
+    QChar letter = text.at(i);
+    Qt::Key key = static_cast<Qt::Key>(Qt::Key_A
+      + letter.toLower().unicode() - QChar('a').unicode());
+    Qt::KeyboardModifiers upper =
+      letter.isUpper() ? Qt::ShiftModifier : Qt::NoModifier;
+    keyClick(w, key, mod | upper, ms);
+    }
 }
 
 void QTestApp::mouseDown(QWidget* w, QPoint pos, Qt::MouseButton btn, 

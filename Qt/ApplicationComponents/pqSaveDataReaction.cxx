@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSmartPointer.h"
 #include "vtkSMProxyManager.h"
 #include "vtkSMSourceProxy.h"
+#include "vtkSMTrace.h"
 #include "vtkSMWriterFactory.h"
 
 #include <QMessageBox>
@@ -141,7 +142,7 @@ bool pqSaveDataReaction::saveActiveData(const QString& filename)
 
   vtkSMWriterFactory* writerFactory = vtkSMProxyManager::GetProxyManager()->GetWriterFactory();
   vtkSmartPointer<vtkSMProxy> proxy;
-  proxy.TakeReference(writerFactory->CreateWriter(filename.toAscii().data(),
+  proxy.TakeReference(writerFactory->CreateWriter(filename.toLatin1().data(),
       vtkSMSourceProxy::SafeDownCast(port->getSource()->getProxy()),
       port->getPortNumber()));
   vtkSMSourceProxy* writer = vtkSMSourceProxy::SafeDownCast(proxy);
@@ -189,5 +190,11 @@ bool pqSaveDataReaction::saveActiveData(const QString& filename)
     }
   writer->UpdateVTKObjects();
   writer->UpdatePipeline();
+
+  SM_SCOPED_TRACE(SaveData)
+    .arg("writer", writer)
+    .arg("filename", filename.toLatin1().data())
+    .arg("source", port->getSource()->getProxy())
+    .arg("port", port->getPortNumber());
   return true;
 }

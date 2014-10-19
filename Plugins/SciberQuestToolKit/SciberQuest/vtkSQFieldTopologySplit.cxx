@@ -70,20 +70,11 @@ int vtkSQFieldTopologySplit::FillOutputPortInformation(
 int vtkSQFieldTopologySplit::RequestInformation(
     vtkInformation * /*req*/,
     vtkInformationVector ** /*inInfos*/,
-    vtkInformationVector *outInfos)
+    vtkInformationVector *vtkNotUsed(outInfos))
 {
   #ifdef SQTK_DEBUG
   std::cerr << "=====vtkSQFieldTopologySplit::RequestInformation" << std::endl;
   #endif
-
-
-  // tell the excutive that we are handling our own decomposition.
-  // once for each output port
-  for (int p=0; p<5; ++p)
-    {
-    vtkInformation *outInfo=outInfos->GetInformationObject(p);
-    outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),-1);
-    }
 
   return 1;
 }

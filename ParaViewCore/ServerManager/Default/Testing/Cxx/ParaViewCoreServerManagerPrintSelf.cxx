@@ -41,7 +41,6 @@
 #include "vtkSMCompoundProxyDefinitionLoader.h"
 #include "vtkSMCompoundSourceProxy.h"
 #include "vtkSMCompoundSourceProxyDefinitionBuilder.h"
-#include "vtkSMContextNamedOptionsProxy.h"
 #include "vtkSMContextViewProxy.h"
 #include "vtkSMCSVExporterProxy.h"
 #include "vtkSMDataTypeDomain.h"
@@ -59,7 +58,7 @@
 #include "vtkSMFileListDomain.h"
 #include "vtkSMFixedTypeDomain.h"
 #include "vtkSMGlobalPropertiesLinkUndoElement.h"
-#include "vtkSMGlobalPropertiesManager.h"
+#include "vtkSMGlobalPropertiesProxy.h"
 #include "vtkSMIdTypeVectorProperty.h"
 #include "vtkSMImplicitPlaneRepresentationProxy.h"
 #include "vtkSMInputArrayDomain.h"
@@ -75,7 +74,6 @@
 #include "vtkSMObject.h"
 #include "vtkSMOrderedPropertyIterator.h"
 #include "vtkSMOutputPort.h"
-#include "vtkSMParallelCoordinatesRepresentationProxy.h"
 #include "vtkSMPipelineState.h"
 #include "vtkSMPluginLoaderProxy.h"
 #include "vtkSMPluginManager.h"
@@ -98,7 +96,6 @@
 #include "vtkSMPSWriterProxy.h"
 #include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMPWriterProxy.h"
-#include "vtkSMPythonTraceObserver.h"
 #include "vtkSMReaderFactory.h"
 #include "vtkSMRemoteObject.h"
 #include "vtkSMRemoteObjectUpdateUndoElement.h"
@@ -116,7 +113,6 @@
 #include "vtkSMStateLoader.h"
 #include "vtkSMStateLocator.h"
 #include "vtkSMStateVersionController.h"
-#include "vtkSMStateVersionControllerBase.h"
 #include "vtkSMStringListDomain.h"
 #include "vtkSMStringVectorProperty.h"
 #include "vtkSMTesting.h"
@@ -138,7 +134,7 @@
   cout << "Class: " << #classname << endl;\
   c = classname::New(); c->Print(cout); c->Delete();
 
-int main(int , char *[])
+int ParaViewCoreServerManagerPrintSelf(int , char *[])
 {
   vtkObject *c;
 
@@ -169,7 +165,6 @@ int main(int , char *[])
   PRINT_SELF(vtkSMCompoundProxyDefinitionLoader);
   PRINT_SELF(vtkSMCompoundSourceProxy);
   PRINT_SELF(vtkSMCompoundSourceProxyDefinitionBuilder);
-  PRINT_SELF(vtkSMContextNamedOptionsProxy);
   PRINT_SELF(vtkSMContextViewProxy);
   PRINT_SELF(vtkSMCSVExporterProxy);
   PRINT_SELF(vtkSMDataTypeDomain);
@@ -187,7 +182,7 @@ int main(int , char *[])
   PRINT_SELF(vtkSMFileListDomain);
   PRINT_SELF(vtkSMFixedTypeDomain);
   PRINT_SELF(vtkSMGlobalPropertiesLinkUndoElement);
-  PRINT_SELF(vtkSMGlobalPropertiesManager);
+  PRINT_SELF(vtkSMGlobalPropertiesProxy);
   PRINT_SELF(vtkSMIdTypeVectorProperty);
   PRINT_SELF(vtkSMImplicitPlaneRepresentationProxy);
   PRINT_SELF(vtkSMInputArrayDomain);
@@ -203,7 +198,6 @@ int main(int , char *[])
   PRINT_SELF(vtkSMObject);
   PRINT_SELF(vtkSMOrderedPropertyIterator);
   PRINT_SELF(vtkSMOutputPort);
-  PRINT_SELF(vtkSMParallelCoordinatesRepresentationProxy);
   PRINT_SELF(vtkSMPipelineState);
   PRINT_SELF(vtkSMPluginLoaderProxy);
   PRINT_SELF(vtkSMPluginManager);
@@ -226,7 +220,6 @@ int main(int , char *[])
   PRINT_SELF(vtkSMPSWriterProxy);
   PRINT_SELF(vtkSMPVRepresentationProxy);
   PRINT_SELF(vtkSMPWriterProxy);
-  PRINT_SELF(vtkSMPythonTraceObserver);
   PRINT_SELF(vtkSMReaderFactory);
   PRINT_SELF(vtkSMRemoteObject);
   PRINT_SELF(vtkSMRemoteObjectUpdateUndoElement);
@@ -244,7 +237,6 @@ int main(int , char *[])
   PRINT_SELF(vtkSMStateLoader);
   PRINT_SELF(vtkSMStateLocator);
   PRINT_SELF(vtkSMStateVersionController);
-  PRINT_SELF(vtkSMStateVersionControllerBase);
   PRINT_SELF(vtkSMStringListDomain);
   PRINT_SELF(vtkSMStringVectorProperty);
   PRINT_SELF(vtkSMTesting);

@@ -41,19 +41,19 @@ public:
 
   // Description:
   // Makes a new selection source proxy.
-  bool SelectSurfaceCells(int region[4],
+  bool SelectSurfaceCells(const int region[4],
     vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources,
     bool multiple_selections=false);
-  bool SelectSurfacePoints(int region[4],
+  bool SelectSurfacePoints(const int region[4],
     vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources,
     bool multiple_selections=false);
-  bool SelectFrustumCells(int region[4],
+  bool SelectFrustumCells(const int region[4],
     vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources,
     bool multiple_selections=false);
-  bool SelectFrustumPoints(int region[4],
+  bool SelectFrustumPoints(const int region[4],
     vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources,
     bool multiple_selections=false);
@@ -65,6 +65,15 @@ public:
     vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources,
     bool multiple_selections=false);
+
+  // Description:
+  // Returns the range for visible elements in the current view.
+  bool ComputeVisibleScalarRange(const int region[4],
+    int fieldAssociation, const char* scalarName,
+    int component, double range[]);
+  bool ComputeVisibleScalarRange(
+    int fieldAssociation, const char* scalarName,
+    int component, double range[]);
 
   // Description:
   // Convenience method to pick a location. Internally uses SelectSurfaceCells
@@ -92,9 +101,12 @@ public:
 
   // Description:
   // For backwards compatibility in Python scripts.
-  void ResetCamera()
-    { this->InvokeCommand("ResetCamera"); }
+  void ResetCamera();
   void ResetCamera(double bounds[6]);
+  void ResetCamera(
+    double xmin, double xmax,
+    double ymin, double ymax,
+    double zmin, double zmax);
 
   // Description:
   // Convenience method for zooming to a representation.
@@ -117,12 +129,6 @@ public:
   // Description:
   // Returns the client-side camera object.
   vtkCamera* GetActiveCamera();
-
-  // Description:
-  // Create a default representation for the given source proxy.
-  // Returns a new proxy.
-  virtual vtkSMRepresentationProxy* CreateDefaultRepresentation(
-    vtkSMProxy*, int);
 
   // Description:
   // This method calls UpdateInformation on the Camera Proxy
@@ -151,10 +157,21 @@ public:
   // geometry.
   bool StreamingUpdate(bool render_if_needed);
 
+  // Description:
+  // Overridden to check through the various representations that this view can
+  // create.
+  virtual const char* GetRepresentationType(
+    vtkSMSourceProxy* producer, int outputPort);
+
+  // Description:
+  // Returns the render window used by this view.
+  virtual vtkRenderWindow* GetRenderWindow();
+
 //BTX
 protected:
   vtkSMRenderViewProxy();
   ~vtkSMRenderViewProxy();
+
 
   // Description:
   // Calls UpdateLOD() on the vtkPVRenderView.
@@ -170,7 +187,7 @@ protected:
   virtual vtkImageData* CaptureWindowInternal(int magnification);
   virtual void CaptureWindowInternalRender();
 
-  bool SelectFrustumInternal(int region[4],
+  bool SelectFrustumInternal(const int region[4],
     vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources,
     bool multiple_selections,

@@ -35,9 +35,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqComboBoxDomain.h"
 #include "pqPropertiesPanel.h"
 #include "pqSignalAdaptors.h"
-#include "pqStandardColorLinkAdaptor.h"
 #include "vtkSMPropertyGroup.h"
 #include "vtkSMProxy.h"
+
+// Qt includes
+#include <QActionGroup>
+#include <QMenu>
 
 class pqFontPropertyWidget::pqInternals
 {
@@ -50,12 +53,14 @@ public:
     this->Ui.mainLayout->setMargin(pqPropertiesPanel::suggestedMargin());
     this->Ui.mainLayout->setSpacing(pqPropertiesPanel::suggestedHorizontalSpacing());
     }
+
+  QString justification;
 };
 
 //-----------------------------------------------------------------------------
 pqFontPropertyWidget::pqFontPropertyWidget(
   vtkSMProxy* smproxy, vtkSMPropertyGroup* smgroup, QWidget* parentObject)
-  : Superclass(smproxy, parentObject),
+  : Superclass(smproxy, smgroup, parentObject),
   Internals(new pqInternals(this))
 {
   Ui::FontPropertyWidget &ui = this->Internals->Ui;
@@ -88,20 +93,30 @@ pqFontPropertyWidget::pqFontPropertyWidget(
   smproperty = smgroup->GetProperty("Color");
   if (smproperty)
     {
-    pqSignalAdaptorColor *adaptor = new pqSignalAdaptorColor(ui.FontColor, "chosenColor",
-      SIGNAL(chosenColorChanged(const QColor&)), false);
-    this->addPropertyLink(adaptor, "color",
-      SIGNAL(colorChanged(const QVariant&)), smproperty);
+    this->addPropertyLink(
+      ui.FontColor, "chosenColorRgbF", SIGNAL(chosenColorChanged(const QColor&)),
+      smproperty);
 
-    // pqStandardColorLinkAdaptor makes it possible to set this color to one of
-    // the standard colors.
-    new pqStandardColorLinkAdaptor(ui.FontColor, smproxy, smproxy->GetPropertyName(smproperty));
+    // pqColorPaletteLinkHelper makes it possible to set this color to one of
+    // the color palette colors.
+    new pqColorPaletteLinkHelper(ui.FontColor, smproxy, smproxy->GetPropertyName(smproperty));
     }
   else
     {
     ui.FontColor->hide();
     }
   
+  smproperty = smgroup->GetProperty("Opacity");
+  if (smproperty)
+    {
+    this->addPropertyLink(ui.Opacity, "value", SIGNAL(valueChanged(double)),
+      smproperty);
+    }
+  else
+    {
+    ui.Opacity->hide();
+    }
+
   smproperty = smgroup->GetProperty("Bold");
   if (smproperty)
     {
@@ -131,6 +146,18 @@ pqFontPropertyWidget::pqFontPropertyWidget(
     {
     ui.Shadow->hide();
     }
+
+  smproperty = smgroup->GetProperty("Justification");
+  if(smproperty)
+    {
+    this->setupJustificationButton();
+    this->addPropertyLink(this, "justification",
+      SIGNAL(justificationChanged(QString&)), smproperty);
+    }
+  else
+    {
+    ui.Justification->hide();
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -138,4 +165,63 @@ pqFontPropertyWidget::~pqFontPropertyWidget()
 {
   delete this->Internals;
   this->Internals = NULL;
+}
+
+//-----------------------------------------------------------------------------
+void pqFontPropertyWidget::setJustification(QString& str)
+{
+  if(this->Internals->justification == str)
+    {
+    return;
+    }
+  this->Internals->justification = str;
+  // Change toolbutton icon
+  QList<QAction*> acts = this->Internals->Ui.Justification->menu()->actions();
+  for(QList<QAction*>::iterator i = acts.begin(); i != acts.end(); ++i)
+    {
+    if((*i)->text() == str)
+      {
+      this->Internals->Ui.Justification->setIcon((*i)->icon());
+      break;
+      }
+    }
+
+  emit this->justificationChanged(str);
+}
+
+//-----------------------------------------------------------------------------
+QString pqFontPropertyWidget::justification() const
+{
+  return this->Internals->justification;
+}
+
+//-----------------------------------------------------------------------------
+void pqFontPropertyWidget::setupJustificationButton()
+{
+  Ui::FontPropertyWidget &ui = this->Internals->Ui;
+  QActionGroup* actionGroup = new QActionGroup(this);
+  actionGroup->setExclusive(true);
+  QAction* leftAlign = new QAction(QIcon(
+      ":/pqWidgets/Icons/pqTextAlignLeft16.png"), tr("Left"), actionGroup);
+  leftAlign->setIconVisibleInMenu(true);
+  QAction* rightAlign = new QAction(QIcon(
+      ":/pqWidgets/Icons/pqTextAlignRight16.png"), tr("Right"), actionGroup);
+  rightAlign->setIconVisibleInMenu(true);
+  QAction* centerAlign = new QAction(QIcon(
+      ":/pqWidgets/Icons/pqTextAlignCenter16.png"), tr("Center"), actionGroup);
+  centerAlign->setIconVisibleInMenu(true);
+  QMenu* popup = new QMenu(this);
+  popup->addAction(leftAlign);
+  popup->addAction(rightAlign);
+  popup->addAction(centerAlign);
+  ui.Justification->setMenu(popup);
+  QObject::connect(actionGroup, SIGNAL(triggered(QAction*)),
+    this, SLOT(changeJustificationIcon(QAction*)));
+}
+
+//-----------------------------------------------------------------------------
+void pqFontPropertyWidget::changeJustificationIcon(QAction* action)
+{
+  QString str = action->text();
+  this->setJustification(str);
 }

@@ -21,16 +21,26 @@ SET (TP_SOURCES
   pqTPPluginManager.h
 )
 
-INCLUDE(${QT_USE_FILE})
-
-QT4_WRAP_CPP(MOC_SRCS
+SET (TP_MOC_SOURCES
   pqTPExportStateWizard.h
   pqTPActionsGroup.h
   pqTPPluginManager.h
-)
+  )
+IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+  SET (Qt5_FIND_COMPONENTS Widgets)
+  INCLUDE (ParaViewQt5)
+  QT5_WRAP_CPP(MOC_SRCS
+    ${TP_MOC_SOURCES})
+  QT5_WRAP_UI(UI_SRCS
+    ${UI_RESOURCES})
+ELSE ()
+  INCLUDE (${QT_USE_FILE})
+  QT4_WRAP_CPP(MOC_SRCS
+    ${TP_MOC_SOURCES})
+  QT4_WRAP_UI(UI_SRCS
+    ${UI_RESOURCES})
+ENDIF ()
 
-QT4_WRAP_UI(UI_SRCS
-  ${UI_RESOURCES})
 
 #------------------------------------------------------------------------------
 SET (PARAVIEW_PLUGIN_IFACES)
@@ -75,9 +85,9 @@ ADD_PARAVIEW_PLUGIN(
     tp_export_py.cxx
 )
 
-IF (BUILD_TESTING AND BUILD_SHARED_LIBS AND PARAVIEW_DATA_ROOT)
+IF (BUILD_TESTING AND BUILD_SHARED_LIBS)
   include(ParaViewTestingMacros)
   add_client_tests("pv"
     LOAD_PLUGIN "TemporalParallelismScriptGenerator"
     TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/Testing/TemporalParallelism.xml )
-ENDIF (BUILD_TESTING AND BUILD_SHARED_LIBS AND PARAVIEW_DATA_ROOT)
+ENDIF ()

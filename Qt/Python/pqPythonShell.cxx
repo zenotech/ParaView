@@ -43,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkStdString.h"
 #include "vtkWeakPointer.h"
 
+#include <QAbstractItemView>
 #include <QInputDialog>
 #include <QStringListModel>
 #include <QTextCharFormat>
@@ -331,8 +332,11 @@ void pqPythonShell::clear()
 //-----------------------------------------------------------------------------
 void pqPythonShell::executeScript(const QString& script)
 {
-  emit this->executing(true);  
-  this->Interpreter->RunStringWithConsoleLocals(script.toAscii().data());
+  emit this->executing(true);
+  QString command = script;
+  command.replace("\r\n", "\n");
+  command.replace("\r", "\n");
+  this->Interpreter->RunStringWithConsoleLocals(command.toLatin1().data());
   emit this->executing(false);
   CLEAR_UNDO_STACK();
 
@@ -352,7 +356,7 @@ void pqPythonShell::pushScript(const QString& script)
   emit this->executing(true);
   foreach (QString line, lines)
     {
-    bool isMultilineStatement = this->Interpreter->Push(line.toAscii().data());
+    bool isMultilineStatement = this->Interpreter->Push(line.toLatin1().data());
     this->Prompt = isMultilineStatement ? pqPythonShell::PS2() : pqPythonShell::PS1();
     }
   emit this->executing(false);
@@ -387,7 +391,7 @@ void pqPythonShell::HandleInterpreterEvents(
 
   case vtkCommand::UpdateEvent:
       {
-      vtkStdString* data = reinterpret_cast<vtkStdString*>(calldata);
+      vtkStdString* strData = reinterpret_cast<vtkStdString*>(calldata);
       bool ok;
       QString inputText = QInputDialog::getText(this,
         tr("Enter Input requested by Python"),
@@ -397,7 +401,7 @@ void pqPythonShell::HandleInterpreterEvents(
         &ok);
       if (ok)
         {
-        *data = inputText.toStdString();
+        *strData = inputText.toStdString();
         }
       }
     break;

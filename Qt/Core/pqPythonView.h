@@ -27,7 +27,6 @@ class PQCORE_EXPORT pqPythonView : public pqView
 
 public:
   static QString pythonViewType() { return "PythonView"; }
-  static QString pythonViewTypeName() { return "Python View"; }
 
   // Constructor:
   // \c type  :- view type.
@@ -55,18 +54,6 @@ public:
 
   /// Get the view proxy as a vtkSMPythonViewProxy
   vtkSMPythonViewProxy* getPythonViewProxy();
-
-  /// Returns whether a source can be displayed in this view module.
-  /// The default implementation returns true is the connection ID for the port
-  /// and the view are the same.
-  virtual bool canDisplay(pqOutputPort* opPort) const;
-
-  /// Capture the image rendered by the view at a given magnification
-  virtual vtkImageData* captureImage(int magnification);
-
-  /// Bring in all the signatures of captureImage() from the superclass
-  /// to prevent it from being hidden.
-  using Superclass::captureImage;
 
 protected slots:
   virtual void initializeAfterObjectsCreated();

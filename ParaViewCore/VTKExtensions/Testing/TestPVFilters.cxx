@@ -17,7 +17,7 @@
 #include "vtkTesting.h"
 #include "vtkCleanUnstructuredGrid.h"
 #include "vtkGlyphSource2D.h"
-#include "vtkPVGlyphFilter.h"
+#include "vtkPVLegacyGlyphFilter.h"
 #include "vtkPVGeometryFilter.h"
 #include "vtkUnstructuredGrid.h"
 #include "vtkContourFilter.h"
@@ -36,7 +36,7 @@
 #include "vtkWarpScalar.h"
 #include "vtkDataSetMapper.h"
 
-int main(int argc, char* argv[])
+int TestPVFilters(int argc, char* argv[])
 {
   char* fname = 
     vtkTestUtilities::ExpandDataFileName(argc, argv, "Data/blow.vtk");
@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
   gs->FilledOff();
   gs->CrossOff();
 
-  vtkPVGlyphFilter *glyph = vtkPVGlyphFilter::New();
+  vtkPVLegacyGlyphFilter *glyph = vtkPVLegacyGlyphFilter::New();
   glyph->SetInputConnection( clean->GetOutputPort() );
   glyph->SetSourceConnection( gs->GetOutputPort());
   glyph->SetScaleFactor( 0.75 );

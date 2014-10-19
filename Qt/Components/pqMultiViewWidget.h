@@ -68,7 +68,7 @@ public:
   /// Captures an image for the views in the layout. Note that there must be
   /// at least one valid view in the widget, otherwise returns NULL.
   vtkImageData* captureImage(int width, int height);
- 
+
   /// setups up the environment for capture. Returns the magnification that can
   /// be used to capture the image for required size.
   int prepareForCapture(int width, int height);
@@ -76,11 +76,20 @@ public:
   /// cleans up the environment after image capture.
   void cleanupAfterCapture();
 
+  /// Capture an image and saves it out to a file.
+  bool writeImage(const QString& filename, int width, int height, int quality=-1);
+
   /// Returns list of views assigned to frames in this widget.
   QList<vtkSMViewProxy*> viewProxies() const;
 
   /// Returns true if the view has been assigned to this layout.
   bool isViewAssigned(pqView*) const;
+
+  /// pqMultiViewWidget supports popout mode i.e. the views could be laid out
+  /// in separate popup widget rather than simply placing them  under this
+  /// pqMultiViewWidget frame. Use this method to toggle that. Returns true if
+  /// the view is popped out at the end of this call, false otherwise.
+  bool togglePopout();
 
 signals:
   /// fired when a frame in this widget becomes active.

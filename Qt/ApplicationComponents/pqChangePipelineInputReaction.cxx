@@ -42,6 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqUndoStack.h"
 #include "vtkSMInputProperty.h"
 #include "vtkSMProxy.h"
+#include "vtkSMTrace.h"
 
 #include <QDebug>
 
@@ -97,6 +98,8 @@ void pqChangePipelineInputReaction::changeInput()
 
   BEGIN_UNDO_SET(QString("Change Input for %1").arg(
       filter->getSMName()));
+  SM_SCOPED_TRACE(PropertiesModified)
+    .arg("proxy", filter->getProxy());
 
   const QMap<QString, QList<pqOutputPort*> > input_map =
     dialog.selectedInputs();
@@ -118,7 +121,7 @@ void pqChangePipelineInputReaction::changeInput()
 
     vtkSMInputProperty* ip =vtkSMInputProperty::SafeDownCast(
       filter->getProxy()->GetProperty(
-        inputPortName.toAscii().data()));
+        inputPortName.toLatin1().data()));
     ip->SetProxies(
       static_cast<unsigned int>(inputPtrs.size()),
       &inputPtrs[0], &inputPorts[0]);

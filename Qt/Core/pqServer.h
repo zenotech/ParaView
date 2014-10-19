@@ -110,10 +110,6 @@ public:
   /// Returns the time keeper for this connection.
   pqTimeKeeper* getTimeKeeper() const;
 
-  /// Initializes the pqServer, must be called as soon as pqServer 
-  /// is created.
-  void initialize();
-
   /// Returns the PVOptions for this connection. These are client side options.
   vtkPVOptions* getOptions() const;
 
@@ -131,20 +127,6 @@ public:
   /// heartbeat message to all servers every \c msec milliseconds.
   static void setHeartBeatTimeoutSetting(int msec);
   static int getHeartBeatTimeoutSetting();
-
-  /// Get/Set the application wide coincident topology resolution settings.
-  static void setCoincidentTopologyResolutionModeSetting(int mode);
-  static int coincidentTopologyResolutionModeSetting();
-  static void setPolygonOffsetParametersSetting(double factor, double value);
-  static void polygonOffsetParametersSetting(double &factor, double &value);
-  static void setPolygonOffsetFacesSetting(bool);
-  static bool polygonOffsetFacesSetting();
-  static void setZShiftSetting(double shift);
-  static double zShiftSetting();
-
-  /// Get/Set global immediate mode rendering.
-  static void setGlobalImmediateModeRenderingSetting(bool val);
-  static bool globalImmediateModeRenderingSetting();
 
   /// enable/disable monitoring of server notifications.
   void setMonitorServerNotifications(bool);
@@ -168,22 +150,11 @@ signals:
   void serverSideDisconnected();
 
 protected:
-  // Creates the TimeKeeper proxy for this connection.
-  void createTimeKeeper();
-
   /// Returns the string key used for the heart beat time interval.
   static const char* HEARBEAT_TIME_SETTING_KEY();
 
   /// Set the heartbeat timeout for this instance of pqServer.
   void setHeartBeatTimeout(int msec);
-  void setCoincidentTopologyResolutionMode(int);
-  void setPolygonOffsetParameters(double factor, double units);
-  void setPolygonOffsetFaces(bool offset_faces);
-  void setZShift(double shift);
-  void setGlobalImmediateModeRendering(bool);
-
-  // updates all servers with the current settings.
-  static void updateGlobalMapperProperties();
 
   // ---- Collaboration client-to-clients communication mechanisme ----
 
@@ -233,10 +204,7 @@ private:
 
   pqServerResource Resource;
   vtkIdType ConnectionID;
-  vtkWeakPointer<vtkSMProxy> GlobalMapperPropertiesProxy;
   vtkWeakPointer<vtkSMSession> Session;
-  vtkWeakPointer<vtkSMProxySelectionModel> ActiveSources;
-  vtkWeakPointer<vtkSMProxySelectionModel> ActiveView;
 
   // TODO:
   // Each connection will eventually have a PVOptions object. 

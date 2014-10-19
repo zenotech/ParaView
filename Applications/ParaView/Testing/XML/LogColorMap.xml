@@ -3,7 +3,7 @@
   <!-- Checks log-space mapping for colors -->
   <pqevent object="pqClientMainWindow/menubar/menuTools" command="activate" arguments="actionTesting_Window_Size" />
   <pqevent object="pqClientMainWindow/MainControlsToolbar/actionOpenData" command="activate" arguments="" />
-  <pqevent object="pqClientMainWindow/FileOpenDialog" command="filesSelected" arguments="$PARAVIEW_DATA_ROOT/Data/disk_out_ref.ex2" />
+  <pqevent object="pqClientMainWindow/FileOpenDialog" command="filesSelected" arguments="$PARAVIEW_DATA_ROOT/disk_out_ref.ex2" />
   <pqevent object="pqClientMainWindow/propertiesDock/propertiesPanel/Accept" command="activate" arguments="" />
   <pqevent object="pqClientMainWindow/menubar/menuFilters/pqProxyGroupMenuManager0/Calculator" command="activate" arguments="" />
   <pqevent object="pqClientMainWindow/propertiesDock/propertiesPanel/scrollArea/qt_scrollarea_viewport/scrollAreaWidgetContents/PropertiesFrame/ProxyPanel/AttributeMode/ComboBox" command="set_string" arguments="Cell Data" />
@@ -16,7 +16,7 @@
   <pqevent object="pqClientMainWindow/colorMapEditorDock/colorMapEditorPanel/EditScalarBar" command="activate" arguments="" />
   <pqevent object="ColorLegendEditor/scrollArea/qt_scrollarea_viewport/Container/ProxyWidget/Title/Title" command="set_string" arguments="Title" />
   <pqevent object="ColorLegendEditor/scrollArea/qt_scrollarea_viewport/Container/ProxyWidget/DrawNanAnnotation/CheckBox" command="set_boolean" arguments="true" />
-  <pqevent object="ColorLegendEditor/buttonBox/1QPushButton0" command="activate" arguments="" />
+  <pqevent object="ColorLegendEditor/widget/OKButton" command="activate" arguments="" />
   <!-- compare default color map -->
   <pqcompareview object="pqClientMainWindow/centralwidget/MultiViewWidget/CoreWidget/qt_tabwidget_stackedwidget/MultiViewWidget1/Frame.0/Viewport" baseline="$PARAVIEW_DATA_ROOT/Baseline/LogColorMap1.png" width="300" height="300" />
 

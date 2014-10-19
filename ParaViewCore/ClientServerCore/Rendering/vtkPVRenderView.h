@@ -26,10 +26,11 @@
 #include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 #include "vtkPVView.h"
 #include "vtkBoundingBox.h" // needed for iVar
+#include "vtkNew.h" // needed for iVar
+
 
 class vtkAlgorithmOutput;
 class vtkCamera;
-class vtkCameraManipulator;
 class vtkExtentTranslator;
 class vtkInformationDoubleKey;
 class vtkInformationDoubleVectorKey;
@@ -52,6 +53,7 @@ class vtkPVSynchronizedRenderer;
 class vtkRenderer;
 class vtkRenderViewBase;
 class vtkRenderWindow;
+class vtkTextRepresentation;
 class vtkTexture;
 
 class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVRenderView : public vtkPVView
@@ -278,9 +280,9 @@ public:
   // Description:
   // Set or get whether capture should be done as
   // StillRender or InteractiveRender when capturing screenshots.
-  vtkSetMacro(UseInteractiveRenderingForSceenshots, bool);
-  vtkBooleanMacro(UseInteractiveRenderingForSceenshots, bool);
-  vtkGetMacro(UseInteractiveRenderingForSceenshots, bool);
+  vtkSetMacro(UseInteractiveRenderingForScreenshots, bool);
+  vtkBooleanMacro(UseInteractiveRenderingForScreenshots, bool);
+  vtkGetMacro(UseInteractiveRenderingForScreenshots, bool);
 
   // Description:
   // Set or get whether offscreen rendering should be used during
@@ -323,8 +325,10 @@ public:
 
   // Description:
   // Convenience methods used by representations to pass represented data.
+  // If trueSize is non-zero, then that's the size used in making decisions
+  // about LOD/remote rendering etc and not the actual size of the dataset.
   static void SetPiece(vtkInformation* info,
-    vtkPVDataRepresentation* repr, vtkDataObject* data);
+    vtkPVDataRepresentation* repr, vtkDataObject* data, unsigned long trueSize=0);
   static vtkAlgorithmOutput* GetPieceProducer(vtkInformation* info,
     vtkPVDataRepresentation* repr);
   static void SetPieceLOD(vtkInformation* info,
@@ -370,6 +374,21 @@ public:
     const int whole_extents[6], const double origin[3], const double spacing[3]);
 
   // Description:
+  // Some representation only work when remote rendering or local rendering. Use
+  // this method in REQUEST_UPDATE() pass to tell the view if the representation
+  // requires a particular mode. Note, only use this to "require" a remote or
+  // local render. \c value == true indicates that the representation requires
+  // distributed rendering, \c value == false indicates the representation can
+  // only render property on the client or root node.
+  static void SetRequiresDistributedRendering(
+    vtkInformation* info, vtkPVDataRepresentation* repr, bool value, bool for_lod=false);
+  static void SetRequiresDistributedRenderingLOD(
+    vtkInformation* info, vtkPVDataRepresentation* repr, bool value)
+    {
+    vtkPVRenderView::SetRequiresDistributedRendering(info, repr, value, true);
+    }
+
+  // Description:
   // Representations that support hardware (render-buffer based) selection,
   // should register the prop that they use for selection rendering. They can do
   // that in the vtkPVDataRepresentation::AddToView() implementation.
@@ -383,6 +402,10 @@ public:
   void SetLightSwitch(bool enable);
   bool GetLightSwitch();
   vtkBooleanMacro(LightSwitch, bool);
+
+  // Description:
+  // Enable/disable showing of annotation for developers.
+  void SetShowAnnotation(bool val);
 
   //*****************************************************************
   // Forwarded to orientation axes widget.
@@ -447,10 +470,9 @@ public:
 
   //*****************************************************************
   // Forwarded to vtkPVInteractorStyle if present on local processes.
-  virtual void Add2DManipulator(vtkCameraManipulator* val);
-  virtual void RemoveAll2DManipulators();
-  virtual void Add3DManipulator(vtkCameraManipulator* val);
-  virtual void RemoveAll3DManipulators();
+  virtual void SetCamera2DManipulators(const int manipulators[9]);
+  virtual void SetCamera3DManipulators(const int manipulators[9]);
+  void SetCameraManipulators(vtkPVInteractorStyle* style, const int manipulators[9]);
 
   // Description:
   // Overridden to synchronize information among processes whenever data
@@ -568,8 +590,10 @@ protected:
 
   // Description:
   // Returns true if distributed rendering should be used based on the geometry
-  // size.
-  bool ShouldUseDistributedRendering(double geometry_size);
+  // size. \c using_lod will be true if this method is called to determine
+  // distributed rendering status for renders using lower LOD i.e when called in
+  // UpdateLOD().
+  bool ShouldUseDistributedRendering(double geometry_size, bool using_lod);
 
   // Description:
   // Returns true if LOD rendering should be used based on the geometry size.
@@ -603,6 +627,11 @@ protected:
   // Synchronizes remote-rendering related parameters for collaborative
   // rendering in multi-clients mode.
   void SynchronizeForCollaboration();
+
+  // Description:
+  // Method to build annotation text to annotate the view with runtime
+  // information.
+  virtual void BuildAnnotationText(ostream& str);
 
   // Description:
   // SynchronizationCounter is used in multi-clients mode to ensure that the
@@ -639,6 +668,7 @@ protected:
   int StillRenderImageReductionFactor;
   int InteractiveRenderImageReductionFactor;
   int InteractionMode;
+  bool ShowAnnotation;
 
   // 2D and 3D interactor style
   vtkPVInteractorStyle* TwoDInteractorStyle;
@@ -658,7 +688,7 @@ protected:
 
   bool UseOffscreenRendering;
   bool UseOffscreenRenderingForScreenshots;
-  bool UseInteractiveRenderingForSceenshots;
+  bool UseInteractiveRenderingForScreenshots;
   bool NeedsOrderedCompositing;
   bool RenderEmptyImages;
 
@@ -695,10 +725,19 @@ private:
   // open the DISPLAY etc.
   bool RemoteRenderingAvailable;
 
+  // Flags used to maintain rendering modes requested by representations.
+  bool DistributedRenderingRequired;
+  bool NonDistributedRenderingRequired;
+  bool DistributedRenderingRequiredLOD;
+  bool NonDistributedRenderingRequiredLOD;
+
   int PreviousParallelProjectionStatus;
 
   class vtkInternals;
   vtkInternals* Internals;
+
+  vtkNew<vtkTextRepresentation> Annotation;
+  void UpdateAnnotationText();
 //ETX
 };
 

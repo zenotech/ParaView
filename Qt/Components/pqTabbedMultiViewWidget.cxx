@@ -54,38 +54,88 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QVBoxLayout>
 #include <QtDebug>
 
-namespace
+//-----------------------------------------------------------------------------
+// **************** pqTabbedMultiViewWidget::pqTabWidget **********************
+//-----------------------------------------------------------------------------
+pqTabbedMultiViewWidget::pqTabWidget::pqTabWidget(QWidget* parentObject):
+  Superclass(parentObject)
 {
-  class pqTabWidget : public QTabWidget
-  {
-public:
-  pqTabWidget(QWidget* parentObject): QTabWidget(parentObject)
-  {
-  }
-
-  int tabButtonIndex(QWidget* wdg, QTabBar::ButtonPosition position) const
-    {
-    for (int cc=0; cc < this->count(); cc++)
-      {
-      if (this->tabBar()->tabButton(cc, position) == wdg)
-        {
-        return cc;
-        }
-      }
-    return -1;
-    }
-
-  void setTabButton(int index, QTabBar::ButtonPosition position, QWidget* wdg)
-    {
-    this->tabBar()->setTabButton(index, position, wdg);
-    }
-  };
 }
 
+//-----------------------------------------------------------------------------
+pqTabbedMultiViewWidget::pqTabWidget::~pqTabWidget()
+{
+}
+
+//-----------------------------------------------------------------------------
+int pqTabbedMultiViewWidget::pqTabWidget::tabButtonIndex(
+  QWidget* wdg, QTabBar::ButtonPosition position) const
+{
+  for (int cc=0; cc < this->count(); cc++)
+    {
+    if (this->tabBar()->tabButton(cc, position) == wdg)
+      {
+      return cc;
+      }
+    }
+  return -1;
+}
+
+//-----------------------------------------------------------------------------
+void pqTabbedMultiViewWidget::pqTabWidget::setTabButton(
+  int index, QTabBar::ButtonPosition position, QWidget* wdg)
+{
+  this->tabBar()->setTabButton(index, position, wdg);
+}
+
+//-----------------------------------------------------------------------------
+int pqTabbedMultiViewWidget::pqTabWidget::addAsTab(pqMultiViewWidget* wdg, pqTabbedMultiViewWidget* self)
+{
+  int tab_count = this->count();
+  int tab_index = this->insertTab(tab_count-1, wdg, QString("Layout #%1").arg(tab_count));
+
+  QLabel* label = new QLabel(this);
+  label->setObjectName("popout");
+  label->setToolTip(pqTabWidget::popoutLabelText(false));
+  label->setStatusTip(pqTabWidget::popoutLabelText(false));
+  label->setPixmap(this->style()->standardPixmap(
+      pqTabWidget::popoutLabelPixmap(false)));
+  this->setTabButton(tab_index, QTabBar::LeftSide, label);
+  label->installEventFilter(self);
+
+  label = new QLabel(this);
+  label->setObjectName("close");
+  label->setToolTip("Close layout");
+  label->setStatusTip("Close layout");
+  label->setPixmap(
+    this->style()->standardPixmap(QStyle::SP_TitleBarCloseButton));
+  this->setTabButton(tab_index, QTabBar::RightSide, label);
+  label->installEventFilter(self);
+  return tab_index;
+}
+
+//-----------------------------------------------------------------------------
+const char* pqTabbedMultiViewWidget::pqTabWidget::popoutLabelText(bool popped_out)
+{
+  return popped_out?
+    "Bring popped out window back to the frame":
+    "Pop out layout in separate window";
+}
+
+//-----------------------------------------------------------------------------
+QStyle::StandardPixmap pqTabbedMultiViewWidget::pqTabWidget::popoutLabelPixmap(bool popped_out)
+{
+  return popped_out?
+    QStyle::SP_TitleBarNormalButton: QStyle::SP_TitleBarMaxButton;
+}
+
+//-----------------------------------------------------------------------------
+// ****************     pqTabbedMultiViewWidget   **********************
+//-----------------------------------------------------------------------------
 class pqTabbedMultiViewWidget::pqInternals
 {
 public:
-  QPointer<pqTabWidget> TabWidget;
+  QPointer<pqTabbedMultiViewWidget::pqTabWidget> TabWidget;
   QMultiMap<pqServer*, QPointer<pqMultiViewWidget> > TabWidgets;
   QPointer<QWidget> FullScreenWindow;
 
@@ -382,29 +432,11 @@ void pqTabbedMultiViewWidget::createTab(vtkSMViewLayoutProxy* vlayout)
     SLOT(frameActivated()));
 
   int count = this->Internals->TabWidget->count();
-
   widget->setObjectName(QString("MultiViewWidget%1").arg(count));
   widget->setLayoutManager(vlayout);
 
-  int tab_index = this->Internals->TabWidget->insertTab(count-1, widget,
-    QString("Layout #%1").arg(count));
+  int tab_index = this->Internals->TabWidget->addAsTab(widget, this);
   this->Internals->TabWidget->setCurrentIndex(tab_index);
-
-  //set the close button for all tabs that are closeable.
-  //if (tab_index != 0 || true)
-  //   initially, we wanted to not allow closing the first tab. However, that
-  //   becomes cumbersome with mutliple servers. So let's experiment with all
-  //   tabs closeable.
-    {
-    QLabel* label = new QLabel(this);
-    label->setObjectName("close");
-    label->setPixmap(
-      this->style()->standardPixmap(QStyle::SP_TitleBarCloseButton));
-    this->Internals->TabWidget->setTabButton(tab_index,
-      QTabBar::RightSide, label);
-    label->installEventFilter(this);
-    }
-
   pqServer* server =
     pqApplicationCore::instance()->getServerManagerModel()->findServer(
       vlayout->GetSession());
@@ -416,7 +448,8 @@ bool pqTabbedMultiViewWidget::eventFilter(QObject *obj, QEvent *evt)
 {
   // filtering events on the QLabel added as the tabButton to the tabbar to
   // close the tabs. If clicked, we close the tab.
-  if (evt->type() == QEvent::MouseButtonRelease)
+  if (evt->type() == QEvent::MouseButtonRelease &&
+    qobject_cast<QLabel*>(obj))
     {
     int index = this->Internals->TabWidget->tabButtonIndex(
       qobject_cast<QWidget*>(obj), QTabBar::RightSide);
@@ -429,6 +462,26 @@ bool pqTabbedMultiViewWidget::eventFilter(QObject *obj, QEvent *evt)
         this->createTab();
         }
       END_UNDO_SET();
+      return true;
+      }
+
+    // user clicked on the popout label. We pop the frame out (or back in).
+    index = this->Internals->TabWidget->tabButtonIndex(
+      qobject_cast<QWidget*>(obj), QTabBar::LeftSide);
+    if (index != -1)
+      {
+      // Pop out tab in a separate window.
+      pqMultiViewWidget* tabPage = qobject_cast<pqMultiViewWidget*>(
+        this->Internals->TabWidget->widget(index));
+      if (tabPage)
+        {
+        QLabel* label = qobject_cast<QLabel*>(obj);
+        bool popped_out = tabPage->togglePopout();
+        label->setPixmap(this->style()->standardPixmap(
+            pqTabWidget::popoutLabelPixmap(popped_out)));
+        label->setToolTip(pqTabWidget::popoutLabelText(popped_out));
+        label->setStatusTip(pqTabWidget::popoutLabelText(popped_out));
+        }
       return true;
       }
     }
@@ -469,6 +522,32 @@ void pqTabbedMultiViewWidget::cleanupAfterCapture()
   if (widget)
     {
     widget->cleanupAfterCapture();
+    }
+}
+
+//-----------------------------------------------------------------------------
+bool pqTabbedMultiViewWidget::writeImage(
+  const QString& filename, int dx, int dy, int quality)
+{
+  pqMultiViewWidget* widget = qobject_cast<pqMultiViewWidget*>(
+    this->Internals->TabWidget->currentWidget());
+  if (widget)
+    {
+    return widget->writeImage(filename, dx, dy, quality);
+    }
+
+  return 1;
+}
+
+
+//-----------------------------------------------------------------------------
+void pqTabbedMultiViewWidget::toggleWidgetDecoration()
+{
+  pqMultiViewWidget* widget = qobject_cast<pqMultiViewWidget*>(
+    this->Internals->TabWidget->currentWidget());
+  if (widget)
+    {
+    widget->setDecorationsVisible(!widget->isDecorationsVisible());
     }
 }
 

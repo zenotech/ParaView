@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -35,6 +35,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqActiveObjects.h"
 #include "pqDisplayColorWidget.h"
 #include "pqEditColorMapReaction.h"
+#include "pqRescaleCustomScalarRangeReaction.h"
+#include "pqRescaleVisibleScalarRangeReaction.h"
 #include "pqResetScalarRangeReaction.h"
 #include "pqScalarBarVisibilityReaction.h"
 #include "pqSetName.h"
@@ -48,6 +50,8 @@ void pqColorToolbar::constructor()
   new pqScalarBarVisibilityReaction(ui.actionScalarBarVisibility);
   new pqEditColorMapReaction(ui.actionEditColorMap);
   new pqResetScalarRangeReaction(ui.actionResetRange);
+  new pqRescaleCustomScalarRangeReaction(ui.actionRescaleCustomRange);
+  new pqRescaleVisibleScalarRangeReaction(ui.actionRescaleVisibleRange);
 
   pqDisplayColorWidget* display_color = new pqDisplayColorWidget(this)
     << pqSetName("displayColor");
@@ -55,7 +59,7 @@ void pqColorToolbar::constructor()
 
   QObject::connect(&pqActiveObjects::instance(),
     SIGNAL(representationChanged(pqDataRepresentation*)),
-    display_color, 
+    display_color,
     SLOT(setRepresentation(pqDataRepresentation*)));
 }
 

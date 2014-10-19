@@ -12,31 +12,26 @@ ELSE (ParaView_SOURCE_DIR)
 ENDIF (ParaView_SOURCE_DIR)
 
 IF(PARAVIEW_BUILD_QT_GUI)
-  INCLUDE(${QT_USE_FILE})
   INCLUDE_DIRECTORIES(${PARAVIEW_GUI_INCLUDE_DIRS})
+  IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    SET (Qt5_FIND_COMPONENTS Widgets)
+    INCLUDE (ParaViewQt5)
 
-  QT4_WRAP_CPP(MOC_SRCS
-    pqQuadView.h
-    pqQuadViewOptions.h
-    pqActiveQuadViewOptions.h
-  )
+    QT5_WRAP_CPP(MOC_SRCS
+      pqQuadView.h
+      )
+  ELSE ()
+    INCLUDE (${QT_USE_FILE})
 
-  QT4_WRAP_UI(UI_SRCS
-    pqQuadViewOptions.ui
-  )
+    QT4_WRAP_CPP(MOC_SRCS
+      pqQuadView.h
+      )
+  ENDIF ()
 
-  add_paraview_view_module(
-    VIEW1_IFACE VIEW1_IFACE_SRCS
-    VIEW_TYPE pqQuadView
-    VIEW_NAME "Quad View"
-    VIEW_XML_GROUP "views"
-    VIEW_XML_NAME "QuadView")
-
-  ADD_PARAVIEW_VIEW_OPTIONS(
-    VIEW1_OPTIONS_IFACE VIEW1_OPTIONS_IFACE_SRCS
-    VIEW_TYPE pqQuadView
-    ACTIVE_VIEW_OPTIONS pqActiveQuadViewOptions
-  )
+  add_pqproxy(VIEW1_IFACE VIEW1_IFACE_SRCS
+    TYPE pqQuadView
+    XML_GROUP "views"
+    XML_NAME "QuadView")
 
   ADD_PARAVIEW_PLUGIN(QuadView "1.0"
 
@@ -51,18 +46,13 @@ IF(PARAVIEW_BUILD_QT_GUI)
 
     GUI_INTERFACES
       ${VIEW1_IFACE}
-      ${VIEW1_OPTIONS_IFACE}
 
     GUI_SOURCES
       ${MOC_SRCS}
       ${UI_SRCS}
       ${VIEW1_IFACE_SRCS}
-      ${VIEW1_OPTIONS_IFACE_SRCS}
-      pqActiveQuadViewOptions.cxx
 
       pqQuadView.cxx
-      pqQuadViewOptions.cxx
-      pqActiveQuadViewOptions.cxx
   )
 
 ENDIF(PARAVIEW_BUILD_QT_GUI)

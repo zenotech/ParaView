@@ -35,9 +35,10 @@
 #include "vtkSMSessionObject.h"
 #include "vtkClientServerID.h" // needed for saving animation in batch script
 
+class vtkPVDataInformation;
+class vtkPVXMLElement;
 class vtkSMProperty;
 class vtkSMProxyLocator;
-class vtkPVXMLElement;
 //BTX
 struct vtkSMDomainInternals;
 //ETX
@@ -75,9 +76,12 @@ public:
   // Note that unlike the compile-time default values, the
   // application must explicitly call this method to initialize the
   // property.
+  // If \c use_unchecked_values is true, the property's unchecked values will be
+  // changed by this method.
   // Returns 1 if the domain updated the property.
   // Default implementation does nothing.
-  virtual int SetDefaultValues(vtkSMProperty*) {return 0; };
+  virtual int SetDefaultValues(vtkSMProperty*, bool vtkNotUsed(use_unchecked_values))
+    {return 0; };
 
   // Description:
   // Assigned by the XML parser. The name assigned in the XML
@@ -92,6 +96,10 @@ public:
   // values.
   vtkGetMacro(IsOptional, bool);
 
+  // Description:
+  // Provides access to the vtkSMProperty on which this domain is hooked up.
+  vtkSMProperty* GetProperty();
+
 protected:
   vtkSMDomain();
   ~vtkSMDomain();
@@ -105,8 +113,18 @@ protected:
   void SaveState(vtkPVXMLElement* parent, const char* uid);
   virtual void ChildSaveState(vtkPVXMLElement* domainElement);
 
+  // Description:
   // Load the state of the domain from the XML.
-  virtual int LoadState(vtkPVXMLElement* vtkNotUsed(domainElement), 
+  // Subclasses generally have no need to load XML state. In fact, serialization
+  // of state for domains, in general, is unnecessary for two reasons:
+  // 1. domains whose values are defined in XML will be populated from the
+  // configuration xml anyways.
+  // 2. domains whose values depend on data (at runtime) will be repopulated
+  // with data values when the XML state is loaded.
+  // The only exception to this rule is vtkSMProxyListDomain (presently).
+  // vtkSMProxyListDomain needs to try to restore proxies (with proper ids) for
+  // the domain.
+  virtual int LoadState(vtkPVXMLElement* vtkNotUsed(domainElement),
     vtkSMProxyLocator* vtkNotUsed(loader)) { return 1;  }
 
   // Description:
@@ -138,6 +156,12 @@ protected:
   void AddRequiredProperty(vtkSMProperty *prop, const char *function);
 
   // Description:
+  // Helper method to get vtkPVDataInformation from input proxy connected to the
+  // required property with the given function.
+  virtual vtkPVDataInformation* GetInputDataInformation(
+    const char* function, int index=0);
+
+  // Description:
   // When the IsOptional flag is set, IsInDomain() always returns true.
   // This is used by properties that use domains to provide information
   // (a suggestion to the gui for example) as opposed to restrict their
@@ -159,6 +183,11 @@ protected:
   // Description:
   // Gets the number of required properties added.
   unsigned int GetNumberOfRequiredProperties();
+
+  // Description:
+  // Set the domain's property. This is called by vtkSMProperty when the domain
+  // is created.
+  void SetProperty(vtkSMProperty*);
 
   char* XMLName;
   bool IsOptional;

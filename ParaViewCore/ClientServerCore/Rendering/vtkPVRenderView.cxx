@@ -57,7 +57,11 @@
 #include "vtkPVStreamingMacros.h"
 #include "vtkPVSynchronizedRenderer.h"
 #include "vtkPVSynchronizedRenderWindows.h"
+#include "vtkPVTrackballMultiRotate.h"
+#include "vtkPVTrackballRoll.h"
 #include "vtkPVTrackballRotate.h"
+#include "vtkPVTrackballRotate.h"
+#include "vtkPVTrackballZoom.h"
 #include "vtkPVTrackballZoom.h"
 #include "vtkRenderer.h"
 #include "vtkRenderViewBase.h"
@@ -67,7 +71,11 @@
 #include "vtkSelectionNode.h"
 #include "vtkSmartPointer.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
+#include "vtkTextActor.h"
+#include "vtkTextProperty.h"
+#include "vtkTextRepresentation.h"
 #include "vtkTimerLog.h"
+#include "vtkTrackballPan.h"
 #include "vtkTrackballPan.h"
 #include "vtkTrivialProducer.h"
 #include "vtkVector.h"
@@ -81,6 +89,7 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <sstream>
 
 class vtkPVRenderView::vtkInternals
 {
@@ -142,6 +151,7 @@ vtkInformationKeyRestrictedMacro(
 vtkCxxSetObjectMacro(vtkPVRenderView, LastSelection, vtkSelection);
 //----------------------------------------------------------------------------
 vtkPVRenderView::vtkPVRenderView()
+  : Annotation()
 {
   this->Internals = new vtkInternals();
   // non-reference counted, so no worries about reference loops.
@@ -180,12 +190,16 @@ vtkPVRenderView::vtkPVRenderView()
   this->InteractionMode = -1;
   this->LastSelection = NULL;
   this->UseOffscreenRenderingForScreenshots = false;
-  this->UseInteractiveRenderingForSceenshots = false;
+  this->UseInteractiveRenderingForScreenshots = false;
   this->UseOffscreenRendering = (options->GetUseOffscreenRendering() != 0);
   this->Selector = vtkPVHardwareSelector::New();
   this->PreviousParallelProjectionStatus = 0;
   this->NeedsOrderedCompositing = false;
   this->RenderEmptyImages = false;
+  this->DistributedRenderingRequired = false;
+  this->NonDistributedRenderingRequired = false;
+  this->DistributedRenderingRequiredLOD = false;
+  this->NonDistributedRenderingRequiredLOD = false;
 
   this->SynchronizedRenderers = vtkPVSynchronizedRenderer::New();
 
@@ -296,6 +310,20 @@ vtkPVRenderView::vtkPVRenderView()
   this->GetRenderer()->AddActor(this->CenterAxes);
 
   this->SetInteractionMode(INTERACTION_MODE_3D);
+
+  this->NonCompositedRenderer->AddActor(this->Annotation.GetPointer());
+  this->Annotation->SetRenderer(this->NonCompositedRenderer);
+  this->Annotation->SetText("Annotation");
+  this->Annotation->BuildRepresentation();
+  this->Annotation->SetWindowLocation(vtkTextRepresentation::UpperLeftCorner);
+  this->Annotation->GetTextActor()->SetTextScaleModeToNone();
+  this->Annotation->GetTextActor()->GetTextProperty()->SetJustificationToLeft();
+  this->Annotation->SetVisibility(0);
+  this->ShowAnnotation = false;
+
+  // We update the annotation text before the 2D renderer renders.
+  this->NonCompositedRenderer->AddObserver(
+    vtkCommand::StartEvent, this, &vtkPVRenderView::UpdateAnnotationText);
 }
 
 //----------------------------------------------------------------------------
@@ -920,6 +948,10 @@ void vtkPVRenderView::Update()
   // information during update.
   this->GeometryBounds.Reset();
 
+  // reset flags that representations set in REQUEST_UPDATE() pass.
+  this->DistributedRenderingRequired = false;
+  this->NonDistributedRenderingRequired = false;
+
   this->Superclass::Update();
 
   // After every update we can expect the representation geometries to change.
@@ -957,7 +989,8 @@ void vtkPVRenderView::Update()
 
   // Update decisions about lod-rendering and remote-rendering.
   this->UseLODForInteractiveRender = this->ShouldUseLODRendering(local_size);
-  this->UseDistributedRenderingForStillRender = this->ShouldUseDistributedRendering(local_size);
+  this->UseDistributedRenderingForStillRender =
+    this->ShouldUseDistributedRendering(local_size, /*using_lod=*/false);
   if (!this->UseLODForInteractiveRender)
     {
     this->UseDistributedRenderingForInteractiveRender =
@@ -1012,6 +1045,10 @@ void vtkPVRenderView::UpdateLOD()
     this->RequestInformation->Set(USE_OUTLINE_FOR_LOD(), 1);
     }
 
+  // reset flags that representations set in REQUEST_UPDATE_LOD() pass.
+  this->DistributedRenderingRequiredLOD = false;
+  this->NonDistributedRenderingRequiredLOD = false;
+
   this->CallProcessViewRequest(
     vtkPVView::REQUEST_UPDATE_LOD(),
     this->RequestInformation, this->ReplyInformationVector);
@@ -1021,7 +1058,7 @@ void vtkPVRenderView::UpdateLOD()
   // cout << "LOD Geometry size: " << local_size << endl;
 
   this->UseDistributedRenderingForInteractiveRender =
-    this->ShouldUseDistributedRendering(local_size);
+    this->ShouldUseDistributedRendering(local_size, /*using_lod=*/true);
 
   this->InteractiveRenderProcesses = vtkPVSession::CLIENT;
   bool in_tile_display_mode = this->InTileDisplayMode();
@@ -1117,7 +1154,8 @@ void vtkPVRenderView::Render(bool interactive, bool skip_rendering)
     this->GetUseDistributedRenderingForInteractiveRender():
     this->GetUseDistributedRenderingForStillRender();
 
-  if (this->GetUseOrderedCompositing())
+  bool use_ordered_compositing = this->GetUseOrderedCompositing();
+  if (use_ordered_compositing)
     {
     this->Internals->DeliveryManager->RedistributeDataForOrderedCompositing(
       use_lod_rendering);
@@ -1163,6 +1201,15 @@ void vtkPVRenderView::Render(bool interactive, bool skip_rendering)
     in_cave_mode ||
     (!use_distributed_rendering && in_tile_display_mode));
 
+  if (this->ShowAnnotation)
+    {
+    std::ostringstream stream;
+    stream
+      << "Mode: " << (interactive? "interactive" : "still") << "\n"
+      << "Level-of-detail: " << (use_lod_rendering? "yes" : "no") << "\n"
+      << "Remote/parallel rendering (if applicable): " << (use_distributed_rendering? "yes" : "no") << "\n";
+    this->Annotation->SetText(stream.str().c_str());
+    }
 
   // When in batch mode, we are using the same render window for all views. That
   // makes it impossible for vtkPVSynchronizedRenderWindows to identify which
@@ -1236,7 +1283,8 @@ int vtkPVRenderView::GetDataDistributionMode(bool use_remote_rendering)
 
 //----------------------------------------------------------------------------
 void vtkPVRenderView::SetPiece(vtkInformation* info,
-  vtkPVDataRepresentation* repr, vtkDataObject* data)
+  vtkPVDataRepresentation* repr, vtkDataObject* data,
+  unsigned long trueSize/*=0*/)
 {
   vtkPVRenderView* view = vtkPVRenderView::SafeDownCast(info->Get(VIEW()));
   if (!view)
@@ -1245,7 +1293,7 @@ void vtkPVRenderView::SetPiece(vtkInformation* info,
     return;
     }
 
-  view->GetDeliveryManager()->SetPiece(repr, data, false);
+  view->GetDeliveryManager()->SetPiece(repr, data, false, trueSize);
 }
 
 //----------------------------------------------------------------------------
@@ -1429,9 +1477,74 @@ vtkDataObject* vtkPVRenderView::GetCurrentStreamedPiece(
 }
 
 //----------------------------------------------------------------------------
-bool vtkPVRenderView::ShouldUseDistributedRendering(double geometry_size)
+void vtkPVRenderView::SetRequiresDistributedRendering(
+  vtkInformation* info, vtkPVDataRepresentation* vtkNotUsed(repr), bool value, bool for_lod)
 {
-  if (this->GetRemoteRenderingAvailable() == false)
+  vtkPVRenderView* self = vtkPVRenderView::SafeDownCast(info->Get(VIEW()));
+  if (!self)
+    {
+    vtkGenericWarningMacro("Missing VIEW().");
+    return;
+    }
+
+  bool &nonDistributedRenderingRequired = for_lod?
+    self->NonDistributedRenderingRequiredLOD :
+    self->NonDistributedRenderingRequired;
+
+  bool &distributedRenderingRequired = for_lod?
+    self->DistributedRenderingRequiredLOD :
+    self->DistributedRenderingRequired;
+
+  if ( (nonDistributedRenderingRequired == true && value == true) ||
+       (distributedRenderingRequired == true && value == false) )
+    {
+    vtkGenericWarningMacro(
+      "Conflicting distributed rendering requests. "
+      "Rendering may not work as expected.");
+    return;
+    }
+
+  if (value)
+    {
+    distributedRenderingRequired = true;
+    }
+  else
+    {
+    nonDistributedRenderingRequired = true;
+    }
+}
+
+//----------------------------------------------------------------------------
+bool vtkPVRenderView::ShouldUseDistributedRendering(
+  double geometry_size, bool using_lod)
+{
+  // both can never be true.
+  assert ((this->DistributedRenderingRequired && this->NonDistributedRenderingRequired) == false);
+  assert ((this->DistributedRenderingRequiredLOD && this->NonDistributedRenderingRequiredLOD)  == false);
+
+  bool remote_rendering_available = this->GetRemoteRenderingAvailable();
+
+  // First check if any representations explicitly told us to use either remote
+  // or local render. In that case, we pick accordingly without taking
+  // remote-rendering thresholds into consideration (BUG #0013749).
+  const bool &distributedRenderingRequired = using_lod?
+    this->DistributedRenderingRequiredLOD :
+    this->DistributedRenderingRequired;
+  const bool &nonDistributedRenderingRequired = using_lod?
+    this->NonDistributedRenderingRequiredLOD :
+    this->NonDistributedRenderingRequired;
+  if (distributedRenderingRequired == true && remote_rendering_available == false)
+    {
+    vtkErrorMacro("Some of the representations in this view require remote rendering "
+      "which, however, is not available. Rendering may not work as expected.");
+    }
+  else if (distributedRenderingRequired || nonDistributedRenderingRequired)
+    {
+    // implies that at least a representation requested a specific mode.
+    return distributedRenderingRequired? true : false;
+    }
+
+  if (remote_rendering_available == false)
     {
     return false;
     }
@@ -1914,36 +2027,99 @@ void vtkPVRenderView::SetStencilCapable(int val)
 //*****************************************************************
 // Forwarded to vtkPVInteractorStyle if present on local processes.
 //----------------------------------------------------------------------------
-void vtkPVRenderView::Add2DManipulator(vtkCameraManipulator* val)
+void vtkPVRenderView::SetCamera2DManipulators(const int manipulators[9])
 {
-  if (this->TwoDInteractorStyle)
+  this->SetCameraManipulators(this->TwoDInteractorStyle, manipulators);
+}
+
+//----------------------------------------------------------------------------
+void vtkPVRenderView::SetCamera3DManipulators(const int manipulators[9])
+{
+  this->SetCameraManipulators(this->ThreeDInteractorStyle, manipulators);
+}
+
+//----------------------------------------------------------------------------
+void vtkPVRenderView::SetCameraManipulators(vtkPVInteractorStyle* style, const int manipulators[9])
+{
+  if (!style)
     {
-    this->TwoDInteractorStyle->AddManipulator(val);
+    return;
+    }
+
+  style->RemoveAllManipulators();
+  enum
+    {
+    NONE=0,
+    SHIFT=1,
+    CTRL=2
+    };
+
+  enum
+    {
+    PAN=1,
+    ZOOM=2,
+    ROLL=3,
+    ROTATE=4,
+    MULTI_ROTATE=5
+    };
+
+  for (int manip=NONE; manip <=CTRL; manip++)
+    {
+    for (int button=0; button<3; button++)
+      {
+      int manipType = manipulators[3*manip + button];
+      vtkSmartPointer<vtkCameraManipulator> cameraManipulator;
+      switch (manipType)
+        {
+      case PAN:
+        cameraManipulator = vtkSmartPointer<vtkTrackballPan>::New();
+        break;
+      case ZOOM:
+        cameraManipulator = vtkSmartPointer<vtkPVTrackballZoom>::New();
+        break;
+      case ROLL:
+        cameraManipulator = vtkSmartPointer<vtkPVTrackballRoll>::New();
+        break;
+      case ROTATE:
+        cameraManipulator = vtkSmartPointer<vtkPVTrackballRotate>::New();
+        break;
+      case MULTI_ROTATE:
+        cameraManipulator = vtkSmartPointer<vtkPVTrackballMultiRotate>::New();
+        break;
+        }
+      if (cameraManipulator)
+        {
+        cameraManipulator->SetButton(button + 1); // since button starts with 1.
+        cameraManipulator->SetControl(manip == CTRL? 1 : 0);
+        cameraManipulator->SetShift(manip == SHIFT? 1 : 0);
+        style->AddManipulator(cameraManipulator);
+        }
+      }
     }
 }
 
 //----------------------------------------------------------------------------
-void vtkPVRenderView::RemoveAll2DManipulators()
+void vtkPVRenderView::SetShowAnnotation(bool val)
 {
-  if (this->TwoDInteractorStyle)
-    {
-    this->TwoDInteractorStyle->RemoveAllManipulators();
-    }
+  this->ShowAnnotation = val;
+  this->Annotation->SetVisibility(val? 1 : 0);
 }
+
 //----------------------------------------------------------------------------
-void vtkPVRenderView::Add3DManipulator(vtkCameraManipulator* val)
+void vtkPVRenderView::UpdateAnnotationText()
 {
-  if (this->ThreeDInteractorStyle)
+  if (this->ShowAnnotation)
     {
-    this->ThreeDInteractorStyle->AddManipulator(val);
+    std::ostringstream stream;
+    stream << this->Annotation->GetText();
+    this->BuildAnnotationText(stream);
+    this->Annotation->SetText(stream.str().c_str());
     }
 }
 
 //----------------------------------------------------------------------------
-void vtkPVRenderView::RemoveAll3DManipulators()
+void vtkPVRenderView::BuildAnnotationText(ostream& str)
 {
-  if (this->ThreeDInteractorStyle)
-    {
-    this->ThreeDInteractorStyle->RemoveAllManipulators();
-    }
+  double time = this->RenderView->GetRenderer()->GetLastRenderTimeInSeconds();
+  str << "Frame rate: " << (time > 0.0? 1.0/time : 100000.0) << " fps\n";
 }

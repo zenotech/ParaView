@@ -25,6 +25,8 @@
 #include "vtkSMProxy.h"
 #include "vtkPVServerManagerRenderingModule.h" // needed for export macro
 
+class vtkPVArrayInformation;
+
 class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMTransferFunctionProxy : public vtkSMProxy
 {
 public:
@@ -51,6 +53,18 @@ public:
     {
     return vtkSMTransferFunctionProxy::RescaleTransferFunction(
       proxy, range[0], range[1], extend);
+    }
+
+  // Description:
+  // Locates all representations that are currently using this transfer function
+  // and then rescales the transfer function scalar range to exactly match the
+  // combined valid scalar ranges obtained from them all.
+  virtual bool RescaleTransferFunctionToDataRange(bool extend=false);
+  static bool RescaleTransferFunctionToDataRange(vtkSMProxy* proxy, bool extend=false)
+    {
+    vtkSMTransferFunctionProxy* self =
+      vtkSMTransferFunctionProxy::SafeDownCast(proxy);
+    return self? self->RescaleTransferFunctionToDataRange(extend) : false;
     }
 
   // Description:
@@ -133,6 +147,22 @@ public:
     }
 
   // Description:
+  // Return true if the representation corresponding to the transfer function
+  // for the view is showing a Scalar-Bar (Color Legend).  Otherwise return
+  // false.
+  virtual bool IsScalarBarVisible(vtkSMProxy* view);
+
+  // Description:
+  // Safely call IsScalarBarVisible(..) after casting the proxy to the
+  // appropriate type.
+  static bool IsScalarBarVisible(vtkSMProxy* proxy, vtkSMProxy* view)
+    {
+    vtkSMTransferFunctionProxy* self =
+      vtkSMTransferFunctionProxy::SafeDownCast(proxy);
+    return self? self->IsScalarBarVisible(view) : false;
+    }
+
+  // Description:
   // Find and return the Scalar-Bar (Color Legend) representation corresponding
   // to the transfer function for the view, if any. This returns the proxy if
   // one exists, it won't create a new one.
@@ -147,6 +177,19 @@ public:
     vtkSMTransferFunctionProxy* self =
       vtkSMTransferFunctionProxy::SafeDownCast(proxy);
     return self? self->FindScalarBarRepresentation(view) : NULL;
+    }
+
+  // Description:
+  // Update component titles for all scalar bars connected to this transfer
+  // function proxy. The arrayInfo is used to determine component names, if
+  // possible.
+  virtual bool UpdateScalarBarsComponentTitle(vtkPVArrayInformation* arrayInfo);
+  static bool UpdateScalarBarsComponentTitle(vtkSMProxy* proxy,
+    vtkPVArrayInformation* arrayInfo)
+    {
+    vtkSMTransferFunctionProxy* self =
+      vtkSMTransferFunctionProxy::SafeDownCast(proxy);
+    return self? self->UpdateScalarBarsComponentTitle(arrayInfo) : false;
     }
 
 //BTX

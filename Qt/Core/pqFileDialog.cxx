@@ -1095,6 +1095,9 @@ void pqFileDialog::fileSelectionChanged()
   QString fileString;
   const QModelIndexList indices =
     this->Implementation->Ui.Files->selectionModel()->selectedIndexes();
+  const QModelIndexList rows =
+    this->Implementation->Ui.Files->selectionModel()->selectedRows();
+
   if(indices.isEmpty())
     {
     // do not change the FileName text if no selections
@@ -1114,7 +1117,7 @@ void pqFileDialog::fileSelectionChanged()
       {
       name = this->Implementation->FileFilter.data(index).toString();
       fileString += name;
-      if ( i != indices.size()-1 )
+      if ( i != rows.size()-1 )
         {
         fileString += this->Implementation->FileNamesSeperator;
         }
@@ -1153,7 +1156,7 @@ bool pqFileDialog::selectFile(const QString& f)
 {
   // We don't use QFileInfo here since it messes the paths up if the client and
   // the server are heterogeneous systems.
-  std::string unix_path = f.toAscii().data();
+  std::string unix_path = f.toLatin1().data();
   vtksys::SystemTools::ConvertToUnixSlashes(unix_path);
 
   std::string filename, dirname;

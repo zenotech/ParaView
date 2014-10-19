@@ -7,15 +7,16 @@
   All rights reserved.
   See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
 
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
+  This software is distributed WITHOUT ANY WARRANTY; without even
+  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+  PURPOSE.  See the above copyright notice for more information.
 
-=========================================================================*/
+  =========================================================================*/
 #include "vtkCPPythonScriptPipeline.h"
 
 #include "vtkCPDataDescription.h"
 #include "vtkDataObject.h"
+#include "vtkMultiProcessController.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkProcessModule.h"
@@ -24,9 +25,6 @@
 #include "vtkPythonInterpreter.h"
 #include "vtkSMObject.h"
 #include "vtkSMProxyManager.h"
-
-// for PARAVIEW_INSTALL_DIR and PARAVIEW_BINARY_DIR variables
-#include "vtkCPPythonScriptPipelineConfig.h"
 
 #include <string>
 #include <vtksys/SystemTools.hxx>
@@ -38,40 +36,16 @@ extern "C" {
 
 namespace
 {
-  //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
   void InitializePython()
-    {
+  {
     static bool initialized = false;
-    if (initialized) { return; }
+    if (initialized)
+      {
+      return;
+      }
     initialized = true;
 
-    vtkPythonInterpreter::PrependPythonPath(PARAVIEW_INSTALL_DIR "/lib");
-    vtkPythonInterpreter::PrependPythonPath(
-      PARAVIEW_INSTALL_DIR "/lib/paraview-" PARAVIEW_VERSION);
-    vtkPythonInterpreter::PrependPythonPath(
-      PARAVIEW_INSTALL_DIR "/lib/paraview-" PARAVIEW_VERSION "/site-packages");
-
-#if defined(_WIN32)
-# if defined(CMAKE_INTDIR)
-    std::string bin_dir = PARAVIEW_BINARY_DIR "/bin/" CMAKE_INTDIR;
-# else
-    std::string bin_dir = PARAVIEW_BINARY_DIR "/bin";
-# endif
-    // Also update PATH to include the bin_dir so when the DLLs for the Python
-    // modules are searched, they can located.
-    std::string cpathEnv = vtksys::SystemTools::GetEnv("PATH");
-    cpathEnv = "PATH=" + bin_dir + ";" + cpathEnv;
-    vtksys::SystemTools::PutEnv(cpathEnv.c_str());
-
-    vtkPythonInterpreter::PrependPythonPath(bin_dir.c_str());
-    vtkPythonInterpreter::PrependPythonPath(PARAVIEW_BINARY_DIR "/lib/site-packages");
-    vtkPythonInterpreter::PrependPythonPath(PARAVIEW_BINARY_DIR "/lib");
-
-#else // UNIX/OsX
-    vtkPythonInterpreter::PrependPythonPath(PARAVIEW_BINARY_DIR "/lib");
-    vtkPythonInterpreter::PrependPythonPath(PARAVIEW_BINARY_DIR "/lib/site-packages");
-#endif
- 
     // register callback to initialize modules statically. The callback is
     // empty when BUILD_SHARED_LIBS is ON.
     vtkPVInitializePythonModules();
@@ -92,7 +66,23 @@ namespace
       << "paraview.print_debug_info = f2\n"
       << "import vtkPVCatalystPython\n";
     vtkPythonInterpreter::RunSimpleString(loadPythonModules.str().c_str());
-    }
+  }
+
+//----------------------------------------------------------------------------
+  // for things like programmable filters that have a '\n' in their strings,
+  // we need to fix them to have \\n so that everything works smoothly
+  void fixEOL(std::string& str)
+  {
+    const std::string from = "\\n";
+    const std::string to = "\\\\n";
+    size_t start_pos = 0;
+    while((start_pos = str.find(from, start_pos)) != std::string::npos)
+      {
+      str.replace(start_pos, from.length(), to);
+      start_pos += to.length();
+      }
+    return;
+  }
 }
 
 vtkStandardNewMacro(vtkCPPythonScriptPipeline);
@@ -111,7 +101,17 @@ vtkCPPythonScriptPipeline::~vtkCPPythonScriptPipeline()
 //----------------------------------------------------------------------------
 int vtkCPPythonScriptPipeline::Initialize(const char* fileName)
 {
-  if(vtksys::SystemTools::FileExists(fileName) == 0)
+  // only process 0 checks if the file exists and broadcasts that information
+  // to the other processes
+  int fileExists = 0;
+  vtkMultiProcessController* controller =
+    vtkMultiProcessController::GetGlobalController();
+  if(controller->GetLocalProcessId()==0)
+    {
+    fileExists = vtksys::SystemTools::FileExists(fileName, true);
+    }
+  controller->Broadcast(&fileExists, 1, 0);
+  if(fileExists == 0)
     {
     vtkErrorMacro("Could not find file " << fileName);
     return 0;
@@ -128,10 +128,88 @@ int vtkCPPythonScriptPipeline::Initialize(const char* fileName)
   // need to save the script name as it is used as the name of the module
   this->SetPythonScriptName(fileNameName.c_str());
 
+  // only process 0 reads the actual script and then broadcasts it out
+  char* scriptText = NULL;
+  // we need to add the script path to PYTHONPATH
+  char* scriptPath = NULL;
+
+  int rank = controller->GetLocalProcessId();
+  int scriptSizes[2] = {0, 0};
+  if(rank == 0)
+    {
+    std::string line;
+    std::ifstream myfile (fileName);
+    std::string desiredString;
+    if (myfile.is_open())
+      {
+      while ( getline (myfile,line) )
+        {
+        fixEOL(line);
+        desiredString.append(line).append("\n");
+        }
+      myfile.close();
+      }
+
+    if(fileNamePath.empty())
+      {
+      fileNamePath = ".";
+      }
+    scriptSizes[0] = static_cast<int>(fileNamePath.size()+1);
+    scriptPath = new char[scriptSizes[0]];
+    memcpy(scriptPath, fileNamePath.c_str(), sizeof(char)*scriptSizes[0]);
+
+    scriptSizes[1] = static_cast<int>(desiredString.size()+1);
+    scriptText = new char[scriptSizes[1]];
+    memcpy(scriptText, desiredString.c_str(), sizeof(char)*scriptSizes[1]);
+    }
+
+  controller->Broadcast(scriptSizes, 2, 0);
+
+  if (rank != 0)
+    {
+    scriptPath = new char[scriptSizes[0]];
+    scriptText = new char[scriptSizes[1]];
+    }
+
+  controller->Broadcast(scriptPath, scriptSizes[0], 0);
+  controller->Broadcast(scriptText, scriptSizes[1], 0);
+
+  vtkPythonInterpreter::PrependPythonPath(scriptPath);
+
+  // The code below creates a module from the scriptText string.
+  // This requires the manual creation of a module object like this:
+  //
+  // import types
+  // _foo = types.ModuleType('foo')
+  // _foo.__file__ = 'foo.pyc'
+  // import sys
+  // sys.module['foo'] = _foo
+  // _source= scriptText
+  // _code = compile(_source, 'foo.py', 'exec')
+  // exec _code in _foo.__dict__
+  // del _source
+  // del _code
+  // import foo
   vtksys_ios::ostringstream loadPythonModules;
-  loadPythonModules
-    << "sys.path.append('" << fileNamePath << "')\n"
-    << "import " << fileNameName << "\n";
+  loadPythonModules << "import types" << std::endl;
+  loadPythonModules << "_" << fileNameName << " = types.ModuleType('" << fileNameName << "')" << std::endl;
+  loadPythonModules <<  "_" << fileNameName << ".__file__ = '" << fileNameName << ".pyc'" << std::endl;
+
+  loadPythonModules << "import sys" << std::endl;
+  loadPythonModules << "sys.modules['" << fileNameName << "'] = _" << fileNameName << std::endl;
+
+  loadPythonModules << "_source = \"\"\"" << std::endl;
+  loadPythonModules << scriptText;
+  loadPythonModules << "\"\"\"" << std::endl;
+
+  loadPythonModules << "_code = compile(_source, \"" << fileNameName << ".py\", \"exec\")" << std::endl;
+  loadPythonModules << "exec _code in _" << fileNameName << ".__dict__" << std::endl;
+  loadPythonModules << "del _source" << std::endl;
+  loadPythonModules << "del _code" << std::endl;
+  loadPythonModules << "import " << fileNameName << std::endl;
+
+  delete[] scriptPath;
+  delete[] scriptText;
 
   vtkPythonInterpreter::RunSimpleString(loadPythonModules.str().c_str());
   return 1;
@@ -188,6 +266,21 @@ int vtkCPPythonScriptPipeline::CoProcess(
 }
 
 //----------------------------------------------------------------------------
+int vtkCPPythonScriptPipeline::Finalize()
+{
+  InitializePython();
+
+  vtksys_ios::ostringstream pythonInput;
+  pythonInput
+    << "if hasattr(" << this->PythonScriptName << ", 'Finalize'):\n"
+    << "  " << this->PythonScriptName << ".Finalize()\n";
+
+  vtkPythonInterpreter::RunSimpleString(pythonInput.str().c_str());
+
+  return 1;
+}
+
+//----------------------------------------------------------------------------
 vtkStdString vtkCPPythonScriptPipeline::GetPythonAddress(void* pointer)
 {
   char addressOfPointer[1024];
@@ -197,7 +290,7 @@ vtkStdString vtkCPPythonScriptPipeline::GetPythonAddress(void* pointer)
   sprintf(addressOfPointer, "%p", pointer);
 #endif
   char *aplus = addressOfPointer;
-  if ((addressOfPointer[0] == '0') && 
+  if ((addressOfPointer[0] == '0') &&
       ((addressOfPointer[1] == 'x') || addressOfPointer[1] == 'X'))
     {
     aplus += 2; //skip over "0x"

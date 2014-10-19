@@ -180,7 +180,9 @@ void pqMultiBlockInspectorPanel::setRepresentation(pqRepresentation *representat
     {
     this->BlockVisibilites.clear();
     this->BlockColors.clear();
+    this->TreeWidget->blockSignals(true);
     this->TreeWidget->clear();
+    this->TreeWidget->blockSignals(false);
     }
 }
 
@@ -222,6 +224,10 @@ void pqMultiBlockInspectorPanel::buildTree(vtkPVCompositeDataInformation *info,
         {
         this->buildTree(compositeChildInfo, item, flatIndex);
         }
+      }
+    else
+      {
+      item->setDisabled(true);
       }
     }
 }

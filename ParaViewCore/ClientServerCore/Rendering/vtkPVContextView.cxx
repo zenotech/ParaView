@@ -14,7 +14,10 @@
 =========================================================================*/
 #include "vtkPVContextView.h"
 
+#include "vtkAnnotationLink.h"
 #include "vtkCamera.h"
+#include "vtkChart.h"
+#include "vtkChartRepresentation.h"
 #include "vtkCommand.h"
 #include "vtkContextInteractorStyle.h"
 #include "vtkContextView.h"
@@ -29,7 +32,8 @@
 #include "vtkRenderer.h"
 #include "vtkRenderWindow.h"
 #include "vtkRenderWindowInteractor.h"
-#include "vtkSmartPointer.h"
+#include "vtkScatterPlotMatrix.h"
+#include "vtkSelection.h"
 #include "vtkTileDisplayHelper.h"
 #include "vtkTilesHelper.h"
 #include "vtkTimerLog.h"
@@ -141,11 +145,11 @@ void vtkPVContextView::Update()
 
     if (s_controller)
       {
-      s_controller->Send(stream, 1, 9998878);
+      s_controller->Send(stream, 1, 998878);
       }
     if (d_controller)
       {
-      d_controller->Send(stream, 1, 9998878);
+      d_controller->Send(stream, 1, 998878);
       }
     if (p_controller)
       {
@@ -156,11 +160,11 @@ void vtkPVContextView::Update()
     {
     if (s_controller)
       {
-      s_controller->Receive(stream, 1, 9998878);
+      s_controller->Receive(stream, 1, 998878);
       }
     if (d_controller)
       {
-      d_controller->Receive(stream, 1, 9998878);
+      d_controller->Receive(stream, 1, 998878);
       }
     if (p_controller)
       {
@@ -211,6 +215,13 @@ void vtkPVContextView::Render(bool vtkNotUsed(interactive))
  if (this->SynchronizedWindows->GetLocalProcessIsDriver() ||
    this->InTileDisplayMode())
    {
+   vtkTimerLog::MarkStartEvent("vtkPVContextView::PrepareForRender");
+   // on rendering-nodes call Render-pass so that representations can update the
+   // vtk-charts as needed.
+   this->CallProcessViewRequest(vtkPVView::REQUEST_RENDER(),
+     this->RequestInformation, this->ReplyInformationVector);
+   vtkTimerLog::MarkEndEvent("vtkPVContextView::PrepareForRender");
+
    this->ContextView->Render();
    }
  this->SynchronizedWindows->SetEnabled(false);
@@ -269,6 +280,69 @@ void vtkPVContextView::OnEndRender()
 
   vtkTileDisplayHelper::GetInstance()->FlushTiles(this->Identifier,
     this->ContextView->GetRenderer()->GetActiveCamera()->GetLeftEye());
+}
+
+//----------------------------------------------------------------------------
+template <class T>
+vtkSelection* vtkPVContextView::GetSelectionImplementation(T* chart)
+{
+  if (vtkSelection* selection = chart->GetAnnotationLink()->GetCurrentSelection())
+    {
+    if (this->SelectionClone == NULL ||
+      this->SelectionClone->GetMTime() < selection->GetMTime() ||
+      this->SelectionClone->GetMTime() < chart->GetAnnotationLink()->GetMTime())
+      {
+      // we need to treat vtkSelection obtained from vtkAnnotationLink as
+      // constant and not modify it. Hence, we create a clone.
+      this->SelectionClone = vtkSmartPointer<vtkSelection>::New();
+      this->SelectionClone->ShallowCopy(selection);
+
+      // Allow the view to transform the selection as appropriate since the raw
+      // selection created by the VTK view is on the "transformed" data put in
+      // the view and not original input data.
+      if (this->MapSelectionToInput(this->SelectionClone) == false)
+        {
+        this->SelectionClone->Initialize();
+        }
+      }
+    return this->SelectionClone;
+    }
+  this->SelectionClone = NULL;
+  return NULL;
+}
+
+//----------------------------------------------------------------------------
+vtkSelection* vtkPVContextView::GetSelection()
+{
+  if (vtkChart *chart = vtkChart::SafeDownCast(this->GetContextItem()))
+    {
+    return this->GetSelectionImplementation(chart);
+    }
+  else if (vtkScatterPlotMatrix* schart = vtkScatterPlotMatrix::SafeDownCast(this->GetContextItem()))
+    {
+    return this->GetSelectionImplementation(schart);
+    }
+
+  vtkWarningMacro("Unsupported context item type.");
+  this->SelectionClone = NULL;
+  return NULL;
+}
+
+//----------------------------------------------------------------------------
+bool vtkPVContextView::MapSelectionToInput(vtkSelection* sel)
+{
+  for (int cc = 0, max = this->GetNumberOfRepresentations(); cc < max; cc++)
+    {
+    vtkChartRepresentation* repr = vtkChartRepresentation::SafeDownCast(
+      this->GetRepresentation(cc));
+    if (repr && repr->GetVisibility() && repr->MapSelectionToInput(sel))
+      {
+      return true;
+      }
+    }
+  // error! we cannot have  a selection created in the view, there's no visible
+  // representation!
+  return false;
 }
 
 //----------------------------------------------------------------------------

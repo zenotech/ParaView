@@ -75,13 +75,18 @@
 #   # that the executable links against. Otherwise, for sake of simplicity no
 #   # extra library is created.
 #   MAKE_INITIALIZER_LIBRARY
-#   
-#   # Optional to specify the installation prefix for all the binaries.
-#   # "bin" is used if none is specified.
+#
+#   # Optionally specify install destinations.  See CMake install() command
+#   # documentation for meaning of RUNTIME, LIBRARY, ARCHIVE, and BUNDLE.
+#   INSTALL_RUNTIME_DIR "bin"
+#   INSTALL_LIBRARY_DIR "lib/<appname>-<major>.<minor>"
+#   INSTALL_ARCHIVE_DIR "lib/<appname>-<major>.<minor>"
+#   INSTALL_BUNDLE_DIR  "bin" # default is the INSTALL_RUNTIME_DIR
+#
+#   # Deprecated.  Use INSTALL_RUNTIME_DIR and INSTALL_BUNDLE_DIR instead.
 #   INSTALL_BIN_DIR "bin"
 #
-#   # Optional to specify the installation prefix for all the libraries.
-#   # "lib/appname-major.minor" is used if none is specified (on windows "bin" is used").
+#   # Deprecated.  Use INSTALL_LIBRARY_DIR and INSTALL_ARCHIVE_DIR instead.
 #   INSTALL_LIB_DIR "lib"
 #   )
 # 
@@ -90,7 +95,7 @@ include(vtkForwardingExecutable)
 
 FUNCTION(build_paraview_client BPC_NAME)
   PV_PARSE_ARGUMENTS(BPC 
-    "APPLICATION_NAME;TITLE;ORGANIZATION;SPLASH_IMAGE;VERSION_MAJOR;VERSION_MINOR;VERSION_PATCH;BUNDLE_ICON;APPLICATION_ICON;REQUIRED_PLUGINS;OPTIONAL_PLUGINS;PVMAIN_WINDOW;PVMAIN_WINDOW_INCLUDE;EXTRA_DEPENDENCIES;GUI_CONFIGURATION_XMLS;COMPRESSED_HELP_FILE;SOURCES;INSTALL_BIN_DIR;INSTALL_LIB_DIR"
+    "APPLICATION_NAME;TITLE;ORGANIZATION;SPLASH_IMAGE;VERSION_MAJOR;VERSION_MINOR;VERSION_PATCH;BUNDLE_ICON;APPLICATION_ICON;REQUIRED_PLUGINS;OPTIONAL_PLUGINS;PVMAIN_WINDOW;PVMAIN_WINDOW_INCLUDE;EXTRA_DEPENDENCIES;GUI_CONFIGURATION_XMLS;COMPRESSED_HELP_FILE;SOURCES;INSTALL_RUNTIME_DIR;INSTALL_LIBRARY_DIR;INSTALL_ARCHIVE_DIR;INSTALL_BUNDLE_DIR;INSTALL_BIN_DIR;INSTALL_LIB_DIR"
     "MAKE_INITIALIZER_LIBRARY"
     ${ARGN}
     )
@@ -105,13 +110,21 @@ FUNCTION(build_paraview_client BPC_NAME)
   pv_set_if_not_set(BPC_TITLE "${BPC_NAME}")
   pv_set_if_not_set(BPC_APPLICATION_NAME "${BPC_NAME}")
   pv_set_if_not_set(BPC_ORGANIZATION "Humanity")
-  pv_set_if_not_set(BPC_INSTALL_BIN_DIR "bin")
-  IF (WIN32)
-    pv_set_if_not_set(BPC_INSTALL_LIB_DIR "bin")
-  ELSE (WIN32)
-    pv_set_if_not_set(BPC_INSTALL_LIB_DIR
+  if(NOT DEFINED BPC_INSTALL_RUNTIME_DIR AND DEFINED BPC_INSTALL_BIN_DIR)
+    set(BPC_INSTALL_RUNTIME_DIR "${BPC_INSTALL_BIN_DIR}")
+  endif()
+  if(NOT DEFINED BPC_INSTALL_LIBRARY_DIR AND DEFINED BPC_INSTALL_LIB_DIR)
+    set(BPC_INSTALL_LIBRARY_DIR "${BPC_INSTALL_LIB_DIR}")
+  endif()
+  if(NOT DEFINED BPC_INSTALL_BUNDLE_DIR AND DEFINED BPC_INSTALL_BIN_DIR)
+    set(BPC_INSTALL_BUNDLE_DIR "${BPC_INSTALL_BIN_DIR}")
+  endif()
+  pv_set_if_not_set(BPC_INSTALL_RUNTIME_DIR "bin")
+  pv_set_if_not_set(BPC_INSTALL_LIBRARY_DIR
       "lib/${BPC_NAME}-${BPC_VERSION_MAJOR}.${BPC_VERSION_MINOR}")
-  ENDIF (WIN32)
+  pv_set_if_not_set(BPC_INSTALL_ARCHIVE_DIR
+      "lib/${BPC_NAME}-${BPC_VERSION_MAJOR}.${BPC_VERSION_MINOR}")
+  pv_set_if_not_set(BPC_INSTALL_BUNDLE_DIR "${BPC_INSTALL_RUNTIME_DIR}")
 
   SET (branding_source_dir "${ParaView_CMAKE_DIR}")
 
@@ -120,7 +133,7 @@ FUNCTION(build_paraview_client BPC_NAME)
     FILE (WRITE "${CMAKE_CURRENT_BINARY_DIR}/Icon.rc"
       "// Icon with lowest ID value placed first to ensure application icon\n"
       "// remains consistent on all systems.\n"
-      "IDI_ICON1 ICON \"@BPC_APPLICATION_ICON@\"")
+      "IDI_ICON1 ICON \"${BPC_APPLICATION_ICON}\"")
     SET(exe_icon "${CMAKE_CURRENT_BINARY_DIR}/Icon.rc")
   ENDIF (WIN32 AND BPC_APPLICATION_ICON)
 
@@ -221,10 +234,16 @@ FUNCTION(build_paraview_client BPC_NAME)
     set (ui_resource_init
       "${ui_resource_init}  Q_INIT_RESOURCE(${BPC_NAME}_help);\n")
   ENDIF (BPC_COMPRESSED_HELP_FILE)
-  
-  QT4_ADD_RESOURCES(rcs_sources
-    ${ui_resources}
-    )
+
+  IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    QT5_ADD_RESOURCES(rcs_sources
+      ${ui_resources}
+      )
+  ELSE ()
+    QT4_ADD_RESOURCES(rcs_sources
+      ${ui_resources}
+      )
+  ENDIF ()
 
   SOURCE_GROUP("Resources" FILES
     ${ui_resources}
@@ -255,9 +274,11 @@ FUNCTION(build_paraview_client BPC_NAME)
                 )
     SET (EXE_SRCS)
     TARGET_LINK_LIBRARIES(pq${BPC_NAME}Initializer
-      pqApplicationComponents
-      ${QT_QTMAIN_LIBRARY}
-      ${BPC_EXTRA_DEPENDENCIES}
+      LINK_PRIVATE
+        pqApplicationComponents
+        vtkPVServerManagerApplication
+        ${QT_QTMAIN_LIBRARY}
+        ${BPC_EXTRA_DEPENDENCIES}
       )
 
     IF (PV_INSTALL_LIB_DIR)
@@ -273,7 +294,7 @@ FUNCTION(build_paraview_client BPC_NAME)
   vtk_add_executable_with_forwarding2(pv_exe_suffix
                  "${PARAVIEW_LIBRARY_DIRS}"
                  "../${PARAVIEW_INSTALL_LIB_DIR}"
-                 "${BPC_INSTALL_LIB_DIR}"
+                 "${BPC_INSTALL_LIBRARY_DIR}"
                  ${BPC_NAME}
                  ${executable_flags}
                  ${BPC_NAME}_main.cxx
@@ -282,23 +303,29 @@ FUNCTION(build_paraview_client BPC_NAME)
                  ${EXE_SRCS}
                  )
   TARGET_LINK_LIBRARIES(${BPC_NAME}
-    pqApplicationComponents
-    ${QT_QTMAIN_LIBRARY}
-    ${BPC_EXTRA_DEPENDENCIES}
+      LINK_PRIVATE
+        pqApplicationComponents
+        vtkPVServerManagerApplication
+        ${QT_QTMAIN_LIBRARY}
+        ${BPC_EXTRA_DEPENDENCIES}
     )
 
   IF (BPC_MAKE_INITIALIZER_LIBRARY)
     TARGET_LINK_LIBRARIES(${BPC_NAME}
-      pq${BPC_NAME}Initializer)
+      LINK_PRIVATE
+        pq${BPC_NAME}Initializer)
   ENDIF (BPC_MAKE_INITIALIZER_LIBRARY)
 
   if (pv_exe_suffix)
     install(TARGETS ${BPC_NAME}
-            DESTINATION ${BPC_INSTALL_LIB_DIR}
+            RUNTIME DESTINATION "${BPC_INSTALL_LIBRARY_DIR}"
             COMPONENT Runtime)
   endif()
   install(TARGETS ${BPC_NAME}${pv_exe_suffix}
-          DESTINATION ${BPC_INSTALL_BIN_DIR}
+          RUNTIME DESTINATION "${BPC_INSTALL_RUNTIME_DIR}"
+          LIBRARY DESTINATION "${BPC_INSTALL_LIBRARY_DIR}"
+          ARCHIVE DESTINATION "${BPC_INSTALL_ARCHIVE_DIR}"
+          BUNDLE DESTINATION  "${BPC_INSTALL_BUNDLE_DIR}"
           COMPONENT Runtime)
 
   IF (APPLE)
@@ -309,4 +336,9 @@ FUNCTION(build_paraview_client BPC_NAME)
     SET_TARGET_PROPERTIES(${BPC_NAME} PROPERTIES 
       MACOSX_BUNDLE_BUNDLE_NAME "${BPC_APPLICATION_NAME}")
   ENDIF (APPLE)
+
+  IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    SET_TARGET_PROPERTIES(${BPC_NAME} PROPERTIES
+      COMPILE_FLAGS "${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
+  ENDIF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
 ENDFUNCTION(build_paraview_client)
