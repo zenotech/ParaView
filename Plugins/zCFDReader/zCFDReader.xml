@@ -9,6 +9,7 @@
                      reads zCFD data files and outputs multi-block
                      datasets. Mesh information and time dependent data are
                      supported. </Documentation>
+                     
       <StringVectorProperty animateable="0"
                             command="SetFileName"
                             name="FileName"
@@ -18,6 +19,17 @@
         <Documentation>This property specifies the file name for the
         reader.</Documentation>
       </StringVectorProperty>
+      
+       <StringVectorProperty animateable="0"
+                            command="SetCaseName"
+                            name="PCaseName"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <FileListDomain name="files" />
+        <Documentation>This property specifies the case name for the
+        reader.</Documentation>
+      </StringVectorProperty>
+     
       <Property animateable="0"
                 command="SetRefresh"
                 name="Refresh">

@@ -24,8 +24,11 @@
 // This class was developed by Takuya Oshima at Niigata University,
 // Japan (oshima@eng.niigata-u.ac.jp).
 
-#ifndef __vtkPOpenFOAMReader_h
-#define __vtkPOpenFOAMReader_h
+#ifndef __vtkzCFDReader_h
+#define __vtkzCFDReader_h
+
+#include <map>
+#include <set>
 
 //#include "vtkOpenFOAMReader.h"
 #include "vtkPolyDataAlgorithm.h"
@@ -38,6 +41,7 @@ class vtkMultiProcessController;
 class vtkzCFDReader : public vtkMultiBlockDataSetAlgorithm
 {
 public:
+
   //ETX
   static vtkzCFDReader *New();
   vtkTypeMacro(vtkzCFDReader, vtkMultiBlockDataSetAlgorithm);
@@ -50,6 +54,9 @@ public:
   //vtkGetMacro(CaseType, caseType);
   vtkSetStringMacro(FileName);
   vtkGetStringMacro(FileName);
+
+  vtkSetStringMacro(CaseName);
+  vtkGetStringMacro(CaseName);
 
 
   void SetRefresh() { this->Refresh = true; this->Modified(); }
@@ -84,6 +91,8 @@ protected:
   vtkzCFDReader();
   ~vtkzCFDReader();
 
+  void ReadPython(std::map<int,std::string> &zoneToBc);
+
   int RequestInformation(vtkInformation *, vtkInformationVector **,
     vtkInformationVector *);
   int RequestData(vtkInformation *, vtkInformationVector **,
@@ -107,16 +116,16 @@ private:
   int ProcessId;
 
   char *FileName;
+  char *CaseName;
   vtkStdString *FileNameOld;
 
   vtkStdString *ProblemName;
-  vtkStdString *CaseName;
 
   // refresh flag
   bool Refresh;
 
   vtkDataArraySelection *ZoneDataArraySelection;
-
+  std::map<int,std::set<int> > selectionToZone;
 
   vtkzCFDReader(const vtkzCFDReader &); // Not implemented.
   void operator=(const vtkzCFDReader &); // Not implemented.
