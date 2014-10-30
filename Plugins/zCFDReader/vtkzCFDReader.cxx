@@ -332,7 +332,10 @@ int vtkzCFDReader::RequestInformation(vtkInformation *vtkNotUsed(request),
     int numZones = zone.size();
     for(std::set<int>::iterator it = zone.begin(); it != zone.end(); ++it)
     {
-      this->ZoneDataArraySelection->AddArray(("Zone "+std::to_string(*it)).c_str());
+      char buf[1024];
+      std::sprintf(buf, "%d", *it);
+      //this->ZoneDataArraySelection->AddArray(("Zone "+std::to_string(*it)).c_str());
+      this->ZoneDataArraySelection->AddArray(("Zone "+std::string(buf)).c_str());
       selectionToZone[count].insert(*it);
       count++;
     }
