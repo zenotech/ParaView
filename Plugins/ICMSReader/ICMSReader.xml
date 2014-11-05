@@ -19,7 +19,7 @@
  
       <Hints>
         <ReaderFactory extensions="icms"
-                       file_description="Example File Format" />
+                       file_description="ICMS (.icms) Files" />
      </Hints>
     </SourceProxy>
     <!-- End Reader -->

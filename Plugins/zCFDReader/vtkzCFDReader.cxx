@@ -85,7 +85,34 @@ namespace detail
     return name;
   }
 
+  /** Cell type encoder
+   *  The first five bits are used to encode the fundamental cell type
+   *  The next 11bits encode the number of faces (max 2047 faces)
+   *  The remaining bits encode the order
+   */
+  struct CellType
+  {
+    enum{
+      TETRA=0x1,PRISM=0x2,PYRA=0x4,HEX=0x8,POLY=0x10,
+      NUM_TYPE=0x5,TYPE_MASK=0x1F,NUM_FACE_MASK=0x7FF
+    };
 
+    static int getType(int cellType)
+    {
+      return cellType & TYPE_MASK;
+    }
+
+    static int getNumFaces(int cellType)
+    {
+      return ( cellType >> NUM_TYPE ) & NUM_FACE_MASK;
+    }
+
+    static int encode(int cellType, int numFaces)
+    {
+      return (numFaces << 5) + cellType;
+    }
+
+  };
 
 }
 
@@ -573,7 +600,7 @@ int vtkzCFDReader::RequestData(vtkInformation *vtkNotUsed(request),
 
   // Read request zones
   hdf::HDFFile<> file(this->FileName);
-  boost::shared_ptr<hdf::HDFGroup<> > meshg = file.openGroup("mesh",true);
+  boost::shared_ptr<hdf::HDFGroup<> > meshg = file.openGroup("mesh",false);
   int totalNumFaces, totalNumCells;
 
   meshg->openAttribute("numFaces")->readData(totalNumFaces);
@@ -609,6 +636,77 @@ int vtkzCFDReader::RequestData(vtkInformation *vtkNotUsed(request),
 
   std::vector<double> vertex;
   meshg->openDataset("nodeVertex")->readData(vertex);
+
+  std::vector<int> faceCell(numAllFaces*2);
+  meshg->openDataset("faceCell")->readData(faceCell);
+
+  std::vector<int> cellType(totalNumCells);
+  // Check for cellFace
+  try
+  {
+    meshg->openDataset("cellType")->readData(cellType);
+  }
+  catch(...)
+  {
+    std::cout << "zCFDReader: cellType missing. Treating all cells as polyhedral " << std::endl;
+    std::vector<hsize_t> dimsf(1);
+    dimsf[0] = totalNumCells;
+    hdf::Slab<1> filespace(dimsf);
+    boost::shared_ptr<hdf::HDFDataSet<> > dataset
+      = meshg->createDataset<int>("cellType", filespace);
+
+    //Read cell face
+    std::vector<int> cellFaceCount(totalNumCells,0);
+    for(int i=0;i<numAllFaces;++i)
+    {
+      int left = faceCell[i*2];
+      int right = faceCell[i*2 + 1];
+      if(left < totalNumCells)
+        cellFaceCount[left]++;
+      if(right < totalNumCells)
+        cellFaceCount[right]++;
+    }
+    for(int i=0;i<totalNumCells;++i)
+    {
+      cellType[i] = detail::CellType::encode(detail::CellType::POLY,cellFaceCount[i]);
+    }
+    dataset->writeData(cellType);
+  }
+  std::vector<int> cellFacePtr(totalNumCells+1,0);
+  for(int i=0;i<totalNumCells;++i)
+  {
+    cellFacePtr[i+1] = cellFacePtr[i] + detail::CellType::getNumFaces(cellType[i]);
+  }
+  std::vector<int> cellFace(cellFacePtr[totalNumCells]);
+  try
+  {
+    meshg->openDataset("cellFace")->readData(cellFace);
+  }
+  catch(...)
+  {
+    // Need to create cellFaces
+    std::cout << "zCFDReader: Creating cell face information " << std::endl;
+    std::vector<hsize_t> dimsf(1);
+    dimsf[0] = cellFace.size();
+    hdf::Slab<1> filespace(dimsf);
+    boost::shared_ptr<hdf::HDFDataSet<> > dataset
+      = meshg->createDataset<int>("cellFace", filespace);
+
+    std::vector<int> count(totalNumCells,0);
+    for(int i = 0; i < numAllFaces; ++i)
+    {
+      for(int j = 0; j < 2; ++j)
+      {
+        int c = faceCell[i*2 + j];
+        if(c < totalNumCells)
+        {
+          cellFace[cellFacePtr[c]+count[c]] = i;
+          count[c]++;
+        }
+      }
+    }
+    dataset->writeData(cellFace);
+  }
 
   for(int i=0;i<GetNumberOfSelectionArrays(ZoneDataArraySelection);++i)
   {
@@ -662,7 +760,6 @@ int vtkzCFDReader::RequestData(vtkInformation *vtkNotUsed(request),
 
         for (int j = start; j < end; ++j)
         {
-
           int n = faceNodes[j];
           int mapIndex = -1;
           if (nodeMap[n] == -1)
@@ -692,7 +789,6 @@ int vtkzCFDReader::RequestData(vtkInformation *vtkNotUsed(request),
         float va = z;
         var->InsertTuple(faceCount,&va);
         faceCount++;
-
       }
 
       polyData->GetCellData()->SetActiveScalars("zone");
@@ -726,6 +822,68 @@ int vtkzCFDReader::RequestData(vtkInformation *vtkNotUsed(request),
       output->GetMetaData(blockI)->Set(vtkCompositeDataSet::NAME(), name.c_str());
       //polyData->Delete();
 
+    }
+    else if(name == "interior" && GetSelectionArrayStatus(ZoneDataArraySelection,name.c_str()))
+    {
+      // Add interior
+      vtkSmartPointer<vtkUnstructuredGrid> uGrid = vtkSmartPointer<
+          vtkUnstructuredGrid>::New();
+      uGrid->Allocate(totalNumCells);
+
+      for(int i = 0; i < totalNumCells; ++i)
+      {
+        std::set<vtkIdType> cellNodeList;
+        std::vector<vtkIdType> faceStream;
+
+        int start = cellFacePtr[i];
+        int end  = cellFacePtr[i+1];
+
+        for(int f = start; f < end; ++f)
+        {
+          int face = cellFace[f];
+          int z = zoneInfo[face*2];
+
+          int start = faceTypeGobalPtr[face];
+          int end   = faceTypeGobalPtr[face+1];
+          int numPts = end - start;
+          assert(numPts < 100);
+          faceStream.push_back(numPts);
+
+          for (int j = start; j < end; ++j)
+          {
+            int n = faceNodes[j];
+            cellNodeList.insert(n);
+            faceStream.push_back(n);
+          }
+        }
+        std::vector<vtkIdType> cNodeList(cellNodeList.begin(),
+            cellNodeList.end());
+        vtkIdType nFaces = end - start;
+        vtkIdType nNodes = cNodeList.size();
+
+        uGrid->InsertNextCell(VTK_POLYHEDRON, nNodes, &cNodeList[0], nFaces,
+            &faceStream[0]);
+      }
+
+      vtkSmartPointer<vtkPoints> newPts = vtkSmartPointer<vtkPoints>::New();
+      newPts->SetNumberOfPoints(vertex.size());
+
+      float xyz[3];
+      for (int v = 0; v < 3; ++v)
+        xyz[v] = 0.0;
+
+      for (int i = 0; i < vertex.size()/3; ++i)
+      {
+        for (int v = 0; v < 3; ++v)
+          xyz[v] = vertex[i*3+v];
+
+        newPts->InsertPoint(i, xyz[0], xyz[1], xyz[2]);
+      }
+      uGrid->SetPoints(newPts);
+
+      const int blockI = output->GetNumberOfBlocks();
+      output->SetBlock(blockI, uGrid);
+      output->GetMetaData(blockI)->Set(vtkCompositeDataSet::NAME(), name.c_str());
     }
   }
 

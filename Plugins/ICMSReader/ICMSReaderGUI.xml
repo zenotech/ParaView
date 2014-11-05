@@ -1,5 +1,0 @@
-<ParaViewReaders>
-  <Reader name="ICMSReader" extensions="icms"
-	  file_description="Example (.icms) Files">
-  </Reader>
-</ParaViewReaders>
