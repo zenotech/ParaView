@@ -128,6 +128,7 @@ vtkzCFDReader::vtkzCFDReader()
 {
 
   this->ZoneDataArraySelection = vtkDataArraySelection::New();
+  this->CellDataArraySelection = vtkDataArraySelection::New();
 
   this->FileName = NULL;
   this->CaseFileName = NULL;
