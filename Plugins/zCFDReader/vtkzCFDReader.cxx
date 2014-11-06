@@ -32,6 +32,10 @@
 #include <vtkPolyData.h>
 #include <vtkSmartPointer.h>
 
+#include <vtksys/SystemTools.hxx>
+
+#include <vtk_jsoncpp.h>
+
 #include <hdf5/hdffile.hpp>
 #include <hdf5/hdfdataset.hpp>
 
@@ -126,9 +130,10 @@ vtkzCFDReader::vtkzCFDReader()
   this->ZoneDataArraySelection = vtkDataArraySelection::New();
 
   this->FileName = NULL;
+  this->CaseFileName = NULL;
   this->FileNameOld = new vtkStdString;
   this->ProblemName = new vtkStdString;
-  this->CaseName = NULL;
+  this->CaseName = new vtkStdString;
 
   this->Refresh = false;
 
@@ -163,6 +168,9 @@ vtkzCFDReader::~vtkzCFDReader()
 {
   delete this->FileNameOld;
 
+  delete this->ProblemName;
+  delete this->CaseName;
+
   this->ZoneDataArraySelection->Delete();
 
   this->SetController(NULL);
@@ -195,6 +203,10 @@ void vtkzCFDReader::SetCaseType(const int t)
 
 void vtkzCFDReader::ReadPython(std::map<int,std::string> &zoneToBc)
 {
+
+
+  std::cout << "Reading Case File " <<  *CaseName << std::endl;
+
   using namespace boost::python;
 
   //Initialize python
@@ -204,7 +216,7 @@ void vtkzCFDReader::ReadPython(std::map<int,std::string> &zoneToBc)
   object main_module = import("__main__");
   object main_namespace = main_module.attr("__dict__");
 
-  exec_file(CaseName, main_namespace, main_namespace);
+  exec_file( (const char *)(*CaseName), main_namespace, main_namespace);
 
   extract<dict> cppdict_ext(main_namespace["parameters"]);
 
@@ -252,6 +264,89 @@ void vtkzCFDReader::ReadPython(std::map<int,std::string> &zoneToBc)
 
 }
 
+bool vtkzCFDReader::ReadStatusFile(const char *fileName)
+{
+  std::string status;
+
+  std::string settingsFileName(fileName);
+  std::ifstream settingsFile(settingsFileName.c_str(), ios::in | ios::binary | ios::ate);
+  vtkDebugMacro("Attempting to load settings file '" << fileName << "'");
+  if (settingsFile.is_open())
+    {
+    std::streampos size = settingsFile.tellg();
+    settingsFile.seekg(0, ios::beg);
+    int stringSize = size;
+    char * settingsString = new char[stringSize+1];
+    settingsFile.read(settingsString, stringSize);
+    settingsString[stringSize] = '\0';
+    settingsFile.close();
+
+    status = settingsString;
+
+    delete[] settingsString;
+    }
+  std::cout << status << std::endl;
+
+  // Parse the user settings
+  Json::Reader reader;
+  Json::Value val;
+  bool success = reader.parse(status, val, false);
+
+  if(val.isMember("num processor"))
+  {
+    std::cout << val.get("num processor",Json::Value(0)) << std::endl;
+  }
+  bool problemNameSet=false;
+  if(val.isMember("problem"))
+  {
+
+    std::cout << val.get("problem",Json::Value("UNKNOWN")) << std::endl;
+
+    *this->ProblemName = vtksys::SystemTools::GetFilenamePath(fileName) + "/";
+
+    *this->ProblemName += vtkStdString(val.get("problem",Json::Value("UNKNOWN")).asString());
+
+
+    std::cout << "Problem Name: " << *this->ProblemName << std::endl;
+
+    if(!vtksys::SystemTools::FileExists(*this->ProblemName))
+    {
+      *this->ProblemName += ".h5";
+      problemNameSet = vtksys::SystemTools::FileExists(*this->ProblemName);
+    }
+    else
+      problemNameSet=true;
+  }
+
+  if(val.isMember("case"))
+  {
+    *this->CaseName = vtksys::SystemTools::GetFilenamePath(fileName) + "/";
+
+    *this->CaseName += vtkStdString(val.get("case",Json::Value("UNKNOWN")).asString());
+
+
+    std::cout << "Case Name: " << *this->CaseName << std::endl;
+
+    if(!vtksys::SystemTools::FileExists(*this->CaseName))
+    {
+      *this->CaseName += ".py";
+      if(!vtksys::SystemTools::FileExists(*this->CaseName))
+      {
+        *this->CaseName = "";
+      }
+    }
+
+  }
+
+/*
+  for(Json::Value::iterator itr = val.begin(); itr != val.end(); ++itr)
+  {
+    std::cout << *itr << std::endl;
+  }
+*/
+  return problemNameSet;
+}
+
 int vtkzCFDReader::RequestInformation(vtkInformation *vtkNotUsed(request),
     vtkInformationVector **vtkNotUsed(inputVector), vtkInformationVector *outputVector)
 {
@@ -276,24 +371,44 @@ int vtkzCFDReader::RequestInformation(vtkInformation *vtkNotUsed(request),
     *this->FileNameOld = vtkStdString(this->FileName);
 
     // Check if h5 or status file
+    std::string extension = vtksys::SystemTools::GetFilenameLastExtension(this->FileName);
 
-    if(CaseName != NULL)
+    std::cout << "Extension: " << extension << std::endl;
+
+    if(extension == ".txt") // _status.txt
+    {
+      // Read status file
+      bool problemNameSet = ReadStatusFile(this->FileName);
+      if(!problemNameSet)
+        return 0;
+    }
+    else if(extension == ".h5") // Mesh file
+    {
+      *this->ProblemName = vtkStdString(this->FileName);
+    }
+
+    vtksys::SystemTools::FileExists(this->FileName);
+    vtksys::SystemTools::GetFilenameLastExtension(this->FileName);
+    vtksys::SystemTools::GetFilenamePath(FileName);
+    vtksys::SystemTools::GetFilenameName(FileName);
+    vtksys::SystemTools::GetFilenameWithoutExtension(FileName);
+
+    if(CaseFileName != NULL)
+    {
+      *this->CaseName = vtkStdString(this->CaseFileName);
       std::cout << "RequestInformation: Case Name " << std::endl;
-
-
-    // Set ProblemName and CaseName
-    *this->ProblemName = vtkStdString(this->FileName);
+    }
 
     //this->InternalMeshSelectionStatus
     //    = this->Parent->GetZonehArrayStatus(internalMeshName.c_str());
     std::map<int,std::string> zoneToBc;
-    if(CaseName != NULL)
+    if(*CaseName != "")
     {
       ReadPython(zoneToBc);
     }
 
     // Read zone indexes from h5 file
-    hdf::HDFFile<> file(this->FileName);
+    hdf::HDFFile<> file(*this->ProblemName);
     boost::shared_ptr<hdf::HDFGroup<> > meshg = file.openGroup("mesh",true);
     int totalNumFaces, totalNumCells;
 
@@ -599,7 +714,7 @@ int vtkzCFDReader::RequestData(vtkInformation *vtkNotUsed(request),
     }
 
   // Read request zones
-  hdf::HDFFile<> file(this->FileName);
+  hdf::HDFFile<> file(*this->ProblemName);
   boost::shared_ptr<hdf::HDFGroup<> > meshg = file.openGroup("mesh",false);
   int totalNumFaces, totalNumCells;
 

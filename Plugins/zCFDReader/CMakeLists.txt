@@ -31,7 +31,7 @@ add_paraview_plugin(
 
 target_link_libraries(zCFDReader LINK_PRIVATE
   ${vtkhdf5_LIBRARIES}
-  vtksys
+  vtksys vtkjsoncpp
   ${Boost_PYTHON_LIBRARY} ${PYTHON_LIBRARIES}
   )
 

@@ -21,7 +21,7 @@
       </StringVectorProperty>
       
        <StringVectorProperty animateable="0"
-                            command="SetCaseName"
+                            command="SetCaseFileName"
                             name="PCaseName"
                             number_of_elements="1"
                             panel_visibility="advanced">
@@ -54,6 +54,27 @@
           <RequiredProperties>
             <Property function="ArrayList"
                       name="ZoneArrayInfo" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+      </StringVectorProperty>
+      
+      <StringVectorProperty information_only="1"
+                            name="CellArrayInfo">
+        <ArraySelectionInformationHelper attribute_name="Cell" />
+      </StringVectorProperty>
+  
+      <StringVectorProperty animateable="0"
+                            command="SetCellArrayStatus"
+                            element_types="2 0"
+                            information_property="CellArrayInfo"
+                            name="CellArrays"
+                            number_of_elements="0"
+                            number_of_elements_per_command="2"
+                            repeat_command="1">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property function="ArrayList"
+                      name="CellArrayInfo" />
           </RequiredProperties>
         </ArraySelectionDomain>
       </StringVectorProperty>

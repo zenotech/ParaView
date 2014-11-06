@@ -55,8 +55,8 @@ public:
   vtkSetStringMacro(FileName);
   vtkGetStringMacro(FileName);
 
-  vtkSetStringMacro(CaseName);
-  vtkGetStringMacro(CaseName);
+  vtkSetStringMacro(CaseFileName);
+  vtkGetStringMacro(CaseFileName);
 
 
   void SetRefresh() { this->Refresh = true; this->Modified(); }
@@ -80,6 +80,20 @@ public:
   // the input.
   const char *GetZoneArrayName(int index)
   { return this->GetSelectionArrayName(this->ZoneDataArraySelection, index); }
+
+
+  int GetNumberOfCellArrays(void)
+  { return this->GetNumberOfSelectionArrays(this->CellDataArraySelection); }
+
+  int GetCellArrayStatus(const char *name)
+  { return this->GetSelectionArrayStatus(this->CellDataArraySelection, name); }
+  void SetCellArrayStatus(const char *name, int status)
+  { this->SetSelectionArrayStatus(this->CellDataArraySelection, name,
+    status); }
+
+  const char *GetCellArrayName(int index)
+   { return this->GetSelectionArrayName(this->CellDataArraySelection, index); }
+
 
 
   // Description:
@@ -108,6 +122,7 @@ protected:
 
   const char *GetSelectionArrayName(vtkDataArraySelection *s,
       int index);
+
 private:
   vtkMultiProcessController *Controller;
   //caseType CaseType;
@@ -116,16 +131,20 @@ private:
   int ProcessId;
 
   char *FileName;
-  char *CaseName;
+  char *CaseFileName;
   vtkStdString *FileNameOld;
 
   vtkStdString *ProblemName;
+  vtkStdString *CaseName;
 
   // refresh flag
   bool Refresh;
 
   vtkDataArraySelection *ZoneDataArraySelection;
   std::map<int,std::set<int> > selectionToZone;
+
+  vtkDataArraySelection *CellDataArraySelection;
+  std::map<int,std::set<int> > selectionToData;
 
   vtkzCFDReader(const vtkzCFDReader &); // Not implemented.
   void operator=(const vtkzCFDReader &); // Not implemented.
@@ -135,6 +154,9 @@ private:
   void Broadcast(vtkStringArray *);
   void AllGather(vtkStringArray *);
   void AllGather(vtkDataArraySelection *);
+
+  bool ReadStatusFile(const char *fileName);
+
 };
 
 #endif
