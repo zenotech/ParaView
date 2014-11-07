@@ -205,20 +205,19 @@ void vtkzCFDReader::SetCaseType(const int t)
 void vtkzCFDReader::ReadPython(std::map<int,std::string> &zoneToBc)
 {
 
-
-  std::cout << "Reading Case File " <<  *CaseName << std::endl;
-
   using namespace boost::python;
 
-  //Initialize python
-  Py_Initialize();
-
   const char *zcfdhome = vtksys::SystemTools::GetEnv("ZCFD_HOME");
+
+  std::cout << "Reading Case File " <<  *CaseName << " " << *zcfdhome << std::endl;
 
   if(zcfdhome)
   {
     PySys_SetPath(const_cast<char*>(zcfdhome));
   }
+
+  //Initialize python
+  Py_Initialize();
 
   //Get the main module
   object main_module = import("__main__");
