@@ -219,6 +219,8 @@ void vtkzCFDReader::ReadPython(std::map<int,std::string> &zoneToBc)
   //Initialize python
   Py_Initialize();
 
+  PyRun_SimpleString("import sys\nprint sys.path");
+
   //Get the main module
   object main_module = import("__main__");
   object main_namespace = main_module.attr("__dict__");
@@ -231,6 +233,11 @@ void vtkzCFDReader::ReadPython(std::map<int,std::string> &zoneToBc)
   {
     PyObject *e, *v, *t;
     PyErr_Fetch(&e, &v, &t);
+
+    //Get error message
+    char *pStrErrorMessage = PyString_AsString(v);
+
+    std::cout << "Python Exception: " << pStrErrorMessage << std::endl;
 
     // A NULL e means that there is not available Python
     // exception
