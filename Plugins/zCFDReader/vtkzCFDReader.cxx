@@ -207,14 +207,14 @@ void vtkzCFDReader::ReadPython(std::map<int,std::string> &zoneToBc)
 
   using namespace boost::python;
 
-  const char *zcfdhome = vtksys::SystemTools::GetEnv("ZCFD_HOME");
+  const char *env = vtksys::SystemTools::GetEnv("ZCFD_HOME");
 
-  std::cout << "Reading Case File " <<  *CaseName << " " << *zcfdhome << std::endl;
-
-  if(zcfdhome)
+  if(env)
   {
-    PySys_SetPath(const_cast<char*>(zcfdhome));
+    PySys_SetPath(const_cast<char*>(env));
   }
+
+  std::cout << "Reading Case File " <<  *CaseName << " " << std::string(env) << std::endl;
 
   //Initialize python
   Py_Initialize();
@@ -391,6 +391,15 @@ bool vtkzCFDReader::ReadStatusFile(const char *fileName)
 int vtkzCFDReader::RequestInformation(vtkInformation *vtkNotUsed(request),
     vtkInformationVector **vtkNotUsed(inputVector), vtkInformationVector *outputVector)
 {
+
+  const char *env = vtksys::SystemTools::GetEnv("ZCFD_HOME");
+  if(env == 0)
+  {
+    vtkErrorMacro("ZCFD_HOME env has to be specified!");
+    return 0;
+  }
+  std::string zcfdhome(env);
+  std::cout << "ZCFD_HOME: " << zcfdhome << std::endl;
 
   if (!this->FileName || strlen(this->FileName) == 0)
   {
