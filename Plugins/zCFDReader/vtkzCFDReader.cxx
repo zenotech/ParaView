@@ -213,11 +213,52 @@ void vtkzCFDReader::ReadPython(std::map<int,std::string> &zoneToBc)
   //Initialize python
   Py_Initialize();
 
+  const char *zcfdhome = vtksys::SystemTools::GetEnv("ZCFD_HOME");
+
+  if(zcfdhome)
+  {
+    PySys_SetPath(const_cast<char*>(zcfdhome));
+  }
+
   //Get the main module
   object main_module = import("__main__");
   object main_namespace = main_module.attr("__dict__");
 
-  exec_file( (const char *)(*CaseName), main_namespace, main_namespace);
+  try
+  {
+    object perror = exec_file( (const char *)(*CaseName), main_namespace, main_namespace);
+  }
+  catch(const boost::python::error_already_set&)
+  {
+    PyObject *e, *v, *t;
+    PyErr_Fetch(&e, &v, &t);
+
+    // A NULL e means that there is not available Python
+    // exception
+    if (!e) return;
+/*
+    // See if the exception was an AttributeError. If so,
+    // throw a C++ version of that exception
+    if (PyErr_GivenExceptionMatches(perror.ptr(), e))
+    {
+      // We construct objects now since we plan to keep
+      // ownership of the references.
+      object e_obj(handle<>(allow_null(e));
+      object v_obj(handle<>(allow_null(v));
+      object t_obj(handle<>(allow_null(t));
+
+      throw AttributeException(e_obj, v_obj, t_obj);
+    }
+*/
+    // We didn't do anything with the Python exception,
+    // and we never took ownership of the refs, so it's
+    // safe to simply pass them back to PyErr_Restore
+    PyErr_Restore(e, v, t);
+
+    // Rethrow the exception (or whatever...this
+    // is just an example.)
+    throw;
+  }
 
   extract<dict> cppdict_ext(main_namespace["parameters"]);
 
