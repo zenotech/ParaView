@@ -211,7 +211,14 @@ void vtkzCFDReader::ReadPython(std::map<int,std::string> &zoneToBc)
 
   if(env)
   {
-    PySys_SetPath(const_cast<char*>(env));
+    PyObject *obj = PySys_GetObject("path");
+    PyObject *pPath = PyString_FromString(env);
+    PyList_Append(obj,pPath);
+    Py_DECREF(pPath);
+
+    PySys_SetObject("path",obj);
+
+    //PySys_SetPath(const_cast<char*>(env));
   }
 
   std::cout << "Reading Case File " <<  *CaseName << " " << std::string(env) << std::endl;
