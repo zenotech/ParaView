@@ -16,7 +16,7 @@
 
 #include "vtkCommand.h"
 #include "vtkObjectFactory.h"
-#include "vtkPVGenericRenderWindowInteractor.h"
+#include "vtkRenderWindowInteractor.h"
 #include "vtkSMPropertyModificationUndoElement.h"
 #include "vtkSMRenderViewProxy.h"
 #include "vtkSMUndoStack.h"
@@ -132,6 +132,7 @@ void vtkSMInteractionUndoStackBuilder::StartInteraction()
   this->PropertyModified("CameraViewAngle");
   this->PropertyModified("CameraClippingRange");
   this->PropertyModified("CenterOfRotation");
+  this->PropertyModified("RotationFactor");
 }
 
 //-----------------------------------------------------------------------------
@@ -152,6 +153,7 @@ void vtkSMInteractionUndoStackBuilder::EndInteraction()
   this->PropertyModified("CameraViewAngle");
   this->PropertyModified("CameraClippingRange");
   this->PropertyModified("CenterOfRotation");
+  this->PropertyModified("RotationFactor");
 
   if (this->UndoStack)
     {

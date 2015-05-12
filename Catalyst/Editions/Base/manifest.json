@@ -246,6 +246,7 @@
     { "path":"VTK/Copyright.txt" },
     { "path":"License_v1.2.txt" },
     { "path":"CMakeLists.txt" },
+    { "path":"CTestConfig.cmake" },
     { "path":"CMake" },
     { "path":"VTK/CMake" },
     { "path":"VTK/CMakeLists.txt" },
@@ -274,7 +275,7 @@
     { "path":"ParaViewConfig.cmake.in" },
     { "path":"ParaViewCore/README.txt" },
     { "path":"VTK/vtkLogo.ico" },
-    { "path":"VTK/README.html" },
+    { "path":"VTK/README.md" },
     { "path":"VTK/ThirdParty/utf8" }
   ],
   "proxies":[

@@ -59,10 +59,12 @@ set (Module_UI_FILES
   pqPythonDialog.ui
 )
 
+find_package(PythonLibs REQUIRED)
+
 include_directories(
   "${VTK_SOURCE_DIR}/Wrapping/Python"
   "${VTK_BINARY_DIR}/Wrapping/Python"
-  "${PYTHON_INCLUDE_DIR}"
+  ${PYTHON_INCLUDE_DIRS}
   )
 
 #-------------------------------------------------------------------------
@@ -101,7 +103,7 @@ vtk_module_library(${vtk-module}
 #    RUNTIME DESTINATION ${PV_INSTALL_BIN_DIR} COMPONENT Runtime
 #    LIBRARY DESTINATION ${PV_INSTALL_LIB_DIR} COMPONENT Runtime
 #    ARCHIVE DESTINATION ${PV_INSTALL_LIB_DIR} COMPONENT Development)
-#ENDIF(NOT PV_INSTALL_NO_LIBRARIES)
+#ENDIF()
 ## Development
 #IF (NOT PV_INSTALL_NO_DEVELOPMENT)
 #  # Headers
@@ -118,4 +120,4 @@ vtk_module_library(${vtk-module}
 #    ${CMAKE_CURRENT_SOURCE_DIR}
 #    ${PV_INSTALL_INCLUDE_DIR}/Qt/Python/Resources
 #    "*.ui;*.ico;*.png;*.svg;*.xpm;*.rc;*.qrc")
-#ENDIF (NOT PV_INSTALL_NO_DEVELOPMENT)
+#ENDIF ()

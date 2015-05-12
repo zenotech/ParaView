@@ -80,6 +80,7 @@
 #include <vector> // needed for vector.
 
 class vtkSMProxy;
+class vtkSMNamedPropertyIterator;
 
 
 class VTKPVSERVERMANAGERCORE_EXPORT vtkSMSettings : public vtkObject
@@ -153,6 +154,11 @@ public:
   bool GetProxySettings(vtkSMProxy* proxy);
 
   // Description:
+  // Set the property values in a vtkSMProxy from the settings collections
+  // under the given prefix.
+  bool GetProxySettings(const char* prefix, vtkSMProxy* proxy);
+
+  // Description:
   // Get description for a setting.
   std::string GetSettingDescription(const char* settingName);
 
@@ -171,7 +177,15 @@ public:
 
   // Description:
   // Save non-default settings in the current user settings.
-  void SetProxySettings(vtkSMProxy* proxy);
+  // If 'propertyIt' is not NULL, only the listed properties are saved
+  void SetProxySettings(vtkSMProxy* proxy,
+                        vtkSMNamedPropertyIterator* propertyIt = NULL);
+
+  // Description:
+  // Save non-default settings in the current user settings under the given prefix.
+  // If 'propertyIt' is not NULL, only the listed properties are saved
+  void SetProxySettings(const char* prefix, vtkSMProxy* proxy, 
+                        vtkSMNamedPropertyIterator* propertyIt = NULL);
 
   // Description:
   // Set the description of a setting.

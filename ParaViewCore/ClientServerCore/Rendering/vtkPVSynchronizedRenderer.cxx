@@ -14,10 +14,11 @@
 =========================================================================*/
 #include "vtkPVSynchronizedRenderer.h"
 
-#include "vtkBoundingBox.h"
 #include "vtkCameraPass.h"
-#include "vtkCaveSynchronizedRenderers.h"
 #include "vtkImageProcessingPass.h"
+
+#include "vtkBoundingBox.h"
+#include "vtkCaveSynchronizedRenderers.h"
 #include "vtkObjectFactory.h"
 #include "vtkProcessModule.h"
 #include "vtkPVClientServerSynchronizedRenderers.h"
@@ -181,7 +182,7 @@ void vtkPVSynchronizedRenderer::Initialize(
       this->ParallelSynchronizer->WriteBackImagesOn();
       }
     else if (pm->GetNumberOfLocalPartitions() > 1 ||
-      (pm->GetNumberOfLocalPartitions() == 1 && in_tile_display_mode))        
+      (pm->GetNumberOfLocalPartitions() == 1 && in_tile_display_mode))
       {
       //ICET now handles stereo properly, so use it no matter the number
       //of partitions
@@ -287,7 +288,6 @@ void vtkPVSynchronizedRenderer::SetImageProcessingPass(
     {
     return;
     }
-
   vtkSetObjectBodyMacro(ImageProcessingPass, vtkImageProcessingPass, pass);
   this->SetupPasses();
 }
@@ -361,7 +361,6 @@ void vtkPVSynchronizedRenderer::SetupPasses()
     {
     return;
     }
-
   vtkCameraPass* cameraPass = vtkCameraPass::New();
   if (this->ImageProcessingPass)
     {

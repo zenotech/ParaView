@@ -35,6 +35,8 @@ set (Module_SRCS
   pqAlwaysConnectedBehavior.h
   pqAnimationTimeToolbar.cxx
   pqAnimationTimeToolbar.h
+  pqAnimationTimeWidget.cxx
+  pqAnimationTimeWidget.h
   pqApplicationSettingsReaction.cxx
   pqApplicationSettingsReaction.h
   pqApplyBehavior.cxx
@@ -154,6 +156,8 @@ set (Module_SRCS
   pqLoadDataReaction.h
   pqLoadStateReaction.cxx
   pqLoadStateReaction.h
+  pqLoadRestoreWindowLayoutReaction.cxx
+  pqLoadRestoreWindowLayoutReaction.h
   pqMainControlsToolbar.cxx
   pqMainControlsToolbar.h
   pqManageCustomFiltersReaction.cxx
@@ -164,6 +168,8 @@ set (Module_SRCS
   pqManagePluginsReaction.h
   pqMasterOnlyReaction.cxx
   pqMasterOnlyReaction.h
+  pqModelTransformSupportBehavior.cxx
+  pqModelTransformSupportBehavior.h
   pqObjectPickingBehavior.cxx
   pqObjectPickingBehavior.h
   pqOpacityTableModel.cxx
@@ -236,10 +242,14 @@ set (Module_SRCS
   pqStandardViewFrameActionsImplementation.h
   pqStatusBar.cxx
   pqStatusBar.h
+  pqStreamingTestingEventPlayer.cxx
+  pqStreamingTestingEventPlayer.h
   pqTestingReaction.cxx
   pqTestingReaction.h
   pqTextLocationWidget.cxx
   pqTextLocationWidget.h
+  pqTimeInspectorWidget.cxx
+  pqTimeInspectorWidget.h
   pqTimerLogReaction.cxx
   pqTimerLogReaction.h
   pqToggleInteractionViewMode.cxx
@@ -266,6 +276,7 @@ set (Module_MOC_HDRS
   pqAboutDialogReaction.h
   pqAlwaysConnectedBehavior.h
   pqAnimationTimeToolbar.h
+  pqAnimationTimeWidget.h
   pqApplicationSettingsReaction.h
   pqApplyBehavior.h
   pqAutoApplyReaction.h
@@ -325,12 +336,14 @@ set (Module_MOC_HDRS
   pqLightsEditor.h
   pqListPropertyWidget.h
   pqLoadDataReaction.h
+  pqLoadRestoreWindowLayoutReaction.h
   pqLoadStateReaction.h
   pqMainControlsToolbar.h
   pqManageCustomFiltersReaction.h
   pqManageLinksReaction.h
   pqManagePluginsReaction.h
   pqMasterOnlyReaction.h
+  pqModelTransformSupportBehavior.h
   pqObjectPickingBehavior.h
   pqOpacityTableModel.h
   pqParaViewBehaviors.h
@@ -366,8 +379,10 @@ set (Module_MOC_HDRS
   pqStandardPropertyWidgetInterface.h
   pqStandardViewFrameActionsImplementation.h
   pqStatusBar.h
+  pqStreamingTestingEventPlayer.h
   pqTestingReaction.h
   pqTextLocationWidget.h
+  pqTimeInspectorWidget.h
   pqTimerLogReaction.h
   pqToggleInteractionViewMode.h
   pqTransferFunctionWidgetPropertyWidget.h
@@ -395,6 +410,7 @@ if (PARAVIEW_ENABLE_PYTHON)
 endif()
 
 set (Module_UI_FILES
+  Resources/UI/pqAnimationTimeWidget.ui
   Resources/UI/pqAxesToolbar.ui
   Resources/UI/pqBackgroundEditorWidget.ui
   Resources/UI/pqCameraManipulatorWidget.ui
@@ -415,6 +431,7 @@ set (Module_UI_FILES
   Resources/UI/pqPipelineBrowserContextMenu.ui
   Resources/UI/pqSeriesEditorPropertyWidget.ui
   Resources/UI/pqTextLocationWidget.ui
+  Resources/UI/pqTimeInspectorWidget.ui
   Resources/UI/pqTransferFunctionWidgetPropertyWidgetDialog.ui
   Resources/UI/pqVCRToolbar.ui
 )
@@ -470,4 +487,4 @@ vtk_module_library(pqApplicationComponents
 #      FILES ${dynamicHeaders}
 #      DESTINATION ${PV_INSTALL_INCLUDE_DIR}
 #      COMPONENT Development)
-#ENDIF (NOT PV_INSTALL_NO_DEVELOPMENT)
+#ENDIF ()

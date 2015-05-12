@@ -31,7 +31,6 @@
 
 class vtkAppendPolyData;
 class vtkCellData;
-class vtkCompositeDataSet;
 class vtkCutter;
 class vtkDataSet;
 class vtkPProbeFilter;
@@ -81,6 +80,8 @@ public:
   // Description:
   // Set slice Origin for all cutter
   void SetCutOrigins(double origin[3]);
+  void SetCutOrigins(double x, double y, double z)
+    { double xyz[] = {x,y,z}; this->SetCutOrigins(xyz); }
 
   // Description:
   // Enable to probe the dataset at the given cut origin.
@@ -104,10 +105,6 @@ protected:
   vtkPointSource* PointToProbe;
 
   void Process(vtkDataSet* input, vtkPolyData* outputs[4], unsigned int compositeIndex);
-  void Process(vtkCompositeDataSet* input, vtkCompositeDataSet* outputs[4]);
-  void Merge(vtkCompositeDataSet* compositeOutput[4], vtkPolyData* polydataOutput[4]);
-  void Append(vtkCompositeDataSet* composite, vtkAppendPolyData* appender);
-  void Append(vtkPolyData* polydata, vtkAppendPolyData* appender);
 
 private:
   vtkThreeSliceFilter(const vtkThreeSliceFilter&);  // Not implemented.

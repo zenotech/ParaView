@@ -14,13 +14,16 @@
 =========================================================================*/
 #include "vtkGeometryRepresentation.h"
 
+# include "vtkCompositePolyDataMapper2.h"
+#ifndef VTKGL2
+# include "vtkHardwareSelectionPolyDataPainter.h"
+# include "vtkShadowMapBakerPass.h"
+#endif
 #include "vtkAlgorithmOutput.h"
 #include "vtkBoundingBox.h"
 #include "vtkCommand.h"
 #include "vtkCompositeDataDisplayAttributes.h"
 #include "vtkCompositeDataIterator.h"
-#include "vtkCompositePolyDataMapper2.h"
-#include "vtkHardwareSelectionPolyDataPainter.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkMath.h"
@@ -42,7 +45,6 @@
 #include "vtkSelectionConverter.h"
 #include "vtkSelection.h"
 #include "vtkSelectionNode.h"
-#include "vtkShadowMapBakerPass.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkTransform.h"
 #include "vtkUnstructuredGrid.h"
@@ -106,6 +108,7 @@ vtkGeometryRepresentation::vtkGeometryRepresentation()
   // setup the selection mapper so that we don't need to make any selection
   // conversions after rendering.
   vtkCompositePolyDataMapper2* mapper = vtkCompositePolyDataMapper2::New();
+#ifndef VTKGL2
   vtkHardwareSelectionPolyDataPainter* selPainter =
     vtkHardwareSelectionPolyDataPainter::SafeDownCast(
       mapper->GetSelectionPainter()->GetDelegatePainter());
@@ -113,6 +116,7 @@ vtkGeometryRepresentation::vtkGeometryRepresentation()
   selPainter->SetCellIdArrayName("vtkOriginalCellIds");
   selPainter->SetProcessIdArrayName("vtkProcessId");
   selPainter->SetCompositeIdArrayName("vtkCompositeIndex");
+#endif
 
   this->Mapper = mapper;
   this->LODMapper = vtkCompositePolyDataMapper2::New();
@@ -192,6 +196,31 @@ void vtkGeometryRepresentation::SetupDefaults()
   vtkInformation* keys = vtkInformation::New();
   this->Actor->SetPropertyKeys(keys);
   keys->Delete();
+}
+
+//----------------------------------------------------------------------------
+int vtkGeometryRepresentation::GetBlockColorsDistinctValues()
+{
+  vtkPVGeometryFilter *geomFilter = 
+    vtkPVGeometryFilter::SafeDownCast(this->GeometryFilter);
+  if (geomFilter)
+    {
+    return geomFilter->GetBlockColorsDistinctValues();
+    }
+  return 2;
+}
+
+//----------------------------------------------------------------------------
+void vtkGeometryRepresentation::SetBlockColorsDistinctValues(
+  int distinctValues)
+{
+  vtkPVGeometryFilter *geomFilter = 
+    vtkPVGeometryFilter::SafeDownCast(this->GeometryFilter);
+  if (geomFilter)
+    {
+    geomFilter->SetBlockColorsDistinctValues(distinctValues);
+    this->MarkModified();
+    }
 }
 
 //----------------------------------------------------------------------------
@@ -408,9 +437,17 @@ int vtkGeometryRepresentation::RequestData(vtkInformation* request,
   this->CacheKeeper->Update();
 
   // Determine data bounds.
-  vtkCompositeDataSet* cd = vtkCompositeDataSet::SafeDownCast(
-    this->CacheKeeper->GetOutputDataObject(0));
-  if (cd)
+  this->GetBounds(this->CacheKeeper->GetOutputDataObject(0),
+    this->DataBounds);
+  return this->Superclass::RequestData(request, inputVector, outputVector);
+}
+
+//----------------------------------------------------------------------------
+bool vtkGeometryRepresentation::GetBounds(
+  vtkDataObject* dataObject, double bounds[6])
+{
+  vtkMath::UninitializeBounds(bounds);
+  if (vtkCompositeDataSet* cd = vtkCompositeDataSet::SafeDownCast(dataObject))
     {
     vtkBoundingBox bbox;
     vtkCompositeDataIterator* iter = cd->NewIterator();
@@ -425,11 +462,16 @@ int vtkGeometryRepresentation::RequestData(vtkInformation* request,
     iter->Delete();
     if (bbox.IsValid())
       {
-      bbox.GetBounds(this->DataBounds);
+      bbox.GetBounds(bounds);
+      return true;
       }
     }
-
-  return this->Superclass::RequestData(request, inputVector, outputVector);
+  else if (vtkDataSet* ds = vtkDataSet::SafeDownCast(dataObject))
+    {
+    ds->GetBounds(bounds);
+    return (vtkMath::AreBoundsInitialized(bounds) == 1);
+    }
+  return false;
 }
 
 //----------------------------------------------------------------------------
@@ -556,6 +598,14 @@ void vtkGeometryRepresentation::UpdateColoringParameters()
         this->LODMapper->SetScalarMode(VTK_SCALAR_MODE_USE_CELL_FIELD_DATA);
         break;
 
+      case vtkDataObject::FIELD_ASSOCIATION_NONE:
+        this->Mapper->SetScalarMode(VTK_SCALAR_MODE_USE_FIELD_DATA);
+        // Color entire block by zeroth tuple in the field data
+        this->Mapper->SetFieldDataTupleId(0);
+        this->LODMapper->SetScalarMode(VTK_SCALAR_MODE_USE_FIELD_DATA);
+        this->LODMapper->SetFieldDataTupleId(0);
+        break;
+
       case vtkDataObject::FIELD_ASSOCIATION_POINTS:
       default:
         this->Mapper->SetScalarMode(VTK_SCALAR_MODE_USE_POINT_FIELD_DATA);
@@ -604,6 +654,7 @@ void vtkGeometryRepresentation::UpdateColoringParameters()
     }
 
   // Update shadow map properties, in case we are using shadow maps.
+#ifndef VTKGL2
   if (this->Representation == SURFACE ||
     this->Representation == SURFACE_WITH_EDGES)
     {
@@ -616,6 +667,7 @@ void vtkGeometryRepresentation::UpdateColoringParameters()
     this->Actor->GetPropertyKeys()->Set(vtkShadowMapBakerPass::OCCLUDER(), 0);
     this->Actor->GetPropertyKeys()->Remove(vtkShadowMapBakerPass::RECEIVER());
     }
+#endif
 }
 
 //----------------------------------------------------------------------------
@@ -645,8 +697,17 @@ void vtkGeometryRepresentation::SetLookupTable(vtkScalarsToColors* val)
 //----------------------------------------------------------------------------
 void vtkGeometryRepresentation::SetMapScalars(int val)
 {
-  this->Mapper->SetColorMode(val);
-  this->LODMapper->SetColorMode(val);
+  if (val < 0 || val > 1)
+    {
+    vtkWarningMacro(<< "Invalid parameter for vtkGeometryRepresentation::SetMapScalars: " << val);
+    val = 0;
+    }
+  int mapToColorMode[] = {
+    VTK_COLOR_MODE_DIRECT_SCALARS,
+    VTK_COLOR_MODE_MAP_SCALARS
+  };
+  this->Mapper->SetColorMode(mapToColorMode[val]);
+  this->LODMapper->SetColorMode(mapToColorMode[val]);
 }
 
 //----------------------------------------------------------------------------

@@ -66,6 +66,12 @@ public:
   virtual void SetVisibility(bool val);
 
   // Description:
+  // Determines the number of distinct values in vtkBlockColors
+  // See also vtkPVGeometryFilter
+  void SetBlockColorsDistinctValues(int distinctValues);
+  int GetBlockColorsDistinctValues();
+
+  // Description:
   // Enable/Disable LOD;
   virtual void SetSuppressLOD(bool suppress)
     { this->SuppressLOD = suppress; }
@@ -152,6 +158,12 @@ public:
   // Forwarded to Mapper and LODMapper.
   virtual void SetInterpolateScalarsBeforeMapping(int val);
   virtual void SetLookupTable(vtkScalarsToColors* val);
+  // Description:
+  // Sets if scalars are mapped through a color-map or are used
+  // directly as colors. 
+  // 0 maps to VTK_COLOR_MODE_DIRECT_SCALARS
+  // 1 maps to VTK_COLOR_MODE_MAP_SCALARS
+  // @see vtkScalarsToColors::MapScalars
   virtual void SetMapScalars(int val);
   virtual void SetStatic(int val);
 
@@ -185,6 +197,12 @@ public:
   // Description:
   // Convenience method to get the array name used to scalar color with.
   const char* GetColorArrayName();
+
+  // Description:
+  // Convenience method to get bounds from a dataset/composite dataset.
+  // Returns true if valid bounds were computed.
+  static bool GetBounds(vtkDataObject* dataObject, double bounds[6]);
+
 //BTX
 protected:
   vtkGeometryRepresentation();

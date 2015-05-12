@@ -23,16 +23,16 @@
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPNGWriter.h"
-#include "vtkPVGenericRenderWindowInteractor.h"
-#include "vtkPVRenderView.h"
 #include "vtkPointData.h"
-#include "vtkRenderWindow.h"
+#include "vtkPVRenderView.h"
 #include "vtkRendererCollection.h"
+#include "vtkRenderWindow.h"
+#include "vtkRenderWindowInteractor.h"
+#include "vtkSmartPointer.h"
 #include "vtkSMContextViewProxy.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMRenderViewProxy.h"
 #include "vtkSMViewProxy.h"
-#include "vtkSmartPointer.h"
 #include "vtkTimerLog.h"
 #include "vtkUnsignedCharArray.h"
 #include "vtkWebGLExporter.h"
@@ -163,7 +163,7 @@ vtkUnsignedCharArray* vtkPVWebApplication::StillRender(vtkSMViewProxy* view, int
 
   if (value.NeedsRender == false &&
     value.Data != NULL &&
-    view->HasDirtyRepresentation() == false)
+    view->GetNeedsUpdate() == false)
     {
     //cout <<  "Reusing cache" << endl;
     bool latest = this->Internals->Encoder->GetLatestOutput(view->GetGlobalID(), value.Data);
@@ -180,6 +180,7 @@ vtkUnsignedCharArray* vtkPVWebApplication::StillRender(vtkSMViewProxy* view, int
   // TODO: We should add logic to check if a new rendering needs to be done and
   // then alone do a new rendering otherwise use the cached image.
   vtkImageData* image = view->CaptureWindow(1);
+  image->GetDimensions(this->LastStillRenderImageSize);
   //vtkTimerLog::MarkEndEvent("CaptureWindow");
 
   //vtkTimerLog::MarkEndEvent("StillRenderToString");
@@ -402,7 +403,6 @@ const char* vtkPVWebApplication::GetWebGLBinaryData(
 
   return NULL;
 }
-
 //----------------------------------------------------------------------------
 void vtkPVWebApplication::PrintSelf(ostream& os, vtkIndent indent)
 {

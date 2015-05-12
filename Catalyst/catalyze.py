@@ -10,6 +10,7 @@
 #
 import sys
 import os
+import os.path
 import subprocess
 import shutil
 import fnmatch
@@ -34,6 +35,8 @@ def _get_argument_parser():
                         'The directory contain manifest.json and other resources')
   parser.add_argument('-o', dest='output_dir', action='store',
                         help='the directory where the modified sources will be written')
+  parser.add_argument('-t', dest='copy_tests', action='store_true',
+                        help='also copy over the test folders of the editions')
 
   usage = "Usage: %prog [options]"
 
@@ -82,7 +85,9 @@ def filter_proxies(fin, fout, proxies, all_proxies):
       removed_subproxies = []
       for subproxy in proxy.iter('SubProxy'):
         for p in subproxy.iter('Proxy'):
-          if p.attrib['proxyname'] not in all_proxies:
+          # p.attrib doesn't have proxyname it
+          # means the proxy definition is inline.
+          if p.attrib.has_key('proxyname') and (p.attrib['proxyname'] not in all_proxies):
             removed_subproxies.append(p.attrib['name'])
             proxy.remove(subproxy)
             break
@@ -346,6 +351,20 @@ def process(config):
 
   create_cmake_script(config, all_manifests)
 
+def copyTestTrees(config):
+  all_dirs = config.input_dirs
+  repo = config.repo
+  testingDst = os.path.join(config.output_dir, 'Testing')
+  os.makedirs(testingDst)
+  for input_dir in all_dirs:
+    testingSrc = os.path.join(input_dir, 'Testing')
+    if os.path.isdir(testingSrc):
+        for f in os.listdir(testingSrc):
+          print f
+          src = os.path.join(testingSrc,f)
+          dst = os.path.join(testingDst,f)
+          copy_path(src,dst,[])
+
 def main():
   parser = _get_argument_parser()
   config = parser.parse_args()
@@ -367,6 +386,8 @@ def main():
   shutil.rmtree(config.output_dir, ignore_errors=True)
 
   process(config)
+  if (config.copy_tests):
+    copyTestTrees(config)
 
 if __name__ == '__main__':
   main()

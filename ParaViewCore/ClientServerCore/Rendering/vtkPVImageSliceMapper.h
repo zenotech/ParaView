@@ -34,6 +34,11 @@
 
 class vtkImageData;
 class vtkRenderer;
+
+#ifdef VTKGL2
+class vtkOpenGLTexture;
+class vtkActor;
+#endif
 class vtkPainter;
 
 class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVImageSliceMapper : public vtkMapper
@@ -60,12 +65,12 @@ public:
   virtual vtkImageData *GetInput();
 
   // Description:
-  // Set/Get the current X/Y or Z slice number. 
+  // Set/Get the current X/Y or Z slice number.
   vtkSetMacro(Slice,int);
   vtkGetMacro(Slice,int);
 
   //BTX
-  enum 
+  enum
     {
     XY_PLANE = VTK_XY_PLANE,
     YZ_PLANE = VTK_YZ_PLANE,
@@ -84,11 +89,11 @@ public:
 
   // Description:
   // When set, the image slice is always rendered in the XY plane (Z==0)
-  // irrespective of the image bounds. Default if Off.
+  // irrespective of the image bounds. Default is Off.
   vtkSetClampMacro(UseXYPlane, int, 0, 1);
   vtkBooleanMacro(UseXYPlane, int);
   vtkGetMacro(UseXYPlane, int);
-  
+
   // Description:
   // Update that sets the update piece first.
   virtual void Update(int port);
@@ -113,15 +118,14 @@ public:
   // Return bounding box (array of six doubles) of data expressed as
   // (xmin,xmax, ymin,ymax, zmin,zmax).
   virtual double *GetBounds();
-  virtual void GetBounds(double bounds[6]) 
+  virtual void GetBounds(double bounds[6])
     {this->Superclass::GetBounds(bounds);};
-  
+
   // Description:
   // Make a shallow copy of this mapper.
   virtual void ShallowCopy(vtkAbstractMapper *m);
 
 
-//BTX
 protected:
   vtkPVImageSliceMapper();
   ~vtkPVImageSliceMapper();
@@ -133,6 +137,13 @@ protected:
   // Perform the actual rendering.
   virtual void RenderPiece(vtkRenderer *ren, vtkActor *act);
 
+#ifdef VTKGL2
+  vtkOpenGLTexture *Texture;
+  int SetupScalars(vtkImageData*);
+  void RenderInternal(vtkRenderer *ren, vtkActor *act);
+  vtkTimeStamp UpdateTime;
+  vtkActor *PolyDataActor;
+#else
   // Description:
   // Called when the PainterInformation becomes obsolete. It is called before
   // Render request is propogated to the painter.
@@ -140,8 +151,13 @@ protected:
 
   vtkInformation* PainterInformation;
   vtkTimeStamp PainterInformationUpdateTime;
+
+  class vtkObserver;
+  vtkObserver* Observer;
+#endif
+
   vtkPainter* Painter;
- 
+
   int Piece;
   int NumberOfSubPieces;
   int NumberOfPieces;
@@ -150,13 +166,11 @@ protected:
   int SliceMode;
   int Slice;
   int UseXYPlane;
+
 private:
   vtkPVImageSliceMapper(const vtkPVImageSliceMapper&); // Not implemented
   void operator=(const vtkPVImageSliceMapper&); // Not implemented
 
-  class vtkObserver;
-  vtkObserver* Observer;
-//ETX
 };
 
 #endif

@@ -38,7 +38,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqSetData.h"
 #include "pqSetName.h"
 #include "pqSettings.h"
-#include "vtkCollection.h"
 #include "vtkPVProxyDefinitionIterator.h"
 #include "vtkPVXMLElement.h"
 #include "vtkSMProxy.h"
@@ -55,23 +54,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QPair>
 #include <QSet>
 #include <QStringList>
-
-namespace
-{
-  bool findFileNameProperty(vtkPVXMLElement* proxyXML)
-    {
-    for (unsigned int cc=0; cc < proxyXML->GetNumberOfNestedElements(); cc++)
-      {
-      vtkPVXMLElement* child = proxyXML->GetNestedElement(cc);
-      if (child && child->GetAttribute("name") &&
-        strcmp(child->GetAttribute("name"), "FileName") == 0)
-        {
-        return true;
-        }
-      }
-    return false;
-    }
-}
 
 class pqProxyGroupMenuManager::pqInternal
 {
@@ -807,26 +789,19 @@ void pqProxyGroupMenuManager::lookForNewDefinitions()
         // skip readers.
         continue;
         }
-
-      // Old readers don't have ReaderFactory hints. To handle those, we check
-      // for existence of "FileName" property.
-      if (findFileNameProperty(iter->GetProxyDefinition()))
+      for (unsigned int cc=0; cc < hints->GetNumberOfNestedElements(); cc++)
         {
-        continue;
-        }
-
-      vtkNew<vtkCollection> collection;
-      hints->FindNestedElementByName("ShowInMenu", collection.GetPointer());
-      int size = collection->GetNumberOfItems();
-      vtkPVXMLElement* hint = NULL;
-      for(int i=0; i<size; i++)
-        {
-        hint = vtkPVXMLElement::SafeDownCast(collection->GetItemAsObject(i));
-        const char* categoryName = hint->GetAttribute("category");
+        vtkPVXMLElement* showInMenu = hints->GetNestedElement(cc);
+        if (showInMenu == NULL ||
+          showInMenu->GetName() == NULL ||
+          strcmp(showInMenu->GetName(), "ShowInMenu") != 0)
+          {
+          continue;
+          }
 
         definitionSet.insert(QPair<QString, QString>(group, name));
-        this->Internal->addProxy(group, name, NULL);
-        if(categoryName != NULL)
+        this->Internal->addProxy(group, name, showInMenu->GetAttribute("icon"));
+        if (const char* categoryName = showInMenu->GetAttribute("category"))
           {
           pqInternal::CategoryInfo& category = this->Internal->Categories[categoryName];
           // If no label just make it up
@@ -834,7 +809,11 @@ void pqProxyGroupMenuManager::lookForNewDefinitions()
             {
             category.Label = categoryName;
             }
-
+          int show_in_toolbar = 0;
+          if (showInMenu->GetScalarAttribute("show_in_toolbar", &show_in_toolbar))
+            {
+            category.ShowInToolbar = category.ShowInToolbar || (show_in_toolbar == 1);
+            }
           if(!category.Proxies.contains(QPair<QString, QString>(group, name)))
             {
             category.Proxies.push_back(QPair<QString, QString>(group, name));

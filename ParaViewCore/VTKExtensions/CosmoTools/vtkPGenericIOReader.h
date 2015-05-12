@@ -24,11 +24,14 @@
 #include "vtkUnstructuredGridAlgorithm.h" // Base class
 #include "vtkPVVTKExtensionsCosmoToolsModule.h" // For export macro
 
+#include <set> // for std::set in protected methods
+
 // Forward Declarations
 class vtkCallbackCommand;
 class vtkDataArray;
 class vtkDataArraySelection;
 class vtkGenericIOMetaData;
+class vtkIdList;
 class vtkInformation;
 class vtkInformationVector;
 class vtkMultiProcessController;
@@ -41,6 +44,11 @@ namespace gio {
   class GenericIOReader;
 }
 
+class VTKPVVTKEXTENSIONSCOSMOTOOLS_EXPORT vtkPGenericIOReader :
+  public vtkUnstructuredGridAlgorithm
+{
+public:
+
 enum IOType {
   IOTYPEMPI,
   IOTYPEPOSIX
@@ -52,10 +60,6 @@ enum BlockAssignment {
 };
 
 
-class VTKPVVTKEXTENSIONSCOSMOTOOLS_EXPORT vtkPGenericIOReader :
-  public vtkUnstructuredGridAlgorithm
-{
-public:
   static vtkPGenericIOReader *New();
   vtkTypeMacro(vtkPGenericIOReader,vtkUnstructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
@@ -105,6 +109,13 @@ public:
   vtkGetMacro(QueryRankNeighbors,int);
 
   // Description:
+  // Set/Get whether the reader should append the coordinates of the block each
+  // point was read from as a point data array.  Defaults to false (Off).
+  vtkSetMacro(AppendBlockCoordinates,bool);
+  vtkBooleanMacro(AppendBlockCoordinates,bool);
+  vtkGetMacro(AppendBlockCoordinates,bool);
+
+  // Description:
   // Returns the list of arrays used to select the variables to be used
   // for the x,y and z axis.
   vtkGetObjectMacro(ArrayList,vtkStringArray);
@@ -133,8 +144,59 @@ public:
   int GetPointArrayStatus(const char* name);
 
   // Description:
-  // Sets the status of the
+  // Sets the status of the array named.  If the status is 1, the array
+  // will be read in on the resulting dataset.
   void SetPointArrayStatus(const char* name, int status);
+
+  // Description:
+  // Gets/Sets the variable name for the halo id of the particle.
+  // This is used by the requested halo selector to select only the
+  // points in the desired halos.
+  vtkSetStringMacro(HaloIdVariableName);
+  vtkGetStringMacro(HaloIdVariableName);
+
+  // Description:
+  // Gets the ith requested halo id.
+  // If the number of requested halo ids is
+  // greater than 0, only points with those halo ids will be read in.
+  // Otherwise all points will be read in.
+  vtkIdType GetRequestedHaloId(vtkIdType i);
+
+  // Description:
+  // Gets the number of requested halo ids.
+  // If the number of requested halo ids is
+  // greater than 0, only points with those halo ids will be read in.
+  // Otherwise all points will be read in.
+  vtkIdType GetNumberOfRequestedHaloIds();
+
+  // Description:
+  // Sets the number of requested halo ids.
+  // Use SetRequestedHaloId() to se the ids after this is called
+  // If the number of requested halo ids is
+  // greater than 0, only points with those halo ids will be read in.
+  // Otherwise all points will be read in.
+  void SetNumberOfRequestedHaloIds(vtkIdType numIds);
+
+  // Description:
+  // Adds the given halo id to the list of halo ids to request.
+  // If the number of requested halo ids is
+  // greater than 0, only points with those halo ids will be read in.
+  // Otherwise all points will be read in.
+  void AddRequestedHaloId(vtkIdType haloId);
+
+  // Description:
+  // Clears the list of requested halo ids.
+  // If the number of requested halo ids is
+  // greater than 0, only points with those halo ids will be read in.
+  // Otherwise all points will be read in.
+  void ClearRequestedHaloIds();
+
+  // Description:
+  // Sets the ith requested halo id to the given haloId.
+  // If the number of requested halo ids is
+  // greater than 0, only points with those halo ids will be read in.
+  // Otherwise all points will be read in.
+  void SetRequestedHaloId(vtkIdType i, vtkIdType haloId);
 
 protected:
   vtkPGenericIOReader();
@@ -164,9 +226,9 @@ protected:
   // Description:
   // Return the point from the raw data.
   void GetPointFromRawData(
-          std::string xName,
-          std::string yName,
-          std::string zName,
+          int xType, void* xBuffer,
+          int yType, void* yBuffer,
+          int zType, void* zBuffer,
           vtkIdType idx,
           double pnt[3]);
 
@@ -180,11 +242,13 @@ protected:
 
   // Description:
   // Loads the particle coordinates
-  void LoadCoordinates(vtkUnstructuredGrid *grid);
+  void LoadCoordinates(vtkUnstructuredGrid *grid,
+                       std::set< vtkIdType >& pointsInSelectedHalos);
 
   // Description:
   // Loads the particle data arrays
-  void LoadData(vtkUnstructuredGrid *grid);
+  void LoadData(vtkUnstructuredGrid *grid,
+                const std::set< vtkIdType >& pointsInSelectedHalos);
 
   // Description:
   // Finds the neighbors of the user-supplied rank
@@ -199,6 +263,7 @@ protected:
   char *XAxisVariableName;
   char *YAxisVariableName;
   char *ZAxisVariableName;
+  char *HaloIdVariableName;
 
   char *FileName;
   int GenericIOType;
@@ -208,11 +273,13 @@ protected:
   int RankInQuery;
 
   bool BuildMetaData;
+  bool AppendBlockCoordinates;
 
 
   vtkMultiProcessController* Controller;
 
-  vtkStringArray *ArrayList;
+  vtkStringArray* ArrayList;
+  vtkIdList* HaloList;
   vtkDataArraySelection* PointDataArraySelection;
   vtkCallbackCommand* SelectionObserver;
 

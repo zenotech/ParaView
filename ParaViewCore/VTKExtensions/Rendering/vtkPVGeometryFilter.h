@@ -62,6 +62,11 @@ public:
   vtkGetMacro(UseOutline, int);
 
   // Description:
+  // Determines the number of distinct values in vtkBlockColors
+  vtkSetMacro(BlockColorsDistinctValues, int);
+  vtkGetMacro(BlockColorsDistinctValues, int);
+
+  // Description:
   // When input is structured data, this flag will generate faces with
   // triangle strips.  This should render faster and use less memory, but no
   // cell data is copied.  By default, UseStrips is Off.
@@ -76,8 +81,7 @@ public:
   vtkBooleanMacro(ForceUseStrips, int);
 
   // Description:
-  // Whether to generate cell normals.  Cell normals should speed up
-  // rendering when point normals are not available.  They can only be used
+  // Whether to generate cell normals.  They can only be used
   // for poly cells now.  This option does nothing if the output
   // contains lines, verts, or strips.
   vtkSetMacro(GenerateCellNormals, int);
@@ -253,6 +257,7 @@ protected:
 
   int OutlineFlag;
   int UseOutline;
+  int BlockColorsDistinctValues;
   int UseStrips;
   int GenerateCellNormals;
   int Triangulate;
@@ -307,6 +312,12 @@ private:
   void operator=(const vtkPVGeometryFilter&); // Not implemented
 
   void AddCompositeIndex(vtkPolyData* pd, unsigned int index);
+  // Description:
+  // Adds a field array called "vtkBlockColors". The array is
+  // added to each block only if the dataset is a composite
+  // dataset. The array has one value set to 
+  // (blockIndex % BlockColorsDistinctValues)
+  void AddBlockColors(vtkPolyData* pd, unsigned int index);
   void AddHierarchicalIndex(vtkPolyData* pd, unsigned int level, unsigned int index);
   class BoundsReductionOperation;
 //ETX

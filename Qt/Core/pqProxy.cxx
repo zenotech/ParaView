@@ -43,6 +43,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMTrace.h"
 
+#include "vtksys/RegularExpression.hxx"
+
 #include "pqApplicationCore.h"
 #include "pqServer.h"
 #include "pqServerManagerModel.h"
@@ -67,6 +69,22 @@ public:
   ProxyListsType ProxyLists;
   vtkSmartPointer<vtkSMProxy> Proxy;
   vtkSmartPointer<vtkEventQtSlotConnect> Connection;
+
+  /// Returns true if the ProxyLists (the collection of helper proxies)
+  /// contains the given proxy.
+  bool containsHelperProxy(vtkSMProxy* aproxy, QString& key) const
+    {
+    for (ProxyListsType::const_iterator iter = this->ProxyLists.begin();
+      iter != this->ProxyLists.end(); ++iter)
+      {
+      if (iter.value().contains(aproxy))
+        {
+        key = iter.key();
+        return true;
+        }
+      }
+    return false;
+    }
 };
 
 //-----------------------------------------------------------------------------
@@ -213,6 +231,24 @@ QList<vtkSMProxy*> pqProxy::getHelperProxies() const
 }
 
 //-----------------------------------------------------------------------------
+pqProxy* pqProxy::findProxyWithHelper(vtkSMProxy* aproxy, QString& key)
+{
+  if (!aproxy) { return NULL; }
+  pqServerManagerModel* smmodel =
+    pqApplicationCore::instance()->getServerManagerModel();
+  pqServer* server = smmodel->findServer(aproxy->GetSession());
+  QList<pqProxy*> proxies = smmodel->findItems<pqProxy*>(server);
+  foreach (pqProxy* pqproxy, proxies)
+    {
+    if (pqproxy->Internal->containsHelperProxy(aproxy, key))
+      {
+      return pqproxy;
+      }
+    }
+  return NULL;
+}
+
+//-----------------------------------------------------------------------------
 void pqProxy::rename(const QString& newname)
 {
   if(newname != this->SMName)
@@ -329,4 +365,77 @@ void pqProxy::onProxyUnRegistered(const QString& group, const QString& name, vtk
     {
     this->removeInternalHelperProxy(name, proxy);
     }
+}
+
+//-----------------------------------------------------------------------------
+std::string pqProxy::rstToHtml(const char* rstStr)
+{
+  std::string htmlStr = rstStr;
+  {
+  // bold
+  vtksys::RegularExpression re("[*][*]([^*]+)[*][*]");
+  while (re.find (htmlStr))
+    {
+    const char* s = htmlStr.c_str();
+    std::string bold(s + re.start(1), re.end(1)- re.start(1));
+    htmlStr.replace (re.start(0),
+                                   re.end(0) - re.start(0), 
+                                   std::string("<b>") + bold + "</b>");
+    }
+  }
+  {
+  // italic
+  vtksys::RegularExpression re("[*]([^*]+)[*]");
+  while (re.find (htmlStr))
+    {
+    const char* s = htmlStr.c_str();
+    std::string it(s + re.start(1), re.end(1)- re.start(1));
+    htmlStr.replace (re.start(0), re.end(0) - re.start(0), 
+                                   std::string("<i>") + it + "</i>");
+    }
+  }
+  {
+  // begin bullet list
+  size_t start = 0;
+  std::string src ("\n\n- ");
+  while ((start = htmlStr.find(src, start)) 
+         != std::string::npos)
+    {
+    htmlStr.replace (start, src.size(), "\n<ul><li>");
+    }
+  }
+  {
+  // li for bullet list
+  size_t start = 0;
+  std::string src("\n- ");
+  while ((start = htmlStr.find(src, start)) 
+         != std::string::npos)
+    {
+    htmlStr.replace (start, src.size(), "\n<li>");
+    }
+  }
+  {
+  // end bullet list
+  vtksys::RegularExpression re("<li>(.*)\n\n([^-])");
+  while (re.find (htmlStr))
+    {
+    const char* s = htmlStr.c_str();
+    std::string listItem(s + re.start(1), re.end(1)- re.start(1));
+    std::string afterList(s + re.start(2), re.end(2) - re.start(2));
+    htmlStr.replace (
+      re.start(0), re.end(0) - re.start(0), 
+      std::string("<li>") + listItem + "</ul>" + afterList);
+    }
+  }
+  {
+  // paragraph
+  size_t start = 0;
+  std::string src("\n\n");
+  while ((start = htmlStr.find(src, start)) 
+         != std::string::npos)
+    {
+    htmlStr.replace (start, src.size(), "\n<p>\n");
+    }
+  }
+  return htmlStr;
 }

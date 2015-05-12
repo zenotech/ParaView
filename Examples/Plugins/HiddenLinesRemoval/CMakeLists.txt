@@ -16,8 +16,16 @@ if (NOT ParaView_BINARY_DIR)
   include(${PARAVIEW_USE_FILE})
 endif()
 
+# Set a consistent MACOSX_RPATH default across all CMake versions.
+# When CMake 2.8.12 is required, change this default to 1.
+# When CMake 3.0.0 is required, remove this block (see CMP0042).
+if(NOT DEFINED CMAKE_MACOSX_RPATH)
+  set(CMAKE_MACOSX_RPATH 0)
+endif()
+
 include(ParaViewPlugins)
 
+if (VTK_RENDERING_BACKEND STREQUAL "OpenGL")
 
 # Compile-in all GLSL files are strings.
 # const char* with the names same as that of the file then become available for
@@ -42,3 +50,4 @@ add_paraview_plugin(
           vtkVisibleLinesPainter.cxx
           ${ENCODED_STRING_FILES}
 )
+endif()

@@ -110,7 +110,7 @@ vtkPCosmoReader::vtkPCosmoReader()
   this->Overlap = 5;
   this->ReadMode = 1;
   this->CosmoFormat = 1;
-  this->ByteSwap = 0;
+//  this->ByteSwap = 0;
 }
 
 //----------------------------------------------------------------------------
@@ -223,14 +223,14 @@ int vtkPCosmoReader::RequestData(
     distribute.setParameters(this->FileName, this->RL, "BLOCK");
     }
 
-  if( this->ByteSwap )
-    {
-    distribute.setByteSwap(true);
-    }
-  else
-    {
-    distribute.setByteSwap(false);
-    }
+//  if( this->ByteSwap )
+//    {
+//    distribute.setByteSwap(true);
+//    }
+//  else
+//    {
+//    distribute.setByteSwap(false);
+//    }
 
   exchange.setParameters(this->RL, this->Overlap);
 
@@ -297,7 +297,7 @@ int vtkPCosmoReader::RequestData(
   owner->SetName("ghost");
   owner->Allocate(numberOfParticles);
   vtkUnsignedCharArray* ghost = vtkUnsignedCharArray::New();
-  ghost->SetName("vtkGhostLevels");
+  ghost->SetName(vtkDataSetAttributes::GhostArrayName());
   ghost->Allocate(numberOfParticles);
 
   // put it into the correct VTK structure
@@ -344,7 +344,7 @@ int vtkPCosmoReader::RequestData(
     status->pop_back();
 
     owner->InsertNextValue(neighbor);
-    ghost->InsertNextValue(level);
+    ghost->InsertNextValue((level > 0) ? vtkDataSetAttributes::DUPLICATEPOINT : 0);
     }
 
   // cleanup

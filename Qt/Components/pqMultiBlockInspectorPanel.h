@@ -32,8 +32,11 @@ class QTreeWidgetItem;
 
 class pqOutputPort;
 class pqRepresentation;
-class vtkPVCompositeDataInformation;
+class vtkDiscretizableColorTransferFunction;
 class vtkEventQtSlotConnect;
+class vtkPiecewiseFunction;
+class vtkPVCompositeDataInformation;
+class vtkSMProxy;
 
 class PQCOMPONENTS_EXPORT pqMultiBlockInspectorPanel : public QWidget
 {
@@ -49,9 +52,10 @@ public:
   QString lookupBlockName(unsigned int flatIndex) const;
 
 public slots:
-  void setOutputPort(pqOutputPort *port);
-  void setRepresentation(pqRepresentation *representation);
-  void updateInformation();
+  /// ParaView events
+  void onPortChanged(pqOutputPort *port);
+  void onRepresentationChanged(pqRepresentation *representation);
+  void onDataUpdated();
 
   void setBlockVisibility(unsigned int index, bool visible);
   void clearBlockVisibility(unsigned int index);
@@ -76,16 +80,20 @@ public slots:
   void showAllBlocks();
 
 private slots:
-  void treeWidgetCustomContextMenuRequested(const QPoint &pos);
-  void blockItemChanged(QTreeWidgetItem *item, int column);
-  void updateTreeWidgetBlockVisibilities();
-  void updateTreeWidgetBlockVisibilities(
-    vtkPVCompositeDataInformation *iter,
-    QTreeWidgetItem *parent,
-    unsigned int &flatIndex,
-    bool visibility);
-  void currentSelectionChanged(pqOutputPort *port);
-  void currentTreeItemSelectionChanged();
+  /// ParaView events
+  void onSelectionChanged(pqOutputPort *port);
+  void onColorArrayNameModified();
+
+  void onCustomContextMenuRequested(const QPoint &pos);
+  void onItemChanged(QTreeWidgetItem *item, int column);
+  void updateTree();
+  void updateTree(vtkPVCompositeDataInformation *iter,
+                  QTreeWidgetItem *parent,
+                  int& flatIndex, bool visibility,
+                  int inheritedColorIndex,
+                  int inheritedOpacityIndex);
+  void onItemSelectionChanged();
+  void onItemDoubleClicked(QTreeWidgetItem * item, int column);
   void updateBlockVisibilities();
   void updateBlockColors();
   void updateBlockOpacities();
@@ -93,11 +101,23 @@ private slots:
 private:
   Q_DISABLE_COPY(pqMultiBlockInspectorPanel)
 
+ enum NodeType
+ {
+   INTERNAL_NODE,
+   LEAF_NODE
+ };
+
   void buildTree(vtkPVCompositeDataInformation *iter,
                  QTreeWidgetItem *parent,
-                 unsigned int &flatIndex);
+                 int& flatIndex);
   void unsetChildVisibilities(QTreeWidgetItem *parent);
-  QIcon makeBlockIcon(unsigned int flatIndex) const;
+  QIcon makeColorIcon(int flatIndex, NodeType nodeType, 
+                      int inheritedColorIndex) const;
+  QIcon makeOpacityIcon(int flatIndex, NodeType nodeType, 
+                        int inheritedOpacityIndex) const;
+  QIcon makeNullIcon() const;
+
+
 
 private:
   QTreeWidget *TreeWidget;
@@ -106,7 +126,14 @@ private:
   QMap<unsigned int, bool> BlockVisibilites;
   QMap<unsigned int, QColor> BlockColors;
   QMap<unsigned int, double> BlockOpacities;
-  vtkEventQtSlotConnect *VisibilityPropertyListener;
+  vtkEventQtSlotConnect *PropertyListener;
+  vtkSMProxy *ColorTransferProxy;
+  vtkDiscretizableColorTransferFunction* ColorTransferFunction;
+  vtkPiecewiseFunction* OpacityTransferFunction;
+  unsigned int BlockColorsDistinctValues;
+  int CompositeWrap;
+
+
   pqTimer UpdateUITimer;
 
   struct BlockIcon
@@ -127,7 +154,6 @@ private:
       return c.rgba() < oc.rgba();
     }
   };
-  mutable QMap<BlockIcon, QIcon> BlockIconCache;
 };
 
 #endif // __pqMultiBlockInspectorPanel_h

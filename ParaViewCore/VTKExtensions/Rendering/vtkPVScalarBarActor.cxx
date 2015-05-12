@@ -70,6 +70,7 @@ vtkPVScalarBarActor::vtkPVScalarBarActor()
   this->AspectRatio = 20.0;
   this->AutomaticLabelFormat = 1;
   this->DrawTickMarks = 1;
+  this->DrawSubTickMarks = 1;
   this->AddRangeLabels = 1;
   this->RangeLabelFormat = NULL;
   this->SetRangeLabelFormat("%4.3e");
@@ -77,6 +78,7 @@ vtkPVScalarBarActor::vtkPVScalarBarActor()
   this->AddRangeAnnotations = 1;
   this->AnnotationTextScaling = 1;
   this->SetVerticalTitleSeparation(4);
+  this->AutomaticAnnotations = 0;
 
   this->ScalarBarTexture = vtkTexture::New();
 
@@ -112,6 +114,7 @@ void vtkPVScalarBarActor::PrintSelf(ostream &os, vtkIndent indent)
   os << indent << "AspectRatio: " << this->AspectRatio << endl;
   os << indent << "AutomaticLabelFormat: " << this->AutomaticLabelFormat << endl;
   os << indent << "DrawTickMarks: " << this->DrawTickMarks << endl;
+  os << indent << "DrawSubTickMarks: " << this->DrawSubTickMarks << endl;
   os << indent << "AddRangeLabels: " << this->AddRangeLabels << endl;
   os << indent << "RangeLabelFormat: " << (this->RangeLabelFormat ? this->RangeLabelFormat : "(null)") << endl;
   os << indent << "ScalarBarTexture: ";
@@ -153,6 +156,7 @@ void vtkPVScalarBarActor::PrintSelf(ostream &os, vtkIndent indent)
   os << indent << "LabelSpace: " << this->LabelSpace << endl;
   os << indent << "TitleJustification: " << this->TitleJustification << endl;
   os << indent << "AddRangeAnnotations: " << this->AddRangeAnnotations << endl;
+  os << indent << "AutomaticAnnotations: " << this->AutomaticAnnotations << endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -338,8 +342,11 @@ std::vector<double> vtkPVScalarBarActor::LinearTickMarks(
 
   // If we have too many ticks, try reducing the number of ticks by applying
   // these scaling factors to originalMag in this order.
-  const double magScale[] = { 1.0, 2.0, 2.5, 4.0, 10.0,
-                              20.0, 25.0, 40.0, 100.0 };
+  const double magScale[] = { 1.0, 1.5, 2.0, 2.5, 3.0, 3.5,
+                              4.0, 5.0, 6.0, 7.0, 8.0, 9.0,
+                              10.0, 15.0, 20.0, 25.0, 30.0, 35.0,
+                              40.0, 50.0, 60.0, 70.0, 80.0, 90.0,
+                              100.0 };
   const int numScales = static_cast<int>(sizeof(magScale)/sizeof(double));
 
   for (int scaleIdx = 0; scaleIdx < numScales; scaleIdx++)
@@ -429,7 +436,7 @@ std::vector<double> vtkPVScalarBarActor::LogTickMarks(
 
   double logrange[2];
   logrange[0] = log10(range[0]);  logrange[1] = log10(range[1]);
-  ticks = this->LinearTickMarks(logrange, maxTicks, minDigits, true);
+  ticks = this->LinearTickMarks(logrange, maxTicks, minDigits, false);
 
 #if 0
   // Figure out how many digits we must show in order for tic labels
@@ -896,7 +903,7 @@ void vtkPVScalarBarActor::ConfigureTicks()
     ticks.insert(ticks.end(), fakeMax);
     numTicks = static_cast<int>(ticks.size());
 
-    for (int i = 0; i < numTicks-1; i++)
+    for (int i = 0; this->DrawSubTickMarks && i < numTicks-1; i++)
       {
       double minorTickRange[2];
       minorTickRange[0] = ticks[i];  minorTickRange[1] = ticks[i+1];
@@ -1099,7 +1106,7 @@ void vtkPVScalarBarActor::ConfigureTicks()
       {
       normVal = (val - range[0])/(range[1] - range[0]);
       }
-    
+
     if (this->Orientation == VTK_ORIENT_VERTICAL)
       {
       double x = precede ?
@@ -1166,52 +1173,63 @@ static void AddLabelIfUnoccluded(
 void vtkPVScalarBarActor::EditAnnotations()
 {
   vtkScalarsToColors* lut = this->LookupTable;
-  if (lut && !lut->GetIndexedLookup() && this->AddRangeAnnotations)
+  if (lut && !lut->GetIndexedLookup())
     {
     const double* range = lut->GetRange();
-    double minX, maxX;
-    vtkColor4d minFltCol;
-    vtkColor4d maxFltCol;
-    vtkColor3ub minCol;
-    vtkColor3ub maxCol;
-    minX = this->P->ScalarBarBox.Posn[this->P->TL[1]];
-    maxX = this->P->ScalarBarBox.Size[1] + minX;
-
-    // Print min + max labels that have 3 significant digits
-    // or the number of digits it takes to distinguish them,
-    // whichever is more.
-    char minLabel[64];
-    char maxLabel[64];
-    char minFmt[64];
-    char maxFmt[64];
     double dr = range[1] - range[0];
-    double ldr = log10(dr);
-    // The least significant digit in which the min and max vary:
-    int least = (ldr > 0 ? +1 : -1) * static_cast<int>(floor(fabs(ldr)));
-    // The most significant digit of the min and max:
-    int minMost = static_cast<int>(ceil(log10(fabs(range[0]))));
-    int maxMost = static_cast<int>(ceil(log10(fabs(range[1]))));
-    // How many digits of precision are required to distinguish min and max:
-    int minDig = (minMost == VTK_INT_MIN) ? 3 : (minMost - least);
-    int maxDig = (maxMost == VTK_INT_MIN) ? 3 : (maxMost - least);
-    // Labels for min and max:
-    SNPRINTF(minFmt, 63, "%%.%dg", minDig < 3 ? 3 : minDig);
-    SNPRINTF(maxFmt, 63, "%%.%dg", maxDig < 3 ? 3 : maxDig);
-    SNPRINTF(minLabel, 63, minFmt, range[0]);
-    SNPRINTF(maxLabel, 63, maxFmt, range[1]);
+    double minX = this->P->ScalarBarBox.Posn[this->P->TL[1]];
+    double maxX = this->P->ScalarBarBox.Size[1] + minX;
 
-    lut->GetColor(range[0], minFltCol.GetData());
-    lut->GetColor(range[1], maxFltCol.GetData());
-    for (int j = 0; j < 3; ++j)
+    // Add annotations with min and max values
+    if (this->AddRangeAnnotations)
       {
-      minCol.GetData()[j] =
-        static_cast<unsigned char>(minFltCol.GetData()[j] * 255.);
-      maxCol.GetData()[j] =
-        static_cast<unsigned char>(maxFltCol.GetData()[j] * 255.);
+      this->AddValueLabelIfUnoccluded(range[0], minX, dr);
+      this->AddValueLabelIfUnoccluded(range[1], maxX, dr);
       }
-    AddLabelIfUnoccluded(minX, minCol, minLabel, this->P);
-    AddLabelIfUnoccluded(maxX, maxCol, maxLabel, this->P);
+
+    // Add annotations with corresponding values between discretized colors
+    vtkDiscretizableColorTransferFunction* transferFunc =
+      vtkDiscretizableColorTransferFunction::SafeDownCast(this->LookupTable);
+    vtkIdType nbValues = lut->GetNumberOfAvailableColors();
+    if (transferFunc && transferFunc->GetDiscretize() &&
+      this->AutomaticAnnotations && nbValues)
+      {
+      double step = dr / nbValues;
+      double stepPos = (maxX - minX) / nbValues;
+      for(vtkIdType i = 0; i <= nbValues; i++)
+        {
+        double value = range[0] + step * i;
+        double pos = minX + stepPos * i;
+        this->AddValueLabelIfUnoccluded(value, pos, value - range[0]);
+        }
+      }
     }
+}
+
+//-----------------------------------------------------------------------------
+void vtkPVScalarBarActor::AddValueLabelIfUnoccluded(
+  double value, double pos, double /*diff*/)
+{
+  double lVal = log10(value);
+  // The least significant digit
+  int least = (lVal > 0 ? +1 : -1) * static_cast<int>(floor(fabs(lVal)));
+  // The most significant digit
+  int most = static_cast<int>(ceil(log10(fabs(value))));
+  // How many digits of precision are required
+  int dig = (most == VTK_INT_MIN) ? 3 : (most - least);
+  // Label
+  char label[64], fmt[64];
+  SNPRINTF(fmt, 63, "%%.%dg", dig < 3 ? 3 : dig);
+  SNPRINTF(label, 63, fmt, value);
+  vtkColor4d fltCol;
+  vtkColor3ub col;
+  this->LookupTable->GetColor(value, fltCol.GetData());
+  for (int j = 0; j < 3; ++j)
+    {
+    col.GetData()[j] =
+      static_cast<unsigned char>(fltCol.GetData()[j] * 255.);
+    }
+  AddLabelIfUnoccluded(pos, col, label, this->P);
 }
 
 //-----------------------------------------------------------------------------

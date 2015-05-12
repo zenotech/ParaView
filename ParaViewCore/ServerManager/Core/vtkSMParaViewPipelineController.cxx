@@ -35,8 +35,8 @@
 #include "vtkSMSettings.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMTimeKeeperProxy.h"
-#include "vtkWeakPointer.h"
 #include "vtkSMTrace.h"
+#include "vtkWeakPointer.h"
 
 #include <cassert>
 #include <map>
@@ -135,23 +135,7 @@ vtkStdString vtkSMParaViewPipelineController::GetHelperProxyGroupName(vtkSMProxy
 vtkSMProxy* vtkSMParaViewPipelineController::FindProxy(
   vtkSMSessionProxyManager* pxm, const char* reggroup, const char* xmlgroup, const char* xmltype)
 {
-  vtkNew<vtkSMProxyIterator> iter;
-  iter->SetSessionProxyManager(pxm);
-  iter->SetModeToOneGroup();
-
-  for (iter->Begin(reggroup); !iter->IsAtEnd(); iter->Next())
-    {
-    vtkSMProxy* proxy = iter->GetProxy();
-    if (proxy != NULL &&
-      proxy->GetXMLGroup() &&
-      proxy->GetXMLName() &&
-      strcmp(proxy->GetXMLGroup(), xmlgroup) == 0 &&
-      strcmp(proxy->GetXMLName(), xmltype) == 0)
-      {
-      return proxy;
-      }
-    }
-  return NULL;
+  return pxm? pxm->FindProxy(reggroup, xmlgroup, xmltype) : NULL;
 }
 
 //----------------------------------------------------------------------------
@@ -1098,7 +1082,10 @@ bool vtkSMParaViewPipelineController::PostInitializeProxy(vtkSMProxy* proxy)
       {
       vtkSMProperty* smproperty = iter->GetProperty();
 
-      if ((smproperty->GetMTime() > ts) || smproperty->GetInformationOnly())
+      if ((smproperty->GetMTime() > ts) ||
+        smproperty->GetInformationOnly() ||
+        // doesn't make sense to set property values for internal properties.
+        smproperty->GetIsInternal())
         {
         // Property was modified between since the PreInitializeProxy() call. We
         // leave it untouched.

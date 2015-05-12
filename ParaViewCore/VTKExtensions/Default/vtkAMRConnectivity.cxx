@@ -35,6 +35,7 @@
 #include "vtkSmartPointer.h"
 #include "vtkTimerLog.h"
 #include "vtkUniformGrid.h"
+#include "vtkUnsignedCharArray.h"
 #include "vtksys/SystemTools.hxx"
 
 #include "vtkPVConfig.h"
@@ -182,11 +183,12 @@ private:
 };
 
 
+#ifdef PARAVIEW_USE_MPI
+
 static const int BOUNDARY_TAG = 857089;
 static const int EQUIV_SIZE_TAG = 748957;
 static const int EQUIV_TAG = 357345;
 
-#ifdef PARAVIEW_USE_MPI
 //-----------------------------------------------------------------------------
 // Simple containers for managing asynchronous communication.
 struct vtkAMRConnectivityCommRequest
@@ -381,10 +383,10 @@ int vtkAMRConnectivity::DoRequestData (vtkNonOverlappingAMR* volume,
       return 0;
       }
 
-    vtkDataArray* ghostLevels = grid->GetCellData ()->GetArray ("vtkGhostLevels");
-    if (!ghostLevels) 
+    vtkUnsignedCharArray* ghostArray = grid->GetCellGhostArray();
+    if (!ghostArray) 
       {
-      vtkErrorMacro ("No vtkGhostLevels array attached to the CTH volume data");
+      vtkErrorMacro ("No ghost array attached to the CTH volume data");
       return 0;
       }
 
@@ -400,12 +402,13 @@ int vtkAMRConnectivity::DoRequestData (vtkNonOverlappingAMR* volume,
           {
           int ijk[3] = { i, j, k };
           vtkIdType cellId = grid->ComputeCellId (ijk);
-          if (regionId->GetTuple1 (cellId) == 0 
-              && volArray->GetTuple1 (cellId) > this->VolumeFractionSurfaceValue
-              && ghostLevels->GetTuple1 (cellId) < 0.5)
+          if (regionId->GetTuple1 (cellId) == 0 &&
+              volArray->GetTuple1 (cellId) > this->VolumeFractionSurfaceValue &&
+              (ghostArray->GetValue (cellId) & 
+               vtkDataSetAttributes::DUPLICATECELL) == 0)
             {
             // wave propagation sets the region id as it propagates
-            this->WavePropagation (cellId, grid, regionId, volArray, ghostLevels);
+            this->WavePropagation (cellId, grid, regionId, volArray, ghostArray);
             // increment this way so the region id remains globally unique
             this->NextRegionId += numProcs;
             }
@@ -629,11 +632,12 @@ int vtkAMRConnectivity::DoRequestData (vtkNonOverlappingAMR* volume,
       vtkIdTypeArray* regionIdArray = vtkIdTypeArray::SafeDownCast (
                                         grid->GetCellData ()->GetArray (this->RegionName.c_str()));
       vtkDataArray* volArray = grid->GetCellData ()->GetArray (volumeName);
-      vtkDataArray* ghostLevels = grid->GetCellData ()->GetArray ("vtkGhostLevels");
+      vtkUnsignedCharArray* ghostArray = grid->GetCellGhostArray();
       for (int cellId = 0; cellId < regionIdArray->GetNumberOfTuples (); cellId ++) 
         {
-        if (ghostLevels->GetTuple1 (cellId) < 0.5
-            || volArray->GetTuple1 (cellId) < this->VolumeFractionSurfaceValue)
+        if ((ghostArray->GetValue (cellId) & 
+             vtkDataSetAttributes::DUPLICATECELL) == 0 ||
+            volArray->GetTuple1 (cellId) < this->VolumeFractionSurfaceValue)
           {
           continue;
           }
@@ -645,9 +649,11 @@ int vtkAMRConnectivity::DoRequestData (vtkNonOverlappingAMR* volume,
           for (int j = 0; j < cellIds->GetNumberOfIds (); j ++)
             {
             vtkIdType neighbor = cellIds->GetId (j);
-            if (neighbor != cellId
-                && volArray->GetTuple1 (neighbor) > this->VolumeFractionSurfaceValue
-                && ghostLevels->GetTuple1 (neighbor) < 0.5)
+            if (neighbor != cellId &&
+                volArray->GetTuple1 (neighbor) > 
+                  this->VolumeFractionSurfaceValue && 
+                (ghostArray->GetValue (neighbor) & 
+                 vtkDataSetAttributes::DUPLICATECELL) == 0)
               {
               regionIdArray->SetTuple1 (cellId, regionIdArray->GetTuple1 (neighbor));
               isSet = true;
@@ -674,7 +680,7 @@ int vtkAMRConnectivity::WavePropagation (vtkIdType cellIdStart,
                                          vtkUniformGrid* grid, 
                                          vtkIdTypeArray* regionId,
                                          vtkDataArray* volArray,
-                                         vtkDataArray* ghostLevels)
+                                         vtkUnsignedCharArray* ghostArray)
 {
   vtkSmartPointer<vtkIdList> todoList = vtkIdList::New ();
   todoList->SetNumberOfIds (0);
@@ -698,9 +704,10 @@ int vtkAMRConnectivity::WavePropagation (vtkIdType cellIdStart,
         {
         vtkIdType neighbor = cellIds->GetId (j);
         if (neighbor == cellId || todoList->IsId (neighbor) >= 0) { continue; }
-        if (regionId->GetTuple1 (neighbor) == 0 
-            && volArray->GetTuple1 (neighbor) > this->VolumeFractionSurfaceValue
-            && ghostLevels->GetTuple1 (neighbor) < 0.5)
+        if (regionId->GetTuple1 (neighbor) == 0 &&
+            volArray->GetTuple1 (neighbor) > this->VolumeFractionSurfaceValue &&
+            (ghostArray->GetValue (neighbor) &
+             vtkDataSetAttributes::DUPLICATECELL) == 0)
           {
           todoList->InsertNextId (neighbor);
           }

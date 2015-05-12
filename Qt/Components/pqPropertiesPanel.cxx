@@ -371,10 +371,17 @@ void pqPropertiesPanel::setPanelMode(int val)
   this->Internals->Ui.Delete->setVisible(has_source);
   this->Internals->Ui.Help->setVisible(has_source);
   this->Internals->Ui.Reset->setVisible(has_source);
+  this->Internals->Ui.PropertiesSaveAsDefaults->setVisible(has_source);
+  this->Internals->Ui.PropertiesRestoreDefaults->setVisible(has_source);
 
   this->Internals->Ui.PropertiesFrame->setVisible(has_source);
   this->Internals->Ui.ViewFrame->setVisible(has_view);
+  this->Internals->Ui.ViewSaveAsDefaults->setVisible(has_view);
+  this->Internals->Ui.ViewRestoreDefaults->setVisible(has_view);
+
   this->Internals->Ui.DisplayFrame->setVisible(has_display);
+  this->Internals->Ui.DisplaySaveAsDefaults->setVisible(has_display);
+  this->Internals->Ui.DisplayRestoreDefaults->setVisible(has_display);
 
   // the buttons need not be shown if there's only 1 type in the panel.
   bool has_multiples_types =
@@ -522,9 +529,6 @@ void pqPropertiesPanel::updatePropertiesPanel(pqPipelineSource *source)
     {
     this->Internals->Ui.PropertiesButton->setText("Properties");
     }
-
-  this->Internals->Ui.PropertiesRestoreDefaults->setEnabled(source != NULL);
-  this->Internals->Ui.PropertiesSaveAsDefaults->setEnabled(source != NULL);
 }
 
 //-----------------------------------------------------------------------------
@@ -593,14 +597,15 @@ void pqPropertiesPanel::updateDisplayPanel(pqDataRepresentation* repr)
 }
 
 //-----------------------------------------------------------------------------
-void pqPropertiesPanel::updateViewPanel (pqView* _view)
+void pqPropertiesPanel::updateViewPanel (pqView* argView)
 {
+  pqView* _view = argView;
   if ( (this->PanelMode & pqPropertiesPanel::VIEW_PROPERTIES) == 0)
     {
     _view = NULL;
     }
 
-  if (this->Internals->View != _view)
+  if (this->Internals->View != argView)
     {
     // The view has changed.
     if (this->Internals->View)
@@ -611,8 +616,8 @@ void pqPropertiesPanel::updateViewPanel (pqView* _view)
         delete this->Internals->ViewWidgets;
         }
       }
-    this->Internals->View = _view;
-    emit this->viewChanged(_view);
+    this->Internals->View = argView;
+    emit this->viewChanged(argView);
     if (_view)
       {
       // create the widgets for this view
@@ -754,6 +759,16 @@ void pqPropertiesPanel::updateButtonState()
     // only modified proxy is deleted.
     this->Internals->ReceivedChangeAvailable = false;
     }
+
+  // Update PropertiesSaveAsDefaults and PropertiesRestoreDefaults state.
+  // If the source's properties are yet to be applied, we disable the two
+  // buttons (see BUG #15338).
+  bool canSaveRestoreSourcePropertyDefaults =
+    this->Internals->Source != NULL?
+    (this->Internals->Source->modifiedState() == pqProxy::UNMODIFIED) :
+    false;
+  this->Internals->Ui.PropertiesSaveAsDefaults->setEnabled(canSaveRestoreSourcePropertyDefaults);
+  this->Internals->Ui.PropertiesRestoreDefaults->setEnabled(canSaveRestoreSourcePropertyDefaults);
 }
 
 //-----------------------------------------------------------------------------
@@ -852,7 +867,15 @@ void pqPropertiesPanel::propertiesRestoreDefaults()
     this->Internals->SourceWidgets[this->Internals->Source] : NULL;
   if (widgets && widgets->Panel)
     {
-    widgets->Panel->onRestoreDefaults();
+    if (widgets->Panel->restoreDefaults())
+      {
+      // If defaults were restored, we're going to pretend that the user hit
+      // apply for the source, so that the property changes are "accepted" and
+      // rest of the application updates.
+      widgets->apply(this->view());
+      emit this->applied(widgets->Proxy);
+      emit this->applied();
+      }
     }
 }
 
@@ -863,7 +886,7 @@ void pqPropertiesPanel::propertiesSaveAsDefaults()
     this->Internals->SourceWidgets[this->Internals->Source] : NULL;
   if (widgets && widgets->Panel)
     {
-    widgets->Panel->onSaveAsDefaults();
+    widgets->Panel->saveAsDefaults();
     }
 }
 
@@ -872,8 +895,10 @@ void pqPropertiesPanel::displayRestoreDefaults()
 {
   if (this->Internals->DisplayWidgets)
     {
-    this->Internals->DisplayWidgets->Panel->onRestoreDefaults();
-    this->Internals->DisplayWidgets->Panel->apply();
+    if (this->Internals->DisplayWidgets->Panel->restoreDefaults())
+      {
+      this->Internals->DisplayWidgets->Panel->apply();
+      }
     }
 }
 
@@ -882,7 +907,7 @@ void pqPropertiesPanel::displaySaveAsDefaults()
 {
   if (this->Internals->DisplayWidgets)
     {
-    this->Internals->DisplayWidgets->Panel->onSaveAsDefaults();
+    this->Internals->DisplayWidgets->Panel->saveAsDefaults();
     }
 }
 
@@ -891,8 +916,10 @@ void pqPropertiesPanel::viewRestoreDefaults()
 {
   if (this->Internals->ViewWidgets)
     {
-    this->Internals->ViewWidgets->Panel->onRestoreDefaults();
-    this->Internals->ViewWidgets->Panel->apply();
+    if (this->Internals->ViewWidgets->Panel->restoreDefaults())
+      {
+      this->Internals->ViewWidgets->Panel->apply();
+      }
     }
 }
 
@@ -901,7 +928,7 @@ void pqPropertiesPanel::viewSaveAsDefaults()
 {
   if (this->Internals->ViewWidgets)
     {
-    this->Internals->ViewWidgets->Panel->onSaveAsDefaults();
+    this->Internals->ViewWidgets->Panel->saveAsDefaults();
     }
 }
 

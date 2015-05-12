@@ -19,8 +19,6 @@
 #include "vtkRenderState.h"
 #include "vtkOpenGLError.h"
 
-#include "vtkgl.h"
-
 vtkStandardNewMacro(vtkPVDefaultPass);
 //----------------------------------------------------------------------------
 vtkPVDefaultPass::vtkPVDefaultPass()
@@ -46,6 +44,11 @@ void vtkPVDefaultPass::Render(const vtkRenderState* render_state)
   GLint saved_matrix_mode;
   glGetIntegerv(GL_MATRIX_MODE, &saved_matrix_mode);
   glMatrixMode(GL_MODELVIEW);
+
+  // initialize to false
+  this->SetLastRenderingUsedDepthPeeling(
+    render_state->GetRenderer(), false);
+
   this->UpdateGeometry(renderer);
   glMatrixMode(saved_matrix_mode);
 

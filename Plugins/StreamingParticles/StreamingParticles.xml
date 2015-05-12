@@ -25,6 +25,26 @@
                          number_of_elements="1">
         <BooleanDomain name="bool" />
       </IntVectorProperty>
+      <IntVectorProperty command="SetUseBlockDetailInformation"
+                         default_values="0"
+                         name="UseBlockDetailInformation"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <IntVectorProperty command="SetProcessesCanLoadAnyBlock"
+                         default_values="1"
+                         name="ProcessesCanLoadAnyBlock"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <DoubleVectorProperty command="SetDetailLevelToLoad"
+                            default_values="2"
+                            name="DetailLevel"
+                            number_of_elements="1">
+        <DoubleRangeDomain min="0"
+                           max="5e-4"
+                           range="range" />
+      </DoubleVectorProperty>
       <IntVectorProperty command="SetStreamingRequestSize"
                          default_values="1"
                          name="StreamingRequestSize"
@@ -103,6 +123,9 @@
         </ShareProperties>
         <ExposedProperties>
           <Property name="UseOutline" />
+          <Property name="UseBlockDetailInformation" />
+          <Property name="ProcessesCanLoadAnyBlock" />
+          <Property name="DetailLevel" />
           <Property name="StreamingRequestSize" />
         </ExposedProperties>
       </SubProxy>
@@ -128,11 +151,40 @@
         </ShareProperties>
         <ExposedProperties>
           <Property name="UseOutline" />
+          <Property name="UseBlockDetailInformation" />
+          <Property name="ProcessesCanLoadAnyBlock" />
+          <Property name="DetailLevel" />
           <Property name="StreamingRequestSize" />
         </ExposedProperties>
       </SubProxy>
     </Extension>
 
+  </ProxyGroup>
+  <!-- ==================================================================== -->
+  <ProxyGroup name="sources">
+    <SourceProxy class="vtkPVRandomPointsStreamingSource" label="Random Streaming Points"
+                 name="RandomPoints">
+      <IntVectorProperty command="SetNumLevels" default_values="5"
+                         number_of_elements="1" name="NumberOfLevels">
+        <IntRangeDomain max="6"
+                        min="1"
+                        name="range" />
+        <Documentation>Set the number of levels in the octree of blocks
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetPointsPerBlock" default_values="100"
+                         number_of_elements="1" name="PointsPerBlock">
+        <Documentation>Set the number of points generated in each block
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetSeed" default_values="1"
+                         number_of_elements="1" name="Seed">
+        <Documentation>Set the seed of the random number generator
+        </Documentation>
+      </IntVectorProperty>
+      <Documentation>This source creates random points in an octree of blocks to be
+        used with the Streaming Particles representation</Documentation>
+    </SourceProxy>
   </ProxyGroup>
 
 </ServerManagerConfiguration>

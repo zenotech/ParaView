@@ -21,6 +21,7 @@
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkMultiProcessController.h"
+#include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkProperty.h"
 #include "vtkPVCacheKeeper.h"
@@ -29,6 +30,7 @@
 #include "vtkPVRenderView.h"
 #include "vtkRenderer.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
+#include "vtkStructuredExtent.h"
 
 vtkStandardNewMacro(vtkImageSliceRepresentation);
 //----------------------------------------------------------------------------
@@ -87,6 +89,12 @@ void vtkImageSliceRepresentation::SetInputArrayToProcess(
     {
   case vtkDataObject::FIELD_ASSOCIATION_CELLS:
     this->SliceMapper->SetScalarMode(VTK_SCALAR_MODE_USE_CELL_FIELD_DATA);
+    break;
+
+  case vtkDataObject::FIELD_ASSOCIATION_NONE:
+    this->SliceMapper->SetScalarMode(VTK_SCALAR_MODE_USE_FIELD_DATA);
+    // Color entire block by zeroth tuple in the field data
+    this->SliceMapper->SetFieldDataTupleId(0);
     break;
 
   case vtkDataObject::FIELD_ASSOCIATION_POINTS:
@@ -236,21 +244,28 @@ void vtkImageSliceRepresentation::UpdateSliceData(
     break;
     }
 
-  vtkImageData* clone= vtkImageData::New();
-  clone->ShallowCopy(input);
+  // Now, clamp the extent for the slice to the extent available on this rank.
+  vtkNew<vtkStructuredExtent> helper;
+  helper->Clamp(outExt, input->GetExtent());
+  if (outExt[0] <= outExt[1] && outExt[2] <= outExt[3] && outExt[4] <= outExt[5])
+    {
+    vtkExtractVOI* voi = vtkExtractVOI::New();
+    voi->SetVOI(outExt);
+    voi->SetInputData(input);
+    voi->Update();
 
-  vtkExtractVOI* voi = vtkExtractVOI::New();
-  voi->SetVOI(outExt);
-  voi->SetInputData(clone);
-  voi->Update();
+    this->SliceData->ShallowCopy(voi->GetOutput());
+    voi->Delete();
+    }
+  else
+    {
+    this->SliceData->Initialize();
+    }
 
-  this->SliceData->ShallowCopy(voi->GetOutput());
   // vtkExtractVOI is not passing correct origin. Until that's fixed, I
   // will just use the input origin/spacing to compute the bounds.
   this->SliceData->SetOrigin(input->GetOrigin());
 
-  voi->Delete();
-  clone->Delete();
 }
 
 //----------------------------------------------------------------------------

@@ -32,9 +32,10 @@ vtkPVInteractorStyle::vtkPVInteractorStyle()
 {
   this->UseTimers = 0;
   this->CameraManipulators = vtkCollection::New();
-  this->Current = NULL;
+  this->CurrentManipulator = NULL;
   this->CenterOfRotation[0] = this->CenterOfRotation[1]
     = this->CenterOfRotation[2] = 0;
+  this->RotationFactor = 1.0;
  }
 
 //-------------------------------------------------------------------------
@@ -59,67 +60,74 @@ void vtkPVInteractorStyle::AddManipulator(vtkCameraManipulator *m)
 //-------------------------------------------------------------------------
 void vtkPVInteractorStyle::OnLeftButtonDown()
 {
-  this->OnButtonDown(1, this->Interactor->GetShiftKey(), 
+  this->OnButtonDown(1, this->Interactor->GetShiftKey(),
                      this->Interactor->GetControlKey());
 }
 
 //-------------------------------------------------------------------------
 void vtkPVInteractorStyle::OnMiddleButtonDown()
 {
-  this->OnButtonDown(2, this->Interactor->GetShiftKey(), 
+  this->OnButtonDown(2, this->Interactor->GetShiftKey(),
                      this->Interactor->GetControlKey());
 }
 
 //-------------------------------------------------------------------------
 void vtkPVInteractorStyle::OnRightButtonDown()
 {
-  this->OnButtonDown(3, this->Interactor->GetShiftKey(), 
+  this->OnButtonDown(3, this->Interactor->GetShiftKey(),
                      this->Interactor->GetControlKey());
 }
 
 //-------------------------------------------------------------------------
 void vtkPVInteractorStyle::OnButtonDown(int button, int shift, int control)
 {
-  vtkCameraManipulator *manipulator;
-
   // Must not be processing an interaction to start another.
-  if (this->Current)
+  if (this->CurrentManipulator)
     {
     return;
     }
 
   // Get the renderer.
-  if (!this->CurrentRenderer)
+  this->FindPokedRenderer(this->Interactor->GetEventPosition()[0],
+    this->Interactor->GetEventPosition()[1]);
+  if (this->CurrentRenderer == NULL)
     {
-    this->FindPokedRenderer(this->Interactor->GetEventPosition()[0],
-                            this->Interactor->GetEventPosition()[1]);
-    if (this->CurrentRenderer == NULL)
-      {
-      return;
-      }
+    return;
     }
 
   // Look for a matching camera interactor.
+  this->CurrentManipulator = this->FindManipulator(button, shift, control);
+  if (this->CurrentManipulator)
+    {
+    this->CurrentManipulator->Register(this);
+    this->InvokeEvent(vtkCommand::StartInteractionEvent);
+    this->CurrentManipulator->SetCenter(this->CenterOfRotation);
+    this->CurrentManipulator->SetRotationFactor(this->RotationFactor);
+    this->CurrentManipulator->StartInteraction();
+    this->CurrentManipulator->OnButtonDown(this->Interactor->GetEventPosition()[0],
+                                this->Interactor->GetEventPosition()[1],
+                                this->CurrentRenderer,
+                                this->Interactor);
+    }
+}
+
+//-------------------------------------------------------------------------
+vtkCameraManipulator* vtkPVInteractorStyle::FindManipulator(int button, int shift, int control)
+{
+  // Look for a matching camera interactor.
   this->CameraManipulators->InitTraversal();
+  vtkCameraManipulator* manipulator = NULL;
   while ((manipulator = (vtkCameraManipulator*)
                         this->CameraManipulators->GetNextItemAsObject()))
     {
-    if (manipulator->GetButton() == button && 
+    if (manipulator->GetButton() == button &&
         manipulator->GetShift() == shift &&
         manipulator->GetControl() == control)
       {
-      this->Current = manipulator;
-      this->Current->Register(this);
-      this->InvokeEvent(vtkCommand::StartInteractionEvent);
-      this->Current->SetCenter(this->CenterOfRotation);
-      this->Current->StartInteraction();
-      this->Current->OnButtonDown(this->Interactor->GetEventPosition()[0],
-                                  this->Interactor->GetEventPosition()[1],
-                                  this->CurrentRenderer,
-                                  this->Interactor);
-      return;
+      return manipulator;
       }
     }
+  return NULL;
 }
 
 //-------------------------------------------------------------------------
@@ -141,41 +149,63 @@ void vtkPVInteractorStyle::OnRightButtonUp()
 //-------------------------------------------------------------------------
 void vtkPVInteractorStyle::OnButtonUp(int button)
 {
-  if (this->Current == NULL)
+  if (this->CurrentManipulator == NULL)
     {
     return;
     }
-  if (this->Current->GetButton() == button)
+  if (this->CurrentManipulator->GetButton() == button)
     {
-    this->Current->OnButtonUp(this->Interactor->GetEventPosition()[0],
+    this->CurrentManipulator->OnButtonUp(this->Interactor->GetEventPosition()[0],
                               this->Interactor->GetEventPosition()[1],
                               this->CurrentRenderer,
                               this->Interactor);
-    this->Current->EndInteraction();
+    this->CurrentManipulator->EndInteraction();
     this->InvokeEvent(vtkCommand::EndInteractionEvent);
-    this->Current->UnRegister(this);
-    this->Current = NULL;
+    this->CurrentManipulator->UnRegister(this);
+    this->CurrentManipulator = NULL;
     }
 }
 
 //-------------------------------------------------------------------------
 void vtkPVInteractorStyle::OnMouseMove()
 {
-  if (!this->CurrentRenderer)
+  if (this->CurrentRenderer && this->CurrentManipulator)
+    {
+    // When an interaction is active, we should not change the renderer being
+    // interacted with.
+    }
+  else
     {
     this->FindPokedRenderer(this->Interactor->GetEventPosition()[0],
-                            this->Interactor->GetEventPosition()[1]);
+      this->Interactor->GetEventPosition()[1]);
     }
-  
-  if (this->Current)
+
+  if (this->CurrentManipulator)
     {
-    this->Current->OnMouseMove(this->Interactor->GetEventPosition()[0],
+    this->CurrentManipulator->OnMouseMove(this->Interactor->GetEventPosition()[0],
                                this->Interactor->GetEventPosition()[1],
                                this->CurrentRenderer,
                                this->Interactor);
+    this->InvokeEvent(vtkCommand::InteractionEvent);
     }
 }
 
+//-------------------------------------------------------------------------
+void vtkPVInteractorStyle::OnChar()
+{
+  vtkRenderWindowInteractor *rwi = this->Interactor;
+
+  switch (rwi->GetKeyCode())
+    {
+    case 'Q' :
+    case 'q' :
+      // It must be noted that this has no effect in QVTKInteractor and hence
+      // we're assured that the Qt application won't exit because the user hit
+      // 'q'.
+      rwi->ExitCallback();
+      break;
+    }
+}
 
 //-------------------------------------------------------------------------
 void vtkPVInteractorStyle::ResetLights()
@@ -184,12 +214,12 @@ void vtkPVInteractorStyle::ResetLights()
     {
     return;
     }
-  
+
   vtkLight *light;
-  
+
   vtkLightCollection *lights = this->CurrentRenderer->GetLights();
   vtkCamera *camera = this->CurrentRenderer->GetActiveCamera();
-  
+
   lights->InitTraversal();
   light = lights->GetNextItem();
   if ( ! light)
@@ -208,6 +238,7 @@ void vtkPVInteractorStyle::PrintSelf(ostream& os, vtkIndent indent)
     << this->CenterOfRotation[0] << ", "
     << this->CenterOfRotation[1] << ", "
     << this->CenterOfRotation[2] << endl;
+  os << indent << "RotationFactor: "<< this->RotationFactor << endl;
   os << indent << "CameraManipulators: " << this->CameraManipulators << endl;
 
 }

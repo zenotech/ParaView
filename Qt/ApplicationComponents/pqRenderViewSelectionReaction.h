@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqReaction.h"
 #include <QPointer>
 #include <QCursor>
+#include "vtkWeakPointer.h"
 
 class pqRenderView;
 class pqView;
@@ -64,7 +65,10 @@ public:
     SELECT_BLOCKS,
     SELECT_CUSTOM_BOX,
     SELECT_CUSTOM_POLYGON,
-    ZOOM_TO_BOX
+    ZOOM_TO_BOX,
+    CLEAR_SELECTION,
+    SELECT_SURFACE_CELLS_INTERACTIVELY,
+    SELECT_SURFACE_POINTS_INTERACTIVELY
     };
 
   /// If \c view is NULL, this reaction will track the active-view maintained by
@@ -79,11 +83,14 @@ signals:
   void selectedCustomPolygon(vtkIntArray* polygon);
 
 private slots:
-  virtual void actionTriggered(bool val) 
-    {
-    if (val) { this->beginSelection(); }
-    else { this->endSelection(); }
-    }
+  /// For checkable actions, this calls this->beginSelection() or
+  /// this->endSelection() is val is true or false, respectively. For
+  /// non-checkable actions, this call this->beginSelection() and
+  /// this->endSelection() in that order.
+  virtual void actionTriggered(bool val);
+
+  /// Handles enable state for the "CLEAR_SELECTION" mode.
+  virtual void updateEnableState();
 
   /// Called when this object was created with NULL as the view and the active
   /// view changes.
@@ -100,15 +107,27 @@ private:
   /// callback called when the vtkPVRenderView is done with selection.
   void selectionChanged(vtkObject*, unsigned long, void* calldata);
 
+  /// callback called for mouse move events when in 'interactive selection'
+  /// modes.
+  void onMouseMove();
+
+  /// callback called for click events when in 'interactive selection'
+  /// modes.
+  void onLeftButtonPress();
+
 private:
   Q_DISABLE_COPY(pqRenderViewSelectionReaction);
   QPointer<pqRenderView> View;
   SelectionMode Mode;
   int PreviousRenderViewMode;
-  unsigned long ObserverId;
+  vtkWeakPointer<vtkObject> ObservedObject;
+  unsigned long ObserverIds[2];
   QCursor ZoomCursor;
 
   static QPointer<pqRenderViewSelectionReaction> ActiveReaction;
+
+  /// cleans up observers.
+  void cleanupObservers();
 };
 
 #endif

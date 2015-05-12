@@ -23,6 +23,7 @@
 #include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMScalarBarWidgetRepresentationProxy.h"
 #include "vtkSMSessionProxyManager.h"
+#include "vtkSMSettings.h"
 #include "vtkSMTransferFunctionProxy.h"
 
 #include <assert.h>
@@ -97,6 +98,13 @@ vtkSMProxy* vtkSMTransferFunctionManager::GetColorTransferFunction(
 
   vtkNew<vtkSMParaViewPipelineController> controller;
   controller->PreInitializeProxy(proxy);
+
+  // Look up array-specific transfer function
+  vtksys_ios::ostringstream prefix;
+  prefix << ".array_" << proxy->GetXMLGroup() << "." << arrayName;
+
+  vtkSMSettings* settings = vtkSMSettings::GetInstance();
+  settings->GetProxySettings(prefix.str().c_str(), proxy);
 
   vtksys_ios::ostringstream proxyName;
   proxyName << arrayName << ".PVLookupTable";
@@ -213,8 +221,19 @@ void vtkSMTransferFunctionManager::ResetAllTransferFunctionRangesUsingCurrentDat
     assert(lutProxy != NULL);
     if (vtkSMPropertyHelper(lutProxy, "LockScalarRange", true).GetAsInt() == 0)
       {
-      vtkSMTransferFunctionProxy::RescaleTransferFunctionToDataRange(
-        lutProxy, extend);
+      double range[2] = {VTK_DOUBLE_MAX, VTK_DOUBLE_MIN};
+      if (vtkSMTransferFunctionProxy::ComputeDataRange(lutProxy, range))
+        {
+        vtkSMTransferFunctionProxy::RescaleTransferFunction(
+          lutProxy, range[0], range[1], extend);
+        // BUG #0015076: Also reset the opacity function, if any.
+        if (vtkSMProxy* sof = vtkSMPropertyHelper(
+            lutProxy, "ScalarOpacityFunction", /*quiet*/true).GetAsProxy())
+          {
+          vtkSMTransferFunctionProxy::RescaleTransferFunction(
+            sof, range[0], range[1], extend);
+          }
+        }
       }
     }
 }

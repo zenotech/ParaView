@@ -6,6 +6,8 @@ paraview_test_load_data_dirs(""
   dualSphereAnimation
   EnSight
   ExRestarts
+  FieldDataBlocks
+  FieldDataBlocks/FieldDataBlocks
   FileSeries
   GMV
   GMV/invalid
@@ -29,7 +31,9 @@ paraview_test_load_data(""
   can.ex2
   comb.q
   combxyz.bin
+  CubeStringArray.vtk
   disk_out_ref.ex2
+  dualSphereAnimation4.pvd
   dualSphereAnimation.clone.pvd
   dualSphereAnimation.pvd
   "iron protein.vtk"
@@ -40,6 +44,7 @@ paraview_test_load_data(""
   multicomb_1.vts
   multicomb_2.vts
   NE2_ps_bath.png
+  non_convex_polygon.vtu
   office.binary.vtk
   PropertyLink.pvsm
   quadraticTetra01.vtu
@@ -48,6 +53,7 @@ paraview_test_load_data(""
   Scenario1_p1.h5
   Scenario1_p1.xmf
   servers-wiki.pvsc
+  sineWaves.csv
   singleSphereAnimation.pvd
   tensors.pvti
   Test1.h5
@@ -65,15 +71,16 @@ SET (TESTS_WITHOUT_BASELINES
 )
 
 if (PARAVIEW_ENABLE_PYTHON)
-  set (TESTS_WITHOUT_BASELINES
-    ${TESTS_WITHOUT_BASELINES}
+  list(APPEND TESTS_WITHOUT_BASELINES
     ${CMAKE_CURRENT_SOURCE_DIR}/TestPythonConsole.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/TestPopOutWidget.xml) # needs programmable filter
 endif()
 
 SET (TESTS_WITH_INLINE_COMPARES
+  ${CMAKE_CURRENT_SOURCE_DIR}/AxesGrid.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Contour.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/DisconnectAndSaveAnimation.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/Ensemble.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/FileSeries.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/HistogramSelection.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/LineChartSelection.xml
@@ -84,7 +91,6 @@ SET (TESTS_WITH_INLINE_COMPARES
   ${CMAKE_CURRENT_SOURCE_DIR}/RenderNan.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ResetToVisibleRange.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/SaveLargeScreenshot.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/SLACTools.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/TestIsoVolume.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/UpdateTransferFunctionRanges.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/XYChart.xml
@@ -92,13 +98,8 @@ SET (TESTS_WITH_INLINE_COMPARES
 )
 
 SET (TESTS_WITH_BASELINES)
-if(NOT PARAVIEW_USE_VISITBRIDGE)
-  # Analyze reader test was conflicting with the reader from VisIt. So
-  # disabling it.
-  SET (TESTS_WITH_BASELINES ${TESTS_WITH_BASELINES}
-    ${CMAKE_CURRENT_SOURCE_DIR}/AnalyzeReaderWriterPlugin.xml)
-else()
-  SET (TESTS_WITH_BASELINES ${TESTS_WITH_BASELINES}
+if(PARAVIEW_USE_VISITBRIDGE)
+  list(APPEND TESTS_WITH_BASELINES
     ${CMAKE_CURRENT_SOURCE_DIR}/VisItBridgeChombo.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/VisItBridgeEnzo.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/VisItBridgeLAMMPSDump.xml
@@ -118,6 +119,8 @@ if(PARAVIEW_ENABLE_CATALYST AND PARAVIEW_ENABLE_PYTHON)
     ${CMAKE_CURRENT_SOURCE_DIR}/CatalystLiveSetBreakpoint.xml)
   set (CATALYST_SIMULATION CatalystWaveletDriver.py)
   set (INSITU_SCRIPT CatalystWaveletCoprocessing 222)
+  # Since this test is too complex to run in parallel.
+  set (CatalystLiveSetBreakpoint_FORCE_SERIAL TRUE)
 
   foreach (tname ${catalyst_live_tests})
     add_pv_test("pv" "_DISABLE_C"
@@ -155,7 +158,7 @@ if(PARAVIEW_ENABLE_CATALYST AND PARAVIEW_ENABLE_PYTHON)
 endif()
 
 
-SET (TESTS_WITH_BASELINES ${TESTS_WITH_BASELINES}
+list(APPEND TESTS_WITH_BASELINES
   ${CMAKE_CURRENT_SOURCE_DIR}/XdmfRead.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/XdmfReadImageData.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/XdmfReadImageDataCollection.xml
@@ -167,19 +170,20 @@ SET (TESTS_WITH_BASELINES ${TESTS_WITH_BASELINES}
   ${CMAKE_CURRENT_SOURCE_DIR}/ZLibXDMF.xml
   )
 
-SET (TESTS_WITH_BASELINES
-  ${TESTS_WITH_BASELINES}
+list(APPEND TESTS_WITH_BASELINES
   ${CMAKE_CURRENT_SOURCE_DIR}/CTHAMRBaseline.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/CTHAMRContour.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/CTHAMRDualClip.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/CTHAMRClip.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/CTHAMRMaterialInterfaceFilter.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/CTHDerivedDensity2DClyinder.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/AddActiveValuesFromVisibleObjects.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/AnimatePipelineTime.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/3DWidgetInCustomFilter.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/CalcParens.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Calculator.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/CameraLink.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/ChangingTimestepsInStateFiles.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ChartAxisRangeAndLabels.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/CheckableHeader.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Clip.xml
@@ -188,6 +192,7 @@ SET (TESTS_WITH_BASELINES
   ${CMAKE_CURRENT_SOURCE_DIR}/ColorLegendMinMaxLabels.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ColorOpacityTableEditing.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/CategoricalColors.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/ColorByCellDataStringArray.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ComparativeVisPanel.xml
   # disabling overlay test for now. It has issues with Time 0.
   #  ${CMAKE_CURRENT_SOURCE_DIR}/ComparativeOverlay.xml
@@ -198,7 +203,6 @@ SET (TESTS_WITH_BASELINES
   ${CMAKE_CURRENT_SOURCE_DIR}/DataOutlines.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/DualSphereAnimation.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/EnSight.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/Ensemble.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ExodusModeShapes.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ExodusXML.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ExportX3dPOVVRML.xml
@@ -207,13 +211,14 @@ SET (TESTS_WITH_BASELINES
   ${CMAKE_CURRENT_SOURCE_DIR}/ExtractBlock.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ExtractLevel.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/FFTOverTime.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/FieldDataBlocks.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Flow.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Flow2.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Fractal2D.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/H5PartReaderPlugin.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/FunctionalBagPlots.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ImageVolumeRendering.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/InteractiveSelection.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/LoadPartiallyUpdatedStateFiles.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/LoadPlugins.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/LoadSaveStateAnimation.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/LoadState.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/MultiBlockAttributes1.xml
@@ -221,7 +226,10 @@ SET (TESTS_WITH_BASELINES
   ${CMAKE_CURRENT_SOURCE_DIR}/MultiSliceWavelet.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/NormalGlyphs.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/NiftiReaderWriterPlugin.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/NonConvexPolygon.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/OpenSaveData.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/OrthographicView.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/OutOfRangeColors.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Plot3DReader.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/PlotEdges2.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/PlotEdges.xml
@@ -244,6 +252,7 @@ SET (TESTS_WITH_BASELINES
   ${CMAKE_CURRENT_SOURCE_DIR}/SimpleInteraction.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Slice.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/SliceAlongPolyline.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/SliceAlongSpline.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/SpreadSheet1.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/SpreadSheet2.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/SPTimeseries.xml
@@ -253,6 +262,7 @@ SET (TESTS_WITH_BASELINES
   ${CMAKE_CURRENT_SOURCE_DIR}/TensorGlyph.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/TemporalInterpolator.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/TemporalShiftScale.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/TimeInspector.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Tessellate.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Threshold.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/UndoRedo.xml
@@ -273,7 +283,7 @@ SET (TESTS_WITH_BASELINES
 
 # The color dialog is different on MacOS X which makes this test fail.
 if(NOT APPLE)
-  SET (TESTS_WITH_BASELINES ${TESTS_WITH_BASELINES}
+  list(APPEND TESTS_WITH_BASELINES
     ${CMAKE_CURRENT_SOURCE_DIR}/BackgroundLights.xml
     )
 endif()
@@ -287,10 +297,32 @@ if (PARAVIEW_USE_MPI)
     # Test uses D3 which is available in MPI only builds.
     ${CMAKE_CURRENT_SOURCE_DIR}/GridConnectivity.xml
   )
+  if (PARAVIEW_ENABLE_COSMOTOOLS)
+    # Test the Generic IO file writer in VTKExtensions/CosmoTools
+    add_client_tests("pv"
+      --mpi
+      BASELINE_DIR ${PARAVIEW_TEST_BASELINE_DIR}
+      TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/GenericIOReadWrite.xml
+      )
+    add_client_server_tests("pvcs"
+      BASELINE_DIR ${PARAVIEW_TEST_BASELINE_DIR}
+      TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/GenericIOReadWrite.xml
+      )
+    add_client_render_server_tests("pvcrs"
+      BASELINE_DIR ${PARAVIEW_TEST_BASELINE_DIR}
+      TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/GenericIOReadWrite.xml
+      )
+
+  endif()
+  if (PARAVIEW_ENABLE_CGNS)
+    list(APPEND TESTS_WITH_BASELINES
+      ${CMAKE_CURRENT_SOURCE_DIR}/CGNSReader-5blocks_cgns.xml
+    )
+    set(CGNSReader-5blocks_cgns_DISABLE_CRS TRUE)
+  endif()
 endif()
 if(PARAVIEW_ENABLE_PYTHON)
-  set(TESTS_WITH_BASELINES
-    ${TESTS_WITH_BASELINES}
+  list(APPEND TESTS_WITH_BASELINES
     ${CMAKE_CURRENT_SOURCE_DIR}/SelectionLabels.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/TraceExodus.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/TraceExportAndSaveData.xml
@@ -307,6 +339,15 @@ if(PARAVIEW_ENABLE_PYTHON)
   find_python_module(matplotlib matplotlib_found)
   if (PARAVIEW_ENABLE_MATPLOTLIB AND matplotlib_found)
     list(APPEND TESTS_WITH_BASELINES ${CMAKE_CURRENT_SOURCE_DIR}/TestPythonView.xml)
+  endif()
+
+  find_python_module(numpy numpy_found)
+  if (numpy_found)
+    list(APPEND TESTS_WITH_BASELINES
+      ${CMAKE_CURRENT_SOURCE_DIR}/StructuredGridCellBlanking.xml
+      ${CMAKE_CURRENT_SOURCE_DIR}/TestFindDataMax.xml)
+    list(APPEND TESTS_WITH_INLINE_COMPARES
+      ${CMAKE_CURRENT_SOURCE_DIR}/FindDataDialog.xml)
   endif()
 endif()
 
@@ -365,14 +406,6 @@ endif()
 set(ProbePicking_DISABLE_CRS TRUE)
 set(ProbePicking_THRESHOLD 120)
 
-# only enable find data tests if numpy is available
-include("TestNumPy")
-
-IF ("1" STREQUAL ${HAS_NUMPY})
-  SET(TESTS_WITH_INLINE_COMPARES ${TESTS_WITH_INLINE_COMPARES}
-    ${CMAKE_CURRENT_SOURCE_DIR}/FindDataDialog.xml)
-ENDIF ("1" STREQUAL ${HAS_NUMPY})
-
 #------------------------------------------------------------------------------
 set (TestPythonConsole_BREAK TRUE)
 
@@ -382,6 +415,8 @@ set(MultiSliceMultiBlock_DISABLE_CRS TRUE)
 set(PolygonCellSelection_DISABLE_CRS TRUE)
 set(PolygonPointSelection_DISABLE_CRS TRUE)
 set(NonlinearSubdivisionDisplay_DISABLE_CRS TRUE)
+set(InteractiveSelection_DISABLE_CRS TRUE)
+set(NonConvexPolygon_DISABLE_CRS TRUE)
 
 # These tests cannot be run using ctest -j since they are affected by focus
 # changed events.
@@ -392,6 +427,14 @@ set (PolygonPointSelection_FORCE_SERIAL TRUE)
 set (Contour_FORCE_SERIAL TRUE) # since this uses popup-menu
 set (Calculator_FORCE_SERIAL TRUE) # since this uses popup-menu
 set (LogColorMap_FORCE_SERIAL TRUE) # since this uses popup-menu
+set (ColorOpacityTableEditing_FORCE_SERIAL TRUE) # since this uses popup-menu
+set (FindWidget_FORCE_SERIAL TRUE) # Uses inline edit popups
+set (PropertyLink_FORCE_SERIAL TRUE)
+set (TestPythonView_FORCE_SERIAL TRUE) # Seems to work better in serial.
+set (Contour_FORCE_SERIAL TRUE) # Uses inline edit popups
+set (SaveColorMap_FORCE_SERIAL TRUE) # Uses inline edit popups
+set (CategoricalColors_FORCE_SERIAL TRUE) # Uses inline edit popups
+set (ChartAxisRangeAndLabels_FORCE_SERIAL TRUE) # Uses inline edit popups
 
 # Set properties for CTH tests
 set(CTHAMRContour_DISABLE_CS TRUE)
@@ -432,10 +475,6 @@ set (ChartAxisRangeAndLabels_THRESHOLD 60)
 SET (ColorEditorControls_THRESHOLD 60)
 SET (ColorEditorVolumeControls_THRESHOLD 300)
 
-SET (SLACTools_DISABLE_CS TRUE)
-SET (SLACTools_DISABLE_CRS TRUE)
-set (SLACTools_THRESHOLD 70)
-
 # Plot image leeway.
 set (SpreadSheet2_THRESHOLD 50)
 set (PlotOverTimeAutoApply_THRESHOLD 50)
@@ -465,7 +504,12 @@ IF (PARAVIEW_USE_MPI)
   # Hence disable them.
   set (LineChartSelection_DISABLE_CS TRUE)
   set (LineChartSelection_DISABLE_CRS TRUE)
-ENDIF (PARAVIEW_USE_MPI)
+
+  # Selections end up highlighting different set of ID based points in parallel.
+  # Hence disable them.
+  set (FunctionalBagPlots_DISABLE_CS TRUE)
+  set (FunctionalBagPlots_DISABLE_CRS TRUE)
+ENDIF ()
 
 # Composite Surface Selection is currently broken in everything but bultin
 SET (CompositeSurfaceSelection_DISABLE_CS TRUE)
@@ -514,20 +558,10 @@ SET (MultiBlockAttributes1_DISABLE_CRS TRUE)
 
 # Plugins are only built as shared libraries.
 IF (NOT BUILD_SHARED_LIBS)
-  SET (AnalyzeReaderWriterPlugin_DISABLE_C TRUE)
-  SET (H5PartReaderPlugin_DISABLE_C TRUE)
-  SET (LoadPlugins_DISABLE_C TRUE)
   SET (NiftiReaderWriterPlugin_DISABLE_C TRUE)
-  SET (SLACTools_DISABLE_C TRUE)
-ENDIF (NOT BUILD_SHARED_LIBS)
+ENDIF ()
 # There should be a client server specific version of this test.
-SET (AnalyzeReaderWriterPlugin_DISABLE_CS TRUE)
-SET (H5PartReaderPlugin_DISABLE_CS TRUE)
-SET (LoadPlugins_DISABLE_CS TRUE)
 SET (NiftiReaderWriterPlugin_DISABLE_CS TRUE)
-SET (AnalyzeReaderWriterPlugin_DISABLE_CRS TRUE)
-SET (H5PartReaderPlugin_DISABLE_CRS TRUE)
-SET (LoadPlugins_DISABLE_CRS TRUE)
 SET (NiftiReaderWriterPlugin_DISABLE_CRS TRUE)
 
 # Set image threshold overrides for the tests.
@@ -538,6 +572,8 @@ SET (CutMulti_REVERSE_CONNECT TRUE)
 
 # Since this involves charts.
 SET(HistogramSelection_THRESHOLD 40)
+SET(LineChartSelection_THRESHOLD 40)
+SET(FunctionalBagPlots_THRESHOLD 40)
 
 # Increate threshold for this one since the chart axes
 # tends to render slightly differently.
@@ -650,8 +686,7 @@ set(TESTS_WITH_MULTI_SERVERS_3
   ${CMAKE_CURRENT_SOURCE_DIR}/TestMultiServer3.xml
 )
 
-set (TESTS_WITHOUT_BASELINES
-  ${TESTS_WITHOUT_BASELINES}
+list(APPEND TESTS_WITHOUT_BASELINES
   ${TESTS_WITH_INLINE_COMPARES})
 
 add_client_tests("pv"
@@ -681,7 +716,7 @@ IF (PARAVIEW_CLIENT_RENDER_SERVER_TESTS)
   add_client_render_server_tests("pvcrs"
     TEST_SCRIPTS ${TESTS_WITH_INLINE_COMPARES}
   )
-ENDIF (PARAVIEW_CLIENT_RENDER_SERVER_TESTS)
+ENDIF ()
 
 # TODO: remote rendering tests and reverse connect tests.
 
@@ -703,10 +738,12 @@ add_tile_display_tests("pvcs-tile-display" 2 2
    BASELINE_DIR ${PARAVIEW_TEST_BASELINE_DIR}
    TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/TileDisplayScatterPlot-2x2.xml)
 
-set (TileDisplay3DTesting-1x2_THRESHOLD 270)
-add_tile_display_tests("pvcs-tile-display" 1 2
-   BASELINE_DIR ${PARAVIEW_TEST_BASELINE_DIR}
-   TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/TileDisplay3DTesting-1x2.xml)
+# This test has been behaving badly across many platforms and needs to be fixed
+# before it can be useful. Disabling for now, see bug #15424.
+#set (TileDisplay3DTesting-1x2_THRESHOLD 270)
+#add_tile_display_tests("pvcs-tile-display" 1 2
+#   BASELINE_DIR ${PARAVIEW_TEST_BASELINE_DIR}
+#   TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/TileDisplay3DTesting-1x2.xml)
 
 set (TileDisplay3DTesting-2x1_THRESHOLD 270)
 add_tile_display_tests("pvcs-tile-display" 2 1
@@ -736,4 +773,37 @@ if (TARGET paraview)
             --state=${CMAKE_CURRENT_BINARY_DIR}/exodusStateFile.3.14.1.pvsm
     BASELINE_DIR ${PARAVIEW_TEST_BASELINE_DIR}
     TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/LoadExodusStateFile.xml)
+
+  #----------------------------------------------------------------------
+  # Add test to test stereo rendering modes.
+  add_client_tests("pv"
+    --stereo
+    --stereo-type=Interlaced
+    BASELINE_DIR ${PARAVIEW_TEST_BASELINE_DIR}
+    TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/StereoInterlaced.xml)
+  add_client_server_tests("pvcs"
+    --stereo
+    --stereo-type=Interlaced
+    BASELINE_DIR ${PARAVIEW_TEST_BASELINE_DIR}
+    TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/StereoInterlaced.xml)
+  add_client_render_server_tests("pvcrs"
+    --stereo
+    --stereo-type=Interlaced
+    BASELINE_DIR ${PARAVIEW_TEST_BASELINE_DIR}
+    TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/StereoInterlaced.xml)
+  add_client_tests("pv"
+    --stereo
+    --stereo-type=SplitViewportHorizontal
+    BASELINE_DIR ${PARAVIEW_TEST_BASELINE_DIR}
+    TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/StereoSplitViewportHorizontal.xml)
+  add_client_server_tests("pvcs"
+    --stereo
+    --stereo-type=SplitViewportHorizontal
+    BASELINE_DIR ${PARAVIEW_TEST_BASELINE_DIR}
+    TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/StereoSplitViewportHorizontal.xml)
+  add_client_render_server_tests("pvcrs"
+    --stereo
+    --stereo-type=SplitViewportHorizontal
+    BASELINE_DIR ${PARAVIEW_TEST_BASELINE_DIR}
+    TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/StereoSplitViewportHorizontal.xml)
 endif()

@@ -107,6 +107,9 @@ public:
   /// Returns the keys for helper proxies.
   QList<QString> getHelperKeys() const;
 
+  /// convert proxy documentation from RST to HTML (so that it can be used in Qt)
+  static std::string rstToHtml(const char* rstStr);
+
   /// Concept of helper proxies:
   /// A pqProxy is created for every important vtkSMProxy registered. Many a times, 
   /// there may be other proxies associated with that proxy, eg. lookup table proxies,
@@ -125,6 +128,11 @@ public:
 
   /// Returns the proxy manager by calling this->getProxy()->GetProxyManager();
   vtkSMSessionProxyManager* proxyManager() const;
+
+  /// Returns a pqProxy instance, of any, whose helper proxy is the *aproxy*.
+  /// This is not the fastest implementation, so beware of that.
+  /// If found, the key is set to the helper key.
+  static pqProxy* findProxyWithHelper(vtkSMProxy* aproxy, QString& key);
 
 signals:
   /// Fired when the name of the proxy is changed.

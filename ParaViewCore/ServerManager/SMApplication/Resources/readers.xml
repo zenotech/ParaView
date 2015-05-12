@@ -2398,6 +2398,20 @@
         <Documentation>This property specifies the file name for the PNG
         reader.</Documentation>
       </StringVectorProperty>
+      <DoubleVectorProperty name="DataSpacing"
+                            command="SetDataSpacing"
+                            number_of_elements="3"
+                            default_values="1 1 1">
+        <DoubleRangeDomain name="range" min="0 0 0" />
+        <Documentation>
+          Set the spacing to use for the image output by this reader.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="EnableWidgetDecorator">
+            <Property name="UseCustomDataSpacing" function="boolean" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </DoubleVectorProperty>
       <Hints>
         <ReaderFactory extensions="png"
                        file_description="PNG Image Files" />
@@ -2421,6 +2435,20 @@
         <Documentation>This property specifies the file name for the PNG
         reader.</Documentation>
       </StringVectorProperty>
+      <DoubleVectorProperty name="DataSpacing"
+                            command="SetDataSpacing"
+                            number_of_elements="3"
+                            default_values="1 1 1">
+        <DoubleRangeDomain name="range" min="0 0 0" />
+        <Documentation>
+          Set the spacing to use for the image output by this reader.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="EnableWidgetDecorator">
+            <Property name="UseCustomDataSpacing" function="boolean" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </DoubleVectorProperty>
       <Hints>
         <ReaderFactory extensions="jpg jpeg"
                        file_description="JPEG Image Files" />
@@ -2444,6 +2472,36 @@
         <Documentation>This property specifies the file name for the TIFF
         reader.</Documentation>
       </StringVectorProperty>
+      <IntVectorProperty name="UseCustomDataSpacing"
+                         command="SetSpacingSpecifiedFlag"
+                         number_of_elements="1"
+                         default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          To manually specify a custom spacing using **CustomDataSpacing**, set this property to 1 (checked).
+        </Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty name="CustomDataSpacing"
+                            command="SetDataSpacing"
+                            information_property="CustomDataSpacingInfo"
+                            number_of_elements="3"
+                            default_values="1 1 1">
+        <DoubleRangeDomain name="range" min="0 0 0" />
+        <Documentation>
+          Set the spacing to use for the image output by this reader. This is used only when
+          **UseCustomDataSpacing** is set to true.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="EnableWidgetDecorator">
+            <Property name="UseCustomDataSpacing" function="boolean" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty name="CustomDataSpacingInfo"
+                            command="GetDataSpacing"
+                            information_only="1">
+        <SimpleDoubleInformationHelper />
+      </DoubleVectorProperty>
       <Hints>
         <ReaderFactory extensions="tif tiff"
                        file_description="TIFF Image Files" />
@@ -2873,175 +2931,10 @@
       <!-- End of XdmfReaderCore -->
     </SourceProxy>
 
-    <!-- we need to set UseMetaFile property -->
-    <SourceProxy class="vtkFileSeriesReader"
-                 file_name_method="SetFileName"
-                 name="XMLPolyDataReaderUseMetaFile"
-                 si_class="vtkSIMetaReaderProxy"
-                 base_proxygroup="sources"
-                 base_proxyname="XMLPolyDataReader">
-      <IntVectorProperty command="SetUseMetaFile"
-                         default_values="1"
-                         name="UseMetaFile"
-                         number_of_elements="1"
-                         panel_visibility="never" >
-        <BooleanDomain name="bool" />
-      </IntVectorProperty>
-    </SourceProxy>
-
-#ifdef Module_vtkIOXdmf3
-    <SourceProxy name="Xdmf3ReaderCore" class="vtkXdmf3Reader">
-      <!--
-      <StringVectorProperty name="FileName"
-        command="SetFileName" number_of_elements="1">
-        <FileListDomain name="files"/>
-      </StringVectorProperty>
-      -->
-
-      <StringVectorProperty animateable="0"
-                            clean_command="RemoveAllFileNames"
-                            command="AddFileName"
-                            information_property="FileNameInfo"
-                            name="FileName"
-                            number_of_elements="1"
-                            panel_visibility="never"
-                            repeat_command="1">
-        <FileListDomain name="files" />
-        <Documentation>The list of files to be read by the
-        reader.</Documentation>
-      </StringVectorProperty>
-
-
-      <DoubleVectorProperty information_only="1"
-                            name="TimestepValues">
-        <TimeStepsInformationHelper />
-      </DoubleVectorProperty>
-
-      <StringVectorProperty information_only="1"
-                            name="PointArrayInfo">
-        <ArraySelectionInformationHelper attribute_name="Point" />
-      </StringVectorProperty>
-      <StringVectorProperty command="SetPointArrayStatus"
-                            element_types="2 0"
-                            information_property="PointArrayInfo"
-                            label="Point Arrays"
-                            name="PointArrayStatus"
-                            number_of_elements="0"
-                            number_of_elements_per_command="2"
-                            panel_visibility="default"
-                            repeat_command="1">
-        <ArraySelectionDomain name="array_list">
-          <RequiredProperties>
-            <Property function="ArrayList"
-                      name="PointArrayInfo" />
-          </RequiredProperties>
-        </ArraySelectionDomain>
-        <Documentation>This property lists which point-centered arrays to
-        read.</Documentation>
-      </StringVectorProperty>
-      <StringVectorProperty information_only="1"
-                            name="CellArrayInfo">
-        <ArraySelectionInformationHelper attribute_name="Cell" />
-      </StringVectorProperty>
-      <StringVectorProperty command="SetCellArrayStatus"
-                            element_types="2 0"
-                            information_property="CellArrayInfo"
-                            label="Cell Arrays"
-                            name="CellArrayStatus"
-                            number_of_elements="0"
-                            number_of_elements_per_command="2"
-                            panel_visibility="default"
-                            repeat_command="1">
-        <ArraySelectionDomain name="array_list">
-          <RequiredProperties>
-            <Property function="ArrayList"
-                      name="CellArrayInfo" />
-          </RequiredProperties>
-        </ArraySelectionDomain>
-        <Documentation>This property lists which cell-centered arrays to
-        read.</Documentation>
-      </StringVectorProperty>
-      <StringVectorProperty information_only="1"
-                            name="SetInfo">
-        <ArraySelectionInformationHelper attribute_name="Set" />
-      </StringVectorProperty>
-      <StringVectorProperty command="SetSetStatus"
-                            element_types="2 0"
-                            information_property="SetInfo"
-                            label="Sets"
-                            name="SetStatus"
-                            number_of_elements="2"
-                            number_of_elements_per_command="2"
-                            repeat_command="1">
-        <ArraySelectionDomain name="array_list">
-          <RequiredProperties>
-            <Property function="ArrayList"
-                      name="SetInfo" />
-          </RequiredProperties>
-        </ArraySelectionDomain>
-        <Documentation>Select the sets to be loaded from the dataset, if
-        any.</Documentation>
-      </StringVectorProperty>
-
-      <Hints>
-        <ReaderFactory extensions="xmf xdmf"
-                       file_description="Xdmf3 Reader" />
-      </Hints>
-      <!-- End of Xdmf3Reader -->
-
-    </SourceProxy>
-#endif
-
     <!-- End of "internal_sources" -->
   </ProxyGroup>
 
   <ProxyGroup name="sources">
-    <!--  VTK ADIOS BP Reader -->
-#ifdef Module_vtkIOADIOS
-    <SourceProxy name="ADIOSReader"
-                 label="VTK ADIOS Reader"
-                 class="vtkADIOSReader">
-      <Documentation short_help="Read ADIOS BP files using VTKs schema.">
-          Reader to read ADIOS BP files using a VTK specific schema
-      </Documentation>
-      <StringVectorProperty animateable="0"
-                            command="SetFileName"
-                            name="FileName"
-                            number_of_elements="1">
-        <FileListDomain name="files" />
-        <Documentation>
-          This property specifies the ADIOS filename.
-        </Documentation>
-      </StringVectorProperty>
-
-      <!-- Special sauce needed for timesteps -->
-      <DoubleVectorProperty information_only="1"
-                            repeatable="1"
-                            name="TimestepValues">
-        <TimeStepsInformationHelper />
-      </DoubleVectorProperty>
-
-      <IntVectorProperty name="ReadMethod"
-                         command="SetReadMethod"
-                         number_of_elements="1"
-                         default_values="0"
-                         label="Read Method"
-                         panel_visibility="never">
-        <EnumerationDomain name="enum">
-          <Entry value="0" text="BP"/>
-          <Entry value="1" text="BPAggregate"/>
-          <Entry value="3" text="DataSpaces"/>
-          <Entry value="4" text="DIMES"/>
-          <Entry value="5" text="FlexPath"/>
-        </EnumerationDomain>
-      </IntVectorProperty>
-      <Hints>
-        <ReaderFactory extensions="bp"
-                       file_description="VTK ADIOS File" />
-      </Hints>
-    </SourceProxy>
-#endif
-
     <!--  AMR Flash Particles Reader -->
     <SourceProxy class="vtkFileSeriesReader"
                  file_name_method="SetFileName"
@@ -5153,7 +5046,7 @@
       </StringVectorProperty>
     </SourceProxy>
       <!-- End DICOMReaderDirectory -->
-    <SourceProxy class="vtkFileSeriesReader"
+    <SourceProxy class="vtkImageFileSeriesReader"
                  file_name_method="SetFileName"
                  label="PNG Series Reader"
                  name="PNGSeriesReader"
@@ -5182,10 +5075,23 @@
         <TimeStepsInformationHelper />
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
+      <IntVectorProperty name="ReadAsImageStack"
+                         command="SetReadAsImageStack"
+                         number_of_elements="1"
+                         default_values="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          When set, the reader will read the set of files as an image stack, rather than
+          a temporal file series.
+        </Documentation>
+      </IntVectorProperty>
       <SubProxy>
         <Proxy name="Reader"
                proxygroup="internal_sources"
                proxyname="PNGReader"></Proxy>
+        <ExposedProperties>
+          <Property name="DataSpacing" />
+        </ExposedProperties>
       </SubProxy>
       <Hints>
         <ReaderFactory extensions="png"
@@ -5193,7 +5099,7 @@
       </Hints>
       <!-- End PNGSeriesReader -->
     </SourceProxy>
-    <SourceProxy class="vtkFileSeriesReader"
+    <SourceProxy class="vtkImageFileSeriesReader"
                  file_name_method="SetFileName"
                  label="JPEG Series Reader"
                  name="JPEGSeriesReader"
@@ -5222,10 +5128,23 @@
         <TimeStepsInformationHelper />
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
+      <IntVectorProperty name="ReadAsImageStack"
+                         command="SetReadAsImageStack"
+                         number_of_elements="1"
+                         default_values="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          When set, the reader will read the set of files as an image stack, rather than
+          a temporal file series.
+        </Documentation>
+      </IntVectorProperty>
       <SubProxy>
         <Proxy name="Reader"
                proxygroup="internal_sources"
                proxyname="JPEGReader"></Proxy>
+        <ExposedProperties>
+          <Property name="DataSpacing" />
+        </ExposedProperties>
       </SubProxy>
       <Hints>
         <ReaderFactory extensions="jpg jpeg"
@@ -5233,7 +5152,7 @@
       </Hints>
       <!-- End JPEGSeriesReader -->
     </SourceProxy>
-    <SourceProxy class="vtkFileSeriesReader"
+    <SourceProxy class="vtkImageFileSeriesReader"
                  file_name_method="SetFileName"
                  label="TIFF Series Reader"
                  name="TIFFSeriesReader"
@@ -5262,10 +5181,25 @@
         <TimeStepsInformationHelper />
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
+      <IntVectorProperty name="ReadAsImageStack"
+                         command="SetReadAsImageStack"
+                         number_of_elements="1"
+                         default_values="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          When set, the reader will read the set of files as an image stack, rather than
+          a temporal file series.
+        </Documentation>
+      </IntVectorProperty>
       <SubProxy>
         <Proxy name="Reader"
                proxygroup="internal_sources"
                proxyname="TIFFReader"></Proxy>
+        <ExposedProperties>
+          <Property name="UseCustomDataSpacing" />
+          <Property name="CustomDataSpacing" />
+          <Property name="CustomDataSpacingInfo" />
+        </ExposedProperties>
       </SubProxy>
       <Hints>
         <ReaderFactory extensions="tif tiff"
@@ -5332,52 +5266,6 @@
       <!-- End of XdmfReader -->
     </SourceProxy>
 
-#ifdef Module_vtkIOXdmf3
-    <SourceProxy base_proxygroup="internal_sources"
-                 base_proxyname="Xdmf3ReaderCore"
-                 class="vtkXdmf3Reader"
-                 name="Xdmf3ReaderT">
-
-      <IntVectorProperty command="SetFileSeriesAsTime"
-                         default_values="1"
-                         name="AsTime"
-                         number_of_elements="1"
-                         panel_visibility="never" >
-        <BooleanDomain name="bool" />
-        <Documentation>This hidden property controls whether the reader should
-        treat a file series as a temporal or spatial partitioning.</Documentation>
-      </IntVectorProperty>
-
-      <Hints>
-        <ReaderFactory extensions="xmf xdmf"
-                       file_description="Xdmf3 Reader" />
-      </Hints>
-      <!-- End of Xdmf3ReaderT -->
-    </SourceProxy>
-
-    <SourceProxy base_proxygroup="internal_sources"
-                 base_proxyname="Xdmf3ReaderCore"
-                 class="vtkXdmf3Reader"
-                 name="Xdmf3ReaderS">
-
-      <IntVectorProperty command="SetFileSeriesAsTime"
-                         default_values="0"
-                         name="AsTime"
-                         number_of_elements="1"
-                         panel_visibility="never" >
-        <BooleanDomain name="bool" />
-        <Documentation>This hidden property controls whether the reader should
-        treat a file series as a temporal or spatial partitioning.</Documentation>
-      </IntVectorProperty>
-
-      <Hints>
-        <ReaderFactory extensions="xmf xdmf"
-                       file_description="Xdmf3 Reader (Top Level Partition)" />
-      </Hints>
-      <!-- End of Xdmf3ReaderS -->
-    </SourceProxy>
-#endif
-
     <SourceProxy class="vtkExodusFileSeriesReader"
                  file_name_method="SetFileName"
                  name="ExodusIIReader"
@@ -5413,7 +5301,9 @@
                      timesteps in any single Exodus II file. However, multiple
                      files which specify a single time-evolution of a mesh may
                      be used to represent meshes which exhibit changes in
-                     connectivity infrequently.</Documentation>
+                     connectivity infrequently. Field variable mode_shape[0]
+                     represents the time step (t_index) if HasModeShapes is
+                     not set or the ModeShape otherwise.</Documentation>
       <SubProxy>
         <Proxy name="Reader"
                proxygroup="internal_sources"
@@ -6384,10 +6274,13 @@
     <SourceProxy class="vtkPSLACReader"
                  label="SLAC Data Reader"
                  name="SLACReader">
-      <Documentation>A reader for a data format used by Omega3p, Tau3p, and
-      several other tools used at the Standford Linear Accelerator Center
-      (SLAC). The underlying format uses netCDF to store arrays, but also
-      imposes several conventions to form an unstructured grid of
+      <Documentation short_help="A reader for a data format used by
+      Omega3p, Tau3p, and several other tools used at the Standford
+      Linear Accelerator Center (SLAC)">A reader for a data format
+      used by Omega3p, Tau3p, and several other tools used at the
+      Standford Linear Accelerator Center (SLAC). The underlying
+      format uses netCDF to store arrays, but also imposes several
+      conventions to form an unstructured grid of
       elements.</Documentation>
       <OutputPort index="0"
                   name="External Surface" />
@@ -6531,7 +6424,7 @@
                  label="SLAC Particle Data Reader"
                  name="SLACParticleReader"
                  si_class="vtkSIMetaReaderProxy">
-      <Documentation>The SLAC Particle data reader.</Documentation>
+      <Documentation short_help="The SLAC Particle data reader.">The SLAC Particle data reader.</Documentation>
       <SubProxy>
         <Proxy name="Reader"
                proxygroup="internal_sources"
@@ -7106,59 +6999,6 @@
       </Hints>
     </SourceProxy>
     <!-- End UnstructuredPOPReader -->
-#ifdef PARAVIEW_USE_MPI
-    <SourceProxy class="vtkFileSeriesReader"
-                 file_name_method="SetFileName"
-                 label="Parallel NetCDF POP reader"
-                 mpi_required="true"
-                 name="PNetCDFPOPReader"
-                 si_class="vtkSIMetaReaderProxy">
-      <Documentation long_help="Reads rectilinear grid data from a NetCDF POP file in parallel."
-                     short_help="Read rectilinear grid data from a NetCDF file in the POP format in parallel.">
-      The reader reads regular rectilinear grid (image/volume) data from a
-      NetCDF file. Only a subset of the processes actually read the file and
-      these processes communicate the data to other processes.</Documentation>
-      <SubProxy>
-        <Proxy name="Reader"
-               proxygroup="internal_sources"
-               proxyname="PNetCDFPOPReaderCore"></Proxy>
-        <ExposedProperties>
-          <Property name="VariableArrayInfo" />
-          <Property name="VariableArrayStatus" />
-          <Property name="Stride" />
-        </ExposedProperties>
-      </SubProxy>
-      <StringVectorProperty command="GetCurrentFileName"
-                            information_only="1"
-                            name="FileNameInfo">
-        <SimpleStringInformationHelper />
-      </StringVectorProperty>
-      <StringVectorProperty animateable="0"
-                            clean_command="RemoveAllFileNames"
-                            command="AddFileName"
-                            information_property="FileNameInfo"
-                            name="FileName"
-                            number_of_elements="1"
-                            panel_visibility="never"
-                            repeat_command="1">
-        <FileListDomain name="files" />
-        <Documentation>The list of files to be read by the
-        reader.</Documentation>
-      </StringVectorProperty>
-      <DoubleVectorProperty information_only="1"
-                            name="TimestepValues"
-                            repeatable="1">
-        <TimeStepsInformationHelper />
-        <Documentation>Available timestep values.</Documentation>
-      </DoubleVectorProperty>
-      <Hints>
-        <ReaderFactory extensions="pop.ncdf pop.nc"
-                       file_description="Parallel POP Ocean NetCDF (Rectilinear)" />
-      </Hints>
-    </SourceProxy>
-    <!-- End PNetCDFPOPReader -->
-#endif
-
 
     <SourceProxy class="vtkMPASReader"
                  label="NetCDF MPAS reader"
@@ -7362,7 +7202,6 @@
       <StringVectorProperty animateable="0"
                             clean_command="RemoveAllFileNames"
                             command="AddFileName"
-                            information_property="FileNameInfo"
                             name="QFileName"
                             number_of_elements="1"
                             repeat_command="1">
@@ -7415,6 +7254,17 @@
     <SourceProxy class="vtkPlot3DMetaReader"
                  label="PLOT3D Meta-File Reader"
                  name="Plot3DMetaReader">
+      <Documentation short_help="The main goal of this reader is to make it easy to read PLOT3D files or time series of PLOT3D files.">
+The main goal of this reader is to make it easy to read PLOT3D files,
+specifically time series of PLOT3D files. PLOT3D files can take many
+different forms based on their content. Unfortunately, it is not a
+self-describing format therefore the user needs to pass information
+about the contents of the file to the reader. Normally, this is done
+by setting a number of member variables. The goal of this reader is to
+provide a simple format that enable the writer of the PLOT3D file to
+describe its settings as well as group a number of files as a time
+series.
+      </Documentation>
       <StringVectorProperty animateable="0"
                             command="SetFileName"
                             name="FileName"
@@ -7440,6 +7290,10 @@
     <SourceProxy class="vtkCMLMoleculeReader"
                  label="CML Molecule Reader"
                  name="CMLMoleculeReader">
+      <Documentation short_help="A reader for Chemical Markup Language (CML)">
+        This is a reader for Chemical Markup Language (CML) which
+        describes chemical information using XML.
+      </Documentation>
       <StringVectorProperty animateable="0"
                             command="SetFileName"
                             name="FileName"
@@ -7456,65 +7310,46 @@
     </SourceProxy>
     <!-- End CML Reader -->
 
-    <SourceProxy class="vtkEnsembleReader"
-                 file_name_method="SetMetaFileName"
-                 label="XML PolyData Ensemble Reader"
-                 name="XMLPolyDataEnsembleReader"
-                 si_class="vtkSIMetaReaderProxy">
-      <Documentation long_help="Reads ensembles of VTK XML polydata files."
-                     short_help="Reads ensembles of polydata files">The XML
-      Polydata reader reads ensembles of VTK XML polydata files. The
-      standard extension is .evtp.</Documentation>
-      <SubProxy>
-        <Proxy name="Reader"
-               proxygroup="internal_sources"
-               proxyname="XMLPolyDataReaderUseMetaFile"></Proxy>
-        <ExposedProperties>
-          <PropertyGroup label="Cell/Point Array Status"
-                         name="CellPointArrayStatus"
-                         panel_visibility="default"
-                         panel_widget="ArrayStatus">
-            <Property name="CellArrayInfo" />
-            <Property name="CellArrayStatus" />
-            <Property name="PointArrayInfo" />
-            <Property name="PointArrayStatus" />
-          </PropertyGroup>
-          <Property name="UseMetaFile"/>
-        </ExposedProperties>
-      </SubProxy>
+    <!-- Begin Ensemble Data Reader -->
+    <EnsembleDataReaderProxy class="vtkEnsembleDataReader"
+                             label="Ensemble Data Reader"
+                             name="EnsembleDataReader">
+      <Documentation long_help="Reads ensemble data organized in CSV files."
+                     short_help="Reads ensemble CSV files">
+        Reads CSV files in which each row gives a dataset and the last column of
+        each row specifies the file name for the dataset. The standard extension
+        is .pve.
+      </Documentation>
       <StringVectorProperty animateable="0"
-                            command="SetMetaFileName"
-                            name="MetaFileName"
+                            command="SetFileName"
+                            name="FileName"
                             number_of_elements="1"
                             panel_visibility="never">
-        <FileListDomain name="files" />
-        <Documentation>The meta-file for the reader</Documentation>
-      </StringVectorProperty>
-      <IntVectorProperty command="GetFileIndexRange"
-                         information_only="1"
-                         name="FileIndexRange"
-                         number_of_elements="2"
-                         default_values="0 0">
-        <Documentation>Smallest and largest index for the list of
-        simulations files. For instance, if we have 10 simulations the
-        FileIndexRange is [0,9].
+        <FileListDomain name="files"/>
+        <Documentation>
+          This property specifies the PVE file name
         </Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty name="FileIndex"
-                         command="SetFileIndex"
-                         animateable="1"
+      </StringVectorProperty>
+      <IntVectorProperty name="CurrentEnsembleMember"
+                         command="SetCurrentMember"
+                         animatable="1"
                          default_values="0"
                          number_of_elements="1">
         <IntRangeDomain name="range" default_mode="min">
           <RequiredProperties>
-            <Property name="FileIndexRange" function="Range"/>
+            <Property name="EnsembleMemberRange" function="Range" />
           </RequiredProperties>
         </IntRangeDomain>
         <Documentation>
-          The index of the simulation file in the ensemble.
+          The index of the dataset in the ensemble.
         </Documentation>
       </IntVectorProperty>
-      <!-- magic property to send time information to the animation panel -->
+      <IntVectorProperty name="EnsembleMemberRange"
+                         command="GetCurrentMemberRange"
+                         information_only="1"
+                         number_of_elements="2"
+                         default_values="0 0">
+      </IntVectorProperty>
       <DoubleVectorProperty information_only="1"
                             name="TimestepValues"
                             repeatable="1">
@@ -7524,9 +7359,10 @@
         </Documentation>
       </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="evtp"
-                       file_description="VTK PolyData Ensembles" />
+        <ReaderFactory extensions="pve"
+                       file_description="ParaView Ensemble Data" />
       </Hints>
-    </SourceProxy>
+    </EnsembleDataReaderProxy>
+    <!-- End Ensemble Data Reader -->
   </ProxyGroup>
 </ServerManagerConfiguration>
