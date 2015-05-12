@@ -1,7 +1,7 @@
 /*=========================================================================
 
    Program: ParaView
-   Module:    pqCPExportStateWizard.cxx
+   Module:    pqCinemaTrack.cxx
 
    Copyright (c) 2005,2006 Sandia Corporation, Kitware Inc.
    All rights reserved.
@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vtkPVXMLElement.h>
 
 #include <pqApplicationCore.h>
+#include <pqCinemaTrack.h>
 #include <pqFileDialog.h>
 #include <pqImageOutputInfo.h>
 #include <pqPipelineSource.h>
@@ -58,7 +59,8 @@ namespace
     "   rescale_data_range=%4,\n"
     "   enable_live_viz=%5,\n"
     "   live_viz_frequency=%6,\n"
-    "   filename='%7')\n";
+    "   cinema_tracks=%7,\n"
+    "   filename='%8')\n";
 }
 
 //-----------------------------------------------------------------------------
@@ -67,6 +69,7 @@ pqCPExportStateWizard::pqCPExportStateWizard(
   : Superclass(parentObject, parentFlags)
 {
 }
+
 
 //-----------------------------------------------------------------------------
 pqCPExportStateWizard::~pqCPExportStateWizard()
@@ -150,16 +153,71 @@ bool pqCPExportStateWizard::getCommandString(QString& command)
       pqView* view = viewInfo->getView();
       QSize viewSize = view->getSize();
       vtkSMViewProxy* viewProxy = view->getViewProxy();
-      QString info = QString(" '%1' : ['%2', %3, '%4', '%5', '%6', '%7'],").
+
+      //cinema camera parameters
+      QString cinemaCam = "{}";
+      QString camType = viewInfo->getCameraType();
+      if (camType != "None")
+        {
+        cinemaCam = QString("{\"camera\":\"");
+        cinemaCam += camType;
+        cinemaCam += "\", \"phi\":[";
+        int j;
+        for (j = -180; j < 180; j+= (360/viewInfo->getPhi()))
+          {
+          cinemaCam += QString::number(j) + ",";
+          }
+        cinemaCam.chop(1);
+        cinemaCam += "], \"theta\":[";
+        for (j = -180; j < 180; j+= (360/viewInfo->getTheta()))
+          {
+          cinemaCam += QString::number(j) + ",";
+          }
+        cinemaCam.chop(1);
+        cinemaCam += "] }";
+        }
+
+      QString info = QString(" '%1' : ['%2', %3, '%4', '%5', '%6', '%7', '%8'],").
         arg(proxyManager->GetProxyName("views", viewProxy)).
         arg(viewInfo->getImageFileName()).arg(viewInfo->getWriteFrequency()).
         arg(static_cast<int>(viewInfo->fitToScreen())).
-        arg(viewInfo->getMagnification()).arg(viewSize.width()).arg(viewSize.height());
+        arg(viewInfo->getMagnification()).
+        arg(viewSize.width()).
+        arg(viewSize.height()).
+        arg(cinemaCam);
       rendering_info+= info;
       }
     // remove the last comma -- assume that there's at least one view
     rendering_info.chop(1);
     }
+
+  QString cinema_tracks = "{ "; //trailing space matters
+  if(this->Internals->outputCinema->isChecked())
+    {
+    for(int i=0;i<this->Internals->cinemaContainer->count();i++)
+      {
+      pqCinemaTrack *p = dynamic_cast<pqCinemaTrack*>(this->Internals->cinemaContainer->widget(i));
+      if (!p->explore())
+        {
+        continue;
+        }
+      QString name = p->filterName();
+      QString values = "[";
+      QVariantList vals = p->scalars();
+      for (int j = 0; j < vals.count(); j++)
+        {
+        values += QString::number(vals.value(j).toDouble());
+        values += ",";
+        }
+      values.chop(1);
+      values += "]";
+      QString info = QString(" '%1' : %2,").arg(name).arg(values);
+      cinema_tracks+= info;
+      }
+
+    cinema_tracks.chop(1);
+    }
+  cinema_tracks+="}";
 
   QString filters ="ParaView Python State Files (*.py);;All files (*)";
 
@@ -173,6 +231,13 @@ bool pqCPExportStateWizard::getCommandString(QString& command)
     }
 
   QString filename = file_dialog.getSelectedFiles()[0];
+#ifdef _WIN32
+  // Convert to forward slashes. The issue is that the path is interpreted as a
+  // Python string when passed to the interpreter, so a path such as "C:\tests"
+  // is read as "C:<TAB>ests" which isn't what we want. Since Windows is
+  // flexible anyways, just use Unix separators.
+  filename.replace('\\', '/');
+#endif
 
   // the map from the simulation inputs in the paraview gui
   // to the adaptor's named inputs (usually 'input')
@@ -202,6 +267,7 @@ bool pqCPExportStateWizard::getCommandString(QString& command)
                    .arg(rescale_data_range)
                    .arg(live_visualization)
                    .arg(live_visualization_frequency)
+                   .arg(cinema_tracks)
                    .arg(filename);
 
   return true;

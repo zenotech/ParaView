@@ -29,15 +29,15 @@
 #
 #==========================================================================
 set (Module_SRCS
-  vtkSIChartRepresentationProxy.cxx
   vtkSIImageTextureProxy.cxx
   vtkSIPVRepresentationProxy.cxx
-  vtkSIScalarBarActorProxy.cxx
-  vtkSISelectionRepresentationProxy.cxx
-  vtkSITextSourceRepresentationProxy.cxx
-  vtkSIUniformGridVolumeRepresentationProxy.cxx
   vtkSIUnstructuredGridVolumeRepresentationProxy.cxx
 )
+
+# OpenGL2 specific definitions
+if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL2")
+  add_definitions(-DVTKGL2)
+endif()
 
 #------------------------------------------------------------------------------
 vtk_module_library(vtkPVServerImplementationRendering

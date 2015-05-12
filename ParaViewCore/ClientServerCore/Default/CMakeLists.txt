@@ -30,6 +30,7 @@
 #==========================================================================
 set (Module_SRCS
   vtkNetworkImageSource.cxx
+  vtkPVEnsembleDataReaderInformation.cxx
   vtkPVEnvironmentInformation.cxx
   vtkPVEnvironmentInformationHelper.cxx
   vtkPVFileInformation.cxx
@@ -42,6 +43,7 @@ if (PARAVIEW_ENABLE_PYTHON)
   list(APPEND Module_SRCS
     vtkAnnotateGlobalDataFilter.cxx
     vtkPythonCalculator.cxx
+    vtkAnnotateAttributeDataFilter.cxx
     )
 endif()
 
@@ -53,6 +55,6 @@ vtk_module_library(vtkPVClientServerCoreDefault ${Module_SRCS})
 
 # for vtkPVFileInformation
 if (WIN32)
-  target_link_libraries(vtkPVClientServerCoreDefault
+  vtk_module_link_libraries(vtkPVClientServerCoreDefault
     LINK_PRIVATE mpr)
 endif()

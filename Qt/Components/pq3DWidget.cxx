@@ -36,8 +36,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkEventQtSlotConnect.h"
 #include "vtkMemberFunctionCommand.h"
 #include "vtkPVDataInformation.h"
-#include "vtkPVGenericRenderWindowInteractor.h"
 #include "vtkPVXMLElement.h"
+#include "vtkRenderWindowInteractor.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMInputProperty.h"
 #include "vtkSMIntVectorProperty.h"
@@ -71,6 +71,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqPipelineFilter.h"
 #include "pqPipelineSource.h"
 #include "pqPointSourceWidget.h"
+#include "pqPolyLineWidget.h"
 #include "pqRenderView.h"
 #include "pqServer.h"
 #include "pqSMAdaptor.h"
@@ -119,6 +120,10 @@ public:
     else if (name == "Line")
       {
       widget = new pqLineWidget(referenceProxy, controlledProxy, 0);
+      }
+    else if (name == "PolyLineSource")
+      {
+      widget = new pqPolyLineWidget(referenceProxy, controlledProxy, 0);
       }
     else if (name == "Distance")
       {
@@ -316,7 +321,7 @@ void pq3DWidget::setView(pqView* pqview)
   if (rview && !this->Internal->PickSequence.isEmpty())
     {
     this->Internal->PickShortcut = new QShortcut(
-      this->Internal->PickSequence, pqview->getWidget());
+      this->Internal->PickSequence, pqview->widget());
     QObject::connect(this->Internal->PickShortcut, SIGNAL(activated()),
       this, SLOT(pickPoint()));
     }

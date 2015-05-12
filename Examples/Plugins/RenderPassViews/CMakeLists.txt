@@ -9,10 +9,19 @@ IF (ParaView_SOURCE_DIR)
     ${VTK_INCLUDE_DIR}
     ${PARAVIEW_INCLUDE_DIRS}
   )
-ELSE (ParaView_SOURCE_DIR)
+ELSE ()
   FIND_PACKAGE(ParaView REQUIRED)
   INCLUDE(${PARAVIEW_USE_FILE})
-ENDIF (ParaView_SOURCE_DIR)
+ENDIF ()
+
+# Set a consistent MACOSX_RPATH default across all CMake versions.
+# When CMake 2.8.12 is required, change this default to 1.
+# When CMake 3.0.0 is required, remove this block (see CMP0042).
+if(NOT DEFINED CMAKE_MACOSX_RPATH)
+  set(CMAKE_MACOSX_RPATH 0)
+endif()
+
+if (VTK_RENDERING_BACKEND STREQUAL "OpenGL")
 
 add_paraview_plugin(
   RenderPassViews "1.0"
@@ -24,3 +33,4 @@ add_paraview_plugin(
   SERVER_MANAGER_XML
     RenderPassViews.xml
 )
+endif()

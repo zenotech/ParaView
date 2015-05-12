@@ -49,20 +49,37 @@ public:
   virtual const char* GetRepresentationType(
     vtkSMSourceProxy* producer, int outputPort);
 
+  // Description:
+  // Fetchs data bounds from the client-side object. We simply fetch the
+  // client-side data bounds since vtkPVMultiSliceView ensures that they are
+  // synced among all ranks in Update().
+  void GetDataBounds(double bounds[6]);
+
+  // Description:
+  // HACK: method to force representation type to "Slices".
+  static void ForceRepresentationType(vtkSMProxy* reprProxy, const char* type);
+
+  // Description:
+  // HACK: Get source's input data bounds (or BoundingBoxInModelCoordinates if
+  // present).
+  static bool GetDataBounds(vtkSMSourceProxy* source, int opport, double bounds[6]);
 //BTX
 protected:
   vtkSMMultiSliceViewProxy();
   ~vtkSMMultiSliceViewProxy();
 
-
   // Description:
   // Use the center of the source to initialize the view with three orthogonal
   // slices in x, y, z.
-  void InitDefaultSlices(vtkSMSourceProxy* source, int opport);
+  void InitDefaultSlices(vtkSMSourceProxy* source, int opport,
+    vtkSMRepresentationProxy* repr);
 
 private:
   vtkSMMultiSliceViewProxy(const vtkSMMultiSliceViewProxy&); // Not implemented
   void operator=(const vtkSMMultiSliceViewProxy&); // Not implemented
+
+  class vtkInternals;
+  vtkInternals* Internals;
 //ETX
 };
 

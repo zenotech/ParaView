@@ -62,13 +62,23 @@ public:
   bool fitToScreen();
   int getMagnification();
 
+  void showCinema();
+  void hideCinema();
+
+  const QString getCameraType();
+  double getPhi();
+  double getTheta();
+
 public slots:
   void updateImageFileName();
   void updateImageFileNameExtension(const QString&);
+  void updateCinemaType(const QString&);
 
 private:
   Q_DISABLE_COPY(pqImageOutputInfo)
   QScopedPointer<Ui::ImageOutputInfo> Info;
   pqView* View;
+
+  void updateSpherical();
 };
 #endif

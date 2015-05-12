@@ -106,18 +106,24 @@ vtkSMProxy* pqPropertyWidget::proxy() const
 }
 
 //-----------------------------------------------------------------------------
+QString pqPropertyWidget::getTooltip(vtkSMProperty* smproperty)
+{
+  if (smproperty && smproperty->GetDocumentation())
+    {
+    QString doc = pqProxy::rstToHtml(
+      smproperty->GetDocumentation()->GetDescription()).c_str();
+    doc = doc.trimmed();
+    doc = doc.replace(QRegExp("\\s+")," ");
+    return QString("<html><head/><body><p align=\"justify\">%1</p></body></html>").arg(doc);
+    }
+  return QString();
+}
+
+//-----------------------------------------------------------------------------
 void pqPropertyWidget::setProperty(vtkSMProperty *smproperty)
 {
   this->Property = smproperty;
-  if (smproperty && smproperty->GetDocumentation())
-    {
-    QString doc = smproperty->GetDocumentation()->GetDescription();
-    doc = doc.trimmed();
-    doc = doc.replace(QRegExp("\\s+")," ");
-    this->setToolTip(
-      QString("<html><head/><body><p align=\"justify\">%1</p></body></html>").arg(doc));
-    }
-
+  this->setToolTip(pqPropertyWidget::getTooltip(smproperty));
   if ((smproperty->GetHints() &&
        smproperty->GetHints()->FindNestedElementByName("RestartRequired")))
     {

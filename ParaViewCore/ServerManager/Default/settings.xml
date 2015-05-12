@@ -107,6 +107,22 @@
         <BooleanDomain name="bool"/>
       </IntVectorProperty>
 
+      <IntVectorProperty name="BlockColorsDistinctValues"
+                         number_of_elements="1"
+                         default_values="7"
+                         command="SetBlockColorsDistinctValues"
+                         panel_visibility="advanced">
+        <Documentation>
+          Determines the number of distinct values in
+          vtkBlockColors. This array is added to each block if
+          the dataset is a composite dataset. The array has one value
+          set to the reminder of blockIndex divided by
+          BlockColorsDistinctValues (blockIndex mod
+          BlockColorsDistinctValues).
+        </Documentation>
+        <IntRangeDomain min="2" name="range" />
+      </IntVectorProperty>
+
       <IntVectorProperty name="TransferFunctionResetMode"
         number_of_elements="1"
         default_values="0"
@@ -162,6 +178,7 @@
         </Documentation>
         <BooleanDomain name="bool" />
         <Hints>
+          <SaveInQSettings both="1" />
           <RestartRequired />
         </Hints>
       </IntVectorProperty>
@@ -176,6 +193,7 @@
         </Documentation>
         <IntRangeDomain min="1" max="64" />
         <Hints>
+          <SaveInQSettings both="1" />
           <RestartRequired />
         </Hints>
       </IntVectorProperty>
@@ -288,6 +306,7 @@
 
       <PropertyGroup label="Data Processing Options">
         <Property name="AutoConvertProperties" />
+        <Property name="BlockColorsDistinctValues" />
       </PropertyGroup>
 
       <PropertyGroup label="Multicore Support">
@@ -415,6 +434,7 @@
       </IntVectorProperty>
 
       <DoubleVectorProperty name="LODThreshold"
+        label="LOD Threshold"
         default_values="5.0"
         number_of_elements="1">
         <DoubleRangeDomain name="range" min="0.0" max="102400.0" />
@@ -426,13 +446,16 @@
       </DoubleVectorProperty>
 
       <DoubleVectorProperty name="LODResolution"
+        label="LOD Resolution"
         default_values="0.5"
         number_of_elements="1"
         panel_visibility="advanced">
         <DoubleRangeDomain name="range" min="0.0" max="1.0" />
         <Documentation>
           Set the factor used to compute the decimated geometry when employed.
-          0 implies minimal decimation (highest detail, hence more polygons that 1.
+          This affects the size of the grid used for
+          quadric clustering, for example. 1.0 implies maximum resolution while 0
+          implies minimum resolution.
         </Documentation>
         <Hints>
           <PropertyWidgetDecorator type="EnableWidgetDecorator">
@@ -454,6 +477,7 @@
       </DoubleVectorProperty>
 
       <IntVectorProperty name="UseOutlineForLODRendering"
+        label="Use Outline For LOD Rendering"
         default_values="0"
         number_of_elements="1">
         <BooleanDomain name="bool" />

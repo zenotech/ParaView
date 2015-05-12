@@ -61,6 +61,14 @@ endif()
 option(BUILD_SHARED_LIBS "Build VTK with shared libraries." ON)
 set(VTK_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
 
+#------------------------------------------------------------------------------
+# Protect against a stampede of static links at the same time.
+if (NOT BUILD_SHARED_LIBS)
+  set(PV_EXE_JOB_LINK_POOL static_exe_link)
+  set_property(GLOBAL APPEND PROPERTY
+    JOB_POOLS static_exe_link=1)
+endif ()
+
 #-------------------------------------------------------------------------------
 set (ParaView_CMAKE_DIR "${ParaView_SOURCE_DIR}/CMake")
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ParaView_CMAKE_DIR})
@@ -81,11 +89,11 @@ include(CMakeDependentOption)
 #------------------------------------------------------------------------------
 # Determine ParaView Source Version
 set (PARAVIEW_VERSION_MAJOR 4)
-set (PARAVIEW_VERSION_MINOR 2)
-set (PARAVIEW_VERSION_PATCH 0)
+set (PARAVIEW_VERSION_MINOR 3)
+set (PARAVIEW_VERSION_PATCH 1)
 set (PARAVIEW_VERSION_PATCH_EXTRA)
-set (PARAVIEW_VERSION "4.2")
-set (PARAVIEW_VERSION_FULL "4.2.0")
+set (PARAVIEW_VERSION "4.3")
+set (PARAVIEW_VERSION_FULL "4.3.1")
 
 determine_version(${ParaView_SOURCE_DIR} ${GIT_EXECUTABLE} "PARAVIEW")
 
@@ -177,10 +185,12 @@ set (PV_INSTALL_EXPORT_NAME ${VTK_INSTALL_EXPORT_NAME})
 # Setting this ensures that "make install" will leave rpaths to external
 # libraries (not part of the build-tree e.g. Qt, ffmpeg, etc.) intact on
 # "make install". This ensures that one can install a version of ParaView on the
-# build machine without any issues. If this not desired, simply comment the
-# following line and "make install" will strip all rpaths, which is default
-# behavior.
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+# build machine without any issues. If this not desired, simply specify
+# CMAKE_INSTALL_RPATH_USE_LINK_PATH when configuring Paraview and
+# "make install" will strip all rpaths, which is default behavior.
+if(NOT CMAKE_INSTALL_RPATH_USE_LINK_PATH )
+  set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+endif()
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
@@ -246,6 +256,12 @@ if (UNIX)
     "Build ParaView with CosmoTools VTK Extensions" OFF
     "PARAVIEW_USE_MPI" OFF)
   mark_as_advanced(PARAVIEW_ENABLE_COSMOTOOLS)
+
+  cmake_dependent_option(PARAVIEW_ENABLE_CGNS
+  "Enable the CGNS file reader" OFF
+  "PARAVIEW_USE_MPI" OFF)
+  mark_as_advanced(PARAVIEW_ENABLE_CGNS)
+
 endif()
 
 # Is this a 32 bit or 64bit build. Display this in about dialog.
@@ -427,18 +443,24 @@ if (PARAVIEW_ENABLE_QT_SUPPORT)
 
   include (ParaViewQtVersion)
   if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
-    set (Qt5_FIND_COMPONENTS Widgets)
+    set (Qt5_FIND_COMPONENTS
+      Help
+      Network
+      Test
+      UiTools
+      Widgets
+      Xml)
     include (ParaViewQt5)
     if (NOT QT5_FOUND)
       message( SEND_ERROR "Qt ${QT_MIN_VERSION} or greater not found. "
         "Please set the Qt5Core_DIR variable." )
-    endif (NOT QT5_FOUND)
-  else (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+    endif ()
+  else ()
     find_package (Qt4)
     if (NOT QT4_FOUND)
       message (SEND_ERROR "Qt ${QT_MIN_VERSION} or greater not found. "
         "Please set the QT_QMAKE_EXECUTABLE variable.")
-    else (NOT QT4_FOUND)
+    else ()
       # check is Qtversion  is 4.8.*. If so, we are good. Otherwise we will post a
       # warning of versions (>= 4.7 && < 4.8). However we report errors for any
       # version less than 4.7
@@ -449,14 +471,14 @@ if (PARAVIEW_ENABLE_QT_SUPPORT)
           message(SEND_ERROR "Qt ${QTVERSION} not supported. "
             "Please use ${QT_OFFICIAL_VERSION} (you may need to clean your dirtied cache)."
             "Minium required version is ${QT_MIN_VERSION}.")
-        else (qt_version46_x_tmp)
+        else ()
           message(WARNING "Warning: You are using Qt ${QTVERSION}. "
             "Officially supported version is Qt ${QT_OFFICIAL_VERSION}")
-        endif (qt_version46_x_tmp)
-      endif (NOT qt_version_match)
-    endif (NOT QT4_FOUND)
-  endif (PARAVIEW_QT_VERSION VERSION_GREATER "4")
-endif (PARAVIEW_ENABLE_QT_SUPPORT)
+        endif ()
+      endif ()
+    endif ()
+  endif ()
+endif ()
 SET(PARAVIEW_QT_QMAKE_EXECUTABLE ${QT_QMAKE_EXECUTABLE})
 
 # Setup testing.
@@ -687,13 +709,27 @@ if (PARAVIEW_ENABLE_PYTHON AND PARAVIEW_ENABLE_CATALYST)
   endif()
 
   set_property(TARGET vtkPVPythonCatalystPythonD PROPERTY INCLUDE_DIRECTORIES
-    ${VTK_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIR}
+    ${VTK_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS}
     ${vtkPVPythonCatalyst_INCLUDE_DIRS}
     ${ParaView_BINARY_DIR}/CoProcessing/Catalyst)
   set_property(TARGET vtkPVPythonCatalystPython PROPERTY INCLUDE_DIRECTORIES
-    ${VTK_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIR}
+    ${VTK_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS}
     ${vtkPVPythonCatalyst_INCLUDE_DIRS}
     ${ParaView_BINARY_DIR}/CoProcessing/Catalyst)
+
+  # All the ${vtk-module}Python files are installed by VTK/Wrapping/Python/CMakeLists.txt
+  # outside the module subsystem. Hence, we need to install the vtkPVPythonCatalystPython
+  # library explicitly here (BUG #15085).
+  # This code mirrors the code in VTK/Wrapping/Python/CMakeLists.txt
+  if (NOT VTK_INSTALL_NO_RUNTIME AND BUILD_SHARED_LIBS AND NOT VTK_INSTALL_NO_LIBRARIES)
+    install(TARGETS ${vtk-module}Python
+      EXPORT ${VTK_INSTALL_EXPORT_NAME}
+      RUNTIME DESTINATION ${VTK_INSTALL_RUNTIME_DIR} COMPONENT RuntimeLibraries
+      LIBRARY DESTINATION ${VTK_INSTALL_PYTHON_MODULE_DIR}/vtk COMPONENT RuntimeLibraries
+      ARCHIVE DESTINATION ${VTK_INSTALL_ARCHIVE_DIR} COMPONENT Development
+      )
+  endif()
+  unset(vtk-module)
 endif()
 
 #------------------------------------------------------------------------------
@@ -719,8 +755,8 @@ foreach(rule_file ${PARAVIEW_EXTRA_INSTALL_RULES_FILE})
     message (STATUS "***** Incorporating custom cmake file : ${rule_file} ****")
     include("${rule_file}")
     message (STATUS "*********************************************************")
-  endif (EXISTS "${rule_file}")
-endforeach(rule_file ${PARAVIEW_EXTRA_INSTALL_RULES_FILE})
+  endif ()
+endforeach()
 
 #------------------------------------------------------------------------------
 # Lastly generate the ParaViewConfig.cmake so that other projects can depend on
@@ -817,10 +853,8 @@ endif()
 
 #-----------------------------------------------------------------------------
 # Configure the CTestCustom.cmake file for exclusions.
-if (BUILD_TESTING)
-  configure_file("${ParaView_CMAKE_DIR}/CTestCustom.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/CTestCustom.cmake" @ONLY)
-endif()
+configure_file("${ParaView_CMAKE_DIR}/CTestCustom.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/CTestCustom.cmake" @ONLY)
 
 #-----------------------------------------------------------------------------
 # Create target to download data from the ParaViewData group.  This must come

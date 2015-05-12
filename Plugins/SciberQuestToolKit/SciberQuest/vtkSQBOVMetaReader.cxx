@@ -55,6 +55,7 @@ Copyright 2012 SciberQuest Inc.
 #endif
 
 // ****************************************************************************
+#ifndef SQTK_WITHOUT_MPI
 static
 unsigned long hash(const unsigned char *str)
 {
@@ -66,6 +67,7 @@ unsigned long hash(const unsigned char *str)
 
   return hash;
 }
+#endif
 
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkSQBOVMetaReader);
@@ -281,10 +283,10 @@ long long vtkSQBOVMetaReader::GetProcRam()
             "PV_PROC_MEMORY_LIMIT");
 
     std::string hostName=sysInfo.GetHostname();
-    unsigned long hostId=hash((const unsigned char *)hostName.c_str());
     long long hostSize=1l;
 
     #ifndef SQTK_WITHOUT_MPI
+    unsigned long hostId=hash((const unsigned char *)hostName.c_str());
     int worldSize=1;
     MPI_Comm_size(MPI_COMM_WORLD,&worldSize);
 

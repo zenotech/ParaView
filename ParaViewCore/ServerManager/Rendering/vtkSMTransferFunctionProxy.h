@@ -192,6 +192,34 @@ public:
     return self? self->UpdateScalarBarsComponentTitle(arrayInfo) : false;
     }
 
+  // Description:
+  // Helper method used by RescaleTransferFunctionToDataRange() to compute range
+  // from all visible representations using the transfer function.
+  // Returns true if a valid range was determined.
+  virtual bool ComputeDataRange(double range[2]);
+  static bool ComputeDataRange(vtkSMProxy* proxy, double range[2])
+    {
+    vtkSMTransferFunctionProxy* self =
+      vtkSMTransferFunctionProxy::SafeDownCast(proxy);
+    return self? self->ComputeDataRange(range) : false;
+    }
+
+  // Description:
+  // Helper method to reset a transfer function proxy to its XML defaults. By
+  // passing in preserve_range, you can make this method preserve the current
+  // transfer function range.
+  virtual void ResetPropertiesToXMLDefaults(bool preserve_range);
+  static void ResetPropertiesToXMLDefaults(vtkSMProxy* proxy, bool preserve_range=false)
+    {
+    vtkSMTransferFunctionProxy* self =
+      vtkSMTransferFunctionProxy::SafeDownCast(proxy);
+    if (self)
+      {
+      self->ResetPropertiesToXMLDefaults(preserve_range);
+      }
+    }
+  using Superclass::ResetPropertiesToXMLDefaults;
+
 //BTX
 protected:
   vtkSMTransferFunctionProxy();

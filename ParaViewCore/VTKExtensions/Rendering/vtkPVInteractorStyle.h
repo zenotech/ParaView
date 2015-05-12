@@ -18,7 +18,7 @@
 // manipulate the camera, the viewpoint of the scene.
 // The left button is for rotation; shift + left button is for rolling;
 // the right button is for panning; and shift + right button is for zooming.
-// This class fires vtkCommand::StartInteractionEvent and 
+// This class fires vtkCommand::StartInteractionEvent and
 // vtkCommand::EndInteractionEvent to signal start and end of interaction.
 
 #ifndef __vtkPVInteractorStyle_h
@@ -36,7 +36,7 @@ public:
   static vtkPVInteractorStyle *New();
   vtkTypeMacro(vtkPVInteractorStyle, vtkInteractorStyleTrackballCamera);
   void PrintSelf(ostream& os, vtkIndent indent);
-  
+
   // Description:
   // Event bindings controlling the effects of pressing mouse buttons
   // or moving the mouse.
@@ -47,7 +47,12 @@ public:
   virtual void OnMiddleButtonUp();
   virtual void OnRightButtonDown();
   virtual void OnRightButtonUp();
-  
+
+  // Description:
+  // Overrides superclass behaviors to only support the key codes that make
+  // sense in a ParaView application.
+  virtual void OnChar();
+
   // Description:
   // Access to adding or removing manipulators.
   void AddManipulator(vtkCameraManipulator *m);
@@ -74,15 +79,28 @@ public:
   vtkGetVector3Macro(CenterOfRotation, double);
 
   // Description:
-  // Do not let the superclass do anything with a char event.
-  virtual void OnChar() {};
+  // Propagates the rotation factor to the manipulators.
+  // This simply sets an interal ivar.
+  // It is propagated to a manipulator before the event
+  // is sent to it.
+  // Also changing the RotationFactor during interaction
+  // i.e. after a button press but before a button up
+  // has no effect until the next button press.
+  vtkSetMacro(RotationFactor, double);
+  vtkGetMacro(RotationFactor, double);
+
+
+  // Description:
+  // Returns the chosen manipulator based on the modifiers.
+  virtual vtkCameraManipulator* FindManipulator(int button, int shift, int control);
 
 protected:
   vtkPVInteractorStyle();
   ~vtkPVInteractorStyle();
 
-  vtkCameraManipulator *Current;
+  vtkCameraManipulator *CurrentManipulator;
   double CenterOfRotation[3];
+  double RotationFactor;
 
   // The CameraInteractors also store there button and modifier.
   vtkCollection *CameraManipulators;

@@ -35,6 +35,9 @@ set (CTEST_CUSTOM_WARNING_EXCEPTION
   # ignore warnings about unsafe str* functions.
   "_CRT_SECURE_NO_WARNINGS"
 
+  # ignore std::copy() warnings.
+  "vtkPVChangeOfBasisHelper.*_SCL_SECURE_NO_WARNINGS"
+
   # ignore warnings from documentation generation tools.
   "Warning.*Skipping it."
   "warning.*Skipping it."
@@ -81,6 +84,10 @@ set (CTEST_CUSTOM_WARNING_EXCEPTION
   # exclude warning from MantaView  plugin
   "MantaView.VTK"
   "manta"
+
+  # exclude warning from GeodesicMeasurement plugin
+  "GeodesicMeasurementPlugin"
+  "FmmMesh"
 
   # exclude warnings from mpi4py
   ".*mpi4py.*"

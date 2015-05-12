@@ -15,10 +15,11 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkInitializationHelper.h"
 #include "vtkProcessModule.h"
 #include "vtkPVOptions.h"
+#include "vtkSmartPointer.h"
 #include "vtkSMProxy.h"
 #include "vtkSMProxyManager.h"
-#include "vtkSMSessionProxyManager.h"
 #include "vtkSMSession.h"
+#include "vtkSMSessionProxyManager.h"
 
 //----------------------------------------------------------------------------
 int main(int argc, char* argv[])
@@ -46,7 +47,6 @@ int main(int argc, char* argv[])
       "Contour",
       "Clip",
       "Cut",
-      "Glyph",
       NULL
   };
 
@@ -57,7 +57,8 @@ int main(int argc, char* argv[])
   while (*name)
     {
     // Create proxy and change main radius value
-    vtkSMProxy* proxy = pxm->NewProxy("filters", *name);
+    vtkSmartPointer<vtkSMProxy> proxy;
+    proxy.TakeReference(pxm->NewProxy("filters", *name));
     ++name;
 
     if (!proxy)

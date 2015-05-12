@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>355</width>
-    <height>129</height>
+    <width>390</width>
+    <height>126</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>390</width>
+    <height>0</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>Form</string>
@@ -66,6 +72,22 @@
     </layout>
    </item>
    <item>
+    <widget class="QLabel" name="ArrayLabel">
+     <property name="font">
+      <font>
+       <weight>50</weight>
+       <bold>false</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Array Name:</string>
+     </property>
+     <property name="textFormat">
+      <enum>Qt::AutoText</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QScrollArea" name="scrollArea">
      <property name="frameShape">
       <enum>QFrame::NoFrame</enum>
@@ -81,8 +103,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>337</width>
-        <height>79</height>
+        <width>372</width>
+        <height>53</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="ScrollAreaLayout" stretch="0,0,1">
@@ -106,22 +128,49 @@
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,0">
+        <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,0,0">
          <property name="spacing">
           <number>2</number>
          </property>
          <item>
           <widget class="QPushButton" name="RestoreDefaults">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="toolTip">
             <string>Restore application default setting values for color map</string>
            </property>
            <property name="text">
             <string/>
            </property>
+           <property name="icon">
+            <iconset resource="../../../Components/Resources/pqComponents.qrc">
+             <normaloff>:/pqWidgets/Icons/pqSave16.png</normaloff>:/pqWidgets/Icons/pqSave16.png</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="SaveAsArrayDefaults">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="toolTip">
+            <string>Save current color map settings values as default for array</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../../../Components/Resources/pqComponents.qrc">
+             <normaloff>:/pqWidgets/Icons/pqSaveArray16.png</normaloff>:/pqWidgets/Icons/pqSaveArray16.png</iconset>
+           </property>
           </widget>
          </item>
          <item>
           <widget class="QPushButton" name="SaveAsDefaults">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="toolTip">
             <string>Save current color map settings values as default</string>
            </property>

@@ -9,6 +9,8 @@
 IF (ParaView_SOURCE_DIR)
   INCLUDE_DIRECTORIES(
     ${VTK_INCLUDE_DIRS}
+  )
+  INCLUDE_DIRECTORIES(SYSTEM
     ${MPI_INCLUDE_PATH}
   )
 
@@ -16,10 +18,10 @@ vtk_module_load(vtkzlib)
 
 INCLUDE_DIRECTORIES(${vtkzlib_INCLUDE_DIRS})
 
-ELSE (ParaView_SOURCE_DIR)
+ELSE ()
   FIND_PACKAGE(ParaView REQUIRED)
   INCLUDE(${PARAVIEW_USE_FILE})
-ENDIF (ParaView_SOURCE_DIR)
+ENDIF ()
 
 ADD_PARAVIEW_PLUGIN(AnalyzeNIfTIIO "1.0"
   SERVER_MANAGER_SOURCES vtkAnalyzeReader.cxx
@@ -32,3 +34,12 @@ ADD_PARAVIEW_PLUGIN(AnalyzeNIfTIIO "1.0"
   REQUIRED_ON_SERVER)
 
 target_link_libraries(AnalyzeNIfTIIO LINK_PRIVATE ${vtkzlib_LIBRARIES})
+
+# Add testing if necessary
+if (BUILD_TESTING)
+  # Analyze reader test was conflicting with the reader from VisIt. So
+  # disabling it.
+  if(NOT PARAVIEW_USE_VISITBRIDGE)
+    add_subdirectory(Testing)
+  endif ()
+endif()

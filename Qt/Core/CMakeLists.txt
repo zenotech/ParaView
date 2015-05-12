@@ -43,6 +43,8 @@ set(Module_SRCS
   pqAutoStartInterface.h
   pqBoxChartView.cxx
   pqBoxChartView.h
+  pqCheckBoxDelegate.h
+  pqCheckBoxDelegate.cxx
   pqCollaborationEventPlayer.cxx
   pqCollaborationEventPlayer.h
   pqCollaborationManager.cxx
@@ -115,6 +117,8 @@ set(Module_SRCS
   pqOutputWindowAdapter.h
   pqOutputWindow.cxx
   pqOutputWindow.h
+  pqOutputWindowModel.cxx
+  pqOutputWindowModel.h
   pqParallelCoordinatesChartView.cxx
   pqParallelCoordinatesChartView.h
   pqPipelineFilter.cxx
@@ -225,6 +229,7 @@ set (Module_MOC_HDRS
   pqAnimationScene.h
   pqApplicationCore.h
   pqBoxChartView.h
+  pqCheckBoxDelegate.h
   pqCollaborationEventPlayer.h
   pqCollaborationManager.h
   pqComparativeContextView.h
@@ -236,12 +241,14 @@ set (Module_MOC_HDRS
   pqCoreUtilities.h
   pqDataRepresentation.h
   pqDisplayPolicy.h
+  pqFileDialogEventPlayer.h
   pqFileDialogEventTranslator.h
   pqFileDialogFavoriteModel.h
   pqFileDialogFilter.h
   pqFileDialog.h
   pqFileDialogModel.h
   pqFileDialogRecentDirsModel.h
+  pqFlatTreeViewEventPlayer.h
   pqFlatTreeViewEventTranslator.h
   pqFormBuilder.h
   pqInterfaceTracker.h
@@ -254,6 +261,7 @@ set (Module_MOC_HDRS
   pqOutputPort.h
   pqOutputWindowAdapter.h
   pqOutputWindow.h
+  pqOutputWindowModel.h
   pqParallelCoordinatesChartView.h
   pqPipelineFilter.h
   pqPipelineRepresentation.h
@@ -265,6 +273,7 @@ set (Module_MOC_HDRS
   pqPropertyLinks.h
   pqPropertyManager.h
   pqProxy.h
+  pqQVTKWidgetEventPlayer.h
   pqQVTKWidgetEventTranslator.h
   pqQVTKWidget.h
   pqRecentlyUsedResourcesList.h
@@ -319,12 +328,6 @@ endif()
 
 #-------------------------------------------------------------------------
 if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
-  # import Qt5 build settings
-  set(Qt5_FIND_COMPONENTS
-      Widgets
-      UiTools
-      Xml)
-  include (ParaViewQt5)
   # Setting this variable ensures that any module depending on pqWidgets
   # automatically inherits the Qt include dirs.
   set (${vtk-module}_INCLUDE_DIRS
@@ -394,9 +397,9 @@ target_link_libraries(${vtk-module} LINK_PUBLIC ${QT_LIBRARIES})
 #    "${CMAKE_CURRENT_SOURCE_DIR}"
 #    "${PV_INSTALL_INCLUDE_DIR}/Qt/Core/Resources/Icons"
 #    "${resPath}/*.ico;${resPath}/*.png;${resPath}/*.svg;${resPath}/*.xpm;${resPath}/*.rc")
-#ENDIF (NOT PV_INSTALL_NO_DEVELOPMENT)
+#ENDIF ()
 #
 #IF(BUILD_TESTING)
 #  ADD_SUBDIRECTORY(Testing)
-#ENDIF(BUILD_TESTING)
+#ENDIF()
 

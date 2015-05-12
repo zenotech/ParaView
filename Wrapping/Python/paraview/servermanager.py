@@ -786,13 +786,24 @@ class VectorProperty(Property):
             values = (values,)
         if not self.GetRepeatable() and len(values) != self.GetNumberOfElements():
             raise RuntimeError("This property requires %d values." % self.GetNumberOfElements())
+
+        convertedValues = map(self.ConvertValue, values)
+
         if self.GetRepeatable():
-            # Clean up first
-            self.SMProperty.SetNumberOfElements(0)
-        idx = 0
-        for val in values:
-            self.SMProperty.SetElement(idx, self.ConvertValue(val))
+          # Clean up first
+          self.SMProperty.SetNumberOfElements(len(convertedValues))
+
+        try:
+          # SetElements() isn't available for all VectorProperty values.
+          # Try to use it so that the proxies are updated only once.
+          # Otherwise, call SetElement() for each element.
+          self.SMProperty.SetElements(convertedValues)
+        except TypeError as e:
+          idx = 0
+          for val in convertedValues:
+            self.SMProperty.SetElement(idx, val)
             idx += 1
+
         self._UpdateProperty()
 
     def Clear(self):
@@ -2423,7 +2434,20 @@ def _getPyProxy(smproxy, outputPort=0):
     if classForProxy:
         retVal = classForProxy(proxy=smproxy, port=outputPort)
     else:
-        retVal = Proxy(proxy=smproxy, port=outputPort)
+        # Since the class for this proxy, doesn't exist yet, we attempt to
+        # create a new class definition for it, if possible and then add it
+        # to the "misc" module. This is essential since the Python property
+        # variables for a proxy are only setup whne the Proxy class is created
+        # (in _createClass).
+        # NOTE: _createClass() takes the xml group and name, not the xml label,
+        # hence we don't pass xmlName variable.
+        classForProxy = _createClass(smproxy.GetXMLGroup(), smproxy.GetXMLName())
+        if classForProxy:
+            global misc
+            misc.__dict__[classForProxy.__name__] = classForProxy
+            retVal = classForProxy(proxy=smproxy, port=outputPort)
+        else:
+            retVal = Proxy(proxy=smproxy, port=outputPort)
     return retVal
 
 def _makeUpdateCameraMethod(rv):
@@ -2548,6 +2572,7 @@ def updateModules(m):
     createModule("lookup_tables", m.rendering)
     createModule("textures", m.rendering)
     createModule('cameramanipulators', m.rendering)
+    createModule('annotations', m.rendering)
     createModule("animation", m.animation)
     createModule("misc", m.misc)
     createModule('animation_keyframes', m.animation)
@@ -2568,6 +2593,7 @@ def _createModules(m):
     createModule("lookup_tables", m.rendering)
     createModule("textures", m.rendering)
     createModule('cameramanipulators', m.rendering)
+    createModule('annotations', m.rendering)
     m.animation = createModule('animation')
     createModule('animation_keyframes', m.animation)
     m.implicit_functions = createModule('implicit_functions')
@@ -2581,6 +2607,65 @@ class PVModule(object):
 
 def _make_name_valid(name):
     return paraview.make_name_valid(name)
+
+def _createClass(groupName, proxyName, apxm=None):
+    """Defines a new class type for the proxy."""
+    global ActiveConnection
+    pxm = ProxyManager() if not apxm else apxm
+    proto = pxm.GetPrototypeProxy(groupName, proxyName)
+    if not proto:
+       paraview.print_error("Error while loading %s/%s %s"%(groupName, i['group'], proxyName))
+       return None
+    pname = proxyName
+    if paraview.compatibility.GetVersion() >= 3.5 and proto.GetXMLLabel():
+        pname = proto.GetXMLLabel()
+    pname = _make_name_valid(pname)
+    if not pname:
+        return None
+    cdict = {}
+    # Create an Initialize() method for this sub-class.
+    cdict['Initialize'] = _createInitialize(groupName, proxyName)
+    iter = PropertyIterator(proto)
+    # Add all properties as python properties.
+    for prop in iter:
+        propName = iter.GetKey()
+        if paraview.compatibility.GetVersion() >= 3.5:
+            if (prop.GetInformationOnly() and propName != "TimestepValues" ) \
+              or prop.GetIsInternal():
+                continue
+        names = [propName]
+        if paraview.compatibility.GetVersion() >= 3.5:
+            names = [iter.PropertyLabel]
+
+        propDoc = None
+        if prop.GetDocumentation():
+            propDoc = prop.GetDocumentation().GetDescription()
+        for name in names:
+            name = _make_name_valid(name)
+            if name:
+                cdict[name] = property(_createGetProperty(propName),
+                                       _createSetProperty(propName),
+                                       None,
+                                       propDoc)
+    # Add the documentation as the class __doc__
+    if proto.GetDocumentation() and \
+       proto.GetDocumentation().GetDescription():
+        doc = proto.GetDocumentation().GetDescription()
+    else:
+        doc = Proxy.__doc__
+    cdict['__doc__'] = doc
+    # Create the new type
+    if proto.GetXMLName() == "ExodusIIReader":
+        superclasses = (ExodusIIReaderProxy,)
+    elif proto.IsA("vtkSMSourceProxy"):
+        superclasses = (SourceProxy,)
+    elif proto.IsA("vtkSMViewLayoutProxy"):
+        superclasses = (ViewLayoutProxy,)
+    else:
+        superclasses = (Proxy,)
+
+    cobj = type(pname, superclasses, cdict)
+    return cobj
 
 def createModule(groupName, mdl=None):
     """Populates a module with proxy classes defined in the given group.
@@ -2601,65 +2686,16 @@ def createModule(groupName, mdl=None):
     definitionIter = pxm.NewDefinitionIterator(groupName)
     for i in definitionIter:
         proxyName = i['key']
-        proto = pxm.GetPrototypeProxy(groupName, proxyName)
-        if not proto:
-           paraview.print_error("Error while loading %s/%s %s"%(groupName, i['group'], proxyName))
-           continue
-        pname = proxyName
-        if paraview.compatibility.GetVersion() >= 3.5 and\
-           proto.GetXMLLabel():
-            pname = proto.GetXMLLabel()
-        pname = _make_name_valid(pname)
-        if not pname:
-            continue
-        if pname in mdl.__dict__:
-            if debug:
-                paraview.print_warning("Warning: %s is being overwritten. This may point to an issue in the ParaView configuration files" % pname)
-        cdict = {}
-        # Create an Initialize() method for this sub-class.
-        cdict['Initialize'] = _createInitialize(groupName, proxyName)
-        iter = PropertyIterator(proto)
-        # Add all properties as python properties.
-        for prop in iter:
-            propName = iter.GetKey()
-            if paraview.compatibility.GetVersion() >= 3.5:
-                if (prop.GetInformationOnly() and propName != "TimestepValues" ) \
-                  or prop.GetIsInternal():
-                    continue
-            names = [propName]
-            if paraview.compatibility.GetVersion() >= 3.5:
-                names = [iter.PropertyLabel]
-
-            propDoc = None
-            if prop.GetDocumentation():
-                propDoc = prop.GetDocumentation().GetDescription()
-            for name in names:
-                name = _make_name_valid(name)
-                if name:
-                    cdict[name] = property(_createGetProperty(propName),
-                                           _createSetProperty(propName),
-                                           None,
-                                           propDoc)
-        # Add the documentation as the class __doc__
-        if proto.GetDocumentation() and \
-           proto.GetDocumentation().GetDescription():
-            doc = proto.GetDocumentation().GetDescription()
-        else:
-            doc = Proxy.__doc__
-        cdict['__doc__'] = doc
-        # Create the new type
-        if proto.GetXMLName() == "ExodusIIReader":
-            superclasses = (ExodusIIReaderProxy,)
-        elif proto.IsA("vtkSMSourceProxy"):
-            superclasses = (SourceProxy,)
-        elif proto.IsA("vtkSMViewLayoutProxy"):
-            superclasses = (ViewLayoutProxy,)
-        else:
-            superclasses = (Proxy,)
-
-        cobj = type(pname, superclasses, cdict)
-        # Add it to the modules dictionary
-        mdl.__dict__[pname] = cobj
+        cobj = _createClass(groupName, proxyName, apxm=pxm)
+        if cobj:
+            pname = cobj.__name__
+            if pname in mdl.__dict__ and debug:
+                paraview.print_warning(\
+                        "Warning: %s is being overwritten."\
+                        " This may point to an issue in the ParaView configuration files"\
+                        % pname)
+            # Add it to the modules dictionary
+            mdl.__dict__[pname] = cobj
     return mdl
 
 
@@ -2993,7 +3029,7 @@ def demo5():
     scene.Play()
     return scene
 
-ASSOCIATIONS = { 'POINTS' : 0, 'CELLS' : 1, 'VERTICES' : 4, 'EDGES' : 5, 'ROWS' : 6}
+ASSOCIATIONS = { 'POINTS' : 0, 'CELLS' : 1, 'FIELD' : 2, 'VERTICES' : 4, 'EDGES' : 5, 'ROWS' : 6}
 _LEGACY_ASSOCIATIONS = { 'POINT_DATA' : 0, 'CELL_DATA' : 1 }
 
 def GetAssociationAsString(val):

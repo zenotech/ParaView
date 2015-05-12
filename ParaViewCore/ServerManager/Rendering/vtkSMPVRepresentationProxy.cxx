@@ -33,6 +33,7 @@
 #include "vtkSMTransferFunctionManager.h"
 #include "vtkSMTransferFunctionProxy.h"
 
+#include <cmath>
 #include <set>
 #include <string>
 #include <vtksys/ios/sstream>
@@ -220,7 +221,7 @@ bool vtkSMPVRepresentationProxy::RescaleTransferFunctionToDataRange(
     vtkWarningMacro("No input present. Cannot determine data ranges.");
     return false;
     }
-  
+
   vtkPVDataInformation* dataInfo = inputProxy->GetDataInformation(port);
   vtkPVArrayInformation* info = dataInfo->GetArrayInformation(
     arrayname, attribute_type);
@@ -263,7 +264,7 @@ bool vtkSMPVRepresentationProxy::RescaleTransferFunctionToDataRangeOverTime(
     vtkWarningMacro("No input present. Cannot determine data ranges.");
     return false;
     }
- 
+
   vtkPVTemporalDataInformation* dataInfo =
     inputProxy->GetOutputPort(port)->GetTemporalDataInformation();
   vtkPVArrayInformation* info = dataInfo->GetArrayInformation(
@@ -305,9 +306,20 @@ bool vtkSMPVRepresentationProxy::RescaleTransferFunctionToDataRange(
     info->GetComponentRange(component, range);
     if (range[1] >= range[0])
       {
-      if ( (range[1] - range[0]) < 1e-16 )
+      // the range must be large enough, compared to values order of magnitude
+      double rangeOrderOfMagnitude = 1e-11;
+      if (rangeOrderOfMagnitude < std::abs(range[0]))
         {
-        range[1] = range[0] + 1e-16;
+        rangeOrderOfMagnitude = std::abs(range[0]);
+        }
+      if (rangeOrderOfMagnitude < std::abs(range[1]))
+        {
+        rangeOrderOfMagnitude = std::abs(range[1]);
+        }
+      double rangeMinLength = rangeOrderOfMagnitude * 1e-5;
+      if ((range[1] - range[0]) < rangeMinLength)
+        {
+        range[1] = range[0] + rangeMinLength;
         }
       // If data range is too small then we tweak it a bit so scalar mapping
       // produces valid/reproducible results.
@@ -464,6 +476,17 @@ bool vtkSMPVRepresentationProxy::SetScalarColoring(const char* arrayname, int at
     vtkSMProxy* lutProxy =
       mgr->GetColorTransferFunction(arrayname, this->GetSessionProxyManager());
     vtkSMPropertyHelper(lutProperty).Set(lutProxy);
+
+    // Get the array information for the color array to determine transfer function properties
+    vtkPVArrayInformation* colorArrayInfo = this->GetArrayInformationForColorArray();
+    if (colorArrayInfo)
+      {
+      if (colorArrayInfo->GetDataType() == VTK_STRING)
+        {
+        vtkSMPropertyHelper(lutProxy, "IndexedLookup", true).Set(1);
+        lutProxy->UpdateVTKObjects();
+        }
+      }
     }
 
   if (vtkSMProperty* sofProperty = this->GetProperty("ScalarOpacityFunction"))

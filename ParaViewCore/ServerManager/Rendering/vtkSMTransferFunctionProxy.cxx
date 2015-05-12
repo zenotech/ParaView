@@ -20,6 +20,7 @@
 #include "vtkPVXMLElement.h"
 #include "vtkPVXMLParser.h"
 #include "vtkScalarsToColors.h"
+#include "vtkSMCoreUtilities.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMProxyManager.h"
 #include "vtkSMPVRepresentationProxy.h"
@@ -184,13 +185,20 @@ bool vtkSMTransferFunctionProxy::RescaleTransferFunction(
   // determine if the interpolation has to happen in log-space.
   bool log_space =
     (vtkSMPropertyHelper(this, "UseLogScale", true).GetAsInt() != 0);
-  // ensure that log_space is valid for the ranges (before and after).
-  if (rangeMin <= 0.0 || rangeMax <= 0.0 ||
-      old_range[0] <= 0.0 || old_range[1] <= 0.0)
+  if (log_space)
     {
-    log_space = false;
+    // ensure the range is valid for log space.
+    double range[2] = {rangeMin, rangeMax};
+    if (vtkSMCoreUtilities::AdjustRangeForLog(range))
+      {
+      // ranges not valid for log-space. Will convert them.
+      vtkWarningMacro(
+        "Ranges not valid for log-space. "
+        "Changed the range to (" << range[0] <<", " << range[1] << ").");
+      }
+    rangeMin = range[0];
+    rangeMax = range[1];
     }
-
   double dnew = log_space? log10(rangeMax/rangeMin) :
                            (rangeMax - rangeMin);
   // don't set empty ranges. Tweak it a bit.
@@ -220,9 +228,10 @@ bool vtkSMTransferFunctionProxy::RescaleTransferFunction(
 }
 
 //----------------------------------------------------------------------------
-bool vtkSMTransferFunctionProxy::RescaleTransferFunctionToDataRange(bool extend)
+bool vtkSMTransferFunctionProxy::ComputeDataRange(double range[2])
 {
-  double range[2] = {VTK_DOUBLE_MAX, VTK_DOUBLE_MIN};
+  range[0] = VTK_DOUBLE_MAX;
+  range[1] = VTK_DOUBLE_MIN;
   int component = -1;
   if (vtkSMPropertyHelper(this, "VectorMode").GetAsInt() == vtkScalarsToColors::COMPONENT)
     {
@@ -258,7 +267,14 @@ bool vtkSMTransferFunctionProxy::RescaleTransferFunctionToDataRange(bool extend)
         }
       }
     }
-  if (range[0] <= range[1])
+  return (range[0] <= range[1]);
+}
+
+//----------------------------------------------------------------------------
+bool vtkSMTransferFunctionProxy::RescaleTransferFunctionToDataRange(bool extend)
+{
+  double range[2] = {VTK_DOUBLE_MAX, VTK_DOUBLE_MIN};
+  if (this->ComputeDataRange(range))
     {
     return this->RescaleTransferFunction(range[0], range[1], extend);
     }
@@ -371,12 +387,15 @@ bool vtkSMTransferFunctionProxy::MapControlPointsToLogSpace(
   double range[2] = {points.front().GetData()[0],
                      points.back().GetData()[0]};
 
-  if (inverse == false && (range[0] <= 0.0 || range[1] <= 0.0))
+  if (inverse == false)
     {
-    // ranges not valid for log-space. Cannot convert.
-    vtkWarningMacro("Ranges not valid for log-space. "
-      "Cannot map control points to log-space.");
-    return false;
+    if (vtkSMCoreUtilities::AdjustRangeForLog(range))
+      {
+      // ranges not valid for log-space. Will convert them.
+      vtkWarningMacro(
+        "Ranges not valid for log-space. "
+        "Changed the range to (" << range[0] <<", " << range[1] << ").");
+      }
     }
   if (range[0] >= range[1])
     {
@@ -739,6 +758,52 @@ bool vtkSMTransferFunctionProxy::UpdateScalarBarsComponentTitle(
       }
     }
   return true;
+}
+
+//----------------------------------------------------------------------------
+void vtkSMTransferFunctionProxy::ResetPropertiesToXMLDefaults(
+  bool preserve_range)
+{
+  try
+    {
+    if (!preserve_range)
+      {
+      throw true;
+      }
+
+    vtkSMProperty* controlPointsProperty = GetControlPointsProperty(this);
+    if (!controlPointsProperty)
+      {
+      throw true;
+      }
+
+    vtkSMPropertyHelper cntrlPoints(controlPointsProperty);
+    unsigned int num_elements = cntrlPoints.GetNumberOfElements();
+    if (num_elements == 0 || num_elements == 4)
+      {
+      // nothing to do, but not an error, so return true.
+      throw true;
+      }
+
+    std::vector<vtkTuple<double, 4> > points;
+    points.resize(num_elements/4);
+    cntrlPoints.Get(points[0].GetData(), num_elements);
+
+    // sort the points by x, just in case user didn't add them correctly.
+    std::sort(points.begin(), points.end(), StrictWeakOrdering());
+
+    double range[2] = {points.front().GetData()[0],
+      points.back().GetData()[0]};
+    this->ResetPropertiesToXMLDefaults();
+    this->RescaleTransferFunction(range[0], range[1], false);
+    }
+  catch (bool val)
+    {
+    if (val)
+      {
+      this->ResetPropertiesToXMLDefaults();
+      }
+    }
 }
 
 //----------------------------------------------------------------------------

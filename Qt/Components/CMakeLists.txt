@@ -41,10 +41,6 @@ set (Module_SRCS
   pqActionGroupInterface.h
   pqActiveObjects.cxx
   pqActiveObjects.h
-  pqActiveServer.cxx
-  pqActiveServer.h
-  pqActiveView.cxx
-  pqActiveView.h
   pqAnimatablePropertiesComboBox.cxx
   pqAnimatablePropertiesComboBox.h
   pqAnimatableProxyComboBox.cxx
@@ -102,8 +98,6 @@ set (Module_SRCS
   pqContourWidget.h
   pqCubeAxesEditorDialog.cxx
   pqCubeAxesEditorDialog.h
-  pqCurrentTimeToolbar.cxx
-  pqCurrentTimeToolbar.h
   pqCustomFilterDefinitionModel.cxx
   pqCustomFilterDefinitionModel.h
   pqCustomFilterDefinitionWizard.cxx
@@ -162,6 +156,8 @@ set (Module_SRCS
   pqImageTip.h
   pqImplicitPlaneWidget.cxx
   pqImplicitPlaneWidget.h
+  pqIntMaskPropertyWidget.cxx
+  pqIntMaskPropertyWidget.h
   pqIntRangeWidget.cxx
   pqIntRangeWidget.h
   pqIntVectorPropertyWidget.cxx
@@ -208,7 +204,6 @@ set (Module_SRCS
   pqObjectPanelInterface.h
   pqObjectPanelPropertyWidget.cxx
   pqObjectPanelPropertyWidget.h
-
   pqOrbitCreatorDialog.cxx
   pqOrbitCreatorDialog.h
   pqOrbitWidget.cxx
@@ -234,6 +229,8 @@ set (Module_SRCS
   pqPluginTreeWidget.h
   pqPointSourceWidget.cxx
   pqPointSourceWidget.h
+  pqPolyLineWidget.cxx
+  pqPolyLineWidget.h
   pqPopOutWidget.cxx
   pqPopOutWidget.h
   pqPropertiesPanel.cxx
@@ -248,6 +245,8 @@ set (Module_SRCS
   pqPropertyWidgetInterface.h
   pqProxiesWidget.cxx
   pqProxiesWidget.h
+  pqProxyEditorPropertyWidget.cxx
+  pqProxyEditorPropertyWidget.h
   pqProxyInformationWidget.cxx
   pqProxyInformationWidget.h
   pqProxyPanel.cxx
@@ -368,9 +367,6 @@ set (Module_MOC_HDRS
   pq3DWidgetPropertyWidget.h
   pqAboutDialog.h
   pqActiveObjects.h
-  pqActiveServer.h
-  pqActiveView.h
-  #pqAddSourceDialog.h
   pqAnimatablePropertiesComboBox.h
   pqAnimatableProxyComboBox.h
   pqAnimationManager.h
@@ -396,7 +392,6 @@ set (Module_MOC_HDRS
   pqComponentsTestUtility.h
   pqContourWidget.h
   pqCubeAxesEditorDialog.h
-  pqCurrentTimeToolbar.h
   pqCustomFilterDefinitionWizard.h
   pqCustomFilterManager.h
   pqCustomFilterManagerModel.h
@@ -423,6 +418,7 @@ set (Module_MOC_HDRS
   pqHighlightItemDelegate.h
   pqImageTip.h
   pqImplicitPlaneWidget.h
+  pqIntMaskPropertyWidget.h
   pqIntRangeWidget.h
   pqIntVectorPropertyWidget.h
   pqItemViewSearchWidgetEventPlayer.h
@@ -457,12 +453,14 @@ set (Module_MOC_HDRS
   pqPluginTreeWidgetEventTranslator.h
   pqPluginTreeWidget.h
   pqPointSourceWidget.h
+  pqPolyLineWidget.h
   pqPopOutWidget.h
   pqPropertiesPanel.h
   pqPropertyGroupWidget.h
   pqPropertyWidgetDecorator.h
   pqPropertyWidget.h
   pqProxiesWidget.h
+  pqProxyEditorPropertyWidget.h
   pqProxyInformationWidget.h
   pqProxyPanel.h
   pqProxyPropertyWidget.h
@@ -522,7 +520,6 @@ set (Module_MOC_HDRS
 set (Module_UI_FILES
   Resources/UI/pqAbortAnimation.ui
   Resources/UI/pqAboutDialog.ui
-  #Resources/UI/pqAddSourceDialog.ui
   Resources/UI/pqAnimationSettings.ui
   Resources/UI/pqBoxWidget.ui
   Resources/UI/pqCalculatorWidget.ui
@@ -561,6 +558,7 @@ set (Module_UI_FILES
   Resources/UI/pqPipelineTimeKeyFrameEditor.ui
   Resources/UI/pqPluginDialog.ui
   Resources/UI/pqPointSourceControls.ui
+  Resources/UI/pqPolyLineWidget.ui
   Resources/UI/pqPropertiesPanel.ui
   Resources/UI/pqProxyInformationWidget.ui
   Resources/UI/pqProxyWidgetDialog.ui
@@ -594,6 +592,8 @@ if(PARAVIEW_ENABLE_PYTHON)
   LIST(APPEND Module_SRCS
     pqImageOutputInfo.cxx
     pqImageOutputInfo.h
+    pqCinemaTrack.cxx
+    pqCinemaTrack.h
     pqSGExportStateWizard.cxx
     pqSGExportStateWizard.h
     pqSGPluginManager.cxx
@@ -603,12 +603,14 @@ if(PARAVIEW_ENABLE_PYTHON)
     )
   LIST(APPEND Module_MOC_HDRS
     pqImageOutputInfo.h
+    pqCinemaTrack.h
     pqSGExportStateWizard.h
     pqSGPluginManager.h
     pqSGWritersMenuManager.h
     )
   LIST(APPEND Module_UI_FILES
     Resources/UI/pqImageOutputInfo.ui
+    Resources/UI/pqCinemaTrack.ui
     Resources/UI/pqExportStateWizard.ui
     )
 endif()
@@ -692,4 +694,4 @@ endif()
 #    "${CMAKE_CURRENT_SOURCE_DIR}"
 #    "${PV_INSTALL_INCLUDE_DIR}/Qt/Components/Resources/Icons"
 #    "${resPath}/*.ico;${resPath}/*.png;${resPath}/*.svg;${resPath}/*.xpm;${resPath}/*.rc")
-#ENDIF (NOT PV_INSTALL_NO_DEVELOPMENT)
+#ENDIF ()

@@ -46,6 +46,14 @@ public:
   bool GetAutoConvertProperties();
 
   // Description:
+  // Determines the number of distinct values in
+  // vtkBlockColors. This array is added to each block if
+  // the dataset is a composite dataset. The array has one value
+  // set to (blockIndex % BlockColorsDistinctValues)
+  vtkGetMacro(BlockColorsDistinctValues, int);
+  vtkSetMacro(BlockColorsDistinctValues, int);
+
+  // Description:
   // Automatically apply changes in the 'Properties' panel.
   vtkGetMacro(AutoApply, bool);
   vtkSetMacro(AutoApply, bool);
@@ -69,6 +77,15 @@ public:
   // Get/Set the default view type.
   vtkGetStringMacro(DefaultViewType);
   vtkSetStringMacro(DefaultViewType);
+
+  // Description:
+  // Enum for DefaultTimeStep
+  enum
+  {
+    DEFAULT_TIME_STEP_UNCHANGED,
+    DEFAULT_TIME_STEP_FIRST,
+    DEFAULT_TIME_STEP_LAST
+  };
 
   // Description:
   // Enum for TransferFunctionResetMode
@@ -135,7 +152,8 @@ public:
 protected:
   vtkPVGeneralSettings();
   ~vtkPVGeneralSettings();
-
+  
+  int BlockColorsDistinctValues;
   bool AutoApply;
   bool AutoApplyActiveOnly;
   char* DefaultViewType;

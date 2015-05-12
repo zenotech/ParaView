@@ -41,14 +41,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqSearchBox.h"
 #include "pqSettings.h"
 #include "pqSMAdaptor.h"
+#include "pqUndoStack.h"
 
 #include "vtkCommand.h"
+#include "vtkPVArrayInformation.h"
+#include "vtkSMCoreUtilities.h"
 #include "vtkSMProperty.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMSettings.h"
 #include "vtkSMTransferFunctionProxy.h"
 #include "vtkWeakPointer.h"
+
+#include "vtksys/ios/sstream"
 
 #include <QDebug>
 #include <QKeyEvent>
@@ -69,10 +74,6 @@ public:
     this->Ui.setupUi(self);
     this->Ui.RestoreDefaults->setIcon(
       self->style()->standardIcon(QStyle::SP_BrowserReload));
-    this->Ui.SaveAsDefaults->setIcon(
-      self->style()->standardIcon(QStyle::SP_DialogSaveButton));
-    // temporarily hiding this till we get time to add support for this.
-    this->Ui.RestoreDefaults->hide();
 
     QVBoxLayout* vbox = new QVBoxLayout(this->Ui.PropertiesFrame);
     vbox->setMargin(0);
@@ -96,8 +97,12 @@ pqColorMapEditor::pqColorMapEditor(QWidget* parentObject)
                    this, SLOT(updatePanel()));
   QObject::connect(this->Internals->Ui.EditScalarBar, SIGNAL(clicked()),
                    this, SLOT(editScalarBar()));
+  QObject::connect(this->Internals->Ui.RestoreDefaults, SIGNAL(clicked()),
+                   this, SLOT(restoreDefaults()));
   QObject::connect(this->Internals->Ui.SaveAsDefaults, SIGNAL(clicked()),
                    this, SLOT(saveAsDefault()));
+  QObject::connect(this->Internals->Ui.SaveAsArrayDefaults, SIGNAL(clicked()),
+                   this, SLOT(saveAsArrayDefault()));
   QObject::connect(this->Internals->Ui.AutoUpdate, SIGNAL(clicked(bool)),
                    this, SLOT(setAutoUpdate(bool)));
   QObject::connect(this->Internals->Ui.Update, SIGNAL(clicked()),
@@ -161,16 +166,28 @@ void pqColorMapEditor::updateActive()
 
   this->setDataRepresentation(repr);
 
+  QString arrayNameLabel("Array Name: ");
+
   // Set the current LUT proxy to edit.
   if (repr && vtkSMPVRepresentationProxy::GetUsingScalarColoring(repr->getProxy()))
     {
     this->setColorTransferFunction(
       vtkSMPropertyHelper(repr->getProxy(), "LookupTable", true).GetAsProxy());
+
+    vtkPVArrayInformation* arrayInfo =
+      vtkSMPVRepresentationProxy::GetArrayInformationForColorArray(repr->getProxy());
+    if (arrayInfo)
+      {
+      arrayNameLabel.append(arrayInfo->GetName());
+      }
     }
   else
     {
     this->setColorTransferFunction(NULL);
+    arrayNameLabel.append("<none>");
     }
+
+  this->Internals->Ui.ArrayLabel->setText(arrayNameLabel);
 }
 
 //-----------------------------------------------------------------------------
@@ -224,7 +241,9 @@ void pqColorMapEditor::setColorTransferFunction(vtkSMProxy* ctf)
     delete this->Internals->ProxyWidget;
     }
 
+  ui.RestoreDefaults->setEnabled(ctf != NULL);
   ui.SaveAsDefaults->setEnabled(ctf != NULL);
+  ui.SaveAsArrayDefaults->setEnabled(ctf != NULL);
   if (!ctf)
     {
     return;
@@ -291,6 +310,10 @@ void pqColorMapEditor::saveAsDefault()
   vtkSMSettings* settings = vtkSMSettings::GetInstance();
 
   vtkSMProxy* proxy = this->Internals->ActiveRepresentation->getProxy();
+  if (!proxy)
+    {
+    return;
+    }
 
   vtkSMProxy* lutProxy =
     pqSMAdaptor::getProxyProperty(proxy->GetProperty("LookupTable"));
@@ -303,8 +326,8 @@ void pqColorMapEditor::saveAsDefault()
     qCritical() << "No LookupTable property found.";
     }
 
-  vtkSMProxy* scalarOpacityFunctionProxy =
-    pqSMAdaptor::getProxyProperty(lutProxy->GetProperty("ScalarOpacityFunction"));
+  vtkSMProxy* scalarOpacityFunctionProxy = lutProxy?
+    pqSMAdaptor::getProxyProperty(lutProxy->GetProperty("ScalarOpacityFunction")) : NULL;
   if (scalarOpacityFunctionProxy)
     {
     settings->SetProxySettings(scalarOpacityFunctionProxy);
@@ -313,6 +336,66 @@ void pqColorMapEditor::saveAsDefault()
     {
     qCritical("No ScalarOpacityFunction property found");
     }
+}
+
+//-----------------------------------------------------------------------------
+void pqColorMapEditor::saveAsArrayDefault()
+{
+  vtkSMSettings* settings = vtkSMSettings::GetInstance();
+
+  vtkSMProxy* proxy = this->Internals->ActiveRepresentation->getProxy();
+  if (!proxy)
+    {
+    return;
+    }
+
+  vtkSMPropertyHelper colorArrayHelper(proxy, "ColorArrayName");
+
+  vtkSMProxy* lutProxy =
+    pqSMAdaptor::getProxyProperty(proxy->GetProperty("LookupTable"));
+  if (lutProxy)
+    {
+    // Remove special characters from the array name
+    std::string sanitizedArrayName =
+      vtkSMCoreUtilities::SanitizeName(colorArrayHelper.GetInputArrayNameToProcess());
+
+    vtksys_ios::ostringstream prefix;
+    prefix << ".array_" << lutProxy->GetXMLGroup() << "." << sanitizedArrayName;
+
+    settings->SetProxySettings(prefix.str().c_str(), lutProxy);
+    }
+  else
+    {
+    qCritical() << "No LookupTable property found.";
+    }
+
+  vtkSMProxy* scalarOpacityFunctionProxy = lutProxy?
+    pqSMAdaptor::getProxyProperty(lutProxy->GetProperty("ScalarOpacityFunction")) : NULL;
+  if (scalarOpacityFunctionProxy)
+    {
+    settings->SetProxySettings(scalarOpacityFunctionProxy);
+    }
+  else
+    {
+    qCritical("No ScalarOpacityFunction property found");
+    }
+}
+
+//-----------------------------------------------------------------------------
+void pqColorMapEditor::restoreDefaults()
+{
+  vtkSMProxy* proxy = this->Internals->ActiveRepresentation->getProxy();
+  BEGIN_UNDO_SET("Reset color map to defaults");
+  if (vtkSMProxy* lutProxy = vtkSMPropertyHelper(proxy, "LookupTable").GetAsProxy())
+    {
+    vtkSMTransferFunctionProxy::ResetPropertiesToXMLDefaults(lutProxy, true);
+    if (vtkSMProxy* sofProxy = vtkSMPropertyHelper(lutProxy, "ScalarOpacityFunction").GetAsProxy())
+      {
+      vtkSMTransferFunctionProxy::ResetPropertiesToXMLDefaults(sofProxy, true);
+      }
+    }
+  END_UNDO_SET();
+  this->renderViews();
 }
 
 //-----------------------------------------------------------------------------

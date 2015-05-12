@@ -41,8 +41,6 @@ set(Module_SRCS
   pqAnimationTrack.h
   pqAnimationWidget.cxx
   pqAnimationWidget.h
-  pqChartPrintSave.cxx
-  pqChartPrintSave.h
   pqCheckableHeaderView.cxx
   pqCheckableHeaderView.h
   pqCheckBoxPixMaps.cxx
@@ -145,7 +143,6 @@ set (QtWidgets_SRCS
   pqAnimationModel.h
   pqAnimationTrack.h
   pqAnimationWidget.h
-  pqChartPrintSave.h
   pqCheckableHeaderView.h
   pqCheckBoxPixMaps.h
   pqCollapsedGroup.h
@@ -245,15 +242,6 @@ SET(QT_WIDGETS_ALL_SRCS ${Module_SRCS} ${QtWidgets_MOC_SOURCES}
 # import Qt build settings
 
 if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
-  set (Qt5_FIND_COMPONENTS
-    Widgets
-    Network
-    Help
-    PrintSupport
-    Test
-    )
-  include (ParaViewQt5)
-
   # Setting this variable ensures that any module depending on pqWidgets
   # automatically inherits the Qt include dirs.
   set (${vtk-module}_INCLUDE_DIRS
@@ -264,7 +252,7 @@ if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
     ${Qt5Test_INCLUDE_DIRS}
     ${Qt5WebKitWidgets_INCLUDE_DIRS})
   
-else (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+else ()
   set (QT_USE_QTNETWORK 1)
   set (QT_USE_QTHELP 1)
 
@@ -275,7 +263,7 @@ else (PARAVIEW_QT_VERSION VERSION_GREATER "4")
   # automatically inherits the Qt include dirs.
   set (${vtk-module}_INCLUDE_DIRS
     ${QT_INCLUDES})
-endif (PARAVIEW_QT_VERSION VERSION_GREATER "4")
+endif ()
 
 set(${vtk-module}_NO_HeaderTest 1)
 
@@ -308,4 +296,4 @@ target_link_libraries(${vtk-module} LINK_PUBLIC ${QT_LIBRARIES})
 #    "${CMAKE_CURRENT_SOURCE_DIR}"
 #    "${PV_INSTALL_INCLUDE_DIR}/Qt/Widgets/Resources"
 #    "${resPath}/*.ui;${resPath}/*.ico;${resPath}/*.png;${resPath}/*.svg;${resPath}/*.xpm;${resPath}/*.rc;${resPath}/*.qrc")
-#ENDIF (NOT PV_INSTALL_NO_DEVELOPMENT)
+#ENDIF ()

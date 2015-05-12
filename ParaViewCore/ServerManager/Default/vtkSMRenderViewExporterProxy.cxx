@@ -40,7 +40,6 @@ bool vtkSMRenderViewExporterProxy::CanExport(vtkSMProxy* view)
 void vtkSMRenderViewExporterProxy::Write()
 {
   this->CreateVTKObjects();
-
   vtkExporter* exporter = vtkExporter::SafeDownCast(this->GetClientSideObject());
   vtkSMRenderViewProxy* rv = vtkSMRenderViewProxy::SafeDownCast(this->View);
   if (exporter && rv)

@@ -14,8 +14,8 @@ paraview_test_load_data(""
   )
 
 # only enable TestPythonAnnotationFilter test if numpy is available
-include(TestNumPy)
-if (FOUND_NUMPY)
+find_python_module(numpy numpy_found)
+if (numpy_found)
   set(PARAVIEW_PYTHON_ARGS
     --data=${PARAVIEW_TEST_OUTPUT_DATA_DIR}/can.ex2)
   # Add pvpython tests
@@ -23,6 +23,7 @@ if (FOUND_NUMPY)
     NO_DATA NO_VALID NO_OUTPUT NO_RT
     TestPythonAnnotationFilter.py
     TestPythonAnnotationFilterNoMerge.py
+    TestAnnotateAttributeData.py
     )
   set(PARAVIEW_PYTHON_ARGS)
 
@@ -43,8 +44,12 @@ endif()
 paraview_add_test_python(
   NO_DATA NO_RT
   TestPythonViewScript.py
-  CinemaTest.py
   TestColorHistogram.py
+)
+
+paraview_add_test_pvbatch(
+  NO_DATA NO_RT
+  CinemaTest.py
 )
 
 # these tests could run safely in serial and
@@ -64,12 +69,25 @@ if (PARAVIEW_USE_MPI AND VTK_MPIRUN_EXE)
     JUST_VALID
     ${PVBATCH_TESTS}
     )
+
+  if (numpy_found)
+    paraview_add_test_pvbatch_mpi(
+      NO_DATA NO_VALID NO_OUTPUT NO_RT
+      TestAnnotateAttributeData.py
+      )
+  endif()
 else()
   # run the test serially
   paraview_add_test_pvbatch(
     JUST_VALID
     ${PVBATCH_TESTS}
     )
+  if (numpy_found)
+    paraview_add_test_pvbatch(
+      NO_DATA NO_VALID NO_OUTPUT NO_RT
+      TestAnnotateAttributeData.py
+      )
+  endif()
 endif()
 
 # Python Multi-servers test
@@ -93,4 +111,4 @@ if(BUILD_SHARED_LIBS)
 endif()
 
 # Extend timeout for CinemaTest
-set_tests_properties(pvpythonPython-CinemaTest PROPERTIES TIMEOUT 500)
+set_tests_properties(pvpythonPython-Batch-CinemaTest PROPERTIES TIMEOUT 500)

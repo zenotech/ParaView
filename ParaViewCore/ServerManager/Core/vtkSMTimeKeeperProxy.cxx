@@ -15,9 +15,12 @@
 #include "vtkSMTimeKeeperProxy.h"
 
 #include "vtkObjectFactory.h"
+#include "vtkSMDoubleVectorProperty.h"
 #include "vtkSMProxyProperty.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMTimeKeeper.h"
+
+#include <algorithm>
 
 vtkStandardNewMacro(vtkSMTimeKeeperProxy);
 //----------------------------------------------------------------------------
@@ -137,6 +140,36 @@ bool vtkSMTimeKeeperProxy::SetSuppressTimeSource(vtkSMProxy* proxy, bool suppres
     return true;
     }
   return false;
+}
+
+//----------------------------------------------------------------------------
+double vtkSMTimeKeeperProxy::GetLowerBoundTimeStep(double value)
+{
+  vtkSMDoubleVectorProperty* dvp = vtkSMDoubleVectorProperty::SafeDownCast(
+    this->GetProperty("TimestepValues"));
+  if (dvp && dvp->GetNumberOfElements() > 0)
+    {
+    return *(std::lower_bound(dvp->GetElements(),
+      dvp->GetElements() + dvp->GetNumberOfElements() - 1, // note: this is "last"
+      value));
+    }
+  return value;
+}
+
+
+//----------------------------------------------------------------------------
+int vtkSMTimeKeeperProxy::GetLowerBoundTimeStepIndex(double value)
+{
+  vtkSMDoubleVectorProperty* dvp = vtkSMDoubleVectorProperty::SafeDownCast(
+    this->GetProperty("TimestepValues"));
+  if (dvp && dvp->GetNumberOfElements() > 0)
+    {
+    const double* first = dvp->GetElements();
+    const double* last = dvp->GetElements() + dvp->GetNumberOfElements() - 1; // note: this is "last"
+    const double* iter = std::lower_bound(first, last, value);
+    return static_cast<int>(iter - first);
+    }
+  return 0;
 }
 
 //----------------------------------------------------------------------------

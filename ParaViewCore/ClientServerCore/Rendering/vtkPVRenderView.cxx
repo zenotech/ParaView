@@ -20,6 +20,7 @@
 #include "vtkCamera.h"
 #include "vtkCommand.h"
 #include "vtkDataRepresentation.h"
+#include "vtkPVGridAxes3DActor.h"
 #include "vtkInformationDoubleKey.h"
 #include "vtkInformationDoubleVectorKey.h"
 #include "vtkInformation.h"
@@ -49,7 +50,6 @@
 #include "vtkPVDataDeliveryManager.h"
 #include "vtkPVDataRepresentation.h"
 #include "vtkPVDisplayInformation.h"
-#include "vtkPVGenericRenderWindowInteractor.h"
 #include "vtkPVHardwareSelector.h"
 #include "vtkPVInteractorStyle.h"
 #include "vtkPVOptions.h"
@@ -149,9 +149,15 @@ vtkInformationKeyRestrictedMacro(
   vtkPVRenderView, VIEW_PLANES, DoubleVector, 24);
 
 vtkCxxSetObjectMacro(vtkPVRenderView, LastSelection, vtkSelection);
+
+#define VTK_STEREOTYPE_SAME_AS_CLIENT 0
+
 //----------------------------------------------------------------------------
 vtkPVRenderView::vtkPVRenderView()
-  : Annotation()
+  : Annotation(),
+  OrientationWidgetVisibility(false),
+  StereoType(VTK_STEREO_RED_BLUE),
+  ServerStereoType(VTK_STEREOTYPE_SAME_AS_CLIENT)
 {
   this->Internals = new vtkInternals();
   // non-reference counted, so no worries about reference loops.
@@ -203,19 +209,10 @@ vtkPVRenderView::vtkPVRenderView()
 
   this->SynchronizedRenderers = vtkPVSynchronizedRenderer::New();
 
-  if (this->SynchronizedWindows->GetLocalProcessIsDriver())
-    {
-    this->Interactor = vtkPVGenericRenderWindowInteractor::New();
-    // essential to call Initialize() otherwise first time the render is called
-    // on  the render window, it initializes the interactor which in turn
-    // results in a call to Render() which can cause uncanny side effects.
-    this->Interactor->Initialize();
-    }
-
   vtkRenderWindow* window = this->SynchronizedWindows->NewRenderWindow();
   window->SetMultiSamples(0);
   window->SetOffScreenRendering(this->UseOffscreenRendering? 1 : 0);
-  window->SetInteractor(this->Interactor);
+
   this->RenderView = vtkRenderViewBase::New();
   this->RenderView->SetRenderWindow(window);
   window->Delete();
@@ -249,15 +246,13 @@ vtkPVRenderView::vtkPVRenderView()
   this->GetRenderer()->AddLight(this->Light);
   this->GetRenderer()->SetAutomaticLightCreation(0);
 
-  if (this->Interactor)
+  // Setup interactor styles. Since these are only needed on the process that
+  // the users interact with, we only create it on the "driver" process.
+  if (this->SynchronizedWindows->GetLocalProcessIsDriver())
     {
     this->InteractorStyle = // Default one will be the 3D
         this->ThreeDInteractorStyle = vtkPVInteractorStyle::New();
     this->TwoDInteractorStyle = vtkPVInteractorStyle::New();
-
-    this->Interactor->SetRenderer(this->GetRenderer());
-    this->Interactor->SetRenderWindow(this->GetRenderWindow());
-    this->Interactor->SetInteractorStyle(this->ThreeDInteractorStyle);
 
     // Add some default manipulators. Applications can override them without
     // much ado.
@@ -305,7 +300,7 @@ vtkPVRenderView::vtkPVRenderView()
 
   this->OrientationWidget->SetParentRenderer(this->GetRenderer());
   this->OrientationWidget->SetViewport(0, 0, 0.25, 0.25);
-  this->OrientationWidget->SetInteractor(this->Interactor);
+//  this->OrientationWidget->SetInteractor(this->Interactor);
 
   this->GetRenderer()->AddActor(this->CenterAxes);
 
@@ -345,12 +340,8 @@ vtkPVRenderView::~vtkPVRenderView()
   this->Light->Delete();
   this->CenterAxes->Delete();
   this->OrientationWidget->Delete();
+  this->Interactor = 0;
 
-  if (this->Interactor)
-    {
-    this->Interactor->Delete();
-    this->Interactor = 0;
-    }
   if (this->InteractorStyle)
     {
     // Don't want to delete it as it is only pointing to either
@@ -480,9 +471,17 @@ void vtkPVRenderView::RemovePropFromRenderer(vtkProp* prop)
 }
 
 //----------------------------------------------------------------------------
-vtkRenderer* vtkPVRenderView::GetRenderer()
+vtkRenderer* vtkPVRenderView::GetRenderer(int rendererType)
 {
-  return this->RenderView->GetRenderer();
+  switch (rendererType)
+    {
+  case NON_COMPOSITED_RENDERER:
+    return this->GetNonCompositedRenderer();
+  case DEFAULT_RENDERER:
+    return this->RenderView->GetRenderer();
+  default:
+    return NULL;
+    }
 }
 
 //----------------------------------------------------------------------------
@@ -502,6 +501,46 @@ vtkCamera* vtkPVRenderView::GetActiveCamera()
 vtkRenderWindow* vtkPVRenderView::GetRenderWindow()
 {
   return this->RenderView->GetRenderWindow();
+}
+
+//----------------------------------------------------------------------------
+vtkRenderWindowInteractor* vtkPVRenderView::GetInteractor()
+{
+  return this->Interactor;
+}
+
+//----------------------------------------------------------------------------
+void vtkPVRenderView::SetupInteractor(vtkRenderWindowInteractor* iren)
+{
+  if (this->GetLocalProcessSupportsInteraction() == false)
+    {
+    // We don't setup interactor on non-driver processes.
+    return;
+    }
+
+  if (this->Interactor != iren)
+    {
+    this->Interactor = iren;
+    this->OrientationWidget->SetInteractor(this->Interactor);
+    if (this->OrientationWidgetVisibility)
+      {
+      // don't ask! vtkPVAxesWidget must die!
+      this->OrientationWidget->SetEnabled(0);
+      this->OrientationWidget->SetEnabled(1);
+      }
+
+    if (this->Interactor)
+      {
+      this->Interactor->SetRenderWindow(this->GetRenderWindow());
+
+      // this will set the interactor style.
+      int mode = this->InteractionMode;
+      this->InteractionMode = -1;
+      this->SetInteractionMode(mode);
+      }
+
+    this->Modified();
+    }
 }
 
 //----------------------------------------------------------------------------
@@ -547,6 +586,31 @@ void vtkPVRenderView::SetInteractionMode(int mode)
     case INTERACTION_MODE_ZOOM:
       this->Interactor->SetInteractorStyle(this->RubberBandZoom);
       break;
+      }
+    }
+}
+
+//----------------------------------------------------------------------------
+void vtkPVRenderView::SetGridAxes3DActor(vtkPVGridAxes3DActor* gridActor)
+{
+  if (this->GridAxes3DActor != gridActor)
+    {
+    const bool in_tile_display_mode = this->InTileDisplayMode();
+    if (this->GridAxes3DActor)
+      {
+      this->GetNonCompositedRenderer()->RemoveViewProp(this->GridAxes3DActor);
+      this->GetRenderer()->RemoveViewProp(this->GridAxes3DActor);
+      }
+    this->GridAxes3DActor = gridActor;
+    if (this->GridAxes3DActor && !in_tile_display_mode)
+      {
+      this->GetNonCompositedRenderer()->AddViewProp(this->GridAxes3DActor);
+      this->GetRenderer()->AddViewProp(this->GridAxes3DActor);
+
+      this->GridAxes3DActor->SetEnableLayerSupport(true);
+      this->GridAxes3DActor->SetBackgroundLayer(this->GetRenderer()->GetLayer());
+      this->GridAxes3DActor->SetGeometryLayer(this->GetRenderer()->GetLayer());
+      this->GridAxes3DActor->SetForegroundLayer(this->GetNonCompositedRenderer()->GetLayer());
       }
     }
 }
@@ -648,7 +712,10 @@ void vtkPVRenderView::Select(int fieldAssociation, int region[4])
   if (this->SynchronizedWindows->GetEnabled() ||
     this->SynchronizedWindows->GetLocalProcessIsDriver())
     {
+    // we don't render labels for hardware selection
+    this->NonCompositedRenderer->SetDraw(false);
     sel.TakeReference(this->Selector->Select(region));
+    this->NonCompositedRenderer->SetDraw(true);
     }
   this->PostSelect(sel);
 }
@@ -759,10 +826,17 @@ void vtkPVRenderView::SynchronizeGeometryBounds()
     // nodes.
 
     this->CenterAxes->SetUseBounds(0);
+    if (this->GridAxes3DActor)
+      {
+      this->GridAxes3DActor->SetUseBounds(0);
+      }
     double prop_bounds[6];
     this->GetRenderer()->ComputeVisiblePropBounds(prop_bounds);
     this->CenterAxes->SetUseBounds(1);
-
+    if (this->GridAxes3DActor)
+      {
+      this->GridAxes3DActor->SetUseBounds(1);
+      }
 
     bbox.AddBounds(prop_bounds);
     }
@@ -798,7 +872,7 @@ bool vtkPVRenderView::GetLocalProcessDoesRendering(bool using_distributed_render
     return true;
 
   default:
-    return using_distributed_rendering || 
+    return using_distributed_rendering ||
       this->InTileDisplayMode() ||
       this->SynchronizedWindows->GetIsInCave();
     }
@@ -1101,6 +1175,8 @@ void vtkPVRenderView::InteractiveRender()
 //----------------------------------------------------------------------------
 void vtkPVRenderView::Render(bool interactive, bool skip_rendering)
 {
+  this->UpdateStereoProperties();
+
   if (this->SynchronizedWindows->GetMode() !=
     vtkPVSynchronizedRenderWindows::CLIENT ||
     (!interactive && this->UseDistributedRenderingForStillRender) ||
@@ -1229,6 +1305,7 @@ void vtkPVRenderView::Render(bool interactive, bool skip_rendering)
      in_tile_display_mode || in_cave_mode) &&
     vtkProcessModule::GetProcessType() != vtkProcessModule::PROCESS_DATA_SERVER)
     {
+    this->AboutToRenderOnLocalProcess(interactive);
     this->GetRenderWindow()->Render();
     }
 
@@ -1659,6 +1736,13 @@ void vtkPVRenderView::UpdateCenterAxes()
   widths[1] *= 0.25;
   widths[2] *= 0.25;
   this->CenterAxes->SetScale(widths);
+
+  double bounds[6];
+  this->GeometryBounds.GetBounds(bounds);
+  if (this->GridAxes3DActor)
+    {
+    this->GridAxes3DActor->SetTransformedBounds(bounds);
+    }
 }
 
 //----------------------------------------------------------------------------
@@ -1742,16 +1826,6 @@ void vtkPVRenderView::InvalidateCachedSelection()
   this->Selector->InvalidateCachedSelection();
 }
 
-//----------------------------------------------------------------------------
-void vtkPVRenderView::PrepareForScreenshot()
-{
-  if (this->Interactor && this->GetRenderWindow())
-    {
-    this->GetRenderWindow()->SetInteractor(this->Interactor);
-    }
-  this->Superclass::PrepareForScreenshot();
-}
-
 //*****************************************************************
 // Forwarded to orientation axes widget.
 
@@ -1765,6 +1839,7 @@ void vtkPVRenderView::SetOrientationAxesInteractivity(bool v)
 void vtkPVRenderView::SetOrientationAxesVisibility(bool v)
 {
   this->OrientationWidget->SetEnabled(v);
+  this->OrientationWidgetVisibility = v;
 }
 
 //----------------------------------------------------------------------------
@@ -1788,30 +1863,31 @@ void vtkPVRenderView::SetCenterAxesVisibility(bool v)
 }
 
 //*****************************************************************
-// Forward to vtkPVGenericRenderWindowInteractor.
+// Forward to vtkPVInteractorStyle instances.
 //----------------------------------------------------------------------------
 void vtkPVRenderView::SetCenterOfRotation(double x, double y, double z)
 {
   this->CenterAxes->SetPosition(x, y, z);
-  if (this->Interactor)
+  if (this->TwoDInteractorStyle)
     {
-    this->Interactor->SetCenterOfRotation(x, y, z);
+    this->TwoDInteractorStyle->SetCenterOfRotation(x, y, z);
+    }
+  if (this->ThreeDInteractorStyle)
+    {
+    this->ThreeDInteractorStyle->SetCenterOfRotation(x, y, z);
     }
 }
 
 //----------------------------------------------------------------------------
-void vtkPVRenderView::SetNonInteractiveRenderDelay(double seconds)
+void vtkPVRenderView::SetRotationFactor(double factor)
 {
-  if (this->Interactor)
+  if (this->TwoDInteractorStyle)
     {
-    if(seconds > 0)
-      {
-      this->Interactor->SetNonInteractiveRenderDelay(static_cast<unsigned long>(seconds*1000));
-      }
-    else
-      {
-      this->Interactor->SetNonInteractiveRenderDelay(0);
-      }
+    this->TwoDInteractorStyle->SetRotationFactor(factor);
+    }
+  if (this->ThreeDInteractorStyle)
+    {
+    this->ThreeDInteractorStyle->SetRotationFactor(factor);
     }
 }
 
@@ -2000,9 +2076,60 @@ void vtkPVRenderView::SetStereoRender(int val)
 }
 
 //----------------------------------------------------------------------------
-void vtkPVRenderView::SetStereoType(int val)
+inline int vtkGetNumberOfRendersPerFrame(int stereoMode)
 {
-  this->GetRenderWindow()->SetStereoType(val);
+  switch(stereoMode)
+    {
+  case VTK_STEREO_CRYSTAL_EYES:
+  case VTK_STEREO_RED_BLUE:
+  case VTK_STEREO_INTERLACED:
+  case VTK_STEREO_DRESDEN:
+  case VTK_STEREO_ANAGLYPH:
+  case VTK_STEREO_CHECKERBOARD:
+  case VTK_STEREO_SPLITVIEWPORT_HORIZONTAL:
+  case VTK_STEREO_FAKE:
+    return 2;
+
+  case VTK_STEREO_LEFT:
+  case VTK_STEREO_RIGHT:
+  default:
+    return 1;
+    }
+}
+
+//----------------------------------------------------------------------------
+void vtkPVRenderView::UpdateStereoProperties()
+{
+  if (!this->GetRenderWindow()->GetStereoRender())
+    {
+    return;
+    }
+
+  if (this->ServerStereoType != 0 &&
+    vtkGetNumberOfRendersPerFrame(this->ServerStereoType)
+    != vtkGetNumberOfRendersPerFrame(this->StereoType))
+    {
+    vtkWarningMacro("Incompatible stereo types for client and server ranks. "
+      "Forcing the server use the same type as the client.");
+    this->ServerStereoType = 0;
+    }
+
+  switch (this->SynchronizedWindows->GetMode())
+    {
+  case vtkPVSynchronizedRenderWindows::RENDER_SERVER:
+    if (this->ServerStereoType == VTK_STEREOTYPE_SAME_AS_CLIENT)
+      {
+      this->GetRenderWindow()->SetStereoType(this->StereoType);
+      }
+    else
+      {
+      this->GetRenderWindow()->SetStereoType(this->ServerStereoType);
+      }
+    break;
+
+  default:
+    this->GetRenderWindow()->SetStereoType(this->StereoType);
+    }
 }
 
 //----------------------------------------------------------------------------

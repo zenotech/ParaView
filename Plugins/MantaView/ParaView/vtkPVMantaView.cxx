@@ -21,7 +21,6 @@
 #include "vtkMantaRenderer.h"
 #include "vtkObjectFactory.h"
 #include "vtkPVAxesWidget.h"
-#include "vtkPVGenericRenderWindowInteractor.h"
 #include "vtkPVSynchronizedRenderer.h"
 #include "vtkRenderViewBase.h"
 
@@ -66,11 +65,6 @@ vtkPVMantaView::vtkPVMantaView()
   mantaRenderer->SetAutomaticLightCreation(0);
 
 //  this->OrderedCompositingBSPCutsSource = vtkBSPCutsGenerator::New();
-
-  if (this->Interactor)
-    {
-    this->Interactor->SetRenderer(mantaRenderer);
-    }
 
   this->OrientationWidget->SetParentRenderer(mantaRenderer);
 

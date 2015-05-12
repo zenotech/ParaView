@@ -34,15 +34,14 @@
 #include "vtkPVCompositeDataInformation.h"
 #include "vtkPVDataInformation.h"
 #include "vtkPVDisplayInformation.h"
-#include "vtkPVGenericRenderWindowInteractor.h"
 #include "vtkPVLastSelectionInformation.h"
 #include "vtkPVOptions.h"
 #include "vtkPVRenderView.h"
-#include "vtkPVRenderViewProxy.h"
 #include "vtkPVServerInformation.h"
 #include "vtkPVXMLElement.h"
 #include "vtkRenderer.h"
 #include "vtkRenderWindow.h"
+#include "vtkRenderWindowInteractor.h"
 #include "vtkSelection.h"
 #include "vtkSelectionNode.h"
 #include "vtkSmartPointer.h"
@@ -60,6 +59,7 @@
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMTrace.h"
 #include "vtkSMUncheckedPropertyHelper.h"
+#include "vtkSMViewProxyInteractorHelper.h"
 #include "vtkTransform.h"
 #include "vtkWeakPointer.h"
 #include "vtkWindowToImageFilter.h"
@@ -86,47 +86,26 @@ namespace
     return true;
     }
 #endif
-
-  class vtkRenderHelper : public vtkPVRenderViewProxy
-  {
-public:
-  static vtkRenderHelper* New();
-  vtkTypeMacro(vtkRenderHelper, vtkPVRenderViewProxy);
-
-  virtual void EventuallyRender()
-    {
-    this->Proxy->StillRender();
-    }
-  virtual vtkRenderWindow* GetRenderWindow() { return NULL; }
-  virtual void Render()
-    {
-    this->Proxy->InteractiveRender();
-    }
-  // Description:
-  // Returns true if the most recent render indeed employed low-res rendering.
-  virtual bool LastRenderWasInteractive()
-    {
-    return this->Proxy->LastRenderWasInteractive();
-    }
-
-  vtkWeakPointer<vtkSMRenderViewProxy> Proxy;
-  };
-  vtkStandardNewMacro(vtkRenderHelper);
 };
 
 vtkStandardNewMacro(vtkSMRenderViewProxy);
 //----------------------------------------------------------------------------
-vtkSMRenderViewProxy::vtkSMRenderViewProxy()
+vtkSMRenderViewProxy::vtkSMRenderViewProxy()  :
+  InteractorHelper()
 {
   this->IsSelectionCached = false;
   this->NewMasterObserverId = 0;
   this->DeliveryManager = NULL;
   this->NeedsUpdateLOD = true;
+  this->InteractorHelper->SetViewProxy(this);
 }
 
 //----------------------------------------------------------------------------
 vtkSMRenderViewProxy::~vtkSMRenderViewProxy()
 {
+  this->InteractorHelper->SetViewProxy(NULL);
+  this->InteractorHelper->CleanupInteractor();
+
   if( this->NewMasterObserverId != 0 &&
       this->Session && this->Session->GetCollaborationManager())
     {
@@ -237,6 +216,20 @@ void vtkSMRenderViewProxy::UpdateLOD()
 }
 
 //-----------------------------------------------------------------------------
+bool vtkSMRenderViewProxy::GetNeedsUpdate() {
+  vtkPVRenderView* view =
+    vtkPVRenderView::SafeDownCast(this->GetClientSideObject());
+  if (view->GetUseInteractiveRenderingForScreenshots())
+    {
+    return this->NeedsUpdateLOD;
+    }
+  else
+    {
+    return this->NeedsUpdate;
+    }
+}
+
+//-----------------------------------------------------------------------------
 bool vtkSMRenderViewProxy::StreamingUpdate(bool render_if_needed)
 {
   // FIXME: add a check to not do anything when in multi-client mode. We don't
@@ -341,12 +334,31 @@ vtkCamera* vtkSMRenderViewProxy::GetActiveCamera()
 }
 
 //----------------------------------------------------------------------------
-vtkPVGenericRenderWindowInteractor* vtkSMRenderViewProxy::GetInteractor()
+void vtkSMRenderViewProxy::SetupInteractor(vtkRenderWindowInteractor* iren)
+{
+  if (this->GetLocalProcessSupportsInteraction())
+    {
+    this->CreateVTKObjects();
+    vtkPVRenderView* rv = vtkPVRenderView::SafeDownCast(this->GetClientSideObject());
+
+    // Remember, these calls end up changing ivars on iren.
+    rv->SetupInteractor(iren);
+    this->InteractorHelper->SetupInteractor(rv->GetInteractor());
+    }
+}
+
+//----------------------------------------------------------------------------
+vtkRenderWindowInteractor* vtkSMRenderViewProxy::GetInteractor()
 {
   this->CreateVTKObjects();
-  vtkPVRenderView* rv = vtkPVRenderView::SafeDownCast(
-    this->GetClientSideObject());
+  vtkPVRenderView* rv = vtkPVRenderView::SafeDownCast(this->GetClientSideObject());
   return rv? rv->GetInteractor() : NULL;
+}
+
+//----------------------------------------------------------------------------
+vtkSMViewProxyInteractorHelper* vtkSMRenderViewProxy::GetInteractorHelper()
+{
+  return this->InteractorHelper.GetPointer();
 }
 
 //----------------------------------------------------------------------------
@@ -387,14 +399,6 @@ void vtkSMRenderViewProxy::CreateVTKObjects()
                                               ->GetSubProxy( "ActiveCamera" )
                                               ->GetClientSideObject() );
   rv->SetActiveCamera( camera );
-
-  if (rv->GetInteractor())
-    {
-    vtkRenderHelper* helper = vtkRenderHelper::New();
-    helper->Proxy = this;
-    rv->GetInteractor()->SetPVRenderView(helper);
-    helper->Delete();
-    }
 
   vtkEventForwarderCommand* forwarder = vtkEventForwarderCommand::New();
   forwarder->SetTarget(this);
@@ -605,7 +609,13 @@ void vtkSMRenderViewProxy::ResetCamera()
     .arg(this)
     .arg("ResetCamera")
     .arg("comment", "reset view to fit data");
-  this->InvokeCommand("ResetCamera");
+
+  vtkClientServerStream stream;
+  stream << vtkClientServerStream::Invoke
+         << VTKOBJECT(this)
+         << "ResetCamera"
+         << vtkClientServerStream::End;
+  this->ExecuteStream(stream);
 }
 
 //----------------------------------------------------------------------------

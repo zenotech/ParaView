@@ -66,6 +66,12 @@ public:
   vtkBooleanMacro(DrawTickMarks, int);
 
   // Description:
+  // If true (the default), sub-tick marks will be drawn.
+  vtkGetMacro(DrawSubTickMarks, int);
+  vtkSetMacro(DrawSubTickMarks, int);
+  vtkBooleanMacro(DrawSubTickMarks, int);
+
+  // Description:
   // Set whether the range endpoints (minimum and maximum) are added
   // as labels alongside other value labels.
   vtkGetMacro(AddRangeLabels, int);
@@ -73,9 +79,21 @@ public:
   vtkBooleanMacro(AddRangeLabels, int);
 
   // Description:
+  // Set whether annotions are automatically created according the number
+  // of discrete colors. Default is FALSE;
+  vtkSetMacro(AutomaticAnnotations, int);
+  vtkGetMacro(AutomaticAnnotations, int);
+  vtkBooleanMacro(AutomaticAnnotations, int);
+
+  // Description:
   // Set the C-style format string for the range labels.
   vtkGetStringMacro(RangeLabelFormat);
   vtkSetStringMacro(RangeLabelFormat);
+
+  // Description:
+  // Add value as annotation label on scalar bar at the given position
+  virtual void AddValueLabelIfUnoccluded(
+    double value, double pos, double diff);
 
   // Description:
   // Set the title justification. Valid values are VTK_TEXT_LEFT,
@@ -152,7 +170,12 @@ protected:
   double AspectRatio;
   int AutomaticLabelFormat;
   int DrawTickMarks;
+  int DrawSubTickMarks;
   int AddRangeLabels;
+
+  // Description:
+  // Flag indicating whether automatic annotations are computed and shown.
+  int AutomaticAnnotations;
 
   char* RangeLabelFormat;
 

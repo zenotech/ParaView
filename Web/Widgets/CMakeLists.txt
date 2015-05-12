@@ -69,6 +69,33 @@ copy_files_recursive(${paraview_pipeline2_source_dir}
   LABEL "Copying ParaView Pipeline CSS files")
 
 # =================================================================
+# Color management widgets
+# =================================================================
+
+set(paraview_colormgmt_source_dir "${CMAKE_CURRENT_SOURCE_DIR}/ColorManagement")
+set(paraview_colormgmt_binary_dir_js "${PARAVIEW_WWW_DIR}/lib/js")
+set(paraview_colormgmt_binary_dir_css "${PARAVIEW_WWW_DIR}/lib/css")
+set(paraview_colormgmt_binary_dir_img "${PARAVIEW_WWW_DIR}/lib/img")
+
+copy_files_recursive(${paraview_colormgmt_source_dir}
+  DESTINATION ${paraview_colormgmt_binary_dir_js}
+  REGEX "^(.*\\.js)$"
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/paraview_colormgmt-js-copy-complete"
+  LABEL "Copying ParaView Color Management JavaScript files")
+
+copy_files_recursive(${paraview_colormgmt_source_dir}
+  DESTINATION ${paraview_colormgmt_binary_dir_css}
+  REGEX "^(.*\\.css)$"
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/paraview_colormgmt-css-copy-complete"
+  LABEL "Copying ParaView Color Management CSS files")
+
+copy_files_recursive(${paraview_colormgmt_source_dir}
+  DESTINATION ${paraview_colormgmt_binary_dir_img}
+  REGEX "^(.*\\.png)$"
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/paraview_colormgmt-img-copy-complete"
+  LABEL "Copying ParaView Color Management Image files")
+
+# =================================================================
 # Toolbars
 # =================================================================
 
@@ -113,6 +140,9 @@ add_custom_target(ParaViewWebWidgets ALL DEPENDS
   "${CMAKE_CURRENT_BINARY_DIR}/paraview_pipeline-css-copy-complete"
   "${CMAKE_CURRENT_BINARY_DIR}/paraview_pipeline2-js-copy-complete"
   "${CMAKE_CURRENT_BINARY_DIR}/paraview_pipeline2-css-copy-complete"
+  "${CMAKE_CURRENT_BINARY_DIR}/paraview_colormgmt-js-copy-complete"
+  "${CMAKE_CURRENT_BINARY_DIR}/paraview_colormgmt-css-copy-complete"
+  "${CMAKE_CURRENT_BINARY_DIR}/paraview_colormgmt-img-copy-complete"
   "${CMAKE_CURRENT_BINARY_DIR}/paraview_toolbars-js-copy-complete"
   "${CMAKE_CURRENT_BINARY_DIR}/paraview_toolbars-css-copy-complete"
   "${CMAKE_CURRENT_BINARY_DIR}/paraview_logo-copy-complete"

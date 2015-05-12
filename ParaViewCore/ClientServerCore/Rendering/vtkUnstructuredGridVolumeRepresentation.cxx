@@ -14,6 +14,7 @@
 =========================================================================*/
 #include "vtkUnstructuredGridVolumeRepresentation.h"
 
+#include "vtkColorTransferFunction.h"
 #include "vtkCommand.h"
 #include "vtkDataSet.h"
 #include "vtkInformation.h"
@@ -306,12 +307,18 @@ void vtkUnstructuredGridVolumeRepresentation::UpdateMapperParameters()
     this->LODMapper->SetScalarMode(VTK_SCALAR_MODE_USE_CELL_FIELD_DATA);
     break;
 
+  case vtkDataObject::FIELD_ASSOCIATION_NONE:
+    activeMapper->SetScalarMode(VTK_SCALAR_MODE_USE_FIELD_DATA);
+    this->LODMapper->SetScalarMode(VTK_SCALAR_MODE_USE_FIELD_DATA);
+    break;
+
   case vtkDataObject::FIELD_ASSOCIATION_POINTS:
   default:
     activeMapper->SetScalarMode(VTK_SCALAR_MODE_USE_POINT_FIELD_DATA);
     this->LODMapper->SetScalarMode(VTK_SCALAR_MODE_USE_POINT_FIELD_DATA);
     break;
     }
+
   this->Actor->SetMapper(activeMapper);
 }
 
@@ -380,6 +387,7 @@ void vtkUnstructuredGridVolumeRepresentation::SetInterpolationType(int val)
 void vtkUnstructuredGridVolumeRepresentation::SetColor(vtkColorTransferFunction* lut)
 {
   this->Property->SetColor(lut);
+  this->LODMapper->SetLookupTable(lut);
 }
 
 //----------------------------------------------------------------------------

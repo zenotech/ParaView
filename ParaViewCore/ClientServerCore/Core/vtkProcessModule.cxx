@@ -22,6 +22,7 @@
 #include "vtkDummyController.h"
 #include "vtkFloatingPointExceptions.h"
 #include "vtkMultiThreader.h"
+#include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkOutputWindow.h"
 #include "vtkPVConfig.h"
@@ -54,9 +55,11 @@
 
 #include <assert.h>
 #include <stdexcept> // for runtime_error
+#include <clocale> // needed for setlocale()
 
 namespace
 {
+#ifdef PARAVIEW_USE_MPI
   // Returns true if the arguments has the specified boolean_arg.
   bool vtkFindArgument(const char* boolean_arg,
     int argc, char** &argv)
@@ -70,6 +73,22 @@ namespace
       }
     return false;
     }
+#endif
+
+  // This is used to avoid creating vtkWin32OutputWindow on ParaView executables.
+  // vtkWin32OutputWindow is not a useful window for any of the ParaView commandline
+  // executables.
+  class vtkPVGenericOutputWindow : public vtkOutputWindow
+  {
+public:
+  vtkTypeMacro(vtkPVGenericOutputWindow, vtkOutputWindow);
+  static vtkPVGenericOutputWindow* New();
+
+private:
+  vtkPVGenericOutputWindow() {}
+  ~vtkPVGenericOutputWindow() {}
+  };
+  vtkStandardNewMacro(vtkPVGenericOutputWindow);
 }
 
 //----------------------------------------------------------------------------
@@ -94,25 +113,26 @@ bool vtkProcessModule::Initialize(ProcessTypes type, int &argc, char** &argv)
 
 #ifdef PARAVIEW_USE_MPI
   bool use_mpi = (type != PROCESS_CLIENT);
+  // scan the arguments to determine if we need to initialize MPI on client.
+  bool default_use_mpi = use_mpi;
+
   if (!use_mpi) // i.e. type == PROCESS_CLIENT.
     {
-    // scan the arguments to determine if we need to initialize MPI on client.
-    bool default_use_mpi = false;
 #if defined(PARAVIEW_INITIALIZE_MPI_ON_CLIENT)
     default_use_mpi = true;
 #endif
-
-    // Refer to vtkPVOptions.cxx for details.
-    if (vtkFindArgument("--mpi", argc, argv))
-      {
-      default_use_mpi = true;
-      }
-    else if (vtkFindArgument("--no-mpi", argc, argv))
-      {
-      default_use_mpi = false;
-      }
-    use_mpi = default_use_mpi;
     }
+
+  // Refer to vtkPVOptions.cxx for details.
+  if (vtkFindArgument("--mpi", argc, argv))
+    {
+    default_use_mpi = true;
+    }
+  else if (vtkFindArgument("--no-mpi", argc, argv))
+    {
+    default_use_mpi = false;
+    }
+  use_mpi = default_use_mpi;
 
   // initialize MPI only on all processes if paraview is compiled w/MPI.
   int mpi_already_initialized = 0;
@@ -209,6 +229,14 @@ bool vtkProcessModule::Initialize(ProcessTypes type, int &argc, char** &argv)
 #ifdef PARAVIEW_ENABLE_FPE
   vtkFloatingPointExceptions::Enable();
 #endif //PARAVIEW_ENABLE_FPE
+
+  if (vtkProcessModule::ProcessType != PROCESS_CLIENT)
+    {
+    // On non-client processes, we don't want VTK default output window esp. on
+    // Windows since that pops up too many windows. Hence we replace it.
+    vtkNew<vtkPVGenericOutputWindow> window;
+    vtkOutputWindow::SetInstance(window.GetPointer());
+    }
 
   // In general turn off error prompts. This is where the process waits for
   // user-input on any error/warning. In past, we turned on prompts on Windows.

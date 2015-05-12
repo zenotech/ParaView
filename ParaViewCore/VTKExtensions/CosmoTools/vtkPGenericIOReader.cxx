@@ -23,6 +23,7 @@
 #include "vtkDataArray.h"
 #include "vtkDataArraySelection.h"
 #include "vtkDataObject.h"
+#include "vtkIdList.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkMPI.h"
@@ -32,10 +33,12 @@
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
 #include "vtkPoints.h"
+#include "vtkSmartPointer.h"
 #include "vtkStdString.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStringArray.h"
 #include "vtkType.h"
+#include "vtkTypeUInt64Array.h"
 #include "vtkUnstructuredGrid.h"
 
 #include "vtkGenericIOUtilities.h"
@@ -167,9 +170,11 @@ vtkPGenericIOReader::vtkPGenericIOReader()
   this->XAxisVariableName = NULL;
   this->YAxisVariableName = NULL;
   this->ZAxisVariableName = NULL;
+  this->HaloIdVariableName= NULL;
   this->GenericIOType     = IOTYPEMPI;
   this->BlockAssignment   = ROUND_ROBIN;
   this->BuildMetaData     = false;
+  this->AppendBlockCoordinates = true;
 
   this->MetaData  = new vtkGenericIOMetaData();
   this->MetaData->InitCommunicator( this->Controller );
@@ -181,6 +186,7 @@ vtkPGenericIOReader::vtkPGenericIOReader()
   this->QueryRankNeighbors = 0;
 
   this->ArrayList = vtkStringArray::New();
+  this->HaloList = vtkIdList::New();
   this->PointDataArraySelection = vtkDataArraySelection::New();
   this->SelectionObserver  = vtkCallbackCommand::New();
   this->SelectionObserver->SetCallback(
@@ -203,6 +209,7 @@ vtkPGenericIOReader::~vtkPGenericIOReader()
  vtkGenericIOUtilities::SafeDeleteString(this->XAxisVariableName);
  vtkGenericIOUtilities::SafeDeleteString(this->YAxisVariableName);
  vtkGenericIOUtilities::SafeDeleteString(this->ZAxisVariableName);
+ vtkGenericIOUtilities::SafeDeleteString(this->HaloIdVariableName);
 
  if( this->MetaData != NULL )
    {
@@ -210,6 +217,7 @@ vtkPGenericIOReader::~vtkPGenericIOReader()
    }
 
  this->ArrayList->Delete();
+ this->HaloList->Delete();
 
  this->PointDataArraySelection->RemoveObserver( this->SelectionObserver );
  this->SelectionObserver->Delete();
@@ -285,6 +293,47 @@ void vtkPGenericIOReader::SetPointArrayStatus(
     this->PointDataArraySelection->DisableArray( name );
     assert(!this->PointDataArraySelection->ArrayIsEnabled(name));
     }
+}
+
+//------------------------------------------------------------------------------
+vtkIdType vtkPGenericIOReader::GetRequestedHaloId(vtkIdType i)
+{
+  assert("pre: array index out of bounds" &&
+         (i >= 0 && this->HaloList->GetNumberOfIds() > i));
+  return this->HaloList->GetId(i);
+}
+
+//------------------------------------------------------------------------------
+vtkIdType vtkPGenericIOReader::GetNumberOfRequestedHaloIds()
+{
+  return this->HaloList->GetNumberOfIds();
+}
+
+//------------------------------------------------------------------------------
+void vtkPGenericIOReader::SetNumberOfRequestedHaloIds(vtkIdType numIds)
+{
+  this->HaloList->SetNumberOfIds(numIds);
+  this->Modified();
+}
+
+//------------------------------------------------------------------------------
+void vtkPGenericIOReader::AddRequestedHaloId(vtkIdType haloId)
+{
+  this->SetRequestedHaloId(this->GetNumberOfRequestedHaloIds(),haloId);
+}
+
+//------------------------------------------------------------------------------
+void vtkPGenericIOReader::ClearRequestedHaloIds()
+{
+  this->HaloList->Reset();
+  this->Modified();
+}
+
+//------------------------------------------------------------------------------
+void vtkPGenericIOReader::SetRequestedHaloId(vtkIdType i, vtkIdType haloId)
+{
+  *this->HaloList->WritePointer(i,1) = haloId;
+  this->Modified();
 }
 
 //------------------------------------------------------------------------------
@@ -510,6 +559,13 @@ void vtkPGenericIOReader::LoadRawData()
   this->LoadRawVariableData( yaxis );
   this->LoadRawVariableData( zaxis );
 
+  if (this->HaloList->GetNumberOfIds() > 0)
+    {
+    std::string haloIds = std::string(this->HaloIdVariableName);
+    haloIds = vtkGenericIOUtilities::trim(haloIds);
+    this->LoadRawVariableData(haloIds);
+    }
+
 #ifdef DEBUG
   std::cout << "\t==========\n";
   std::cout << "\tNUMBER OF ARRAYS: "
@@ -554,29 +610,27 @@ void vtkPGenericIOReader::LoadRawData()
 #endif
 }
 
+
 //------------------------------------------------------------------------------
 void vtkPGenericIOReader::GetPointFromRawData(
-        std::string xName, std::string yName, std::string zName,
+        int xType, void* xBuffer, int yType, void* yBuffer, int zType, void* zBuffer,
         vtkIdType idx, double pnt[3])
 {
-  std::string name[3];
-  name[0] = xName;
-  name[1] = yName;
-  name[2] = zName;
+  void* buffer[3] = {xBuffer, yBuffer, zBuffer};
 
-  int type = -1;
+  int type[3] = {xType, yType, zType};
+
   for( int i=0; i < 3; ++i )
     {
-    type = this->MetaData->VariableGenericIOType[ name[i] ];
-    void *rawBuffer = this->MetaData->RawCache[ name[i] ];
-    assert("pre: raw buffer is NULL!" && (rawBuffer != NULL) );
+    assert("pre: raw buffer is NULL!" && (buffer[i] != NULL) );
 
-    pnt[i] = vtkGenericIOUtilities::GetDoubleFromRawBuffer(type,rawBuffer,idx);
+    pnt[i] = vtkGenericIOUtilities::GetDoubleFromRawBuffer(type[i],buffer[i],idx);
     } // END for all dimensions
 }
 
 //------------------------------------------------------------------------------
-void vtkPGenericIOReader::LoadCoordinates(vtkUnstructuredGrid *grid)
+void vtkPGenericIOReader::LoadCoordinates(vtkUnstructuredGrid *grid,
+                                          std::set< vtkIdType >& pointsInSelectedHalos)
 {
   assert("pre: grid is NULL!" && (grid != NULL) );
 
@@ -603,6 +657,13 @@ void vtkPGenericIOReader::LoadCoordinates(vtkUnstructuredGrid *grid)
     return;
     }
 
+  int xType = this->MetaData->VariableGenericIOType[xaxis];
+  void* xBuffer = this->MetaData->RawCache[xaxis];
+  int yType = this->MetaData->VariableGenericIOType[yaxis];
+  void* yBuffer = this->MetaData->RawCache[yaxis];
+  int zType = this->MetaData->VariableGenericIOType[zaxis];
+  void* zBuffer = this->MetaData->RawCache[zaxis];
+
   vtkCellArray *cells = vtkCellArray::New();
   cells->Allocate(cells->EstimateSize(this->MetaData->NumberOfElements,1));
 
@@ -614,12 +675,46 @@ void vtkPGenericIOReader::LoadCoordinates(vtkUnstructuredGrid *grid)
   int nparticles = this->MetaData->NumberOfElements;
   double pnt[3];
   vtkIdType idx = 0;
-  for( ;idx < nparticles; ++idx)
+  if (this->HaloList->GetNumberOfIds() == 0)
     {
-    this->GetPointFromRawData(xaxis,yaxis,zaxis, idx, pnt);
-    pnts->SetPoint(idx,pnt);
-    cells->InsertNextCell(1,&idx);
-    } // END for all points
+    for( ;idx < nparticles; ++idx)
+      {
+      this->GetPointFromRawData(xType,xBuffer,yType,yBuffer,zType,zBuffer, idx, pnt);
+      pnts->SetPoint(idx,pnt);
+      cells->InsertNextCell(1,&idx);
+      } // END for all points
+    }
+  else
+    {
+    std::string haloVarName = std::string(this->HaloIdVariableName);
+    haloVarName = vtkGenericIOUtilities::trim(haloVarName);
+    int haloType = this->MetaData->VariableGenericIOType[haloVarName];
+    void* haloBuffer = this->MetaData->RawCache[haloVarName];
+    vtkIdType numPointsSoFar = 0;
+    for (; idx < nparticles; ++idx)
+      {
+      vtkIdType haloId = vtkGenericIOUtilities::GetIdFromRawBuffer(haloType,haloBuffer,idx);
+      bool isInRequestedHalo = false;
+      for (vtkIdType j = 0; j < this->GetNumberOfRequestedHaloIds(); ++j)
+        {
+        if (haloId == this->HaloList->GetId(j))
+          {
+          isInRequestedHalo = true;
+          pointsInSelectedHalos.insert(idx);
+          break;
+          }
+        }
+      if (isInRequestedHalo)
+        {
+        this->GetPointFromRawData(xType,xBuffer,yType,yBuffer,zType,zBuffer,idx,pnt);
+        pnts->SetPoint(numPointsSoFar,pnt);
+        cells->InsertNextCell(1,&numPointsSoFar);
+        ++numPointsSoFar;
+        }
+      }
+    // set the number of points correctly
+    pnts->SetNumberOfPoints(numPointsSoFar);
+    }
 
   grid->SetPoints(pnts);
   pnts->Delete();
@@ -630,8 +725,24 @@ void vtkPGenericIOReader::LoadCoordinates(vtkUnstructuredGrid *grid)
   grid->Squeeze();
 }
 
+namespace {
+template< typename T >
+void GetOnlyDataInHalo(vtkDataArray* allData, vtkDataArray* haloData, std::set< vtkIdType > pointsInHalo)
+{
+  T* data = (T*) allData->GetVoidPointer(0);
+  T* filteredData = (T*) haloData->GetVoidPointer(0);
+  vtkIdType i = 0;
+  for (std::set< vtkIdType >::iterator itr = pointsInHalo.begin();
+       itr != pointsInHalo.end(); ++itr)
+    {
+    filteredData[i++] = data[*itr];
+    }
+}
+}
+
 //------------------------------------------------------------------------------
-void vtkPGenericIOReader::LoadData(vtkUnstructuredGrid *grid)
+void vtkPGenericIOReader::LoadData(vtkUnstructuredGrid *grid,
+                                   const std::set< vtkIdType >& pointsInSelectedHalos)
 {
   assert("pre: grid is NULL!" && (grid != NULL) );
 
@@ -649,18 +760,71 @@ void vtkPGenericIOReader::LoadData(vtkUnstructuredGrid *grid)
     if( this->PointDataArraySelection->ArrayIsEnabled(name) )
       {
       std::string varName = std::string( name );
-      vtkDataArray *dataArray =
+      vtkSmartPointer< vtkDataArray > dataArray;
+      dataArray.TakeReference(
           vtkGenericIOUtilities::GetVtkDataArray(
               varName,
               this->MetaData->VariableGenericIOType[ varName ],
               this->MetaData->RawCache[ varName ],
               this->MetaData->NumberOfElements
-              );
+              ));
+      if (this->HaloList->GetNumberOfIds() != 0)
+        {
+        vtkSmartPointer< vtkDataArray > onlyDataInHalo;
+        onlyDataInHalo.TakeReference(dataArray->NewInstance());
+        onlyDataInHalo->SetNumberOfTuples(grid->GetNumberOfPoints());
+        onlyDataInHalo->SetName(dataArray->GetName());
+        switch (dataArray->GetDataType()) {
+        vtkTemplateMacro(GetOnlyDataInHalo<VTK_TT>(
+                           dataArray,onlyDataInHalo,pointsInSelectedHalos));
+          }
+        dataArray = onlyDataInHalo;
+        }
 
       PD->AddArray( dataArray );
-      dataArray->Delete();
       } // END if the array is enabled
     } // END for all arrays
+  if (this->AppendBlockCoordinates && this->Reader->IsSpatiallyDecomposed())
+    {
+    vtkSmartPointer< vtkTypeUInt64Array > dataArray = vtkSmartPointer< vtkTypeUInt64Array >::New();
+    dataArray->SetNumberOfComponents(3);
+    dataArray->SetNumberOfTuples(this->MetaData->NumberOfElements);
+    dataArray->SetName("gio_block_indices");
+    int nextBlockIdx = 0;
+    int nextBlockStart = 0;
+    unsigned long long coords[3];
+    // since the compiler can't tell if they're the same....
+    assert (sizeof(unsigned long long) == sizeof(uint64_t));
+    for (int i = 0; i < this->MetaData->NumberOfElements; ++i)
+      {
+      if (i == nextBlockStart)
+        {
+        this->Reader->GetBlockCoords(nextBlockIdx,(uint64_t*)coords);
+        nextBlockStart += this->Reader->GetNumberOfElementsInBlock(nextBlockIdx);
+        ++nextBlockIdx;
+        }
+      dataArray->SetTupleValue(i,coords);
+      }
+      if (this->HaloList->GetNumberOfIds() != 0)
+        {
+        vtkSmartPointer< vtkTypeUInt64Array > onlyDataInHalo;
+        onlyDataInHalo.TakeReference(dataArray->NewInstance());
+        onlyDataInHalo->SetNumberOfComponents(3);
+        onlyDataInHalo->SetNumberOfTuples(grid->GetNumberOfPoints());
+        onlyDataInHalo->SetName(dataArray->GetName());
+        vtkIdType i = 0;
+        for (std::set< vtkIdType >::iterator itr = pointsInSelectedHalos.begin();
+             itr != pointsInSelectedHalos.end(); ++itr, ++i)
+          {
+          vtkTypeUInt64 data[3];
+          dataArray->GetTupleValue(*itr,data);
+          onlyDataInHalo->SetTupleValue(i,data);
+          }
+        dataArray = onlyDataInHalo;
+        }
+
+    PD->AddArray( dataArray );
+    }
 
 }
 
@@ -792,16 +956,17 @@ int vtkPGenericIOReader::RequestData(
       vtkUnstructuredGrid::SafeDownCast(
           outInfo->Get(vtkDataObject::DATA_OBJECT()));
   assert("pre: output grid is NULL!" && (output != NULL) );
+  std::set< vtkIdType > pointsInSelectedHalos;
 
   // STEP 1: Load raw data
   this->LoadRawData();
 
   // STEP 2: Load coordinates
-  this->LoadCoordinates(output);
+  this->LoadCoordinates(output,pointsInSelectedHalos);
   MPI_Barrier(this->MetaData->MPICommunicator);
 
   // STEP 3: Load data
-  this->LoadData(output);
+  this->LoadData(output,pointsInSelectedHalos);
   MPI_Barrier(this->MetaData->MPICommunicator);
 
   // STEP 4: Clear variables
