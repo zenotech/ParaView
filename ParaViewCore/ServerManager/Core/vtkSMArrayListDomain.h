@@ -78,7 +78,7 @@ class vtkSMSourceProxy;
 class vtkPVArrayInformation;
 
 //BTX
-struct vtkSMArrayListDomainInternals;
+class vtkSMArrayListDomainInternals;
 //ETX
 
 class VTKPVSERVERMANAGERCORE_EXPORT vtkSMArrayListDomain : public vtkSMStringListDomain
@@ -216,6 +216,13 @@ protected:
   virtual vtkPVDataInformation* GetExtraDataInformation() { return NULL; }
 
   // Description:
+  // Returns true if an array should be filtered out. This is typically used to
+  // filter out arrays based on their names by subclasses.
+  // This implementation always returns false, but subclasses may override.
+  virtual bool IsFilteredArray(
+    vtkPVDataInformation* info, int association, const char* arrayName);
+
+  // Description:
   // Set to an attribute type defined in vtkDataSetAttributes.
   vtkSetMacro(AttributeType, int);
   int AttributeType;
@@ -239,6 +246,7 @@ private:
   vtkSMArrayListDomain(const vtkSMArrayListDomain&); // Not implemented
   void operator=(const vtkSMArrayListDomain&); // Not implemented
 
+  friend class vtkSMArrayListDomainInternals;
   vtkSMArrayListDomainInternals* ALDInternals;
 };
 

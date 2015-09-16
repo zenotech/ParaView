@@ -398,6 +398,12 @@ public:
   // should be written to the file or if the defaults are sufficient.
   virtual bool IsValueDefault() { return false; }
 
+  // Description:
+  // Returns true if the property has a domain with required properties. This
+  // typically indicates that the property has a domain whose values change at
+  // runtime based on input dataset or file being processed.
+  bool HasDomainsWithRequiredProperties();
+
 //BTX
 protected:
   vtkSMProperty();
@@ -565,5 +571,18 @@ private:
   bool BlockModifiedEvents;
 //ETX
 };
+
+#define vtkSMPropertyTemplateMacroCase(typeSMProperty, type, prop, call) \
+  if (typeSMProperty* SM_PROPERTY = typeSMProperty::SafeDownCast(prop)) \
+    { \
+    (void) SM_PROPERTY; \
+    typedef type SM_TT; \
+    call; \
+    }
+#define vtkSMVectorPropertyTemplateMacro(prop, call) \
+  vtkSMPropertyTemplateMacroCase(vtkSMDoubleVectorProperty, double, prop, call)       \
+  vtkSMPropertyTemplateMacroCase(vtkSMIntVectorProperty, int, prop, call)             \
+  vtkSMPropertyTemplateMacroCase(vtkSMIdTypeVectorProperty, vtkIdType, prop, call)    \
+  vtkSMPropertyTemplateMacroCase(vtkSMStringVectorProperty, vtkStdString, prop, call) \
 
 #endif

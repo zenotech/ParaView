@@ -96,6 +96,7 @@ pqLineWidget::pqLineWidget(vtkSMProxy* o, vtkSMProxy* pxy, QWidget* p,
 
   this->Implementation->UI.setupUi(this);
   this->Implementation->UI.visible->setChecked(this->widgetVisible());
+  this->Implementation->UI.pickMeshPoint->setChecked(this->pickOnMeshPoint());
 
   // Setup validators for all line widgets.
   QDoubleValidator* validator = new QDoubleValidator(this);
@@ -108,6 +109,9 @@ pqLineWidget::pqLineWidget(vtkSMProxy* o, vtkSMProxy* pxy, QWidget* p,
 
   QObject::connect(this->Implementation->UI.visible,
     SIGNAL(toggled(bool)), this, SLOT(setWidgetVisible(bool)));
+
+  QObject::connect(this->Implementation->UI.pickMeshPoint,
+    SIGNAL(toggled(bool)), this, SLOT(setPickOnMeshPoint(bool)));
 
   QObject::connect(this, SIGNAL(widgetVisibilityChanged(bool)),
     this, SLOT(onWidgetVisibilityChanged(bool)));
@@ -203,7 +207,25 @@ void pqLineWidget::pick(double dx, double dy, double dz)
   vtkSMProxy* widget = this->getWidgetProxy();
   QList<QVariant> value;
   value << dx << dy << dz;
-  if (this->Implementation->PickPoint1)
+
+  bool point1;
+  int pickPointIndex = this->Implementation->UI.pickPoint->currentIndex();
+  if (pickPointIndex == 1)
+    {
+    point1 = true;
+    }
+  else if (pickPointIndex == 2)
+    {
+    point1 = false;
+    }
+  else
+    {
+    point1 = this->Implementation->PickPoint1;
+    this->Implementation->PickPoint1 = 
+      !this->Implementation->PickPoint1;
+    }
+
+  if (point1)
     {
     pqSMAdaptor::setMultipleElementProperty(
       widget->GetProperty("Point1WorldPosition"), value);
@@ -214,9 +236,6 @@ void pqLineWidget::pick(double dx, double dy, double dz)
       widget->GetProperty("Point2WorldPosition"), value);
     }
   widget->UpdateVTKObjects();
-
-  this->Implementation->PickPoint1 = 
-    !this->Implementation->PickPoint1;
 
   this->setModified();
   this->render();

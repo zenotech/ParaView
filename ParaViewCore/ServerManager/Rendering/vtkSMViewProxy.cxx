@@ -74,12 +74,12 @@ namespace
       else if (strcmp(child->GetName(), "Representation") == 0 &&
         // has an attribute "view" that matches the viewType.
         child->GetAttribute("view") &&
-        strcmp(child->GetAttribute("view"), viewType) == 0)
+        strcmp(child->GetAttribute("view"), viewType) == 0 &&
+        child->GetAttribute("type") != NULL)
         {
         // if port is present, it must match "port".
         int xmlPort;
-        if (child->GetScalarAttribute("port", &xmlPort) == 0 ||
-          xmlPort == port)
+        if (child->GetScalarAttribute("port", &xmlPort) == 0 || xmlPort == port)
           {
           return child->GetAttribute("type");
           }
@@ -564,19 +564,6 @@ vtkImageData* vtkSMViewProxy::CaptureWindow(int magnification)
       white += whiteStep[2];
       black += blackStep[2];
       out += outStep[2];
-
-      if (white[0] == black[0] &&
-          white[1] == black[1] &&
-          white[2] == black[2])
-        {
-        out[0] = white[0];
-        out[1] = white[1];
-        out[2] = white[2];
-        out[3] = 1;
-        }
-      else
-        {
-        }
       }
 
     this->RestoreRendererBackground(renderer, info);
@@ -691,6 +678,12 @@ void vtkSMViewProxy::PrintSelf(ostream& os, vtkIndent indent)
 void vtkSMViewProxy::SetTransparentBackground(bool val)
 {
   vtkSMViewProxy::TransparentBackground = val;
+}
+
+//----------------------------------------------------------------------------
+bool vtkSMViewProxy::GetTransparentBackground()
+{
+  return vtkSMViewProxy::TransparentBackground;
 }
 
 //----------------------------------------------------------------------------

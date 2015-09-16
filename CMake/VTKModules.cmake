@@ -18,6 +18,9 @@ set(_vtk_mpi_modules
 
   vtkFiltersParallelFlowPaths
   #  vtkStreamTracer (Parallel)
+
+  vtkIOMPIParallel
+  # vtkMPIMultiBlockPLOT3DReader.
   )
 
 # Add CosmoTools VTK extensions if enabled.
@@ -360,6 +363,10 @@ endif()
 if (PARAVIEW_ENABLE_MATPLOTLIB)
   list (APPEND _vtk_modules vtkRenderingMatplotlib)
 endif()
+
+if (PARAVIEW_ENABLE_XDMF3)
+  list (APPEND _vtk_modules vtkIOXdmf3)
+endif ()
 
 if (PARAVIEW_ENABLE_PYTHON)
   list (APPEND _vtk_modules vtkFiltersPython)

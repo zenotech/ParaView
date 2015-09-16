@@ -63,7 +63,11 @@ pqRenderViewSelectionReaction::pqRenderViewSelectionReaction(
   PreviousRenderViewMode(-1),
   ZoomCursor(QCursor(QPixmap((const char **)zoom_xpm)))
 {
-  this->ObserverIds[0] = this->ObserverIds[1] = 0;
+for (size_t i = 0;
+     i < sizeof(this->ObserverIds) / sizeof(this->ObserverIds[0]); ++i)
+    {
+    this->ObserverIds[i] = 0;
+    }
 
   QObject::connect(parentObject, SIGNAL(triggered(bool)),
     this, SLOT(actionTriggered(bool)));
@@ -98,15 +102,15 @@ pqRenderViewSelectionReaction::~pqRenderViewSelectionReaction()
 //-----------------------------------------------------------------------------
 void pqRenderViewSelectionReaction::cleanupObservers()
 {
-  if (this->ObservedObject != NULL && this->ObserverIds[0] > 0)
+  for (size_t i = 0;
+       i < sizeof(this->ObserverIds) / sizeof(this->ObserverIds[0]); ++i)
     {
-    this->ObservedObject->RemoveObserver(this->ObserverIds[0]);
-    }
-  if (this->ObservedObject != NULL && this->ObserverIds[1] > 0)
+    if (this->ObservedObject != NULL && this->ObserverIds[i] > 0)
     {
-    this->ObservedObject->RemoveObserver(this->ObserverIds[1]);
+      this->ObservedObject->RemoveObserver(this->ObserverIds[i]);
     }
-  this->ObserverIds[0] = this->ObserverIds[1] = 0;
+    this->ObserverIds[i] = 0;
+    }
   this->ObservedObject = NULL;
 }
 
@@ -264,7 +268,14 @@ void pqRenderViewSelectionReaction::beginSelection()
       this, &pqRenderViewSelectionReaction::onMouseMove);
     this->ObserverIds[1] = this->ObservedObject->AddObserver(
       vtkCommand::LeftButtonReleaseEvent,
-      this, &pqRenderViewSelectionReaction::onLeftButtonPress);
+      this, &pqRenderViewSelectionReaction::onLeftButtonRelease);
+
+    this->ObserverIds[2] = this->ObservedObject->AddObserver(
+      vtkCommand::MouseWheelForwardEvent,
+      this, &pqRenderViewSelectionReaction::onWheelRotate);
+    this->ObserverIds[3] = this->ObservedObject->AddObserver(
+      vtkCommand::MouseWheelBackwardEvent,
+      this, &pqRenderViewSelectionReaction::onWheelRotate);
     break;
 
   default:
@@ -316,18 +327,27 @@ void pqRenderViewSelectionReaction::selectionChanged(
 
   BEGIN_UNDO_EXCLUDE();
 
-  bool ctrl = (rmp->GetInteractor()->GetControlKey() == 1);
+  pqRenderView::pqSelectionOperator selOp = pqRenderView::PV_SELECTION_NEW;
+  if (rmp->GetInteractor()->GetControlKey() == 1)
+    {
+    selOp = pqRenderView::PV_SELECTION_MERGE;
+    }
+  else if (rmp->GetInteractor()->GetShiftKey() == 1)
+    {
+    selOp = pqRenderView::PV_SELECTION_SUBTRACT;
+    }
+
   int* region = reinterpret_cast<int*>(calldata);
   vtkObject* unsafe_object = reinterpret_cast<vtkObject*>(calldata);
 
   switch (this->Mode)
     {
   case SELECT_SURFACE_CELLS:
-    this->View->selectOnSurface(region, ctrl);
+    this->View->selectOnSurface(region, selOp);
     break;
 
   case SELECT_SURFACE_POINTS:
-    this->View->selectPointsOnSurface(region, ctrl);
+    this->View->selectPointsOnSurface(region, selOp);
     break;
 
   case SELECT_FRUSTUM_CELLS:
@@ -340,16 +360,16 @@ void pqRenderViewSelectionReaction::selectionChanged(
 
   case SELECT_SURFACE_CELLS_POLYGON:
     this->View->selectPolygonCells(vtkIntArray::SafeDownCast(unsafe_object),
-      ctrl);
+      selOp);
     break;
 
   case SELECT_SURFACE_POINTS_POLYGON:
     this->View->selectPolygonPoints(vtkIntArray::SafeDownCast(unsafe_object),
-      ctrl);
+      selOp);
     break;
 
   case SELECT_BLOCKS:
-    this->View->selectBlock(region, ctrl);
+    this->View->selectBlock(region, selOp);
     break;
 
   case SELECT_CUSTOM_BOX:
@@ -364,11 +384,22 @@ void pqRenderViewSelectionReaction::selectionChanged(
   case ZOOM_TO_BOX:
     this->View->resetCenterOfRotationIfNeeded();
     break;
+
+  default:
+    break;
     }
 
   END_UNDO_EXCLUDE();
 
   this->endSelection();
+
+  if (this->View)
+    {
+    bool frustumSelection =
+      this->Mode == pqRenderViewSelectionReaction::SELECT_FRUSTUM_CELLS ||
+      this->Mode == pqRenderViewSelectionReaction::SELECT_FRUSTUM_POINTS;
+    this->View->emitSelectionSignals(frustumSelection);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -385,10 +416,14 @@ void pqRenderViewSelectionReaction::onMouseMove()
 
   int x = rmp->GetInteractor()->GetEventPosition()[0];
   int y = rmp->GetInteractor()->GetEventPosition()[1];
-  if (x < 0 || y < 0)
+  int* size = rmp->GetInteractor()->GetSize();
+  vtkSMInteractiveSelectionPipeline* iSelectionPipeline =
+    vtkSMInteractiveSelectionPipeline::GetInstance();
+  if (x < 0 || y < 0 || x >= size[0] || y >= size[1])
     {
-    // sometimes when the cursor goes quickly out of the window we receive -1
-    // the rest of the code hangs in that case.
+    // If the cursor goes out of the render window we hide the
+    // interactive selection
+    iSelectionPipeline->Hide(rmp);
     return;
     }
 
@@ -396,9 +431,6 @@ void pqRenderViewSelectionReaction::onMouseMove()
 
   vtkNew<vtkCollection> selectedRepresentations;
   vtkNew<vtkCollection> selectionSources;
-  vtkSMInteractiveSelectionPipeline* iSelectionPipeline =
-    vtkSMInteractiveSelectionPipeline::GetInstance();
-
   bool status = false;
   switch (this->Mode)
     {
@@ -433,7 +465,7 @@ void pqRenderViewSelectionReaction::onMouseMove()
 }
 
 //-----------------------------------------------------------------------------
-void pqRenderViewSelectionReaction::onLeftButtonPress()
+void pqRenderViewSelectionReaction::onLeftButtonRelease()
 {
   if (pqRenderViewSelectionReaction::ActiveReaction != this)
     {
@@ -453,21 +485,36 @@ void pqRenderViewSelectionReaction::onLeftButtonPress()
     return;
     }
 
-  bool ctrl = true;
+  vtkSMRenderViewProxy* rmp = this->View->getRenderViewProxy();
+  pqRenderView::pqSelectionOperator selOp = pqRenderView::PV_SELECTION_MERGE;
+  if (rmp->GetInteractor()->GetShiftKey() == 1)
+    {
+    selOp = pqRenderView::PV_SELECTION_SUBTRACT;
+    }
+
   int region[4] = {x, y, x, y};
 
   switch (this->Mode)
     {
   case SELECT_SURFACE_CELLS_INTERACTIVELY:
-    this->View->selectOnSurface(region, ctrl);
+    this->View->selectOnSurface(region, selOp);
     break;
 
   case SELECT_SURFACE_POINTS_INTERACTIVELY:
-    this->View->selectPointsOnSurface(region, ctrl);
+    this->View->selectPointsOnSurface(region, selOp);
     break;
 
   default:
-    qCritical("Invalid call to pqRenderViewSelectionReaction::onLeftButtonPress");
+    qCritical("Invalid call to pqRenderViewSelectionReaction::onLeftButtonRelease");
     break;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void pqRenderViewSelectionReaction::onWheelRotate()
+{
+  if (pqRenderViewSelectionReaction::ActiveReaction == this)
+    {
+    this->onMouseMove();
     }
 }

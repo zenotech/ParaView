@@ -14,15 +14,16 @@
 #include "vtkSMSettings.h"
 
 #include "vtkMultiProcessController.h"
+#include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkProcessModule.h"
 #include "vtkPVXMLElement.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMDoubleVectorProperty.h"
 #include "vtkSMEnumerationDomain.h"
+#include "vtkSMIdTypeVectorProperty.h"
 #include "vtkSMInputProperty.h"
 #include "vtkSMIntVectorProperty.h"
-#include "vtkSMNamedPropertyIterator.h"
 #include "vtkSMProperty.h"
 #include "vtkSMPropertyIterator.h"
 #include "vtkSMProxy.h"
@@ -30,17 +31,17 @@
 #include "vtkSMStringVectorProperty.h"
 #include "vtkStringList.h"
 
-#include <vtksys/ios/sstream>
-#include <vtksys/String.hxx>
+#include <sstream>
 #include <vtksys/SystemTools.hxx>
 #include "vtk_jsoncpp.h"
 
 #include <algorithm>
+#include <string>
 #include <cfloat>
 
 #define vtkSMSettingsDebugMacro(x)\
   { if (vtksys::SystemTools::GetEnv("PV_SETTINGS_DEBUG")) {     \
-  vtksys_ios::ostringstream vtkerror;                           \
+  std::ostringstream vtkerror;                           \
   vtkerror << x << endl;                                        \
   vtkOutputWindowDisplayText(vtkerror.str().c_str());} }
 
@@ -127,10 +128,7 @@ public:
   //----------------------------------------------------------------------------
   const Json::Value & GetSettingBelowPriority(const char* settingName, double priority)
   {
-    if (!this->SettingCollectionsAreSorted)
-      {
-      this->SortSettingCollections();
-      }
+    this->SortCollectionsIfNeeded();
 
     // Iterate over settings, checking higher priority settings first
     for (size_t i = 0; i < this->SettingCollections.size(); ++i)
@@ -154,10 +152,7 @@ public:
   //----------------------------------------------------------------------------
   const Json::Value & GetSettingAtOrBelowPriority(const char* settingName, double priority)
   {
-    if (!this->SettingCollectionsAreSorted)
-      {
-      this->SortSettingCollections();
-      }
+    this->SortCollectionsIfNeeded();
 
     // Iterate over settings, checking higher priority settings first
     for (size_t i = 0; i < this->SettingCollections.size(); ++i)
@@ -414,7 +409,7 @@ public:
           !property->GetNoCustomDefault())
         {
         // Build the JSON reference string
-        vtksys_ios::ostringstream settingStringStream;
+        std::ostringstream settingStringStream;
         settingStringStream << settingPrefix
                             << "." << proxyName
                             << "." << propertyName;
@@ -467,6 +462,7 @@ public:
   void SetSetting(const char* settingName, const std::vector< T > & values)
   {
     this->CreateCollectionIfNeeded();
+    this->SortCollectionsIfNeeded();
 
     // Just set settings in the highest-priority settings group for now.
     std::string root, leaf;
@@ -511,6 +507,13 @@ public:
     Json::Value & jsonValue = valuePath.make(this->SettingCollections[0].Value);
     if (property->GetNumberOfElements() == 1)
       {
+      if (jsonValue.isArray())
+        {
+        // Reset to null so that we aren't setting a value on a Json::Value array
+        jsonValue = Json::Value::null;
+        this->Modified();
+        }
+
       if (jsonValue.isNull() || jsonValue.asInt() != property->GetElement(0))
         {
         jsonValue = property->GetElement(0);
@@ -519,6 +522,13 @@ public:
       }
     else
       {
+      if (!jsonValue.isArray() && !jsonValue.isNull())
+        {
+        // Reset to null so that the jsonValue.resize() operation works
+        jsonValue = Json::Value::null;
+        this->Modified();
+        }
+
       jsonValue.resize(property->GetNumberOfElements());
       for (unsigned int i = 0; i < property->GetNumberOfElements(); ++i)
         {
@@ -541,6 +551,13 @@ public:
     Json::Value & jsonValue = valuePath.make(this->SettingCollections[0].Value);
     if (property->GetNumberOfElements() == 1)
       {
+      if (jsonValue.isArray())
+        {
+        // Reset to null so that we aren't setting a value on a Json::Value array
+        jsonValue = Json::Value::null;
+        this->Modified();
+        }
+
       if (jsonValue.isNull() || jsonValue.asDouble() != property->GetElement(0))
         {
         jsonValue = property->GetElement(0);
@@ -549,6 +566,13 @@ public:
       }
     else
       {
+      if (!jsonValue.isArray() && !jsonValue.isNull())
+        {
+        // Reset to null so that the jsonValue.resize() operation works
+        jsonValue = Json::Value::null;
+        this->Modified();
+        }
+
       jsonValue.resize(property->GetNumberOfElements());
       for (unsigned int i = 0; i < property->GetNumberOfElements(); ++i)
         {
@@ -571,6 +595,13 @@ public:
     Json::Value & jsonValue = valuePath.make(this->SettingCollections[0].Value);
     if (property->GetNumberOfElements() == 1)
       {
+      if (jsonValue.isArray())
+        {
+        // Reset to null so that we aren't setting a value on a Json::Value array
+        jsonValue = Json::Value::null;
+        this->Modified();
+        }
+
       if (jsonValue.isNull() || strcmp(jsonValue.asCString(), property->GetElement(0)) != 0)
         {
         jsonValue = property->GetElement(0);
@@ -579,6 +610,13 @@ public:
       }
     else
       {
+      if (!jsonValue.isArray() && !jsonValue.isNull())
+        {
+        // Reset to null so that the jsonValue.resize() operation works
+        jsonValue = Json::Value::null;
+        this->Modified();
+        }
+
       jsonValue.resize(property->GetNumberOfElements());
       for (unsigned int i = 0; i < property->GetNumberOfElements(); ++i)
         {
@@ -599,6 +637,7 @@ public:
   bool SetPropertySetting(const char* settingName, vtkSMProperty* property)
   {
     this->CreateCollectionIfNeeded();
+    this->SortCollectionsIfNeeded();
 
     if (vtkSMIntVectorProperty* intVectorProperty =
         vtkSMIntVectorProperty::SafeDownCast(property))
@@ -623,7 +662,8 @@ public:
   // Description:
   // Set proxy settings to the highest-priority collection.
   bool SetProxySettings(vtkSMProxy* proxy,
-                        vtkSMNamedPropertyIterator* propertyIt)
+                        vtkSMPropertyIterator* propertyIt,
+                        bool skipPropertiesWithDynamicDomains)
   {
     if (!proxy)
       {
@@ -633,7 +673,8 @@ public:
     std::string jsonPrefix(".");
     jsonPrefix.append(proxy->GetXMLGroup());
 
-    return this->SetProxySettings(jsonPrefix.c_str(), proxy, propertyIt);
+    return this->SetProxySettings(jsonPrefix.c_str(), proxy, propertyIt,
+      skipPropertiesWithDynamicDomains);
   }
 
   //----------------------------------------------------------------------------
@@ -641,20 +682,21 @@ public:
   // Set proxy settings in the highest-priority collection under
   // the setting prefix.
   bool SetProxySettings(const char* settingPrefix, vtkSMProxy* proxy,
-                        vtkSMNamedPropertyIterator* propertyIt)
+                        vtkSMPropertyIterator* propertyIt,
+                        bool skipPropertiesWithDynamicDomains)
   {
     if (!proxy)
       {
       return false;
       }
-
     this->CreateCollectionIfNeeded();
+    this->SortCollectionsIfNeeded();
 
     double highestPriority = this->SettingCollections[0].Priority;
 
     // Get reference to JSON value
     const char* proxyName = proxy->GetXMLName();
-    vtksys_ios::ostringstream settingStringStream;
+    std::ostringstream settingStringStream;
     settingStringStream << settingPrefix << "." << proxyName;
     std::string settingString(settingStringStream.str());
     const char* settingCString = settingString.c_str();
@@ -664,28 +706,18 @@ public:
 
     bool propertySet = false;
     vtkSmartPointer<vtkSMPropertyIterator> iter;
-    iter.TakeReference(proxy->NewPropertyIterator());
+    if (propertyIt)
+      {
+      iter = propertyIt;
+      }
+    else
+      {
+      iter.TakeReference(proxy->NewPropertyIterator());
+      }
     for (iter->Begin(); !iter->IsAtEnd(); iter->Next())
       {
       vtkSMProperty* property = iter->GetProperty();
       if (!property) continue;
-      // save defaults only for properties listed
-      if (propertyIt)
-        {
-        bool found = false;
-        for (propertyIt->Begin(); ! propertyIt->IsAtEnd(); propertyIt->Next())
-          {
-          if (! strcmp(property->GetXMLName(), propertyIt->GetKey()))
-            {
-            found = true;
-            break;
-            }
-          }
-        if (! found)
-          {
-          continue;
-          }
-        }
 
       // Check to see if we save only to QSettings or to both QSettings
       // and the JSON file.
@@ -704,7 +736,7 @@ public:
         }
 
       const char* propertyName = iter->GetKey();
-      vtksys_ios::ostringstream propertySettingStringStream;
+      std::ostringstream propertySettingStringStream;
       propertySettingStringStream << settingStringStream.str() << "."
                                   << propertyName;
       std::string propertySettingString(propertySettingStringStream.str());
@@ -717,6 +749,13 @@ public:
         {
         continue;
         }
+      else if (skipPropertiesWithDynamicDomains &&
+        property->HasDomainsWithRequiredProperties())
+        {
+        // skip properties that have domains that change at runtime. Such
+        // properties are typically serialized in state files not in settings.
+        continue;
+        }
       else if (property->IsValueDefault())
         {
         // Remove existing JSON entry only if there is no
@@ -724,8 +763,8 @@ public:
         // lower-priority setting that is not default, we want to be
         // able to set the value back to the default in the higher
         // priority setting collection.
-        Json::Value lowerPriorityValue = this->GetSettingBelowPriority(propertySettingCString,
-                                                                       highestPriority);
+        const Json::Value & lowerPriorityValue = this->GetSettingBelowPriority(propertySettingCString,
+                                                                               highestPriority);
         if (lowerPriorityValue.isNull())
           {
           if (!proxyValue.removeMember(property->GetXMLName()).isNull())
@@ -840,6 +879,17 @@ public:
       }
   }
 
+  //----------------------------------------------------------------------------
+  // Description:
+  // Sort the collections if needed
+  void SortCollectionsIfNeeded()
+  {
+    if (!this->SettingCollectionsAreSorted)
+      {
+      this->SortSettingCollections();
+      this->SettingCollectionsAreSorted = true;
+      }
+  }
 
 };
 
@@ -1017,7 +1067,7 @@ bool vtkSMSettings::SaveSettingsToFile(const std::string & filePath)
     }
 
   // Get directory component of filePath and create it if it doesn't exist.
-  vtksys_stl::string directory =
+  std::string directory =
     vtksys::SystemTools::GetParentDirectory(filePath.c_str());
   bool createdDirectory = vtksys::SystemTools::MakeDirectory(directory.c_str());
   if (!createdDirectory)
@@ -1234,17 +1284,19 @@ void vtkSMSettings::SetSetting(const char* settingName, unsigned int index, cons
 }
 
 //----------------------------------------------------------------------------
-void vtkSMSettings::SetProxySettings(vtkSMProxy* proxy,
-                                     vtkSMNamedPropertyIterator* propertyIt)
+void vtkSMSettings::SetProxySettings(
+  vtkSMProxy* proxy, vtkSMPropertyIterator* propertyIt,
+  bool skipPropertiesWithDynamicDomains)
 {
-  this->Internal->SetProxySettings(proxy, propertyIt);
+  this->Internal->SetProxySettings(proxy, propertyIt, skipPropertiesWithDynamicDomains);
 }
 
 //----------------------------------------------------------------------------
-void vtkSMSettings::SetProxySettings(const char* prefix, vtkSMProxy* proxy,
-                                     vtkSMNamedPropertyIterator* propertyIt)
+void vtkSMSettings::SetProxySettings(const char* prefix,
+  vtkSMProxy* proxy, vtkSMPropertyIterator* propertyIt,
+  bool skipPropertiesWithDynamicDomains)
 {
-  this->Internal->SetProxySettings(prefix, proxy, propertyIt);
+  this->Internal->SetProxySettings(prefix, proxy, propertyIt, skipPropertiesWithDynamicDomains);
 }
 
 //----------------------------------------------------------------------------
@@ -1253,6 +1305,182 @@ void vtkSMSettings::SetSettingDescription(const char* settingName, const char* d
   Json::Path settingPath(settingName);
   Json::Value & settingValue = settingPath.make(this->Internal->SettingCollections[0].Value);
   settingValue.setComment(description, Json::commentBefore);
+}
+
+//----------------------------------------------------------------------------
+template <class T>
+Json::Value vtkConvertXMLElementToJSON(
+  vtkSMVectorProperty* vp,
+  const std::vector<vtkSmartPointer<vtkPVXMLElement> >& elements)
+{
+  // Since we need to handle enumeration domain :/.
+  vtkSMEnumerationDomain* enumDomain = vtkSMEnumerationDomain::SafeDownCast(
+    vp->FindDomain("vtkSMEnumerationDomain"));
+  Json::Value value(Json::arrayValue);
+  for (size_t cc=0; cc < elements.size(); ++cc)
+    {
+    T xmlValue;
+    elements[cc]->GetScalarAttribute("value", &xmlValue);
+    const char* txt = enumDomain? enumDomain->GetEntryTextForValue(xmlValue) : NULL;
+    if (txt)
+      {
+      value[static_cast<unsigned int>(cc)] = Json::Value(txt);
+      }
+    else
+      {
+      value[static_cast<unsigned int>(cc)] = Json::Value(xmlValue);
+      }
+    }
+  if (vp->GetNumberOfElements()==1 && vp->GetRepeatCommand()==0 && value.size()==1)
+    {
+    return value[0];
+    }
+  return value
+  ;
+}
+
+template <>
+Json::Value vtkConvertXMLElementToJSON<vtkStdString>(
+  vtkSMVectorProperty* vp,
+  const std::vector<vtkSmartPointer<vtkPVXMLElement> >& elements)
+{
+  Json::Value value(Json::arrayValue);
+  for (size_t cc=0; cc < elements.size(); ++cc)
+    {
+    value[static_cast<unsigned int>(cc)] = Json::Value(elements[cc]->GetAttribute("value"));
+    }
+  if (vp->GetNumberOfElements()==1 && vp->GetRepeatCommand()==0 && value.size()==1)
+    {
+    return value[0];
+    }
+  return value;
+}
+
+//---------------------------------------------------------------------------
+Json::Value vtkSMSettings::SerializeAsJSON(
+  vtkSMProxy* proxy, vtkSMPropertyIterator* iter/*=NULL*/)
+{
+  if (proxy == NULL)
+    {
+    return Json::Value();
+    }
+  vtkSmartPointer<vtkPVXMLElement> xml;
+  xml.TakeReference(proxy->SaveXMLState(/*parent=*/NULL, iter));
+  Json::Value root(Json::objectValue);
+  for (unsigned int cc=0, max=xml->GetNumberOfNestedElements(); cc < max; ++cc)
+    {
+    vtkPVXMLElement* propXML = xml->GetNestedElement(cc);
+    if (propXML && propXML->GetName() && strcmp(propXML->GetName(), "Property") == 0)
+      {
+      const char* pname = propXML->GetAttribute("name");
+      int number_of_elements = 0;
+      if (!pname || !propXML->GetScalarAttribute("number_of_elements", &number_of_elements))
+        {
+        continue;
+        }
+
+      vtkSMProperty* prop = proxy->GetProperty(pname);
+      if (prop == NULL || prop->GetInformationOnly())
+        {
+        continue;
+        }
+
+      // parse "Element".
+      std::vector<vtkSmartPointer<vtkPVXMLElement> > valueElements;
+      valueElements.resize(number_of_elements);
+      for (unsigned int kk=0, maxkk=propXML->GetNumberOfNestedElements(); kk<maxkk; ++kk)
+        {
+        int index = 0;
+        vtkPVXMLElement* elemXML = propXML->GetNestedElement(kk);
+        if (elemXML && elemXML->GetName() && strcmp(elemXML->GetName(), "Element") == 0 &&
+          elemXML->GetScalarAttribute("index", &index) &&
+          index >= 0 &&
+          index <= number_of_elements)
+          {
+          valueElements[index] = elemXML;
+          }
+        }
+      vtkSMVectorPropertyTemplateMacro(prop,
+        root[pname] = vtkConvertXMLElementToJSON<SM_TT>(
+          vtkSMVectorProperty::SafeDownCast(prop), valueElements);
+        );
+      }
+    }
+  return root;
+}
+
+//----------------------------------------------------------------------------
+bool vtkSMSettings::DeserializeFromJSON(
+    vtkSMProxy* proxy, const Json::Value& value)
+{
+  if (!proxy || !value)
+    {
+    return true;
+    }
+
+  if (!value.isObject())
+    {
+    vtkGenericWarningMacro("Invalid JSON type. Expected an 'object'.");
+    return false;
+    }
+
+  vtkNew<vtkPVXMLElement> xml;
+  xml->SetName("Proxy");
+  xml->AddAttribute("group", proxy->GetXMLGroup());
+  xml->AddAttribute("name", proxy->GetXMLName());
+  for (Json::Value::const_iterator iter = value.begin(); iter != value.end(); ++iter)
+    {
+    vtkSMProperty* prop = proxy->GetProperty(iter.memberName());
+    if (!prop)
+      {
+      continue;
+      }
+    // Since we need to handle enumeration domain :/.
+    vtkSMEnumerationDomain* enumDomain = vtkSMEnumerationDomain::SafeDownCast(
+      prop->FindDomain("vtkSMEnumerationDomain"));
+
+    vtkNew<vtkPVXMLElement> propXML;
+    propXML->SetName("Property");
+    propXML->AddAttribute("name", iter.memberName());
+    if ((*iter).isArray() || (*iter).isObject())
+      {
+      propXML->AddAttribute("number_of_elements", static_cast<int>((*iter).size()));
+      int index = 0;
+      for (Json::Value::const_iterator elemIter = (*iter).begin(); elemIter != (*iter).end(); ++elemIter, ++index)
+        {
+        vtkNew<vtkPVXMLElement> elemXML;
+        elemXML->SetName("Element");
+        elemXML->AddAttribute("index", index);
+        std::string elemValue = (*elemIter).asString();
+        if (enumDomain && enumDomain->HasEntryText(elemValue.c_str()))
+          {
+          std::ostringstream stream;
+          stream << enumDomain->GetEntryValueForText(elemValue.c_str());
+          elemValue = stream.str();
+          }
+        elemXML->AddAttribute("value", elemValue.c_str());
+        propXML->AddNestedElement(elemXML.GetPointer());
+        }
+      }
+    else
+      {
+      propXML->AddAttribute("number_of_elements", "1");
+      vtkNew<vtkPVXMLElement> elemXML;
+      elemXML->SetName("Element");
+      elemXML->AddAttribute("index", "0");
+      std::string elemValue = (*iter).asString();
+      if (enumDomain && enumDomain->HasEntryText(elemValue.c_str()))
+        {
+        std::ostringstream stream;
+        stream << enumDomain->GetEntryValueForText(elemValue.c_str());
+        elemValue = stream.str();
+        }
+      elemXML->AddAttribute("value", elemValue.c_str());
+      propXML->AddNestedElement(elemXML.GetPointer());
+      }
+    xml->AddNestedElement(propXML.GetPointer());
+    }
+  return (proxy->LoadXMLState(xml.GetPointer(), NULL) != 0);
 }
 
 //----------------------------------------------------------------------------

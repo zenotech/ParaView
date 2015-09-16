@@ -91,8 +91,9 @@ public:
   // Given a location is display coordinates (pixels), tries to compute and
   // return the world location on a surface, if possible. Returns true if the
   // conversion was successful, else returns false.
+  // If Snap on mesh point is true, it will return a point from the mesh only
   bool ConvertDisplayToPointOnSurface(
-    const int display_position[2], double world_position[3]);
+    const int display_position[2], double world_position[3], bool snapOnMeshPoint = false);
 
   // Description:
   // Checks if color depth is sufficient to support selection.
@@ -229,6 +230,12 @@ protected:
   // Description:
   // Called at the end of CreateVTKObjects().
   virtual void CreateVTKObjects();
+
+  // Description:
+  // Returns true if the proxy is in interaction mode that corresponds to making
+  // a selection i.e. vtkPVRenderView::INTERACTION_MODE_POLYGON or
+  // vtkPVRenderView::INTERACTION_MODE_SELECTION.
+  bool IsInSelectionMode();
 
   bool IsSelectionCached;
   void ClearSelectionCache(bool force = false);

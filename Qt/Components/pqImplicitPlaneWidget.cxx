@@ -39,6 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqPropertyLinks.h"
 #include "pqRenderView.h"
 #include "pqServerManagerModel.h"
+#include "pqSMAdaptor.h"
 
 #include <QDoubleValidator>
 
@@ -114,8 +115,12 @@ pqImplicitPlaneWidget::pqImplicitPlaneWidget(vtkSMProxy* o, vtkSMProxy* pxy, QWi
   Superclass(o, pxy, p),
   Implementation(new pqImplementation())
 {
+  // enable picking.
+  this->pickingSupported(QKeySequence(tr("P")));
+
   this->Implementation->UI->setupUi(this);
   this->Implementation->UI->show3DWidget->setChecked(this->widgetVisible());
+  this->Implementation->UI->pickMeshPoint->setChecked(this->pickOnMeshPoint());
 
   // Set validators for all line edit boxes.
   QDoubleValidator* validator = new QDoubleValidator(this);
@@ -130,7 +135,9 @@ pqImplicitPlaneWidget::pqImplicitPlaneWidget(vtkSMProxy* o, vtkSMProxy* pxy, QWi
     SIGNAL(toggled(bool)), this, SLOT(onShow3DWidget(bool)));
   QObject::connect(this, SIGNAL(widgetVisibilityChanged(bool)),
     this, SLOT(onWidgetVisibilityChanged(bool)));
-
+  QObject::connect(this->Implementation->UI->pickMeshPoint,
+    SIGNAL(toggled(bool)), this, SLOT(setPickOnMeshPoint(bool)));
+ 
   connect(this->Implementation->UI->useXNormal,
     SIGNAL(clicked()), this, SLOT(onUseXNormal()));
   connect(this->Implementation->UI->useYNormal,
@@ -267,6 +274,19 @@ void pqImplicitPlaneWidget::setNormalProperty(vtkSMProperty* normal_property)
     }
 }
 
+//-----------------------------------------------------------------------------
+void pqImplicitPlaneWidget::pick(double dx, double dy, double dz)
+{
+  vtkSMProxy* widget = this->getWidgetProxy();
+  QList<QVariant> value;
+  value << dx << dy << dz;
+  pqSMAdaptor::setMultipleElementProperty(
+      widget->GetProperty("Origin"), value);
+  widget->UpdateVTKObjects();
+
+  this->setModified();
+  this->render();
+}
 
 //-----------------------------------------------------------------------------
 void pqImplicitPlaneWidget::onWidgetVisibilityChanged(bool visible)

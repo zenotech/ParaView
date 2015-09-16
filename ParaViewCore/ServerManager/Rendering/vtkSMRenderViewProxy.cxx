@@ -744,7 +744,7 @@ vtkSMRepresentationProxy* vtkSMRenderViewProxy::PickBlock(int x,
 
 //----------------------------------------------------------------------------
 bool vtkSMRenderViewProxy::ConvertDisplayToPointOnSurface(
-    const int display_position[2], double world_position[3])
+    const int display_position[2], double world_position[3], bool snapOnMeshPoint)
 {
   int region[4] = {display_position[0], display_position[1],
     display_position[0], display_position[1] };
@@ -752,7 +752,15 @@ bool vtkSMRenderViewProxy::ConvertDisplayToPointOnSurface(
   vtkSMSessionProxyManager* spxm = this->GetSessionProxyManager();
   vtkNew<vtkCollection> representations;
   vtkNew<vtkCollection> sources;
-  this->SelectSurfaceCells(region, representations.GetPointer(), sources.GetPointer(), false);
+  
+  if (snapOnMeshPoint)
+    {
+    this->SelectSurfacePoints(region, representations.GetPointer(), sources.GetPointer(), false);
+    }
+  else
+    {
+    this->SelectSurfaceCells(region, representations.GetPointer(), sources.GetPointer(), false);
+    }
 
   if (representations->GetNumberOfItems() > 0 && sources->GetNumberOfItems() > 0)
     {
@@ -795,6 +803,7 @@ bool vtkSMRenderViewProxy::ConvertDisplayToPointOnSurface(
     vtkSMPropertyHelper(pickingHelper, "Selection").Set( selection );
     vtkSMPropertyHelper(pickingHelper, "PointA").Set(nearLinePoint, 3);
     vtkSMPropertyHelper(pickingHelper, "PointB").Set(farLinePoint, 3);
+    vtkSMPropertyHelper(pickingHelper, "SnapOnMeshPoint").Set(snapOnMeshPoint);
     pickingHelper->UpdateVTKObjects();
     pickingHelper->UpdateProperty("Update",1);
     vtkSMPropertyHelper(pickingHelper, "Intersection").UpdateValueFromServer();
@@ -1349,7 +1358,13 @@ void vtkSMRenderViewProxy::NewMasterCallback(vtkObject*, unsigned long, void*)
 //----------------------------------------------------------------------------
 void vtkSMRenderViewProxy::ClearSelectionCache(bool force/*=false*/)
 {
-  if(this->IsSelectionCached || force)
+  // We check if we're currently selecting. If that's the case, any non-forced
+  // modifications (i.e. those coming through because of proxy-modifications)
+  // are considered a part of the making/showing selection and hence we
+  // don't clear the selection cache. While this doesn't help us preserve the
+  // cache between separate surface selection invocations, it does help us with
+  // reusing the case when in interactive selection mode.
+  if ((this->IsSelectionCached && !this->IsInSelectionMode()) || force)
     {
     this->IsSelectionCached = false;
     vtkClientServerStream stream;
@@ -1358,5 +1373,19 @@ void vtkSMRenderViewProxy::ClearSelectionCache(bool force/*=false*/)
             << "InvalidateCachedSelection"
             << vtkClientServerStream::End;
     this->ExecuteStream(stream);
+    }
+}
+
+//----------------------------------------------------------------------------
+bool vtkSMRenderViewProxy::IsInSelectionMode()
+{
+  switch (vtkSMPropertyHelper(this, "InteractionMode", /*quiet*/true).GetAsInt())
+    {
+  case vtkPVRenderView::INTERACTION_MODE_SELECTION:
+  case vtkPVRenderView::INTERACTION_MODE_POLYGON:
+    return true;
+
+  default:
+    return false;
     }
 }

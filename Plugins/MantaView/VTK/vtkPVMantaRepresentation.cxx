@@ -187,3 +187,27 @@ double vtkPVMantaRepresentation::GetNt()
   vtkMantaProperty *mantaProperty = vtkMantaProperty::SafeDownCast(this->Property);
   return mantaProperty->GetNt();
 }
+
+//----------------------------------------------------------------------------
+void vtkPVMantaRepresentation::SetUpdateTime(double t)
+{
+  if (t!=this->UpdateTime)
+    {
+    this->Mapper->Modified();
+    this->Superclass::SetUpdateTime(t);
+    }
+}
+
+//----------------------------------------------------------------------------
+void vtkPVMantaRepresentation::SetAllowDataMaterial(bool newval)
+{
+  vtkMantaProperty *mantaProperty = vtkMantaProperty::SafeDownCast(this->Property);
+  mantaProperty->SetAllowDataMaterial(newval);
+}
+
+//----------------------------------------------------------------------------
+bool vtkPVMantaRepresentation::GetAllowDataMaterial()
+{
+  vtkMantaProperty *mantaProperty = vtkMantaProperty::SafeDownCast(this->Property);
+  return mantaProperty->GetAllowDataMaterial();
+}

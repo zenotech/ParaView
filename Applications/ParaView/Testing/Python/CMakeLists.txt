@@ -45,6 +45,7 @@ paraview_add_test_python(
   NO_DATA NO_RT
   TestPythonViewScript.py
   TestColorHistogram.py
+  TestClipCylinder.py
 )
 
 paraview_add_test_pvbatch(
@@ -89,6 +90,12 @@ else()
       )
   endif()
 endif()
+
+
+paraview_add_test_driven(
+  JUST_VALID
+  TestCompositedGeometryCulling.py
+)
 
 # Python Multi-servers test
 # => Only for shared build as we dynamically load plugins

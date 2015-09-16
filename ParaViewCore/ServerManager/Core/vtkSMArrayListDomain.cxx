@@ -18,6 +18,7 @@
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPVArrayInformation.h"
+#include "vtkPVCompositeDataInformation.h"
 #include "vtkPVDataInformation.h"
 #include "vtkPVDataSetAttributesInformation.h"
 #include "vtkPVXMLElement.h"
@@ -34,7 +35,7 @@
 #include <set>
 #include <vector>
 #include <algorithm>
-#include "vtksys/ios/sstream"
+#include <sstream>
 
 vtkStandardNewMacro(vtkSMArrayListDomain);
 
@@ -99,7 +100,7 @@ struct vtkSMArrayListDomainArrayInformation
     }
 };
 
-struct vtkSMArrayListDomainInternals
+class vtkSMArrayListDomainInternals
 {
 public:
   std::vector<vtkSMArrayListDomainInformationKey> InformationKeys;
@@ -221,6 +222,12 @@ void vtkSMArrayListDomainInternals::BuildArrayList(
       // First check if the array is acceptable based on the component requirements.
       if (arrayInfo == NULL||
         !vtkSMInputArrayDomain::IsArrayAcceptable(required_number_of_components, arrayInfo))
+        {
+        continue;
+        }
+
+      // Then, check if the array name is acceptable
+      if (self->IsFilteredArray(dataInfo, type, arrayInfo->GetName()))
         {
         continue;
         }
@@ -512,7 +519,7 @@ int vtkSMArrayListDomain::ReadXMLAttributes(
     {
     // data_type can be a space delimited list of types
     // vlaid for the domain
-    vtksys_ios::istringstream dataTypeStream(data_type);
+    std::istringstream dataTypeStream(data_type);
 
     while (dataTypeStream.good())
       {
@@ -678,7 +685,7 @@ int vtkSMArrayListDomain::SetDefaultValues(vtkSMProperty* prop, bool use_uncheck
         svp->GetElements(values.GetPointer());
         }
 
-      vtksys_ios::ostringstream ass;
+      std::ostringstream ass;
       ass << info->FieldAssociation;
       values->SetString(3, ass.str().c_str());
       values->SetString(4, info->ArrayName.c_str());
@@ -811,7 +818,7 @@ void vtkSMArrayListDomain::PrintSelf(ostream& os, vtkIndent indent)
 vtkStdString vtkSMArrayListDomain::CreateMangledName(
   vtkPVArrayInformation *arrayInfo, int component)
 {
-  vtksys_ios::ostringstream stream;
+  std::ostringstream stream;
   if ( component != arrayInfo->GetNumberOfComponents() )
     {
     stream << arrayInfo->GetName() << "_" <<
@@ -861,4 +868,10 @@ int vtkSMArrayListDomain::ComponentIndexFromMangledName(
       }
     }
   return -1;
+}
+
+//---------------------------------------------------------------------------
+bool vtkSMArrayListDomain::IsFilteredArray(vtkPVDataInformation*, int, const char*)
+{
+  return false;
 }

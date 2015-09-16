@@ -53,11 +53,11 @@
 #include "vtkImplicitFunction.h"
 #include "vtkPlane.h"
 // STL
-#include "vtksys/ios/sstream"
-using vtksys_ios::ostringstream;
-#include "vector"
+#include <sstream>
+using std::ostringstream;
+#include <vector>
 using std::vector;
-#include "string"
+#include <string>
 using std::string;
 #include "algorithm"
 // ansi c

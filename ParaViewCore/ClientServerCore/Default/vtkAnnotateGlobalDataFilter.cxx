@@ -19,7 +19,7 @@
 #include "vtkPythonInterpreter.h"
 
 #include <string>
-#include <vtksys/ios/sstream>
+#include <sstream>
 #include <vtksys/SystemTools.hxx>
 
 //----------------------------------------------------------------------------
@@ -41,6 +41,7 @@ vtkStandardNewMacro(vtkAnnotateGlobalDataFilter);
 vtkAnnotateGlobalDataFilter::vtkAnnotateGlobalDataFilter()
 {
   this->Prefix = 0;
+  this->Postfix = 0;
   this->FieldArrayName = 0;
   this->SetArrayAssociation(vtkDataObject::FIELD);
 }
@@ -49,13 +50,14 @@ vtkAnnotateGlobalDataFilter::vtkAnnotateGlobalDataFilter()
 vtkAnnotateGlobalDataFilter::~vtkAnnotateGlobalDataFilter()
 {
   this->SetPrefix(0);
+  this->SetPostfix(0);
   this->SetFieldArrayName(0);
 }
 
 //----------------------------------------------------------------------------
 void vtkAnnotateGlobalDataFilter::EvaluateExpression()
 {
-  vtksys_ios::ostringstream stream;
+  std::ostringstream stream;
   stream
     << "def vtkAnnotateGlobalDataFilter_EvaluateExpression():" << endl
     << "    from paraview import annotation as pv_ann" << endl
@@ -78,4 +80,5 @@ void vtkAnnotateGlobalDataFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "FieldArrayName: " << (this->FieldArrayName?
     this->FieldArrayName : "(none)") << endl;
   os << indent << "Prefix: " << (this->Prefix? this->Prefix : "(none)") << endl;
+  os << indent << "Postfix: " << (this->Postfix? this->Postfix : "(none)") << endl;
 }

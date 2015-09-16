@@ -24,8 +24,8 @@
 
 #include <cassert>
 #include "vtkType.h"
-#include "vector"
-#include "vtksys/ios/iostream"
+#include <vector>
+#include <iostream>
 
 class vtkMaterialInterfacePieceLoading
 {
@@ -54,7 +54,7 @@ public:
   }
   // Description:
   // Set/Get
-  int GetId() const{ return this->Data[ID]; }
+  vtkIdType GetId() const{ return this->Data[ID]; }
   vtkIdType GetLoading() const{ return this->Data[LOADING]; }
   void SetLoading(vtkIdType loading){ this->Data[LOADING]=loading; }
   // Description:
@@ -78,7 +78,7 @@ public:
 private:
   vtkIdType Data[SIZE];
 };
-vtksys_ios::ostream &operator<<(vtksys_ios::ostream &sout, vtkMaterialInterfacePieceLoading &fp);
+std::ostream &operator<<(std::ostream &sout, vtkMaterialInterfacePieceLoading &fp);
 void PrintPieceLoadingHistogram(std::vector<std::vector<vtkIdType> > &pla);
 #endif
 

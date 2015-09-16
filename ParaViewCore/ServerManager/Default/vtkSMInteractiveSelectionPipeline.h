@@ -41,7 +41,13 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent );
   static vtkSMInteractiveSelectionPipeline* GetInstance();
 
+  // Description:
+  // Get/Create the interactive selection representation
   vtkSMProxy* GetSelectionRepresentation() const;
+  vtkSMProxy* GetOrCreateSelectionRepresentation();
+  vtkSMProxy* CreateSelectionRepresentation(vtkSMSourceProxy* extract);
+  
+
   // Description:
   // Shows the interactive selection for 'selection' and 'sourceRepresentation'.
   // If either sourceRepresentation or selection are null it hides the 
@@ -51,7 +57,11 @@ public:
   // Description:
   // Hides the interactive selection
   void Hide(vtkSMRenderViewProxy* view);
-  
+  // Description:
+  // Copies the labels for interactive selection from 
+  // the selection labels in the representation parameter.
+  void CopyLabels(vtkSMProxy* representation);
+
 
 protected:
   vtkSMInteractiveSelectionPipeline();
@@ -64,7 +74,6 @@ protected:
   vtkSMSourceProxy* ConnectPVExtractSelection(
     vtkSMSourceProxy* source, unsigned int sourceOutputPort, 
     vtkSMSourceProxy* selection);
-  bool CreateSelectionRepresentation(vtkSMSourceProxy* extract);
 
 private:
   // Not implemented
@@ -77,6 +86,7 @@ protected:
   vtkSMProxy* SelectionRepresentation;
 
   vtkSMRenderViewProxy* PreviousView;
+  vtkSMSourceProxy* PreviousRepresentation;
   vtkCallbackCommand* ColorObserver;
   vtkCallbackCommand* ConnectionObserver;
 };

@@ -29,6 +29,7 @@
 #
 #==========================================================================
 set(Module_SRCS
+  vtkAdditionalFieldReader.cxx
   vtkAMRConnectivity.cxx
   vtkAMRDualClip.cxx
   vtkAMRDualContour.cxx
@@ -43,6 +44,7 @@ set(Module_SRCS
   vtkCleanUnstructuredGridCells.cxx
   vtkCleanUnstructuredGrid.cxx
   vtkCSVWriter.cxx
+  vtkDataSetRegionSurfaceFilter.cxx
   vtkEnsembleDataReader.cxx
   vtkEquivalenceSet.cxx
   vtkExodusFileSeriesReader.cxx
@@ -104,12 +106,14 @@ set(Module_SRCS
   vtkPVClipDataSet.cxx
   vtkPVConnectivityFilter.cxx
   vtkPVContourFilter.cxx
+  vtkPVCylinder.cxx
   vtkPVDataSetAlgorithmSelectorFilter.cxx
   vtkPVDReader.cxx
   vtkPVEnSightMasterServerReader2.cxx
   vtkPVEnSightMasterServerReader.cxx
   vtkPVEnSightMasterServerTranslator.cxx
   vtkPVExtractBagPlots.cxx
+  vtkPVExtractComponent.cxx
   vtkPVExtractVOI.cxx
   vtkPVFrustumActor.cxx
   vtkPVGlyphFilter.cxx
@@ -152,6 +156,11 @@ if ("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL")
     )
 endif()
 
+# Add header-only files so they get installed correctly.
+set (${vtk-module}_HDRS
+  vtkMaterialInterfaceIdListItem.h
+)
+
 set_source_files_properties(
   vtkAMRDualGridHelper
   vtkGridAxesHelper
@@ -183,6 +192,8 @@ set(${vtk-module}_WRAP_HINTS "${CMAKE_CURRENT_SOURCE_DIR}/hints")
 vtk_module_library(vtkPVVTKExtensionsDefault ${Module_SRCS})
 target_link_libraries(vtkPVVTKExtensionsDefault LINK_PRIVATE
   ${vtkIOInfovis_LIBRARIES})
+include(vtkOpenGL)
+vtk_opengl_link(vtkPVVTKExtensionsDefault)
 
 OPTION(PARAVIEW_ENABLE_SPYPLOT_MARKERS
        "Enables markers in the spyplot reader"

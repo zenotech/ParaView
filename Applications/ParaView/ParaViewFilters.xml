@@ -114,13 +114,17 @@
     <Proxy group="filters" name="AnnotateAttributeData" />
     <Proxy group="filters" name="PythonAnnotation" />
     <Proxy group="filters" name="TimeToTextConvertor" />
+    <Proxy group="filters" name="DataSetRegionSurfaceFilter" />
+    <Proxy group="filters" name="EnvironmentAnnotation" />
   </Category>
 
+  <Proxy group="filters" name="AddFieldArrays" />
   <Proxy group="filters" name="ImageDataToAMR" />
   <Proxy group="filters" name="UniformGridPartitioner" />
   <Proxy group="filters" name="Append" />
   <Proxy group="filters" name="AppendAttributes" />
   <Proxy group="filters" name="AppendPolyData" />
+  <Proxy group="filters" name="AngularPeriodicFilter" />
   <Proxy group="filters" name="ArbitrarySourceStreamTracer" />
   <Proxy group="filters" name="BlockIdScalars" />
   <Proxy group="filters" name="RandomAttributeGenerator" />
@@ -140,12 +144,14 @@
   <Proxy group="filters" name="CutEverything" />
   <Proxy group="filters" name="D3" />
   <Proxy group="filters" name="DataSetSurfaceFilter" />
+  <Proxy group="filters" name="DataSetRegionSurfaceFilter" />
   <Proxy group="filters" name="DataSetTriangleFilter" />
   <Proxy group="filters" name="DecimatePro" />
   <Proxy group="filters" name="Delaunay2D" />
   <Proxy group="filters" name="Delaunay3D" />
   <Proxy group="filters" name="ElevationFilter" />
   <Proxy group="filters" name="ExtractBlock" />
+  <Proxy group="filters" name="ExtractComponent" />
   <Proxy group="filters" name="ExtractEdges" />
   <Proxy group="filters" name="ExtractGeometry" />
   <Proxy group="filters" name="ExtractGrid" />

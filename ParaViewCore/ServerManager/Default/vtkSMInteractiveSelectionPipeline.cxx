@@ -38,6 +38,7 @@ vtkSMInteractiveSelectionPipeline::vtkSMInteractiveSelectionPipeline() :
   SelectionRepresentation(NULL),
 
   PreviousView(NULL),
+  PreviousRepresentation(NULL),
   ColorObserver(NULL),
   ConnectionObserver(NULL)
 {
@@ -65,7 +66,7 @@ vtkSMInteractiveSelectionPipeline::~vtkSMInteractiveSelectionPipeline()
 void vtkSMInteractiveSelectionPipeline::OnConnectionClosed(
   vtkObject*, unsigned long, void* clientdata, void *)
 {
-  vtkSMInteractiveSelectionPipeline* This = 
+  vtkSMInteractiveSelectionPipeline* This =
     static_cast<vtkSMInteractiveSelectionPipeline*>(clientdata);
   This->OnConnectionClosed();
 }
@@ -84,6 +85,7 @@ void vtkSMInteractiveSelectionPipeline::OnConnectionClosed()
     this->SelectionRepresentation = NULL;
     }
   this->PreviousView = NULL;
+  this->PreviousRepresentation = NULL;
   if (this->ColorObserver)
     {
     this->ColorObserver->Delete();
@@ -97,7 +99,7 @@ vtkSMSourceProxy* vtkSMInteractiveSelectionPipeline::ConnectPVExtractSelection(
   vtkSMSourceProxy* source, unsigned int sourceOutputPort,
   vtkSMSourceProxy* selection)
 {
-  vtkSMSessionProxyManager* proxyManager = 
+  vtkSMSessionProxyManager* proxyManager =
     vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
   vtkSMSourceProxy* extract = NULL;
   if (! this->ExtractInteractiveSelection)
@@ -130,12 +132,12 @@ vtkSMSourceProxy* vtkSMInteractiveSelectionPipeline::ConnectPVExtractSelection(
 }
 
 //----------------------------------------------------------------------------
-bool vtkSMInteractiveSelectionPipeline::CreateSelectionRepresentation(
+vtkSMProxy* vtkSMInteractiveSelectionPipeline::CreateSelectionRepresentation(
   vtkSMSourceProxy* extract)
 {
   if (! this->SelectionRepresentation)
-    {   
-    vtkSMSessionProxyManager* proxyManager = 
+    {
+    vtkSMSessionProxyManager* proxyManager =
       vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
     vtkSMProxy* representation =
       proxyManager->NewProxy("representations", "SelectionRepresentation");
@@ -144,7 +146,7 @@ bool vtkSMInteractiveSelectionPipeline::CreateSelectionRepresentation(
 
     vtkSMPropertyHelper(representation, "Input").Set(
       extract);
-    vtkSMPropertyHelper(representation, "Visibility").Set(1);
+    vtkSMPropertyHelper(representation, "Visibility").Set(extract != NULL);
     double color[] = {0.5, 0, 1};
     vtkSMProxy* colorPalette =
       proxyManager->GetProxy("global_properties", "ColorPalette");
@@ -168,22 +170,44 @@ bool vtkSMInteractiveSelectionPipeline::CreateSelectionRepresentation(
     vtkSMPropertyHelper(representation, "Color").Set(color, 3);
     representation->UpdateVTKObjects();
     this->SelectionRepresentation = representation;
-    return true;
     }
   else
     {
+    vtkSMPropertyHelper(this->SelectionRepresentation, "Input").Set(
+      extract);
     vtkSMPropertyHelper(this->SelectionRepresentation,
-                        "Visibility").Set(true);
+                        "Visibility").Set(extract != NULL);
     this->SelectionRepresentation->UpdateVTKObjects();
-    return false;
     }
+  return this->SelectionRepresentation;
+}
+
+//----------------------------------------------------------------------------
+vtkSMProxy* vtkSMInteractiveSelectionPipeline::GetSelectionRepresentation() const
+{
+  return this->SelectionRepresentation;
+}
+
+//----------------------------------------------------------------------------
+vtkSMProxy* vtkSMInteractiveSelectionPipeline::GetOrCreateSelectionRepresentation()
+{
+  vtkSMProxy* proxyISelectionRepresentation = 
+    vtkSMInteractiveSelectionPipeline::GetInstance()->
+    GetSelectionRepresentation();
+  if (!proxyISelectionRepresentation)
+    {
+    proxyISelectionRepresentation = 
+      vtkSMInteractiveSelectionPipeline::GetInstance()->
+      CreateSelectionRepresentation(NULL);
+    }
+  return proxyISelectionRepresentation;
 }
 
 //----------------------------------------------------------------------------
 void vtkSMInteractiveSelectionPipeline::OnColorModified(
   vtkObject* source, unsigned long, void* clientdata, void *)
 {
-  vtkSMInteractiveSelectionPipeline* This = 
+  vtkSMInteractiveSelectionPipeline* This =
     static_cast<vtkSMInteractiveSelectionPipeline*>(clientdata);
   vtkSMProperty* property = vtkSMProperty::SafeDownCast(source);
   double color[] = {0, 0, 0};
@@ -196,7 +220,7 @@ void vtkSMInteractiveSelectionPipeline::OnColorModified(
 //----------------------------------------------------------------------------
 void vtkSMInteractiveSelectionPipeline::Hide(vtkSMRenderViewProxy* view)
 {
-  if (this->SelectionRepresentation)
+  if (this->SelectionRepresentation && view)
     {
     vtkSMPropertyHelper(this->SelectionRepresentation, "Visibility").Set(0);
     this->SelectionRepresentation->UpdateVTKObjects();
@@ -206,16 +230,21 @@ void vtkSMInteractiveSelectionPipeline::Hide(vtkSMRenderViewProxy* view)
 
 //----------------------------------------------------------------------------
 void vtkSMInteractiveSelectionPipeline::Show(
-  vtkSMSourceProxy* sourceRepresentation,
+  vtkSMSourceProxy* representation,
   vtkSMSourceProxy* selection, vtkSMRenderViewProxy* view)
 {
-  if (sourceRepresentation)
+  if (representation && view)
     {
-    vtkSMPropertyHelper helper(sourceRepresentation, "Input", true);
+    if (this->PreviousRepresentation != representation)
+      {
+      this->CopyLabels(representation);
+      this->PreviousRepresentation = representation;
+      }
+    vtkSMPropertyHelper representationHelper(representation, "Input", true);
     vtkSMSourceProxy* source = vtkSMSourceProxy::SafeDownCast(
-      helper.GetAsProxy());
-    unsigned int sourceOutputPort = helper.GetOutputPort();
-    vtkSMSourceProxy* extract = 
+      representationHelper.GetAsProxy());
+    unsigned int sourceOutputPort = representationHelper.GetOutputPort();
+    vtkSMSourceProxy* extract =
       this->ConnectPVExtractSelection(source, sourceOutputPort, selection);
     this->CreateSelectionRepresentation(extract);
     if (this->PreviousView)
@@ -232,6 +261,7 @@ void vtkSMInteractiveSelectionPipeline::Show(
     }
   else
     {
+    this->PreviousRepresentation = NULL;
     this->Hide(view);
     }
 }
@@ -242,7 +272,7 @@ vtkSMInteractiveSelectionPipeline* vtkSMInteractiveSelectionPipeline::GetInstanc
   static vtkSmartPointer<vtkSMInteractiveSelectionPipeline> Instance;
   if (Instance.GetPointer() == NULL)
     {
-    vtkSMInteractiveSelectionPipeline* pipeline = 
+    vtkSMInteractiveSelectionPipeline* pipeline =
       vtkSMInteractiveSelectionPipeline::New();
     Instance = pipeline;
     pipeline->FastDelete();
@@ -251,15 +281,49 @@ vtkSMInteractiveSelectionPipeline* vtkSMInteractiveSelectionPipeline::GetInstanc
   return Instance;
 }
 
+void vtkSMInteractiveSelectionPipeline::CopyLabels(
+  vtkSMProxy* representation)
+{
+  vtkSMProxy* iSelectionRepresentation = this->GetSelectionRepresentation();
+  if (iSelectionRepresentation)
+    {
+    const char* selectionArrayNames[] = 
+      {"SelectionCellFieldDataArrayName", "SelectionPointFieldDataArrayName"};
+    const char* selectionVisibilityNames[] = 
+      {"SelectionCellLabelVisibility", "SelectionPointLabelVisibility"};
+    const char* iSelectionArrayNames[] =
+      {"CellFieldDataArrayName", "PointFieldDataArrayName"};
+    const char* iSelectionVisibilityNames[] = 
+      {"CellLabelVisibility", "PointLabelVisibility"};
+    for (int i = 0; i < 2; ++i)
+      {
+      const char* iSelectionVisibilityName = iSelectionVisibilityNames[i];
+      const char* iSelectionArrayName = iSelectionArrayNames[i];
+      const char* selectionVisibilityName = selectionVisibilityNames[i];
+      const char* selectionArrayName = selectionArrayNames[i];
+      int visibility = 0;
+      const char* selectionArray = "";
+      if (representation)
+        {
+        visibility = vtkSMPropertyHelper(
+          representation, selectionVisibilityName, true).GetAsInt();
+        selectionArray = vtkSMPropertyHelper(
+          representation, selectionArrayName, true).GetAsString();
+        }
+      vtkSMPropertyHelper(iSelectionRepresentation,
+                          iSelectionVisibilityName, true).Set(visibility);
+      vtkSMPropertyHelper(iSelectionRepresentation, 
+                          iSelectionArrayName, true).Set(
+        selectionArray);
+      iSelectionRepresentation->UpdateVTKObjects();
+      }
+    }
+}
+
+
 //----------------------------------------------------------------------------
 void vtkSMInteractiveSelectionPipeline::PrintSelf(ostream& os, vtkIndent indent )
 {
   (void)os;
   (void)indent;
-}
-
-//----------------------------------------------------------------------------
-vtkSMProxy* vtkSMInteractiveSelectionPipeline::GetSelectionRepresentation() const
-{
-  return this->SelectionRepresentation;
 }

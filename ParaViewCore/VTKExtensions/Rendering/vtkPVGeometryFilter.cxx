@@ -678,10 +678,10 @@ void vtkPVGeometryFilter::AddCompositeIndex(vtkPolyData* pd, unsigned int index)
 {
   vtkUnsignedIntArray* cindex = vtkUnsignedIntArray::New();
   cindex->SetNumberOfComponents(1);
-  cindex->SetNumberOfTuples(1);
+  cindex->SetNumberOfTuples(pd->GetNumberOfCells());
   cindex->FillComponent(0, index);
   cindex->SetName("vtkCompositeIndex");
-  pd->GetFieldData()->AddArray(cindex);
+  pd->GetCellData()->AddArray(cindex);
   cindex->FastDelete();
 }
 
@@ -692,12 +692,11 @@ void vtkPVGeometryFilter::AddBlockColors(
   vtkUnsignedIntArray* cindex = vtkUnsignedIntArray::New();
   cindex->SetNumberOfComponents(1);
   cindex->SetNumberOfTuples(1);
-  cindex->FillComponent(0, index % this->BlockColorsDistinctValues);
+  cindex->SetValue(0, index % this->BlockColorsDistinctValues);
   cindex->SetName("vtkBlockColors");
   pd->GetFieldData()->AddArray(cindex);
   cindex->FastDelete();
 }
-
 
 //----------------------------------------------------------------------------
 void vtkPVGeometryFilter::AddHierarchicalIndex(vtkPolyData* pd,
@@ -858,8 +857,8 @@ int vtkPVGeometryFilter::RequestAMRData(
 
         this->CleanupOutputData(outputBlock.GetPointer(), /*doCommunicate=*/0);
         this->AddCompositeIndex(outputBlock.GetPointer(), amr->GetCompositeIndex(level,dataIdx));
-        this->AddBlockColors(outputBlock.GetPointer(), 
-                                    amr->GetCompositeIndex(level,dataIdx));
+        // we'll use block_id since that matches the index for each leaf node.
+        this->AddBlockColors(outputBlock.GetPointer(), block_id);
         this->AddHierarchicalIndex(outputBlock.GetPointer(), level, dataIdx);
         }
       amrDatasets->SetPiece(block_id, outputBlock.GetPointer());
@@ -923,9 +922,17 @@ int vtkPVGeometryFilter::RequestCompositeData(vtkInformation*,
   int* wholeExtent = vtkStreamingDemandDrivenPipeline::GetWholeExtent(
     inputVector[0]->GetInformationObject(0));
   int numInputs = 0;
-  for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem())
+
+  unsigned int block_id = 0;
+  iter->SkipEmptyNodesOff(); // since we want to a get an accurtate block-id count to
+                             // set vtkBlockColors correctly.
+  for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem(), ++block_id)
     {
     vtkDataObject* block = iter->GetCurrentDataObject();
+    if (!block)
+      {
+      continue;
+      }
 
     vtkPolyData* tmpOut = vtkPolyData::New();
     this->ExecuteBlock(block, tmpOut, 0, 0, 1, 0, wholeExtent);
@@ -940,7 +947,7 @@ int vtkPVGeometryFilter::RequestCompositeData(vtkInformation*,
       tmpOut->FastDelete();
 
       this->AddCompositeIndex(tmpOut, current_flat_index);
-      this->AddBlockColors(tmpOut, current_flat_index);
+      this->AddBlockColors(tmpOut, block_id);
       }
     else
       {

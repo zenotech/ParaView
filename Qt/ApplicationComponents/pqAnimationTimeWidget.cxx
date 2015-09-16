@@ -83,6 +83,7 @@ protected:
   virtual QVariant currentServerManagerValue(bool use_unchecked) const
     {
     Q_ASSERT(use_unchecked == false);
+    Q_UNUSED(use_unchecked);
     unsigned int count = vtkSMPropertyHelper(this->propertySM()).GetNumberOfElements();
     return QVariant(static_cast<int>(count));
     }
@@ -104,7 +105,7 @@ pqAnimationTimeWidget::pqAnimationTimeWidget(QWidget* parentObject)
   this->connect(ui.timeValue, SIGNAL(textChangedAndEditingFinished()), SIGNAL(timeValueChanged()));
   this->connect(ui.radioButtonValue, SIGNAL(toggled(bool)), SIGNAL(playModeChanged()));
   this->connect(ui.radioButtonValue, SIGNAL(toggled(bool)), SLOT(updateTimestepCountLabelVisibility()));
-  this->connect(ui.timestepValue, SIGNAL(editingFinished()),
+  this->connect(ui.timestepValue, SIGNAL(valueChangedAndEditingFinished()),
     SLOT(timestepValueChanged()));
 }
 
@@ -169,10 +170,10 @@ vtkSMProxy* pqAnimationTimeWidget::timeKeeper() const
 void pqAnimationTimeWidget::setTimeValue(double time)
 {
   Ui::AnimationTimeWidget &ui = this->Internals->Ui;
-  ui.timeValue->setTextAndResetCursor(QString::number(time));
+  ui.timeValue->setTextAndResetCursor(QString::number(time, 'g', 17));
   bool prev = ui.timestepValue->blockSignals(true);
-  ui.timestepValue->setValue(
-    vtkSMTimeKeeperProxy::GetLowerBoundTimeStepIndex(this->timeKeeper(), time));
+  int index = vtkSMTimeKeeperProxy::GetLowerBoundTimeStepIndex(this->timeKeeper(), time);
+  ui.timestepValue->setValue(index);
   ui.timestepValue->blockSignals(prev);
 }
 

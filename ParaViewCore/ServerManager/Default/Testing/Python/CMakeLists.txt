@@ -11,6 +11,7 @@ paraview_test_load_data(""
   poisson_3dall_2.xmf
   quadraticTetra01.vtu
   sonic.pht
+  TestRepresentationTypePlugin.xml
   )
 
 ###############################################################################
@@ -20,7 +21,6 @@ paraview_test_load_data(""
 set(PY_TESTS
   Animation.py
   ProxyPropertyLinks.py
-  PythonPVLookupTables.py
   PythonPVSimpleCone.py
   PythonPVSimpleExII.py
   PythonPVSimpleSphere.py
@@ -38,6 +38,7 @@ set(PY_TESTS
   MultiServer.py,NO_VALID
   ValidateSources.py,NO_VALID
   ColorAttributeTypeBackwardsCompatibility.py,NO_VALID
+  RepresentationTypeHint.py,NO_VALID
   )
 
 include(FindPythonModules)

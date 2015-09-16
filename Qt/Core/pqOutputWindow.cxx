@@ -141,7 +141,7 @@ pqOutputWindow::pqOutputWindow(QWidget* Parent) :
     SIGNAL(clicked(bool)), this, SLOT(clear()));
   QObject::connect(ui.checkBoxConsoleView,
                    SIGNAL(stateChanged(int)), this, SLOT(setConsoleView(int)));
-  QMenu* filterMenu = new QMenu();
+  QMenu* filterMenu = new QMenu(this);
   QAction* errorAction = new QAction (tr("Errors"), this);
   errorAction->setCheckable(true);
   errorAction->setChecked(true);
@@ -231,7 +231,11 @@ void pqOutputWindow::onDisplayWarningText(const QString& text)
     text.contains("QEventDispatcherUNIX::unregisterTimer", Qt::CaseSensitive) ||
     text.contains("looking for 'HistogramView") ||
     text.contains("(looking for 'XYPlot") ||
-    text.contains("Unrecognised OpenGL version")
+    text.contains("Unrecognised OpenGL version") ||
+    /* Skip DBusMenuExporterPrivate errors. These, I suspect, are due to
+     * repeated menu actions in the menus. */
+    text.contains("DBusMenuExporterPrivate") ||
+    text.contains("DBusMenuExporterDBus")
     )
     {
     return;

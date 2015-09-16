@@ -27,7 +27,7 @@
 #include "vtkSMTransferFunctionProxy.h"
 
 #include <assert.h>
-#include <vtksys/ios/sstream>
+#include <sstream>
 #include <vtksys/RegularExpression.hxx>
 #include <set>
 
@@ -41,7 +41,7 @@ namespace
     // In previous versions, they were registered as
     // (numComps).(arrayName).(ProxyXMLName). We dropped the numComps, but this
     // lookup should still match those old LUTs loaded from state.
-    vtksys_ios::ostringstream expr;
+    std::ostringstream expr;
     expr << "^[0-9.]*" << arrayName << "\\.";
     vtksys::RegularExpression regExp(expr.str().c_str());
     vtkNew<vtkSMProxyIterator> iter;
@@ -99,14 +99,25 @@ vtkSMProxy* vtkSMTransferFunctionManager::GetColorTransferFunction(
   vtkNew<vtkSMParaViewPipelineController> controller;
   controller->PreInitializeProxy(proxy);
 
+  vtkSMSettings* settings = vtkSMSettings::GetInstance();
+
+  // Load array-specific preset, if specified.
+  std::string stdPresetsKey = ".standard_presets.";
+  stdPresetsKey += arrayName;
+  if (settings->HasSetting(stdPresetsKey.c_str()))
+    {
+    vtkSMTransferFunctionProxy::ApplyPreset(proxy,
+      settings->GetSettingAsString(stdPresetsKey.c_str(), 0, "").c_str(),
+      /*rescale=*/false);
+    }
+
   // Look up array-specific transfer function
-  vtksys_ios::ostringstream prefix;
+  std::ostringstream prefix;
   prefix << ".array_" << proxy->GetXMLGroup() << "." << arrayName;
 
-  vtkSMSettings* settings = vtkSMSettings::GetInstance();
   settings->GetProxySettings(prefix.str().c_str(), proxy);
 
-  vtksys_ios::ostringstream proxyName;
+  std::ostringstream proxyName;
   proxyName << arrayName << ".PVLookupTable";
   if (proxy->GetProperty("ScalarOpacityFunction"))
     {
@@ -152,7 +163,7 @@ vtkSMProxy* vtkSMTransferFunctionManager::GetOpacityTransferFunction(
   controller->PreInitializeProxy(proxy);
   controller->PostInitializeProxy(proxy);
 
-  vtksys_ios::ostringstream proxyName;
+  std::ostringstream proxyName;
   proxyName << arrayName << ".PiecewiseFunction";
   controller->RegisterOpacityTransferFunction(proxy, proxyName.str().c_str());
   proxy->FastDelete();
@@ -221,17 +232,25 @@ void vtkSMTransferFunctionManager::ResetAllTransferFunctionRangesUsingCurrentDat
     assert(lutProxy != NULL);
     if (vtkSMPropertyHelper(lutProxy, "LockScalarRange", true).GetAsInt() == 0)
       {
-      double range[2] = {VTK_DOUBLE_MAX, VTK_DOUBLE_MIN};
-      if (vtkSMTransferFunctionProxy::ComputeDataRange(lutProxy, range))
+      if (vtkSMPropertyHelper(lutProxy, "IndexedLookup", true).GetAsInt() == 1)
         {
-        vtkSMTransferFunctionProxy::RescaleTransferFunction(
-          lutProxy, range[0], range[1], extend);
-        // BUG #0015076: Also reset the opacity function, if any.
-        if (vtkSMProxy* sof = vtkSMPropertyHelper(
-            lutProxy, "ScalarOpacityFunction", /*quiet*/true).GetAsProxy())
+        vtkSMTransferFunctionProxy::ComputeAvailableAnnotations(lutProxy, extend);
+        }
+      else
+        {
+        double range[2] = {VTK_DOUBLE_MAX, VTK_DOUBLE_MIN};
+        if (vtkSMTransferFunctionProxy::ComputeDataRange(lutProxy, range))
           {
+            vtkSMCoreUtilities::AdjustRange(range);
           vtkSMTransferFunctionProxy::RescaleTransferFunction(
-            sof, range[0], range[1], extend);
+            lutProxy, range[0], range[1], extend);
+          // BUG #0015076: Also reset the opacity function, if any.
+          if (vtkSMProxy* sof = vtkSMPropertyHelper(
+                lutProxy, "ScalarOpacityFunction", /*quiet*/true).GetAsProxy())
+            {
+            vtkSMTransferFunctionProxy::RescaleTransferFunction(
+              sof, range[0], range[1], extend);
+            }
           }
         }
       }

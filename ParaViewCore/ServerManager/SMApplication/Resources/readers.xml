@@ -1434,7 +1434,7 @@
                          default_values="1"
                          name="ModeShape"
                          number_of_elements="1">
-        <IntRangeDomain name="range">
+        <IntRangeDomain name="range" default_mode="min">
           <RequiredProperties>
             <Property function="Range"
                       name="ModeShapesRangeInfo" />
@@ -2199,12 +2199,11 @@
         variables that are prescribed over this surface.</Documentation>
         <BooleanDomain name="bool" />
       </IntVectorProperty>
-      <IntVectorProperty command="SetCellLayerRight"
-                         default_values="1"
+      <IntVectorProperty default_values="1"
                          name="CellLayerRight"
-                         number_of_elements="1">
-        <Documentation>Specify whether to add the extra layer of cells on the
-        right or left of the domain.</Documentation>
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <Documentation>**DEPRECATED in ParaView 4.4.** No longer needed/suported.</Documentation>
         <BooleanDomain name="bool" />
       </IntVectorProperty>
       <DoubleVectorProperty information_only="1"
@@ -2406,11 +2405,6 @@
         <Documentation>
           Set the spacing to use for the image output by this reader.
         </Documentation>
-        <Hints>
-          <PropertyWidgetDecorator type="EnableWidgetDecorator">
-            <Property name="UseCustomDataSpacing" function="boolean" />
-          </PropertyWidgetDecorator>
-        </Hints>
       </DoubleVectorProperty>
       <Hints>
         <ReaderFactory extensions="png"
@@ -2443,11 +2437,6 @@
         <Documentation>
           Set the spacing to use for the image output by this reader.
         </Documentation>
-        <Hints>
-          <PropertyWidgetDecorator type="EnableWidgetDecorator">
-            <Property name="UseCustomDataSpacing" function="boolean" />
-          </PropertyWidgetDecorator>
-        </Hints>
       </DoubleVectorProperty>
       <Hints>
         <ReaderFactory extensions="jpg jpeg"
@@ -2507,6 +2496,29 @@
                        file_description="TIFF Image Files" />
       </Hints>
       <!-- End TIFFReader -->
+    </SourceProxy>
+    <SourceProxy class="vtkMRCReader"
+                 label="MRC Reader"
+                 name="MRCReader">
+      <Documentation long_help="Reads a MRC file into an image data."
+                     short_help="Read a MRC file.">The MRC reader reads MRC
+                     (Medical Research Council) image files, and the output is a
+                     uniform rectilinear (image/volume) dataset. The default
+                     file extension is .mrc but .st, .rec and .ali extensions
+                     are known to be commonly used as well.</Documentation>
+      <StringVectorProperty animateable="0"
+                            command="SetFileName"
+                            name="FileName"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <FileListDomain name="files" />
+        <Documentation>The name of the file to load.</Documentation>
+      </StringVectorProperty>
+      <Hints>
+        <ReaderFactory extensions="mrc st rec ali"
+                       file_description="MRC Image Files" />
+      </Hints>
+      <!-- End MRCReader -->
     </SourceProxy>
     <SourceProxy class="vtkNetCDFCFReader"
                  name="netCDFReaderCore">
@@ -5154,6 +5166,47 @@
     </SourceProxy>
     <SourceProxy class="vtkImageFileSeriesReader"
                  file_name_method="SetFileName"
+                 label="MRC Series Reader"
+                 name="MRCSeriesReader"
+                 si_class="vtkSIMetaReaderProxy">
+      <Documentation long_help="Reads a series of MRC files into an time sequence of image datas."
+                     short_help="Read a series of MRC files.">The MRC series
+                     reader reads MRC files. The output is a time sequence of
+                     uniform rectilinear (image/volume) dataset. The default
+                     file extension is .mrc but .ali, .st and .rec are also
+                     recognized.</Documentation>
+      <StringVectorProperty animateable="0"
+                            clean_command="RemoveAllFileNames"
+                            command="AddFileName"
+                            name="FileNames"
+                            number_of_elements="1"
+                            panel_visibility="never"
+                            repeat_command="1">
+        <FileListDomain name="files" />
+        <Documentation>The list of files to be read by the reader. If more than
+        one file is specified, the reader will switch to file series mode in
+        which it will pretend that it can support time and provide one file per
+        time step.</Documentation>
+      </StringVectorProperty>
+      <DoubleVectorProperty information_only="1"
+                            name="TimestepValues"
+                            repeatable="1">
+        <TimeStepsInformationHelper />
+        <Documentation>Available timestep values.</Documentation>
+      </DoubleVectorProperty>
+      <SubProxy>
+        <Proxy name="Reader"
+               proxygroup="internal_sources"
+               proxyname="MRCReader"></Proxy>
+      </SubProxy>
+      <Hints>
+        <ReaderFactory extensions="mrc ali st rec"
+                       file_description="MRC Image Files" />
+      </Hints>
+      <!-- End MRCSeriesReader -->
+    </SourceProxy>
+    <SourceProxy class="vtkImageFileSeriesReader"
+                 file_name_method="SetFileName"
                  label="TIFF Series Reader"
                  name="TIFFSeriesReader"
                  si_class="vtkSIMetaReaderProxy">
@@ -5393,6 +5446,7 @@
             <Property name="XMLFileName" panel_visibility="advanced"/>
             <Property name="XMLFileNameInfo" />
           </PropertyGroup>
+          <Property name="GenerateFileIdArray" />
           <Property name="Refresh" />
         </ExposedProperties>
       </SubProxy>
@@ -5534,6 +5588,7 @@
             <Property name="XMLFileName" panel_visibility="advanced"/>
             <Property name="XMLFileNameInfo" />
           </PropertyGroup>
+          <Property name="GenerateFileIdArray" />
           <Property name="Refresh" />
         </ExposedProperties>
       </SubProxy>

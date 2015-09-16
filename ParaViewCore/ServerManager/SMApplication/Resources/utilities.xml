@@ -69,10 +69,24 @@
                             number_of_elements="1"></StringVectorProperty>
     </Proxy>
 
-    <TransferFunctionProxy class="vtkDiscretizableColorTransferFunction"
+    <TransferFunctionProxy class="vtkPVDiscretizableColorTransferFunction"
                            name="PVLookupTable"
                            post_push="Build"
                            processes="dataserver|renderserver|client">
+      <IntVectorProperty default_values="0"
+                         name="LockScalarRange"
+                         label="Lock Data Range"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          When enabled, data range is locked, meaning that the
+          application will not be permitted to automatically update
+          the color map to fit the data range. To change when the
+          application will update the color map, see the application
+          setting General -> Transfer Function Reset Mode.
+        </Documentation>
+
+      </IntVectorProperty>
       <IntVectorProperty name="IndexedLookup"
                          command="SetIndexedLookup"
                          default_values="0"
@@ -82,6 +96,38 @@
         <Documentation>
           When enabled, the color transfer function switches to indexed-lookup
           (categorical colors) mode.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="ShowIndexedColorActiveValues"
+                         command="SetUseActiveValues"
+                         default_values="0"
+                         number_of_elements="1"
+                         label="Show Categorical Colors in Data Range Only"
+                         panel_visibility="advanced">
+        <BooleanDomain name="bool" />
+        <Hints>
+          <PropertyWidgetDecorator type="ShowWidgetDecorator">
+            <Property name="IndexedLookup" />
+          </PropertyWidgetDecorator>
+        </Hints>
+        <Documentation>
+          When interpretting values as categories, enabling this
+          option results in the display of only the 'active'
+          categorical colors for values in the data range, i.e.,
+          values that exist in the source. You may need to click the
+          'Rescale to Data Range' button to update the active values
+          that are displayed.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="RescaleOnVisibilityChange"
+                         default_values="0"
+                         number_of_elements="1">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Flag indicating whether the color map data range should be
+          updated when a representation's visibility changes.
         </Documentation>
       </IntVectorProperty>
 
@@ -125,16 +171,6 @@
                          number_of_elements="1">
         <BooleanDomain name="bool" />
       </IntVectorProperty>
-      <IntVectorProperty default_values="0"
-                         name="LockScalarRange"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation>
-          When set to true (1), the application will not try to automatically
-          change scalar range whenever the application may usually update the lookup table
-          scalar ranges.
-        </Documentation>
-      </IntVectorProperty>
       <IntVectorProperty command="SetColorSpace"
                          default_values="3"
                          name="ColorSpace"
@@ -158,7 +194,8 @@
       <IntVectorProperty command="SetUseBelowRangeColor"
                          default_values="0"
                          name="UseBelowRangeColor"
-                         number_of_elements="1" >
+                         number_of_elements="1"
+                         panel_visibility="advanced" >
         <BooleanDomain name="bool" />
         <Documentation>
           Use special color to use when a data value is below the range of the color map.
@@ -168,7 +205,8 @@
                             default_values="0 0 0"
                             name="BelowRangeColor"
                             number_of_elements="3"
-                            panel_widget="color_selector" >
+                            panel_widget="color_selector"
+                            panel_visibility="advanced" >
         <Documentation>
           Set the color to use when a data value is below the range of the color map.
         </Documentation>
@@ -181,7 +219,8 @@
       <IntVectorProperty command="SetUseAboveRangeColor"
                          default_values="0"
                          name="UseAboveRangeColor"
-                         number_of_elements="1" >
+                         number_of_elements="1"
+                         panel_visibility="advanced" >
         <BooleanDomain name="bool" />
         <Documentation>
           Use special color to use when a data value is above the range of the color map.
@@ -191,7 +230,8 @@
                             default_values="1 1 1"
                             name="AboveRangeColor"
                             number_of_elements="3"
-                            panel_widget="color_selector" >
+                            panel_widget="color_selector"
+                            panel_visibility="advanced" >
         <Documentation>
           Set the color to use when a data value is above the range of the color map.
         </Documentation>
@@ -202,7 +242,7 @@
         </Hints>
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetNanColor"
-                            default_values="0.5 0 0"
+                            default_values="1 1 0"
                             name="NanColor"
                             number_of_elements="3"
                             panel_widget="color_selector" >
@@ -281,8 +321,8 @@
       </IntVectorProperty>
 
       <StringVectorProperty name="Annotations"
-                            clean_command="ResetAnnotations"
-                            command="SetAnnotation"
+                            clean_command="ResetAnnotationsInFullSet"
+                            command="SetAnnotationInFullSet"
                             element_types="2 2"
                             number_of_elements_per_command="2"
                             repeat_command="1">
@@ -291,12 +331,25 @@
         </Documentation>
       </StringVectorProperty>
 
+      <StringVectorProperty name="ActiveAnnotatedValues"
+                            clean_command="ResetActiveAnnotatedValues"
+                            command="SetActiveAnnotatedValue"
+                            element_types="2"
+                            number_of_elements_per_command="1"
+                            repeat_command="1"
+                            panel_visibility="never">
+        <Documentation>
+          Specify active annotations.
+        </Documentation>
+      </StringVectorProperty>
+
       <DoubleVectorProperty name="IndexedColors"
-                            command="SetIndexedColor"
+                            command="SetIndexedColorInFullSet"
                             number_of_elements_per_command="3"
                             repeat_command="1"
-                            set_number_command="SetNumberOfIndexedColors"
-                            use_index="1">
+                            set_number_command="SetNumberOfIndexedColorsInFullSet"
+                            use_index="1"
+                            panel_visibility="advanced">
         <Documentation>
           Colors used when using IndexedLookup is true.
         </Documentation>
@@ -307,7 +360,6 @@
         <Property name="RGBPoints" function="XRGBPoints" />
         <Property name="ScalarOpacityFunction" function="ScalarOpacityFunction" />
         <Property name="UseLogScale" function="UseLogScale" />
-        <Property name="LockScalarRange" function="LockScalarRange" />
       </PropertyGroup>
 
       <PropertyGroup label="Color Mapping Parameters">
@@ -324,6 +376,7 @@
         <Property name="Annotations" />
         <Property name="IndexedColors" />
       </PropertyGroup>
+
       <!-- End of PVLookupTable -->
     </TransferFunctionProxy>
   </ProxyGroup>
@@ -657,6 +710,28 @@
                     name="Radius" />
         </PropertyGroup>
       </Hints>
+    </Proxy>
+    <Proxy class="vtkPVCylinder"
+           name="Cylinder">
+      <DoubleVectorProperty command="SetCenter"
+                            default_values="none"
+                            name="Center"
+                            number_of_elements="3">
+        <DoubleRangeDomain name="range" />
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetAxis"
+                            default_values="0. 1. 0."
+                            name="Axis"
+                            number_of_elements="3">
+        <DoubleRangeDomain name="range" />
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetRadius"
+                            default_values="0.5"
+                            name="Radius"
+                            number_of_elements="1">
+        <DoubleRangeDomain min="0"
+                           name="range" />
+      </DoubleVectorProperty>
     </Proxy>
   </ProxyGroup>
   <ProxyGroup name="transforms">
@@ -2096,7 +2171,7 @@
                             default_values="0"
                             name="Time"
                             number_of_elements="1"
-                            precision="16"
+                            precision="17"
                             state_ignored="1">
         <!-- state-ignored simply makes this property not be saved in the UndoRedo state -->
         <DoubleRangeDomain name="range" />
@@ -2112,7 +2187,7 @@
                             information_only="1"
                             name="TimeRange"
                             number_of_elements="2"
-                            precision="16"
+                            precision="17"
                             state_ignored="1">
         <!-- state-ignored simply makes this property not be saved in the UndoRedo state -->
         <Documentation>This is the time range. It's possible that there are no
@@ -2228,18 +2303,8 @@
                            min="0 0 0"
                            name="range" />
         <Documentation>
-          Color used for the edges when using 'Surface With Wireframe' representation.
+          Color used for the edges when using 'Surface With Edges' representation.
         </Documentation>
-      </DoubleVectorProperty>
-      <DoubleVectorProperty default_values="0.32 0.34 0.43"
-                            label="Background"
-                            name="BackgroundColor"
-                            number_of_elements="3"
-                            panel_widget="color_selector">
-        <DoubleRangeDomain max="1 1 1"
-                           min="0 0 0"
-                           name="range" />
-        <Documentation>Color used as background for the view.</Documentation>
       </DoubleVectorProperty>
       <DoubleVectorProperty default_values="1.0 1.0 1.0"
                             label="Text"
@@ -2272,6 +2337,52 @@
                            name="range" />
         <Documentation>Color used for showing interactive selection.</Documentation>
       </DoubleVectorProperty>
+      <IntVectorProperty name="UseGradientBackground"
+                         label="Use Gradient Background"
+                         number_of_elements="1"
+                         default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Enable gradient background.
+        </Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty default_values="0.32 0.34 0.43"
+                            label="Background"
+                            name="BackgroundColor"
+                            number_of_elements="3"
+                            panel_widget="color_selector">
+        <DoubleRangeDomain max="1 1 1"
+                           min="0 0 0"
+                           name="range" />
+        <Documentation>Color used as background for the view.</Documentation>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty default_values="0.32 0.34 0.43"
+                            label="Background 2"
+                            name="BackgroundColor2"
+                            number_of_elements="3"
+                            panel_widget="color_selector">
+        <DoubleRangeDomain max="1 1 1"
+                           min="0 0 0"
+                           name="range" />
+        <Documentation>Color used as the 2nd color for gradient backgrounds.</Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="EnableWidgetDecorator">
+            <Property name="UseGradientBackground" function="boolean" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </DoubleVectorProperty>
+
+      <PropertyGroup label="Selection">
+        <Property name="SelectionColor" />
+        <Property name="InteractiveSelectionColor" />
+      </PropertyGroup>
+
+      <PropertyGroup label="Background">
+        <Property name="UseGradientBackground" />
+        <Property name="BackgroundColor" />
+        <Property name="BackgroundColor2" />
+      </PropertyGroup>
+
       <Property name="LoadPalette"
         panel_widget="color_palette_selector">
         <Documentation>
@@ -2392,6 +2503,12 @@
                             default_values="0.0 0.0 1.0"
                             name="PointB"
                             number_of_elements="3"></DoubleVectorProperty>
+      <IntVectorProperty command="SetSnapOnMeshPoint"
+                         default_values="0"
+                         name="SnapOnMeshPoint"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
       <DoubleVectorProperty command="GetIntersection"
                             default_values="0.0 0.0 0.0"
                             information_only="1"
@@ -2413,8 +2530,8 @@
     <!-- End of group "misc" -->
   </ProxyGroup>
   <ProxyGroup name="palettes">
-    <Proxy label="Screen"
-           name="Screen">
+    <!-- ================================================================= -->
+    <Proxy label="Default Background" name="DefaultBackground">
       <DoubleVectorProperty default_values="1.0 1.0 1.0"
                             name="ForegroundColor"
                             number_of_elements="3"></DoubleVectorProperty>
@@ -2433,10 +2550,13 @@
       <DoubleVectorProperty default_values="0.0 0.0 0.5"
                             name="EdgeColor"
                             number_of_elements="3"></DoubleVectorProperty>
-      <!-- End of (palettes, Screen) -->
+      <IntVectorProperty    default_values="0"
+                            name="UseGradientBackground"
+                            number_of_elements="1"></IntVectorProperty>
     </Proxy>
-    <Proxy label="Print"
-           name="Print">
+
+    <!-- ================================================================= -->
+    <Proxy label="Print Background" name="PrintBackground">
       <DoubleVectorProperty default_values="0.0 0.0 0.0"
                             name="ForegroundColor"
                             number_of_elements="3"></DoubleVectorProperty>
@@ -2455,8 +2575,73 @@
       <DoubleVectorProperty default_values="0.0 0.0 0.5"
                             name="EdgeColor"
                             number_of_elements="3"></DoubleVectorProperty>
+      <IntVectorProperty    default_values="0"
+                            name="UseGradientBackground"
+                            number_of_elements="1"></IntVectorProperty>
       <!-- End of (palettes, Print) -->
     </Proxy>
+
+    <!-- ================================================================= -->
+    <Proxy label="Gray Background" name="GrayBackground"
+      base_proxygroup="palettes"  base_proxyname="DefaultBackground" />
+
+    <!-- ================================================================= -->
+    <Proxy label="White Background" name="WhiteBackground"
+      base_proxygroup="palettes"  base_proxyname="PrintBackground" />
+
+    <!-- ================================================================= -->
+    <Proxy label="Black Background" name="BlackBackground">
+      <DoubleVectorProperty default_values="1.0 1.0 1.0"
+                            name="ForegroundColor"
+                            number_of_elements="3"></DoubleVectorProperty>
+      <DoubleVectorProperty default_values="0 0 0"
+                            name="BackgroundColor"
+                            number_of_elements="3"></DoubleVectorProperty>
+      <DoubleVectorProperty default_values="1.0 1.0 1.0"
+                            name="SurfaceColor"
+                            number_of_elements="3"></DoubleVectorProperty>
+      <DoubleVectorProperty default_values="1.0 1.0 1.0"
+                            name="TextAnnotationColor"
+                            number_of_elements="3"></DoubleVectorProperty>
+      <DoubleVectorProperty default_values="1.0 0.0 1.0"
+                            name="SelectionColor"
+                            number_of_elements="3"></DoubleVectorProperty>
+      <DoubleVectorProperty default_values="0.0 0.0 0.5"
+                            name="EdgeColor"
+                            number_of_elements="3"></DoubleVectorProperty>
+      <IntVectorProperty    default_values="0"
+                            name="UseGradientBackground"
+                            number_of_elements="1"></IntVectorProperty>
+    </Proxy>
+
+    <!-- ================================================================= -->
+    <Proxy label="Gradient Background" name="GradientBackground">
+      <DoubleVectorProperty default_values="1.0 1.0 1.0"
+                            name="ForegroundColor"
+                            number_of_elements="3"></DoubleVectorProperty>
+      <DoubleVectorProperty default_values="0.32 0.34 0.43"
+                            name="BackgroundColor"
+                            number_of_elements="3"></DoubleVectorProperty>
+      <DoubleVectorProperty default_values="0 0 0.16"
+                            name="BackgroundColor2"
+                            number_of_elements="3"></DoubleVectorProperty>
+      <DoubleVectorProperty default_values="1.0 1.0 1.0"
+                            name="SurfaceColor"
+                            number_of_elements="3"></DoubleVectorProperty>
+      <DoubleVectorProperty default_values="1.0 1.0 1.0"
+                            name="TextAnnotationColor"
+                            number_of_elements="3"></DoubleVectorProperty>
+      <DoubleVectorProperty default_values="1.0 0.0 1.0"
+                            name="SelectionColor"
+                            number_of_elements="3"></DoubleVectorProperty>
+      <DoubleVectorProperty default_values="0.0 0.0 0.5"
+                            name="EdgeColor"
+                            number_of_elements="3"></DoubleVectorProperty>
+      <IntVectorProperty    default_values="1"
+                            name="UseGradientBackground"
+                            number_of_elements="1"></IntVectorProperty>
+    </Proxy>
+
     <!-- End of group "palettes" -->
   </ProxyGroup>
   <ProxyGroup name="exporters">

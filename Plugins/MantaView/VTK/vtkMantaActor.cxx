@@ -62,12 +62,15 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "vtkManta.h"
 #include "vtkMantaActor.h"
+#include "vtkMantaCompositeMapper.h"
 #include "vtkMantaManager.h"
 #include "vtkMantaProperty.h"
 #include "vtkMantaRenderer.h"
-#include "vtkMapper.h"
+#include "vtkMantaTexture.h"
 
 #include "vtkDataSet.h"
+#include "vtkImageData.h"
+#include "vtkMapper.h"
 #include "vtkObjectFactory.h"
 #include "vtkRendererCollection.h"
 #include "vtkTimerLog.h"
@@ -148,6 +151,7 @@ vtkMantaActor::vtkMantaActor() : Group(0), MantaAS(0)
   //cerr << "MA(" << this << ") CREATE" << endl;
   this->MantaManager = NULL;
   this->SortType = DYNBVH;
+  this->MantaTexture = NULL;
 }
 
 //----------------------------------------------------------------------------
@@ -156,6 +160,8 @@ vtkMantaActor::vtkMantaActor() : Group(0), MantaAS(0)
 vtkMantaActor::~vtkMantaActor()
 {
   //cerr << "MA(" << this << ") DESTROY" << endl;
+  this->SetMantaTexture(NULL);
+
   if (this->MantaManager)
     {
     this->ReleaseGraphicsResources(NULL);
@@ -230,11 +236,24 @@ void vtkMantaActor::Render( vtkRenderer * ren, vtkMapper * mapper )
 
     //check if anything that affect appearence has changed, if so, rebuild manta
     //object so we see it. Don't do it every frame, since it is costly.
-    if (mapper->GetInput() &&
-        mapper->GetInput()->GetMTime() > this->MeshMTime ||
-        mapper->GetMTime() > this->MeshMTime ||
-        this->GetProperty()->GetMTime() > this->MeshMTime ||
-        this->GetMTime() > this->MeshMTime)
+    unsigned long itime = 0;
+    if (mapper->GetInput())
+      {
+      itime = mapper->GetInput()->GetMTime();
+      }
+    else
+      {
+      vtkMantaCompositeMapper * mcMapper = vtkMantaCompositeMapper::SafeDownCast(mapper);
+      if (mcMapper)
+        {
+        itime = mcMapper->GetInputTime();
+        }
+      }
+
+    if ((itime > this->MeshMTime) ||
+        (mapper->GetMTime() > this->MeshMTime) ||
+        (this->GetProperty()->GetMTime() > this->MeshMTime) ||
+        (this->GetMTime() > this->MeshMTime))
       {
       // update pipeline to get up to date data to show
       mapper->Render(ren, this);
@@ -302,7 +321,7 @@ void vtkMantaActor::RemoveObjects()
 //----------------------------------------------------------------------------
 void vtkMantaActor::UpdateObjects( vtkRenderer * ren )
 {
-  //cerr << "MA(" << this << ") UPDATE" << endl;
+  //cerr << "MA(" << this << ") UPDATE OBJ" << endl;
   vtkMantaRenderer * mantaRenderer =
     vtkMantaRenderer::SafeDownCast( ren );
   if (!mantaRenderer)
@@ -310,7 +329,6 @@ void vtkMantaActor::UpdateObjects( vtkRenderer * ren )
     return;
     }
 
-  //Remove whatever we used to show in the scene
   if (!this->MantaManager)
     {
     return;
@@ -320,10 +338,10 @@ void vtkMantaActor::UpdateObjects( vtkRenderer * ren )
   //We are using Manta's DynBVH, but we never use it Dyn-amically.
   //Instead we delete the old and rebuild a new AS every time something changes,
   //We should either ask the DynBVH to update itself,
-  //or try different acceleration structures. Those might be faster - either 
+  //or try different acceleration structures. Those might be faster - either
   //during sort or during search.
 
-  //Remove what was shown.
+  //Remove whatever we used to show in the scene
   this->RemoveObjects();
 
   //Add what we are now supposed to show.
@@ -348,7 +366,7 @@ void vtkMantaActor::UpdateObjects( vtkRenderer * ren )
       case RECURSIVEGRID3:
         innerAS = new Manta::RecursiveGrid(3);
         break;
-      }      
+      }
 
       Manta::Group * innerGroup = dynamic_cast<Manta::Group *>
         (this->Group->get(i));
@@ -406,3 +424,27 @@ void vtkMantaActor::SetGroup( Manta::Group * group )
                    Manta::Callback::create
                    (R, &vtkMantaActorThreadCache::FreeMantaResources));
 }
+
+//----------------------------------------------------------------------------
+void vtkMantaActor::SetTexture( vtkTexture *texture )
+{
+  if (texture == this->GetTexture())
+    {
+    return;
+    }
+  this->Superclass::SetTexture(texture);
+  if (texture)
+    {
+    vtkMantaTexture *mt = vtkMantaTexture::New();
+    mt->SetInputData(this->GetTexture()->GetInput());
+    this->SetMantaTexture(mt);
+    mt->Delete();
+    }
+  else
+    {
+    this->SetMantaTexture(NULL);
+    }
+}
+
+//----------------------------------------------------------------------------
+vtkCxxSetObjectMacro(vtkMantaActor,MantaTexture,vtkMantaTexture);

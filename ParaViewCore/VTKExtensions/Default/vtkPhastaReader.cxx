@@ -36,7 +36,7 @@ vtkCxxSetObjectMacro(vtkPhastaReader, CachedGrid, vtkUnstructuredGrid);
 #include <map>
 #include <vector>
 #include <string>
-#include <vtksys/ios/sstream>
+#include <sstream>
 
 struct vtkPhastaReaderInternal
 {
@@ -154,8 +154,8 @@ size_t vtkPhastaReader::typeSize( const char typestring[] )
     }
   else
     {
-    delete [] ts1;
     fprintf(stderr,"unknown type : %s\n",ts1);
+    delete [] ts1;
     return 0;
     }
 }
@@ -705,6 +705,7 @@ void vtkPhastaReader::ReadGeomFile(char* geomFileName,
   if(pos == NULL)
     {
     vtkErrorMacro(<<"Unable to allocate memory for nodal info");
+    delete [] coordinates;
     return;
     }
   
@@ -797,8 +798,9 @@ void vtkPhastaReader::ReadGeomFile(char* geomFileName,
 
           break;
         default:
-          vtkErrorMacro(<<"Unrecognized CELL_TYPE in "<< geomFileName)
-            return;
+          delete [] nodes;
+          vtkErrorMacro(<<"Unrecognized CELL_TYPE in "<< geomFileName);
+          return;
         }
 
       /* insert the element */
@@ -872,7 +874,7 @@ void vtkPhastaReader::ReadFieldFile(char* fieldFileName,
     {
     int idx=i-5;
     sArrays[idx] = vtkDoubleArray::New();
-    vtksys_ios::ostringstream aName;
+    std::ostringstream aName;
     aName << "s" << idx+1 << ends;
     sArrays[idx]->SetName(aName.str().c_str());
     sArrays[idx]->SetNumberOfTuples(noOfNodes);

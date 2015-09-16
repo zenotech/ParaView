@@ -13,11 +13,11 @@
 
 =========================================================================*/
 #include "vtkMaterialInterfaceProcessRing.h"
-#include "vtksys/ios/iostream"
+#include <iostream>
 using std::vector;
-using vtksys_ios::ostream;
-using vtksys_ios::cerr;
-using vtksys_ios::endl;
+using std::ostream;
+using std::cerr;
+using std::endl;
 //
 // void vtkMaterialInterfaceProcessRing::Initialize(
 //     vtkMaterialInterfaceProcessPriorityQueue &Q,
@@ -67,7 +67,7 @@ void vtkMaterialInterfaceProcessRing::Initialize(
   this->BufferSize=0;
   this->Buffer.clear();
 
-  int nItems = static_cast<int>(Q.size());
+  size_t nItems = Q.size();
   assert(nItems>0);
 
   // check that upper bound does not exclude
@@ -89,7 +89,7 @@ void vtkMaterialInterfaceProcessRing::Initialize(
   // Build ring of process ids.
   this->Buffer.push_back(pl.GetId());
   ++this->BufferSize;
-  for (int itemId=1; itemId<nItems; ++itemId)
+  for (size_t itemId=1; itemId<nItems; ++itemId)
     {
     pl=Q[itemId];
     if (upperLoadingBound!=-1

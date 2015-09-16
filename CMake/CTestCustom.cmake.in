@@ -49,6 +49,7 @@ set (CTEST_CUSTOM_WARNING_EXCEPTION
   ".*vtksmrenderviewproxy.cxx.*unreachable code"
   ".*pqComponentsInit.cxx.*conditional expression is constant"
   ".*pqCoreInit.cxx.*conditional expression is constant"
+  ".*pqApplicationComponentsInit.cxx.*conditional expression is constant"
 
   # ignore warnings from old plugins
   ".*H5Part.*"
@@ -91,13 +92,6 @@ set (CTEST_CUSTOM_WARNING_EXCEPTION
 
   # exclude warnings from mpi4py
   ".*mpi4py.*"
-
-  # exclude Nektar plugin warnings
-  "Nektar.*overloaded-virtual"
-  "Nektar/include.*unused"
-  "Nektar/Veclib"
-  "f951: warning: command line option '-fvisibility-inlines-hidden' is valid"
-  "Nektar/ParaViewPlugin/.*"
 
   # exclude warnings from external genericio library.
   "genericio"

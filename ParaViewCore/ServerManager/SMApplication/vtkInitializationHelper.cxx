@@ -31,7 +31,7 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkSMProxyManager.h"
 
 #include <string>
-#include <vtksys/ios/sstream>
+#include <sstream>
 #include <vtksys/SystemTools.hxx>
 
 // Windows-only helper functionality:
@@ -186,7 +186,7 @@ void vtkInitializationHelper::Initialize(int argc, char**argv,
   vtkProcessModule::Initialize(
     static_cast<vtkProcessModule::ProcessTypes>(type), argc, argv);
 
-  vtksys_ios::ostringstream sscerr;
+  std::ostringstream sscerr;
   if (argv && !options->Parse(argc, argv) )
     {
     if ( options->GetUnknownArgument() )
@@ -208,7 +208,7 @@ void vtkInitializationHelper::Initialize(int argc, char**argv,
 
   if (options->GetTellVersion() )
     {
-    vtksys_ios::ostringstream str;
+    std::ostringstream str;
     str << "paraview version " << PARAVIEW_VERSION_FULL << "\n";
     vtkOutputWindow::GetInstance()->DisplayText(str.str().c_str());
     // TODO: indicate to the caller that application must quit.
@@ -384,20 +384,35 @@ std::string vtkInitializationHelper::GetUserSettingsDirectory()
     }
   directoryPath += applicationName + separator;
 #else
-  const char* home = getenv("HOME");
-  if (!home)
-    {
-    return std::string();
-    }
+  std::string directoryPath;
   std::string separator("/");
-  std::string directoryPath(home);
-  if (directoryPath[directoryPath.size()-1] != separator[0])
+  
+  // Emulating QSettings behavior.
+  const char* xdgConfigHome = getenv("XDG_CONFIG_HOME");
+  if (xdgConfigHome && strlen(xdgConfigHome) > 0)
     {
-    directoryPath.append(separator);
+    directoryPath = xdgConfigHome;
+    if (directoryPath[directoryPath.size() - 1] != separator[0])
+      {
+      directoryPath += separator;
+      }
     }
-  directoryPath += ".config" + separator + organizationName + separator;
+  else
+    {
+    const char* home = getenv("HOME");
+    if (!home)
+      {
+      return std::string();
+      }
+    directoryPath = home;
+    if (directoryPath[directoryPath.size() - 1] != separator[0])
+      {
+      directoryPath += separator;
+      }
+     directoryPath += ".config/";
+    }
+  directoryPath += organizationName + separator;
 #endif
-
   return directoryPath;
 }
 

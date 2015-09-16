@@ -150,6 +150,17 @@ protected:
                        vtkSMProxy *smproxy,
                        vtkSMProperty *smproperty,
                        int smindex = -1);
+  void removePropertyLink(QObject *qobject,
+                       const char *qproperty,
+                       const char *qsignal,
+                       vtkSMProperty *smproperty,
+                       int smindex = -1);
+  void removePropertyLink(QObject *qobject,
+                       const char *qproperty,
+                       const char *qsignal,
+                       vtkSMProxy *smproxy,
+                       vtkSMProperty *smproperty,
+                       int smindex = -1);
   void setShowLabel(bool show);
 
   /// For most pqPropertyWidget subclasses a changeAvailable() signal,
@@ -170,8 +181,10 @@ protected:
   pqPropertyLinks& links()
     { return this->Links; }
 
-private:
+public:
   void setProperty(vtkSMProperty *property);
+
+private:
 
   friend class pqPropertyWidgetDecorator;
   friend class pqProxyWidget;

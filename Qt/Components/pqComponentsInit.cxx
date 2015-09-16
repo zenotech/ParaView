@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
 
+#include "vtkPVConfig.h"
 #include "pqComponentsInit.h"
 #include "pqCoreInit.h"
 #include <QObject>  // for Q_INIT_RESOURCE

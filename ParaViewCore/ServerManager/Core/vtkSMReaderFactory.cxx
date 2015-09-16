@@ -35,7 +35,7 @@
 #include <set>
 #include <string>
 #include <vector>
-#include <vtksys/ios/sstream>
+#include <sstream>
 #include <vtksys/SystemTools.hxx>
 #include <vtksys/RegularExpression.hxx>
 #include <assert.h>
@@ -53,6 +53,7 @@ static void string_replace(std::string& string, char c, std::string str)
 class vtkSMReaderFactory::vtkInternals
 {
 public:
+  static std::set<std::pair<std::string,std::string> > ReaderWhitelist;
   struct vtkValue
     {
     vtkWeakPointer<vtkSMSession> Session;
@@ -189,6 +190,7 @@ public:
   // included.
   std::set<std::string> Groups;
 };
+std::set<std::pair<std::string,std::string> > vtkSMReaderFactory::vtkInternals::ReaderWhitelist;
 
 //----------------------------------------------------------------------------
 bool vtkSMReaderFactory::vtkInternals::vtkValue::ExtensionTest(
@@ -262,12 +264,6 @@ bool vtkSMReaderFactory::vtkInternals::vtkValue::CanReadFile(
       }
     }
 
-  if (strcmp(prototype->GetXMLName(), "ImageReader") == 0)
-    {
-    // ImageReader always returns 0 so don't test it
-    return true;
-    }
-
   vtkSMProxy* proxy = pxm->NewProxy(this->Group.c_str(), this->Name.c_str());
   proxy->SetLocation(vtkProcessModule::DATA_SERVER_ROOT);
   // we deliberate don't call UpdateVTKObjects() here since CanReadFile() can
@@ -335,7 +331,15 @@ void vtkSMReaderFactory::UpdateAvailableReaders()
           iter->GetGroupName(), iter->GetProxyName());
         if (hints && hints->FindNestedElementByName("ReaderFactory"))
           {
-          this->RegisterPrototype(iter->GetGroupName(), iter->GetProxyName());
+          // By default this does no filtering on the readers available.  However, if the
+          // application has specified that it is only interested in a subset of the readers
+          // then only that subset will be available.
+          std::pair<std::string,std::string> reader(iter->GetGroupName(), iter->GetProxyName());
+          if (vtkInternals::ReaderWhitelist.empty() ||
+              vtkInternals::ReaderWhitelist.find(reader) != vtkInternals::ReaderWhitelist.end())
+            {
+            this->RegisterPrototype(iter->GetGroupName(), iter->GetProxyName());
+            }
           }
         }
       iter->Delete();
@@ -485,7 +489,7 @@ static std::string vtkJoin(
   const std::vector<std::string> exts, const char* prefix,
   const char* suffix)
 {
-  vtksys_ios::ostringstream stream;
+  std::ostringstream stream;
   std::vector<std::string>::const_iterator iter;
   for (iter = exts.begin(); iter != exts.end(); ++iter)
     {
@@ -497,7 +501,7 @@ static std::string vtkJoin(
 //----------------------------------------------------------------------------
 const char* vtkSMReaderFactory::GetSupportedFileTypes(vtkSMSession* session)
 {
-  vtksys_ios::ostringstream all_types;
+  std::ostringstream all_types;
   all_types << "Supported Files (";
 
   std::set<std::string> sorted_types;
@@ -532,7 +536,7 @@ const char* vtkSMReaderFactory::GetSupportedFileTypes(vtkSMSession* session)
 
       if (ext_list.size() > 0)
         {
-        vtksys_ios::ostringstream stream;
+        std::ostringstream stream;
         stream << iter->second.Description << "(" << ext_list << ")";
         sorted_types.insert(stream.str());
         all_types << ext_list << " ";
@@ -647,4 +651,15 @@ bool vtkSMReaderFactory::CanReadFile(const char* filename,
 void vtkSMReaderFactory::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
+}
+
+//----------------------------------------------------------------------------
+void vtkSMReaderFactory::AddReaderToWhitelist(const char* readerxmlgroup,
+                                              const char* readerxmlname)
+{
+  if (readerxmlgroup != NULL && readerxmlname != NULL)
+    {
+    vtkSMReaderFactory::vtkInternals::ReaderWhitelist.insert(
+      std::pair<std::string,std::string>(readerxmlgroup,readerxmlname));
+    }
 }

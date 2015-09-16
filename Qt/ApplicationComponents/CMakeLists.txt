@@ -37,6 +37,8 @@ set (Module_SRCS
   pqAnimationTimeToolbar.h
   pqAnimationTimeWidget.cxx
   pqAnimationTimeWidget.h
+  pqApplicationComponentsInit.cxx
+  pqApplicationComponentsInit.h
   pqApplicationSettingsReaction.cxx
   pqApplicationSettingsReaction.h
   pqApplyBehavior.cxx
@@ -130,6 +132,8 @@ set (Module_SRCS
   pqShowWidgetDecorator.h
   pqExportReaction.cxx
   pqExportReaction.h
+  pqFileNamePropertyWidget.cxx
+  pqFileNamePropertyWidget.h
   pqFiltersMenuReaction.cxx
   pqFiltersMenuReaction.h
   pqFixPathsInStateFilesBehavior.cxx
@@ -154,6 +158,8 @@ set (Module_SRCS
   pqListPropertyWidget.h
   pqLoadDataReaction.cxx
   pqLoadDataReaction.h
+  pqLoadPaletteReaction.cxx
+  pqLoadPaletteReaction.h
   pqLoadStateReaction.cxx
   pqLoadStateReaction.h
   pqLoadRestoreWindowLayoutReaction.cxx
@@ -236,6 +242,8 @@ set (Module_SRCS
   pqSourcesMenuReaction.h
   pqSpreadSheetVisibilityBehavior.cxx
   pqSpreadSheetVisibilityBehavior.h
+  pqStandardArrayColorMapsBehavior.cxx
+  pqStandardArrayColorMapsBehavior.h
   pqStandardPropertyWidgetInterface.cxx
   pqStandardPropertyWidgetInterface.h
   pqStandardViewFrameActionsImplementation.cxx
@@ -324,6 +332,7 @@ set (Module_MOC_HDRS
   pqEnableWidgetDecorator.h
   pqShowWidgetDecorator.h
   pqExportReaction.h
+  pqFileNamePropertyWidget.h
   pqFiltersMenuReaction.h
   pqFixPathsInStateFilesBehavior.h
   pqFontPropertyWidget.h
@@ -337,6 +346,7 @@ set (Module_MOC_HDRS
   pqListPropertyWidget.h
   pqLoadDataReaction.h
   pqLoadRestoreWindowLayoutReaction.h
+  pqLoadPaletteReaction.h
   pqLoadStateReaction.h
   pqMainControlsToolbar.h
   pqManageCustomFiltersReaction.h
@@ -376,6 +386,7 @@ set (Module_MOC_HDRS
   pqServerDisconnectReaction.h
   pqSourcesMenuReaction.h
   pqSpreadSheetVisibilityBehavior.h
+  pqStandardArrayColorMapsBehavior.h
   pqStandardPropertyWidgetInterface.h
   pqStandardViewFrameActionsImplementation.h
   pqStatusBar.h
@@ -429,6 +440,7 @@ set (Module_UI_FILES
   Resources/UI/pqLightsEditor.ui
   Resources/UI/pqMainControlsToolbar.ui
   Resources/UI/pqPipelineBrowserContextMenu.ui
+  Resources/UI/pqSavePresetOptions.ui
   Resources/UI/pqSeriesEditorPropertyWidget.ui
   Resources/UI/pqTextLocationWidget.ui
   Resources/UI/pqTimeInspectorWidget.ui
@@ -437,6 +449,7 @@ set (Module_UI_FILES
 )
 
 set (Module_RESOURCE_FILES
+  Resources/pqApplicationComponents.qrc
 )
 
 # not sure this is the best way, but "moc" is complaining about

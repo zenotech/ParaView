@@ -111,6 +111,7 @@ protected:
   virtual void setServerManagerValue(bool use_unchecked, const QVariant& value)
     {
     Q_ASSERT(use_unchecked == false);
+    Q_UNUSED(use_unchecked);
 
     ValueType val = this->convert(value);
     int association = val.first;
@@ -164,6 +165,7 @@ protected:
   virtual QVariant currentServerManagerValue(bool use_unchecked) const
     {
     Q_ASSERT(use_unchecked == false);
+    Q_UNUSED(use_unchecked);
     ValueType val;
     vtkSMProxy* reprProxy = this->proxySM();
     if (vtkSMPVRepresentationProxy::GetUsingScalarColoring(reprProxy))

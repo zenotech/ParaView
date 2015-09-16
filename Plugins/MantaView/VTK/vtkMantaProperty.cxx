@@ -66,20 +66,21 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "vtkObjectFactory.h"
 
+#include <cstring>
+
 #include <Core/Color/RGBColor.h>
 #include <Engine/Control/RTRT.h>
-//#include <Model/Materials/AmbientOcclusion.h>
 #include <Model/Materials/Dielectric.h>
 #include <Model/Materials/Flat.h>
 #include <Model/Materials/Lambertian.h>
+#include <Model/Materials/Transparent.h>
 #include <Model/Materials/MetalMaterial.h>
-#include <Model/Materials/OrenNayar.h>
 #include <Model/Materials/Phong.h>
 #include <Model/Materials/ThinDielectric.h>
 #include <Model/Materials/Transparent.h>
-#include <Model/Textures/Constant.h>
 
-#include <cstring>
+#include <Model/Textures/Constant.h>
+#include <sstream>
 
 //============================================================================
 //This is a helper that exists just to hold on to manta side resources
@@ -136,6 +137,7 @@ vtkMantaProperty::vtkMantaProperty()
   this->MaterialType = NULL;
   this->SetMaterialType("default");
   this->MantaManager = NULL;
+  this->AllowDataMaterial = true;
 }
 
 //----------------------------------------------------------------------------
@@ -338,25 +340,250 @@ void vtkMantaProperty::CreateMantaProperty()
             else
               if ( strcmp( this->MaterialType, "metal" ) == 0 )
                 {
-                this->MantaMaterial = new Manta::MetalMaterial( this->DiffuseTexture );
+                this->MantaMaterial
+                  = new Manta::MetalMaterial( this->DiffuseTexture,
+                                              static_cast<int> ( this->GetSpecularPower() ) );
                 }
               else
-                if ( strcmp( this->MaterialType, "orennayer" ) == 0 )
-                  {
-                  this->MantaMaterial = new Manta::OrenNayar( this->DiffuseTexture );
-                  }
-                else
-                  {
-                  // just default to phong
-                  this->MantaMaterial
-                    = new Manta::Phong( this->DiffuseTexture,
-                                        this->SpecularTexture,
-                                        static_cast<int> ( this->GetSpecularPower() ),
-                                        new Manta::Constant<Manta::ColorComponent>
-                                        (
-                                         this->Reflectance) );
-                  }
+                {
+                // just default to phong
+                this->MantaMaterial
+                  = new Manta::Phong( this->DiffuseTexture,
+                                      this->SpecularTexture,
+                                      static_cast<int> ( this->GetSpecularPower() ),
+                                      new Manta::Constant<Manta::ColorComponent>
+                                      ( this->Reflectance) );
+                }
     }
 
   //cerr << "CREATED " << this->MantaMaterial << endl;
+}
+
+//------------------------------------------------------------------------------
+Manta::Material *vtkMantaProperty::ManufactureMaterial(std::string spec)
+{
+  std::string header;
+  std::istringstream ss(spec);
+  Manta::Material *newMat = NULL;
+  ss >> header;
+  if (ss.fail())
+    {
+    vtkGenericWarningMacro("WARNING unrecognized material " << spec);
+    return NULL;
+    }
+
+  if (header == "Manual")
+    {
+    //user wants the default material, so silently do nothing
+    return NULL;
+    }
+  else if (header == "Transparent")
+    {
+    double R, G, B;
+    double Opacity;
+    ss >> R >> G >> B >> Opacity;
+    if (ss.fail())
+      {
+      vtkGenericWarningMacro("WARNING unrecognized material " << spec << "\n"
+                             << "Transparent expects R G B /*color*/ opacity");
+      return NULL;
+      }
+    newMat = new Manta::Transparent
+      (
+       Manta::Color(Manta::RGBColor(R,G,B)),
+       Opacity
+       ) ;
+    }
+  else if (header == "Flat")
+    {
+    double R, G, B;
+    ss >> R >> G >> B;
+    if (ss.fail())
+      {
+      vtkGenericWarningMacro( "WARNING unrecognized material " << spec << "\n"
+                              << "Flat expects R G B /*color*/");
+      return NULL;
+      }
+    newMat = new Manta::Flat
+      (
+       Manta::Color(Manta::RGBColor(R,G,B))
+       ) ;
+    }
+  else if (header == "MetalMaterial")
+    {
+    double R, G, B;
+    int e; //Phong exponent
+    ss >> R >> G >> B >> e;
+    if (ss.fail())
+      {
+      vtkGenericWarningMacro("WARNING unrecognized material " << spec << "\n"
+                             << "MetalMaterial expects R G B /*color*/ phong_exponent");
+      return NULL;
+      }
+    newMat = new Manta::MetalMaterial
+      (
+       Manta::Color(Manta::RGBColor(R,G,B)),
+       e
+       );
+    }
+  else if (header == "Lambertian")
+    {
+    double R, G, B;
+    ss >> R >> G >> B;
+    if (ss.fail())
+      {
+      vtkGenericWarningMacro("WARNING unrecognized material " << spec << "\n"
+                             << "Lambertian expects R G B /*color*/");
+      return NULL;
+      }
+    newMat = new Manta::Lambertian
+      (
+       Manta::Color(Manta::RGBColor(R,G,B))
+       );
+    }
+  else if (header == "Phong")
+    {
+    double R, G, B; //diffuse
+    double R2, G2, B2; //specular
+    int s; //specular power
+    double refl; //reflectivity
+    ss >> R >> G >> B >> R2 >> G2 >> B2 >> s >> refl;
+    if (ss.fail())
+      {
+      vtkGenericWarningMacro("WARNING unrecognized material " << spec << "\n"
+                             << "Phong expects R G B /*diffuse*/ R G B /*specular*/ "
+                             << "spec_power reflectivity");
+      return NULL;
+      }
+    newMat = new Manta::Phong
+      (
+       Manta::Color(Manta::RGBColor(R,G,B)),
+       Manta::Color(Manta::RGBColor(R2,G2,B2)),
+       s,
+       refl
+       );
+    }
+  else if (header == "Dielectric")
+    {
+    double R, G, B;
+    double N1; //outside refractive index
+    double N2; //inside refractive index
+    double L; //local cutoff scale
+    ss >> R >> G >> B >> N1 >> N2 >> L;
+    if (ss.fail())
+      {
+      vtkGenericWarningMacro("WARNING unrecognized material " << spec << "\n"
+                             << "Dielectric expects R G B /*color*/ "
+                             << "N1 /*outside refractive index*/ N2 /*inside*/ cutoff ");
+      return NULL;
+      }
+    newMat = new Manta::Dielectric
+      (
+       N1,
+       N2,
+       Manta::Color(Manta::RGBColor(R,G,B)),
+       L
+       );
+    }
+  else if (header == "ThinDielectric")
+    {
+    double R, G, B;
+    double E; //refractive index
+    double T; //thickness
+    double L; //local cutoff scale
+    ss >> R >> G >> B >> E >> T >> L;
+    if (ss.fail())
+      {
+      vtkGenericWarningMacro( "WARNING unrecognized material " << spec << "\n"
+                              << "ThinDielectric expects R G B /*color*/ "
+                              <<  "E /*refractive index*/ thickness cutoff ");
+      return NULL;
+      }
+    newMat = new Manta::ThinDielectric
+      (
+       E,
+       Manta::Color(Manta::RGBColor(R,G,B)),
+       T,
+       L
+       );
+    }
+  else
+    {
+    vtkGenericWarningMacro( << "WARNING unrecognized material " << spec);
+    }
+  return newMat;
+}
+
+//------------------------------------------------------------------------------
+Manta::Material *vtkMantaProperty::CombineMaterials(std::string mom,
+                                                    std::string dad)
+{
+  std::string msheader;
+  std::istringstream ms(mom);
+  ms >> msheader;
+  if (ms.fail())
+    {
+    vtkGenericWarningMacro("WARNING unrecognized material " << mom);
+    return NULL;
+    }
+  //mommy's alright
+  std::string mrheader;
+  std::istringstream mr(dad);
+  mr >> mrheader;
+  if (mr.fail())
+    {
+    vtkGenericWarningMacro("WARNING unrecognized material " << mr);
+    return NULL;
+    }
+  //daddy's alright
+
+  double R1, G1, B1;
+  double R2, G2, B2;
+  double N11, N21;
+  double N12, N22;
+  double L1, L2;
+
+  //in case of two dielectrics, we can figure out inside/outside transition
+  if (msheader == "Dielectric" && mrheader == "Dielectric")
+    {
+    ms >> R1 >> G1 >> B1 >> N11 >> N21 >> L1;
+    if (ms.fail())
+      {
+      vtkGenericWarningMacro("WARNING unrecognized material " << mom);
+      return NULL;
+      }
+    mr >> R2 >> G2 >> B2 >> N12 >> N22 >> L2;
+    if (mr.fail())
+      {
+      vtkGenericWarningMacro("WARNING unrecognized material " << dad);
+      return NULL;
+      }
+    //they just seem a little weird
+    double N1 = N11;
+    double N2 = N22;
+    double R = (R1+R2)/2; //probably not right in many cases
+    double G = (G1+G2)/2; //probably not right in many cases
+    double B = (B1+B2)/2; //probably not right in many cases
+    double L = (L1+L2)/2; //probably not right
+    return new Manta::Dielectric
+      (
+       N1,
+       N2,
+       Manta::Color(Manta::RGBColor(R,G,B)),
+       L
+       );
+    }
+
+  //give preference to solid materials that you see through the clear ones
+  if (mrheader == "Dielectric" || mrheader == "ThinDielectric" || mrheader == "Transparent")
+    {
+    return vtkMantaProperty::ManufactureMaterial(mom);
+    }
+  if (msheader == "Dielectric" || msheader == "ThinDielectric" || msheader == "Transparent")
+    {
+    return vtkMantaProperty::ManufactureMaterial(dad);
+    }
+
+  //if all else failes - mother knows best
+  return vtkMantaProperty::ManufactureMaterial(mom);
 }

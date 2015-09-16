@@ -293,12 +293,20 @@ vtkSMProxy* pqAnimatablePropertiesComboBox::getCurrentProxy() const
       {
       pqServerManagerModel* smmodel = pqApplicationCore::instance()->getServerManagerModel();
       pqPipelineSource* src = smmodel->findItem<pqPipelineSource*>(info.Proxy);
-      return src->getHelperProxies("RepresentationAnimationHelper")[info.DisplayPort];
+      QList<vtkSMProxy*> helperProxies = src->getHelperProxies("RepresentationAnimationHelper");
+      if (static_cast<unsigned int>(helperProxies.size()) > info.DisplayPort)
+        {
+        return helperProxies[info.DisplayPort];
+        }
+      else
+        {
+        return NULL;
+        }
       }
 
     return info.Proxy;
     }
-  return 0;
+  return NULL;
 }
 
 //-----------------------------------------------------------------------------

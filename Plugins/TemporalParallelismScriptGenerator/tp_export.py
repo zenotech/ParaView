@@ -40,7 +40,7 @@ class ReaderAccessor(smtrace.RealProxyAccessor):
         # FIXME: ensures thate FileName doesn't get traced.
 
         # change to call STP.CreateReader instead.
-        ctor_args = "%s, fileinfo='%s'" % (ctor, self.FileNameGlob)
+        ctor_args = "%s, fileInfo='%s'" % (ctor, self.FileNameGlob)
         ctor = "STP.CreateReader"
         original_trace = smtrace.RealProxyAccessor.trace_ctor(\
             self, ctor, ReaderFilter(), ctor_args, skip_assignment)
@@ -96,8 +96,13 @@ class WriterAccessor(smtrace.RealProxyAccessor):
             print "WARNING: Could not find", xmlname, "writer in", xmlgroup, \
                 "XML group. This is not a problem as long as the writer is available with " \
                 "the ParaView build used by the simulation code."
-            return servermanager._make_name_valid(xmlname)
-        return servermanager._make_name_valid(prototype.GetXMLLabel())
+            ctor = servermanager._make_name_valid(xmlname)
+        else:
+            ctor = servermanager._make_name_valid(prototype.GetXMLLabel())
+        # TODO: use servermanager.ProxyManager().NewProxy() instead
+        # we create the writer proxy such that it is not registered with the
+        # ParaViewPipelineController, so its state is not sent to ParaView Live.
+        return "servermanager.%s.%s" % (xmlgroup, ctor)
 
     def trace_ctor(self, ctor, filter, ctor_args=None, skip_assignment=False):
         xmlElement = self.get_object().GetHints().FindNestedElementByName("WriterProxy")
@@ -112,7 +117,7 @@ class WriterAccessor(smtrace.RealProxyAccessor):
         trace = smtrace.TraceOutput(original_trace)
         trace.append_separated(["# register the writer with STP",
           "# and provide it with information such as the filename to use"])
-        trace.append("STP.RegisterWriter(%s, filename='%s', tp_writers)" % \
+        trace.append("STP.RegisterWriter(%s, '%s', tp_writers)" % \
             (self, filename))
         trace.append_separator()
         return trace.raw_data()
@@ -129,19 +134,18 @@ class tpstate_filter_proxies_to_serialize(object):
 
 def tp_hook(varname, proxy):
     global export_rendering, screenshot_info, reader_input_map
-    """callback to create our special accssors instead of the default ones."""
+    """callback to create our special accessors instead of the default ones."""
     pname = smtrace.Trace.get_registered_name(proxy, "sources")
     if pname and reader_input_map.has_key(pname):
         # this is a reader.
         return ReaderAccessor(varname, proxy, reader_input_map[pname])
-    pname = smtrace.Trace.get_registered_name(proxy, "views")
-    if pname:
+    if pname and proxy.GetHints() and proxy.GetHints().FindNestedElementByName("WriterProxy"):
+        return WriterAccessor(varname, proxy)
+    if smtrace.Trace.get_registered_name(proxy, "views"):
         # since view is being accessed, ensure that we were indeed saving
         # rendering components.
         assert export_rendering
         return ViewAccessor(varname, proxy, screenshot_info[pname])
-    if pname and proxy.GetHints() and proxy.GetHints().FindNestedElementByName("WriterProxy"):
-        return WriterAccessor(varname, proxy)
     raise NotImplementedError
 
 

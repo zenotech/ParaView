@@ -577,7 +577,7 @@ def RenameSource(newName, proxy=None):
         proxy = active_objects.source
     pxm = servermanager.ProxyManager()
     oldName = pxm.GetProxyName("sources", proxy)
-    if oldName:
+    if oldName and newName != oldName:
       pxm.RegisterProxy("sources", newName, proxy)
       pxm.UnRegisterProxy("sources", oldName, proxy)
 
@@ -970,6 +970,13 @@ def GetOpacityTransferFunction(arrayname, **params):
             tfmgr.GetOpacityTransferFunction(arrayname, session.GetSessionProxyManager()))
     SetProperties(otf, **params)
     return otf
+
+# -----------------------------------------------------------------------------
+def ImportPresets(filename):
+    """Import presets from a file. The file can be in the legacy color map xml
+    format or in the new JSON format. Returns True on success."""
+    presets = servermanager.vtkSMTransferFunctionPresets()
+    return presets.ImportPresets(filename)
 
 # -----------------------------------------------------------------------------
 def CreateLookupTable(**params):

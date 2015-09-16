@@ -81,6 +81,11 @@ private slots:
   void editLabelPropertiesSelection();
   void editLabelPropertiesInteractiveSelection();
   void showFrustum(bool);
+  void onDataUpdated();
+
+  /// List for selection changes and enable/disable UI elements as appropriate.
+  /// \c frustum indicates whether the selection is frustum-based or not.
+  void onSelectionModeChanged(bool frustum);
 
 private:
   Q_DISABLE_COPY(pqFindDataSelectionDisplayFrame);

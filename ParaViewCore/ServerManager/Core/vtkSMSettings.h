@@ -79,10 +79,14 @@
 #include "vtkStdString.h" // needed for vtkStdString.
 #include <vector> // needed for vector.
 
+namespace Json
+{
+  class Value;
+}
+
+
 class vtkSMProxy;
-class vtkSMNamedPropertyIterator;
-
-
+class vtkSMPropertyIterator;
 class VTKPVSERVERMANAGERCORE_EXPORT vtkSMSettings : public vtkObject
 {
 public:
@@ -177,19 +181,45 @@ public:
 
   // Description:
   // Save non-default settings in the current user settings.
-  // If 'propertyIt' is not NULL, only the listed properties are saved
+  // Use the optional 'propertyIt' to limit the serialization to a subset of
+  // properties (typically using vtkSMPropertyIterator subclasses like
+  // vtkSMNamedPropertyIterator).
+  // \c skipPropertiesWithDynamicDomains when true (default) ensures that we
+  // skip serializing properties that have domains whose values change at
+  // runtime.
   void SetProxySettings(vtkSMProxy* proxy,
-                        vtkSMNamedPropertyIterator* propertyIt = NULL);
+                        vtkSMPropertyIterator* propertyIt = NULL,
+                        bool skipPropertiesWithDynamicDomains=true);
 
   // Description:
   // Save non-default settings in the current user settings under the given prefix.
-  // If 'propertyIt' is not NULL, only the listed properties are saved
-  void SetProxySettings(const char* prefix, vtkSMProxy* proxy, 
-                        vtkSMNamedPropertyIterator* propertyIt = NULL);
+  // Use the optional 'propertyIt' to limit the serialization to a subset of
+  // properties (typically using vtkSMPropertyIterator subclasses like
+  // vtkSMNamedPropertyIterator).
+  // \c skipPropertiesWithDynamicDomains when true (default) ensures that we
+  // skip serializing properties that have domains whose values change at
+  // runtime.
+  void SetProxySettings(const char* prefix, vtkSMProxy* proxy,
+                        vtkSMPropertyIterator* propertyIt = NULL,
+                        bool skipPropertiesWithDynamicDomains=true);
 
   // Description:
   // Set the description of a setting.
   void SetSettingDescription(const char* settingName, const char* description);
+
+  // Description:
+  // Saves the state of the proxy as JSON. The implementation simply
+  // converts the state XML to JSON.
+  static Json::Value SerializeAsJSON(
+    vtkSMProxy* proxy, vtkSMPropertyIterator* iter=NULL);
+
+  // Description:
+  // Restores a proxy state using the JSON equivalent. The implementation
+  // converts JSON to XML state for the proxy and then attempts to restore the
+  // XML state.
+  static bool DeserializeFromJSON(
+    vtkSMProxy* proxy, const Json::Value& value);
+
 
 protected:
   vtkSMSettings();

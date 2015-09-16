@@ -29,13 +29,13 @@
 #include <string>
 #include <vtksys/SystemTools.hxx>
 #include <vtksys/Directory.hxx>
-#include <vtksys/ios/sstream>
+#include <sstream>
 
 #include <cstdlib>
 
 #define vtkPVPluginLoaderDebugMacro(x)\
 { if (this->DebugPlugin) {\
-  vtksys_ios::ostringstream vtkerror;\
+  std::ostringstream vtkerror;\
   vtkerror << x;\
   vtkOutputWindowDisplayText(vtkerror.str().c_str());} }
 
@@ -363,10 +363,6 @@ bool vtkPVPluginLoader::LoadPluginInternal(const char* file, bool no_errors)
     return false;
     }
 
-  // So that the lib is closed when the application quits.
-  // BUG #10293.
-  vtkPVPluginLoaderCleaner::GetInstance()->Register(lib);
-
   vtkPVPluginLoaderDebugMacro("Loaded shared library successfully. "
     "Now trying to validate that it's a ParaView plugin.");
 
@@ -399,7 +395,7 @@ bool vtkPVPluginLoader::LoadPluginInternal(const char* file, bool no_errors)
   // totally bogus (even for the GUI layer).
   if (pv_verfication_data != __PV_PLUGIN_VERIFICATION_STRING__)
     {
-    vtksys_ios::ostringstream error;
+    std::ostringstream error;
     error << "Mismatch in versions: \n" <<
       "ParaView Signature: " << __PV_PLUGIN_VERIFICATION_STRING__ << "\n"
       "Plugin Signature: " << pv_verfication_data.c_str();
@@ -482,6 +478,10 @@ bool vtkPVPluginLoader::LoadPluginInternal(const char* file, bool no_errors)
       ldLibPath.c_str());
     }
 
+  // So that the lib is closed when the application quits.
+  // BUGS #10293, #15608.
+  vtkPVPluginLoaderCleaner::GetInstance()->Register(lib);
+
   vtkPVPlugin* plugin = pv_plugin_query_instance();
   return this->LoadPlugin(file, plugin);
 #endif // ifndef BUILD_SHARED_LIBS else
@@ -548,6 +548,7 @@ bool vtkPVPluginLoader::LoadPlugin(const char* file, vtkPVPlugin* plugin)
   // statically imported plugin.
   vtkPVPlugin::ImportPlugin(plugin);
   this->Loaded = true;
+
   return true;
 }
 

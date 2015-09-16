@@ -50,6 +50,9 @@
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
 
+#define FLAT_INDEX_ROLE Qt::UserRole
+#define LEAF_INDEX_ROLE (Qt::UserRole+1)
+
 
 namespace
 {
@@ -292,7 +295,8 @@ void pqMultiBlockInspectorPanel::onRepresentationChanged(
 
 void pqMultiBlockInspectorPanel::buildTree(vtkPVCompositeDataInformation *info,
                                            QTreeWidgetItem *parent_,
-                                           int& flatIndex)
+                                           int& flatIndex,
+                                           int& leafIndex)
 {
   parent_->setTextAlignment(COLOR_COLUMN, Qt::AlignHCenter | Qt::AlignVCenter);
   parent_->setTextAlignment(
@@ -309,31 +313,44 @@ void pqMultiBlockInspectorPanel::buildTree(vtkPVCompositeDataInformation *info,
       }
     else
       {
-      text = QString("Block #%1").arg(flatIndex);
+      text = QString("Block %2").arg(leafIndex);
       }
 
     QTreeWidgetItem *item = new QTreeWidgetItem(parent_, QStringList() << text);
-    item->setData(NAME_COLUMN, Qt::UserRole, flatIndex);
+    item->setData(NAME_COLUMN, FLAT_INDEX_ROLE, flatIndex);
     item->setData(NAME_COLUMN, Qt::CheckStateRole, Qt::Checked);
 
     flatIndex++;
 
-    if(childInfo)
+    if (childInfo)
       {
       vtkPVCompositeDataInformation *compositeChildInfo =
         childInfo->GetCompositeDataInformation();
 
       // recurse down through child blocks only if the child block
       // is composite and is not a multi-piece data set
-      if(compositeChildInfo->GetDataIsComposite() &&
-         !compositeChildInfo->GetDataIsMultiPiece())
+      if (compositeChildInfo->GetDataIsComposite())
         {
-        this->buildTree(compositeChildInfo, item, flatIndex);
+        if (compositeChildInfo->GetDataIsMultiPiece())
+          {
+          flatIndex += compositeChildInfo->GetNumberOfChildren();
+          }
+        else
+          {
+          this->buildTree(compositeChildInfo, item, flatIndex, leafIndex);
+          }
+        }
+      if (!compositeChildInfo->GetDataIsComposite() ||
+          compositeChildInfo->GetDataIsMultiPiece())
+        {
+        item->setData(NAME_COLUMN, LEAF_INDEX_ROLE, leafIndex);
+        leafIndex++;
         }
       }
     else
       {
       item->setDisabled(true);
+      leafIndex++;
       }
     }
 }
@@ -366,17 +383,18 @@ void pqMultiBlockInspectorPanel::onDataUpdated()
     {
     this->TreeWidget->blockSignals(true);
     int flatIndex = 0;
+    int leafIndex = 0;
 
     // create root item
     QString rootLabel = source->getSMName();
     QTreeWidgetItem *rootItem =
       new QTreeWidgetItem(this->TreeWidget->invisibleRootItem(),
                           QStringList() << rootLabel);
-    rootItem->setData(NAME_COLUMN, Qt::UserRole, flatIndex++);
+    rootItem->setData(NAME_COLUMN, FLAT_INDEX_ROLE, flatIndex++);
     rootItem->setData(NAME_COLUMN, Qt::CheckStateRole, Qt::Checked);
 
     // build the rest of the tree
-    this->buildTree(compositeInfo, rootItem, flatIndex);
+    this->buildTree(compositeInfo, rootItem, flatIndex, leafIndex);
     this->TreeWidget->expandAll();
     this->TreeWidget->resizeColumnToContents(NAME_COLUMN);
 
@@ -886,12 +904,15 @@ void pqMultiBlockInspectorPanel::updateTree(
         nodeType = INTERNAL_NODE;
         }
       }
+    QVariant leafIndex = item->data(NAME_COLUMN, LEAF_INDEX_ROLE);
     item->setData(NAME_COLUMN, Qt::CheckStateRole, visibility ? 
                   Qt::Checked : Qt::Unchecked);
     item->setData(COLOR_COLUMN, Qt::DecorationRole, 
                   (item->isDisabled() ?
                    makeNullIcon() :
-                   makeColorIcon(flatIndex, nodeType, inheritedColorIndex)));
+                   makeColorIcon(flatIndex, nodeType,
+                                 inheritedColorIndex,
+                                 leafIndex.isValid()? leafIndex.toInt() : -1)));
     item->setData(
       OPACITY_COLUMN, Qt::DecorationRole, 
       (item->isDisabled()? makeNullIcon() :
@@ -906,6 +927,10 @@ void pqMultiBlockInspectorPanel::updateTree(
         (this->BlockColors.contains(flatIndex) ? flatIndex : -1),
         inheritedOpacityIndex != -1 ? inheritedOpacityIndex :
         (this->BlockOpacities.contains(flatIndex) ? flatIndex : -1));
+      }
+    if (compositeChildInfo && compositeChildInfo->GetDataIsMultiPiece())
+      {
+      flatIndex += compositeChildInfo->GetNumberOfChildren();
       }
     }
 }
@@ -932,7 +957,7 @@ void pqMultiBlockInspectorPanel::onCustomContextMenuRequested(
       }
 
     unsigned int flat_index =
-      item->data(NAME_COLUMN, Qt::UserRole).value<unsigned int>();
+      item->data(NAME_COLUMN, FLAT_INDEX_ROLE).value<unsigned int>();
     hasOverriddenVisibilities = hasOverriddenVisibilities || this->BlockVisibilites.contains(flat_index);
     hasOverridenColor = hasOverridenColor || this->BlockColors.contains(flat_index);
     hasOverriddenOpacity = hasOverriddenOpacity || this->BlockOpacities.contains(flat_index);
@@ -981,7 +1006,7 @@ void pqMultiBlockInspectorPanel::onCustomContextMenuRequested(
     foreach(QTreeWidgetItem *item, items)
       {
       unsigned int flat_index =
-        item->data(NAME_COLUMN, Qt::UserRole).value<unsigned int>();
+        item->data(NAME_COLUMN, FLAT_INDEX_ROLE).value<unsigned int>();
 
       // first unset any child item visibilites
       this->unsetChildVisibilities(item);
@@ -995,7 +1020,7 @@ void pqMultiBlockInspectorPanel::onCustomContextMenuRequested(
     foreach(QTreeWidgetItem *item, items)
       {
       unsigned int flat_index =
-        item->data(NAME_COLUMN, Qt::UserRole).value<unsigned int>();
+        item->data(NAME_COLUMN, FLAT_INDEX_ROLE).value<unsigned int>();
 
       // first unset any child item visibilites
       this->unsetChildVisibilities(item);
@@ -1009,7 +1034,7 @@ void pqMultiBlockInspectorPanel::onCustomContextMenuRequested(
     foreach(QTreeWidgetItem *item, items)
       {
       unsigned int flat_index =
-        item->data(NAME_COLUMN, Qt::UserRole).value<unsigned int>();
+        item->data(NAME_COLUMN, FLAT_INDEX_ROLE).value<unsigned int>();
 
       this->clearBlockVisibility(flat_index);
       item->setData(
@@ -1028,7 +1053,7 @@ void pqMultiBlockInspectorPanel::onCustomContextMenuRequested(
       foreach(QTreeWidgetItem *item, items)
         {
         unsigned int flat_index =
-          item->data(NAME_COLUMN, Qt::UserRole).value<unsigned int>();
+          item->data(NAME_COLUMN, FLAT_INDEX_ROLE).value<unsigned int>();
         this->setBlockColor(flat_index, color);
         }
       }
@@ -1038,7 +1063,7 @@ void pqMultiBlockInspectorPanel::onCustomContextMenuRequested(
     foreach(QTreeWidgetItem *item, items)
       {
       unsigned int flat_index =
-        item->data(NAME_COLUMN, Qt::UserRole).value<unsigned int>();
+        item->data(NAME_COLUMN, FLAT_INDEX_ROLE).value<unsigned int>();
       this->clearBlockColor(flat_index);
       }
     }
@@ -1048,7 +1073,7 @@ void pqMultiBlockInspectorPanel::onCustomContextMenuRequested(
     foreach(QTreeWidgetItem *item, items)
       {
       indices.append(
-        item->data(NAME_COLUMN, Qt::UserRole).value<unsigned int>());
+        item->data(NAME_COLUMN, FLAT_INDEX_ROLE).value<unsigned int>());
       }
     this->promptAndSetBlockOpacity(indices);
     }
@@ -1057,7 +1082,7 @@ void pqMultiBlockInspectorPanel::onCustomContextMenuRequested(
     foreach(QTreeWidgetItem *item, items)
       {
       unsigned int flat_index =
-        item->data(NAME_COLUMN, Qt::UserRole).value<unsigned int>();
+        item->data(NAME_COLUMN, FLAT_INDEX_ROLE).value<unsigned int>();
 
       this->clearBlockOpacity(flat_index);
       }
@@ -1068,7 +1093,7 @@ void pqMultiBlockInspectorPanel::onItemDoubleClicked(
   QTreeWidgetItem * item, int column)
 {
   unsigned int flatIndex =
-    item->data(NAME_COLUMN, Qt::UserRole).value<unsigned int>();
+    item->data(NAME_COLUMN, FLAT_INDEX_ROLE).value<unsigned int>();
   // if (column == NAME_COLUMN)
   //   {
   //   QModelIndex mi(flatIndex, column);
@@ -1097,7 +1122,7 @@ void pqMultiBlockInspectorPanel::onItemChanged(
   Q_UNUSED(column);
 
   unsigned int flat_index = item->data(
-    NAME_COLUMN, Qt::UserRole).value<unsigned int>();
+    NAME_COLUMN, FLAT_INDEX_ROLE).value<unsigned int>();
   bool visible = item->data(NAME_COLUMN, Qt::CheckStateRole).toBool();
 
   // first unset any child item visibilites
@@ -1115,7 +1140,7 @@ void pqMultiBlockInspectorPanel::unsetChildVisibilities(
     {
     QTreeWidgetItem *child = parent_->child(i);
     unsigned int flatIndex = 
-      child->data(NAME_COLUMN, Qt::UserRole).value<unsigned int>();
+      child->data(NAME_COLUMN, FLAT_INDEX_ROLE).value<unsigned int>();
     this->BlockVisibilites.remove(flatIndex);
     unsetChildVisibilities(child);
     }
@@ -1152,7 +1177,7 @@ void pqMultiBlockInspectorPanel::onSelectionChanged(pqOutputPort *port)
             "", Qt::MatchContains | Qt::MatchRecursive))
     {
     vtkIdType flatIndex =
-      item->data(NAME_COLUMN, Qt::UserRole).value<vtkIdType>();
+      item->data(NAME_COLUMN, FLAT_INDEX_ROLE).value<vtkIdType>();
 
     item->setSelected(
       std::binary_search(block_ids.begin(), block_ids.end(), flatIndex));
@@ -1168,7 +1193,7 @@ void pqMultiBlockInspectorPanel::onItemSelectionChanged()
   foreach(const QTreeWidgetItem *item, this->TreeWidget->selectedItems())
     {
     unsigned int flatIndex =
-      item->data(NAME_COLUMN, Qt::UserRole).value<unsigned int>();
+      item->data(NAME_COLUMN, FLAT_INDEX_ROLE).value<unsigned int>();
 
     blockIds.push_back(flatIndex);
     }
@@ -1228,7 +1253,7 @@ QString pqMultiBlockInspectorPanel::lookupBlockName(
     this->TreeWidget->findItems("", Qt::MatchContains | Qt::MatchRecursive))
     {
     unsigned int itemFlatIndex =
-      item->data(NAME_COLUMN, Qt::UserRole).value<unsigned int>();
+      item->data(NAME_COLUMN, FLAT_INDEX_ROLE).value<unsigned int>();
 
     if(itemFlatIndex == flatIndex)
       {
@@ -1251,7 +1276,7 @@ QIcon pqMultiBlockInspectorPanel::makeNullIcon() const
 }
 
 QIcon pqMultiBlockInspectorPanel::makeColorIcon(
-  int flatIndex, NodeType nodeType, int inheritedColorIndex) const
+  int flatIndex, NodeType nodeType, int inheritedColorIndex, int leafIndex/*=-1*/) const
 {
   QPixmap pixmap(ICON_SIZE, ICON_SIZE);
   pixmap.fill(Qt::transparent);
@@ -1264,11 +1289,12 @@ QIcon pqMultiBlockInspectorPanel::makeColorIcon(
     drawColorIcon(painter, color, 
                   (index == flatIndex) ? USER_VALUE : SYSTEM_VALUE);
     }
-  else if (this->ColorTransferFunction && nodeType == LEAF_NODE)
+  else if (this->ColorTransferFunction && nodeType == LEAF_NODE &&
+           this->ColorTransferFunction->GetNumberOfAnnotatedValues() > 0)
     {
     unsigned char* rgb = this->ColorTransferFunction->MapValue(
       CompositeWrap ? 
-      (flatIndex % this->BlockColorsDistinctValues) : flatIndex);
+      (leafIndex % this->BlockColorsDistinctValues) : leafIndex);
     QColor color (rgb[0], rgb[1], rgb[2]);
     drawColorIcon(painter, color);
     }

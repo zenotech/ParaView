@@ -46,6 +46,28 @@ public:
   // Given a range, converts it to be a valid range to switch to log space. If
   // the range is changed, returns true, otherwise returns false.
   static bool AdjustRangeForLog(double range[2]);
+  static bool AdjustRangeForLog(double &rmin, double &rmax)
+    {
+    double range[2] = { rmin, rmax };
+    bool retVal = vtkSMCoreUtilities::AdjustRangeForLog(range);
+    rmin = range[0]; rmax = range[1];
+    return retVal;
+    }
+
+  // Description:
+  // Given a range, adjusts it so that it is a valid range i.e. range[0] <
+  // range[1]. This will always perturb the range[1] by a factor of the value itself.
+  // This assumes range[1] < range[0] to indicate an invalid range and returns
+  // false without changing them. If the range is changed, returns true,
+  // otherwise false.
+  static bool AdjustRange(double range[2]);
+  static bool AdjustRange(double &rmin, double &rmax)
+    {
+    double range[2] = { rmin, rmax };
+    bool retVal = vtkSMCoreUtilities::AdjustRange(range);
+    rmin = range[0]; rmax = range[1];
+    return retVal;
+    }
 
 //BTX
 protected:

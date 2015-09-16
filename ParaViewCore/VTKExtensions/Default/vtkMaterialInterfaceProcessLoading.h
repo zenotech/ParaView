@@ -22,8 +22,8 @@
 
 #include <cassert>
 #include "vtkType.h"
-#include "vtksys/ios/iostream"
-#include "vector"
+#include <iostream>
+#include <vector>
 
 class vtkMaterialInterfaceProcessLoading
 {
@@ -72,7 +72,7 @@ class vtkMaterialInterfaceProcessLoading
     }
     // Description:
     // Return the process id.
-    int GetId() const{ return this->Data[ID]; }
+    vtkIdType GetId() const{ return this->Data[ID]; }
     // Description:
     // Return the load factor.
     vtkIdType GetLoadFactor() const{ return this->Data[LOADING]; }
@@ -87,8 +87,8 @@ class vtkMaterialInterfaceProcessLoading
   private:
     vtkIdType Data[SIZE];
 };
-vtksys_ios::ostream &operator<<(vtksys_ios::ostream &sout, vtkMaterialInterfaceProcessLoading &fp);
-vtksys_ios::ostream &operator<<(vtksys_ios::ostream &sout, std::vector<vtkMaterialInterfaceProcessLoading> &vfp);
+std::ostream &operator<<(std::ostream &sout, vtkMaterialInterfaceProcessLoading &fp);
+std::ostream &operator<<(std::ostream &sout, std::vector<vtkMaterialInterfaceProcessLoading> &vfp);
 #endif
 
 

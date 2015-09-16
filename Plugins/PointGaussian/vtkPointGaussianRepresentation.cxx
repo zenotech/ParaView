@@ -16,9 +16,12 @@
 #include "vtkPVRenderView.h"
 #include "vtkRenderer.h"
 #include "vtkUnstructuredGrid.h"
+#include "vtkDataSet.h"
+#include "vtkPiecewiseFunction.h"
 
 vtkStandardNewMacro(vtkPointGaussianRepresentation)
 
+//----------------------------------------------------------------------------
 vtkPointGaussianRepresentation::vtkPointGaussianRepresentation()
 {
   this->Mapper = vtkSmartPointer< vtkPointGaussianMapper >::New();
@@ -26,13 +29,18 @@ vtkPointGaussianRepresentation::vtkPointGaussianRepresentation()
   this->Actor->SetMapper(this->Mapper);
   this->ScaleByArray = false;
   this->LastScaleArray = NULL;
+  this->OpacityByArray = false;
+  this->LastOpacityArray = NULL;
 }
 
+//----------------------------------------------------------------------------
 vtkPointGaussianRepresentation::~vtkPointGaussianRepresentation()
 {
   this->SetLastScaleArray(NULL);
+  this->SetLastOpacityArray(NULL);
 }
 
+//----------------------------------------------------------------------------
 void vtkPointGaussianRepresentation::PrintSelf(ostream &os, vtkIndent indent)
 {
   os << "vtkPointGaussianRepresentation: {" << std::endl;
@@ -91,33 +99,37 @@ int vtkPointGaussianRepresentation::RequestData(
     vtkInformation *request, vtkInformationVector **inputVector,
     vtkInformationVector *outputVector)
 {
-  if (inputVector[0]->GetNumberOfInformationObjects() == 1)
-    {
-    vtkNew< vtkMaskPoints > convertToPoints;
-    vtkSmartPointer< vtkDataSet > inData =
-        vtkDataSet::GetData(inputVector[0],0);
-    vtkCompositeDataSet* inComposite =
-        vtkCompositeDataSet::GetData(inputVector[0],0);
-    if (inComposite)
-      {
-      vtkNew< vtkCompositeDataToUnstructuredGridFilter > merge;
-      merge->SetInputData(inComposite);
-      merge->Update();
-      inData = merge->GetOutput();
-      }
-    convertToPoints->SetInputData(inData);
-    convertToPoints->SetMaximumNumberOfPoints(inData->GetNumberOfPoints());
-    convertToPoints->GenerateVerticesOn();
-    convertToPoints->SingleVertexPerCellOn();
-    convertToPoints->SetOnRatio(1);
-    convertToPoints->Update();
-    this->ProcessedData = convertToPoints->GetOutput();
-    }
-  else
-    {
+    vtkSmartPointer<vtkDataSet> input = vtkDataSet::GetData(inputVector[0]);
+    vtkPolyData* inputPolyData = vtkPolyData::SafeDownCast(input);
+    vtkCompositeDataSet* compositeInput = vtkCompositeDataSet::GetData(inputVector[0],0);
     this->ProcessedData = NULL;
-    }
-  return this->Superclass::RequestData(request,inputVector,outputVector);
+    if(inputPolyData)
+        {
+        this->ProcessedData = inputPolyData;
+        }
+    else if (compositeInput)
+        {
+        vtkNew< vtkCompositeDataToUnstructuredGridFilter > merge;
+        merge->SetInputData(compositeInput);
+        merge->Update();
+        input = merge->GetOutput();
+        }
+
+    // The mapper underneath expect only PolyData
+    // Apply conversion - We do not need vertex list as we
+    // use all the points in that use case
+    if(this->ProcessedData == NULL && input != NULL)
+        {
+        vtkNew< vtkMaskPoints > unstructuredToPolyData;
+        unstructuredToPolyData->SetInputData(input);
+        unstructuredToPolyData->SetMaximumNumberOfPoints(input->GetNumberOfPoints());
+        unstructuredToPolyData->GenerateVerticesOff();
+        unstructuredToPolyData->SetOnRatio(1);
+        unstructuredToPolyData->Update();
+        this->ProcessedData = unstructuredToPolyData->GetOutput();
+        }
+
+    return this->Superclass::RequestData(request,inputVector,outputVector);
 }
 
 //----------------------------------------------------------------------------
@@ -202,15 +214,15 @@ void vtkPointGaussianRepresentation::SetLookupTable(vtkScalarsToColors* lut)
 }
 
 //----------------------------------------------------------------------------
-void vtkPointGaussianRepresentation::SetOpacity(double val)
+void vtkPointGaussianRepresentation::SetCustomShader(const char* shaderString)
 {
-  this->Actor->GetProperty()->SetOpacity(val);
+  this->Mapper->SetSplatShaderCode(shaderString);
 }
 
 //----------------------------------------------------------------------------
 void vtkPointGaussianRepresentation::SetSplatSize(double radius)
 {
-  this->Mapper->SetDefaultRadius(radius);
+  this->Mapper->SetScaleFactor(radius);
 }
 
 //----------------------------------------------------------------------------
@@ -225,6 +237,12 @@ void vtkPointGaussianRepresentation::SetScaleByArray(bool newVal)
 }
 
 //----------------------------------------------------------------------------
+void vtkPointGaussianRepresentation::SetScaleTransferFunction(vtkPiecewiseFunction* pwf)
+{
+  this->Mapper->SetScaleFunction(pwf);
+}
+
+//----------------------------------------------------------------------------
 void vtkPointGaussianRepresentation::SelectScaleArray(int, int, int, int, const char *name)
 {
   this->SetLastScaleArray(name);
@@ -232,25 +250,58 @@ void vtkPointGaussianRepresentation::SelectScaleArray(int, int, int, int, const 
 }
 
 //----------------------------------------------------------------------------
-void vtkPointGaussianRepresentation::SetColor(double r, double g, double b)
+void vtkPointGaussianRepresentation::SetOpacityByArray(bool newVal)
 {
-  this->Actor->GetProperty()->SetColor(r,g,b);
+  if (this->OpacityByArray != newVal)
+    {
+    this->OpacityByArray = newVal;
+    this->Modified();
+    this->Mapper->SetOpacityArray(this->OpacityByArray ? this->LastOpacityArray : NULL);
+    }
 }
 
 //----------------------------------------------------------------------------
-void vtkPointGaussianRepresentation::SetAmbientColor(double r, double g, double b)
+void vtkPointGaussianRepresentation::SetOpacityTransferFunction(vtkPiecewiseFunction* pwf)
 {
-  this->Actor->GetProperty()->SetAmbientColor(r,g,b);
+  this->Mapper->SetScalarOpacityFunction(pwf);
 }
 
 //----------------------------------------------------------------------------
-void vtkPointGaussianRepresentation::SetDiffuseColor(double r, double g, double b)
+void vtkPointGaussianRepresentation::SelectOpacityArray(int, int, int, int, const char* name)
 {
-  this->Actor->GetProperty()->SetDiffuseColor(r,g,b);
+  this->SetLastOpacityArray(name);
+  this->Mapper->SetOpacityArray(this->OpacityByArray ? name : NULL);
 }
 
 //----------------------------------------------------------------------------
-void vtkPointGaussianRepresentation::SetSpecularColor(double r, double g, double b)
-{
-  this->Actor->GetProperty()->SetSpecularColor(r,g,b);
-}
+#define vtkForwardActorCallMacro(actorMethod,arg,arg_type) \
+  void vtkPointGaussianRepresentation::actorMethod(arg_type arg) \
+  { this->Actor->actorMethod(arg); }
+#define vtkForwardActorCallMacro3Args(actorMethod,arg_type) \
+  void vtkPointGaussianRepresentation::actorMethod(arg_type a, arg_type b, arg_type c) \
+  { this->Actor->actorMethod(a, b, c); }
+#define vtkForwardPropertyCallMacro(propertyMethod,arg,arg_type) \
+  void vtkPointGaussianRepresentation::propertyMethod(arg_type arg) \
+  { this->Actor->GetProperty()->propertyMethod(arg); }
+#define vtkForwardPropertyCallMacro3Args(propertyMethod,arg_type) \
+  void vtkPointGaussianRepresentation::propertyMethod(arg_type a, arg_type b, arg_type c) \
+  { this->Actor->GetProperty()->propertyMethod(a,b,c); }
+
+vtkForwardActorCallMacro3Args(SetOrientation,      double);
+vtkForwardActorCallMacro3Args(SetOrigin,           double);
+vtkForwardActorCallMacro3Args(SetPosition,         double);
+vtkForwardActorCallMacro3Args(SetScale,            double);
+
+vtkForwardActorCallMacro(SetPickable,              value, int);
+
+vtkForwardPropertyCallMacro3Args(SetColor,         double);
+vtkForwardPropertyCallMacro3Args(SetAmbientColor,  double);
+vtkForwardPropertyCallMacro3Args(SetDiffuseColor,  double);
+vtkForwardPropertyCallMacro3Args(SetSpecularColor, double);
+vtkForwardPropertyCallMacro3Args(SetEdgeColor,     double);
+
+vtkForwardPropertyCallMacro(SetOpacity,            value, double);
+vtkForwardPropertyCallMacro(SetInterpolation,      value, int);
+vtkForwardPropertyCallMacro(SetLineWidth,          value, double);
+vtkForwardPropertyCallMacro(SetPointSize,          value, double);
+vtkForwardPropertyCallMacro(SetSpecularPower,      value, double);

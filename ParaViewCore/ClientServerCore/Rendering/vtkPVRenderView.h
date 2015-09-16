@@ -32,6 +32,7 @@
 
 class vtkAlgorithmOutput;
 class vtkCamera;
+class vtkCuller;
 class vtkExtentTranslator;
 class vtkPVGridAxes3DActor;
 class vtkInformationDoubleKey;
@@ -57,6 +58,7 @@ class vtkRenderWindowInteractor;
 class vtkRenderer;
 class vtkTextRepresentation;
 class vtkTexture;
+class vtkTimerLog;
 
 class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVRenderView : public vtkPVView
 {
@@ -92,6 +94,13 @@ public:
   // must be called before calling any other methods on this class.
   // @CallOnAllProcessess
   virtual void Initialize(unsigned int id);
+
+
+  // Description:
+  // Overridden to call InvalidateCachedSelection() whenever the render window
+  // parameters change.
+  virtual void SetSize(int, int);
+  virtual void SetPosition(int, int);
 
   // Description:
   // Gets the non-composited renderer for this view. This is typically used for
@@ -430,7 +439,7 @@ public:
 
   // Description:
   // Set the vtkPVGridAxes3DActor to use for the view.
-  void SetGridAxes3DActor(vtkPVGridAxes3DActor*);
+  virtual void SetGridAxes3DActor(vtkPVGridAxes3DActor*);
 
   //*****************************************************************
   // Forwarded to orientation axes widget.
@@ -445,8 +454,8 @@ public:
 
   //*****************************************************************
   // Forward to vtkPVInteractorStyle instances.
-  void SetCenterOfRotation(double x, double y, double z);
-  void SetRotationFactor(double factor);
+  virtual void SetCenterOfRotation(double x, double y, double z);
+  virtual void SetRotationFactor(double factor);
 
   //*****************************************************************
   // Forward to vtkLightKit.
@@ -625,6 +634,11 @@ protected:
   bool ShouldUseLODRendering(double geometry);
 
   // Description:
+  // Returns true if the local process is invovled in rendering composited
+  // geometry i.e. geometry rendered in view that is composited together.
+  bool IsProcessRenderingGeometriesForCompositing(bool using_distributed_rendering);
+
+  // Description:
   // Synchronizes bounds information on all nodes.
   // @CallOnAllProcessess
   void SynchronizeGeometryBounds();
@@ -770,7 +784,8 @@ private:
   int StereoType;
   int ServerStereoType;
   void UpdateStereoProperties();
-
+  vtkSmartPointer<vtkCuller> Culler;
+  vtkNew<vtkTimerLog> Timer;
 //ETX
 };
 

@@ -16,27 +16,32 @@
 
 #include "vtkCommand.h"
 #include "vtkDataObject.h"
+#include "vtkDoubleArray.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPVArrayInformation.h"
 #include "vtkPVDataInformation.h"
+#include "vtkPVProminentValuesInformation.h"
 #include "vtkPVTemporalDataInformation.h"
 #include "vtkPVXMLElement.h"
 #include "vtkSMArrayListDomain.h"
+#include "vtkSMCoreUtilities.h"
 #include "vtkSMOutputPort.h"
 #include "vtkSMProperty.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMRenderViewProxy.h"
 #include "vtkSMScalarBarWidgetRepresentationProxy.h"
 #include "vtkSMSessionProxyManager.h"
+#include "vtkSMStringVectorProperty.h"
 #include "vtkSMTrace.h"
 #include "vtkSMTransferFunctionManager.h"
 #include "vtkSMTransferFunctionProxy.h"
+#include "vtkStringList.h"
 
 #include <cmath>
 #include <set>
 #include <string>
-#include <vtksys/ios/sstream>
+#include <sstream>
 
 class vtkSMPVRepresentationProxy::vtkStringSet :
   public std::set<std::string> {};
@@ -302,46 +307,78 @@ bool vtkSMPVRepresentationProxy::RescaleTransferFunctionToDataRange(
 
   if (component < info->GetNumberOfComponents())
     {
-    double range[2];
-    info->GetComponentRange(component, range);
-    if (range[1] >= range[0])
+    int indexedLookup = vtkSMPropertyHelper(lut, "IndexedLookup").GetAsInt();
+    if (indexedLookup)
       {
-      // the range must be large enough, compared to values order of magnitude
-      double rangeOrderOfMagnitude = 1e-11;
-      if (rangeOrderOfMagnitude < std::abs(range[0]))
+      vtkPVProminentValuesInformation* prominentValues =
+        vtkSMPVRepresentationProxy::GetProminentValuesInformationForColorArray(this);
+      vtkSmartPointer<vtkStringList> activeAnnotations = vtkSmartPointer<vtkStringList>::New();
+      vtkSmartPointer<vtkDoubleArray> activeIndexedColors = vtkSmartPointer<vtkDoubleArray>::New();
+      vtkSmartPointer<vtkAbstractArray> uniqueValues;
+
+      uniqueValues.TakeReference(
+        prominentValues->GetProminentComponentValues(component));
+
+      vtkSMStringVectorProperty* allAnnotations = vtkSMStringVectorProperty::SafeDownCast(lut->GetProperty("Annotations"));
+      vtkSMStringVectorProperty* activeAnnotatedValuesProperty =
+        vtkSMStringVectorProperty::SafeDownCast(lut->GetProperty("ActiveAnnotatedValues"));
+      if (uniqueValues && allAnnotations && activeAnnotatedValuesProperty)
         {
-        rangeOrderOfMagnitude = std::abs(range[0]);
-        }
-      if (rangeOrderOfMagnitude < std::abs(range[1]))
-        {
-        rangeOrderOfMagnitude = std::abs(range[1]);
-        }
-      double rangeMinLength = rangeOrderOfMagnitude * 1e-5;
-      if ((range[1] - range[0]) < rangeMinLength)
-        {
-        range[1] = range[0] + rangeMinLength;
-        }
-      // If data range is too small then we tweak it a bit so scalar mapping
-      // produces valid/reproducible results.
-      if (lut)
-        {
-        vtkSMTransferFunctionProxy::RescaleTransferFunction(lut, range, extend);
-        vtkSMProxy* sof_lut = vtkSMPropertyHelper(
-          lut, "ScalarOpacityFunction", true).GetAsProxy();
-        if (sof_lut && sof != sof_lut)
+        vtkSmartPointer<vtkStringList> activeAnnotatedValues =
+          vtkSmartPointer<vtkStringList>::New();
+
+        if (extend)
           {
-          vtkSMTransferFunctionProxy::RescaleTransferFunction(
-            sof_lut, range, extend);
+          activeAnnotatedValuesProperty->GetElements(activeAnnotatedValues);
           }
-        }
-      if (sof)
-        {
-        vtkSMTransferFunctionProxy::RescaleTransferFunction(sof, range, extend);
-        }
 
-      return (lut || sof);
+        for (int idx = 0; idx < uniqueValues->GetNumberOfTuples(); ++idx)
+          {
+          // Look up index of color corresponding to the annotation
+          for (unsigned int j = 0; j < allAnnotations->GetNumberOfElements()/2; ++j)
+            {
+            vtkVariant annotatedValue(allAnnotations->GetElement(2*j + 0));
+            if (annotatedValue == uniqueValues->GetVariantValue(idx))
+              {
+              activeAnnotatedValues->AddString(allAnnotations->GetElement(2*j + 0));
+              break;
+              }
+            }
+          }
+
+        activeAnnotatedValuesProperty->SetElements(activeAnnotatedValues);
+        lut->UpdateVTKObjects();
+        }
       }
+    else
+      {
+      double range[2];
+      info->GetComponentRange(component, range);
+      if (range[1] >= range[0])
+        {
+        // the range must be large enough, compared to values order of magnitude
+        // If data range is too small then we tweak it a bit so scalar mapping
+        // produces valid/reproducible results.
+        vtkSMCoreUtilities::AdjustRange(range);
+        if (lut)
+          {
+          vtkSMTransferFunctionProxy::RescaleTransferFunction(lut, range, extend);
+          vtkSMProxy* sof_lut = vtkSMPropertyHelper(
+            lut, "ScalarOpacityFunction", true).GetAsProxy();
+          if (sof_lut && sof != sof_lut)
+            {
+            vtkSMTransferFunctionProxy::RescaleTransferFunction(
+              sof_lut, range, extend);
+            }
+          }
+        if (sof)
+          {
+          vtkSMTransferFunctionProxy::RescaleTransferFunction(sof, range, extend);
+          }
 
+        return (lut || sof);
+        }
+      }
     }
   return false;
 }
@@ -640,6 +677,20 @@ vtkPVArrayInformation* vtkSMPVRepresentationProxy::GetArrayInformationForColorAr
 
   // now, determine a name for it if possible.
   vtkSMPropertyHelper colorArrayHelper(this, "ColorArrayName");
+  vtkSMPropertyHelper inputHelper(this, "Input");
+  vtkSMSourceProxy* input = vtkSMSourceProxy::SafeDownCast(inputHelper.GetAsProxy());
+  unsigned int port = inputHelper.GetOutputPort();
+  if (input)
+    {
+    vtkPVArrayInformation* arrayInfoFromData = input->GetDataInformation(port)->GetArrayInformation(
+      colorArrayHelper.GetInputArrayNameToProcess(),
+      colorArrayHelper.GetInputArrayAssociation());
+    if (arrayInfoFromData)
+      {
+      return arrayInfoFromData; 
+      }
+    }
+
   vtkPVArrayInformation* arrayInfo =
     this->GetRepresentedDataInformation()->GetArrayInformation(
       colorArrayHelper.GetInputArrayNameToProcess(),
@@ -649,15 +700,6 @@ vtkPVArrayInformation* vtkSMPVRepresentationProxy::GetArrayInformationForColorAr
     return arrayInfo;
     }
 
-  vtkSMPropertyHelper inputHelper(this, "Input");
-  vtkSMSourceProxy* input = vtkSMSourceProxy::SafeDownCast(inputHelper.GetAsProxy());
-  unsigned int port = inputHelper.GetOutputPort();
-  if (input)
-    {
-    return input->GetDataInformation(port)->GetArrayInformation(
-      colorArrayHelper.GetInputArrayNameToProcess(),
-      colorArrayHelper.GetInputArrayAssociation());
-    }
   return NULL;
 }
 

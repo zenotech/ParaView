@@ -33,13 +33,14 @@
 #include <set>
 #include <string>
 #include <vector>
-#include <vtksys/ios/sstream>
+#include <sstream>
 #include <vtksys/SystemTools.hxx>
 #include <assert.h>
 
 class vtkSMWriterFactory::vtkInternals
 {
 public:
+  static std::set<std::pair<std::string,std::string> > WriterWhitelist;
   struct vtkValue
     {
     std::string Group;
@@ -165,6 +166,8 @@ public:
   std::set<std::string> Groups;
 };
 
+std::set<std::pair<std::string,std::string> > vtkSMWriterFactory::vtkInternals::WriterWhitelist;
+
 vtkStandardNewMacro(vtkSMWriterFactory);
 //----------------------------------------------------------------------------
 vtkSMWriterFactory::vtkSMWriterFactory()
@@ -258,7 +261,15 @@ void vtkSMWriterFactory::UpdateAvailableWriters()
           iter->GetGroupName(), iter->GetProxyName());
         if (hints && hints->FindNestedElementByName("WriterFactory"))
           {
-          this->RegisterPrototype(iter->GetGroupName(), iter->GetProxyName());
+          // By default this does no filtering on the writers available.  However, if the
+          // application has specified that it is only interested in a subset of the writers
+          // then only that subset will be available.
+          std::pair<std::string,std::string> writer(iter->GetGroupName(), iter->GetProxyName());
+          if (vtkInternals::WriterWhitelist.empty() ||
+              vtkInternals::WriterWhitelist.find(writer) != vtkInternals::WriterWhitelist.end())
+            {
+            this->RegisterPrototype(iter->GetGroupName(), iter->GetProxyName());
+            }
           }
         }
       iter->Delete();
@@ -332,7 +343,7 @@ static std::string vtkJoin(
   const std::set<std::string> exts, const char* prefix,
   const char* suffix)
 {
-  vtksys_ios::ostringstream stream;
+  std::ostringstream stream;
   std::set<std::string>::const_iterator iter;
   for (iter = exts.begin(); iter != exts.end(); ++iter)
     {
@@ -358,14 +369,14 @@ const char* vtkSMWriterFactory::GetSupportedFileTypes(
       if (iter->second.Extensions.size() > 0)
         {
         std::string ext_join = ::vtkJoin(iter->second.Extensions, "*.", " ");
-        vtksys_ios::ostringstream stream;
+        std::ostringstream stream;
         stream << iter->second.Description << "(" << ext_join << ")";
         sorted_types.insert(stream.str());
         }
       }
     }
   
-  vtksys_ios::ostringstream all_types;
+  std::ostringstream all_types;
   std::set<std::string>::iterator iter2;
   for (iter2 = sorted_types.begin(); iter2 != sorted_types.end(); ++iter2)
     {
@@ -404,4 +415,15 @@ bool vtkSMWriterFactory::CanWrite(vtkSMSourceProxy* source, unsigned int outputp
 void vtkSMWriterFactory::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
+}
+
+//----------------------------------------------------------------------------
+void vtkSMWriterFactory::AddWriterToWhitelist(const char* readerxmlgroup,
+                                             const char* readerxmlname)
+{
+  if (readerxmlgroup != NULL && readerxmlname != NULL)
+    {
+    vtkSMWriterFactory::vtkInternals::WriterWhitelist.insert(
+      std::pair<std::string,std::string>(readerxmlgroup,readerxmlname));
+    }
 }

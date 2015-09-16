@@ -71,6 +71,7 @@ set (Module_SRCS
   vtkPVImplicitPlaneRepresentation.cxx
   vtkPVLastSelectionInformation.cxx
   vtkPVMultiSliceView.cxx
+  vtkPVOpenGLInformation.cxx
   vtkPVOpenGLExtensionsInformation.cxx
   vtkPVOrthographicSliceView.cxx
   vtkPVParallelCoordinatesRepresentation.cxx
@@ -87,6 +88,7 @@ set (Module_SRCS
   vtkPVSynchronizedRenderWindows.cxx
   vtkPVView.cxx
   vtkPVXYChartView.cxx
+  vtkQuartileChartRepresentation.cxx
   vtkSelectionDeliveryFilter.cxx
   vtkSelectionRepresentation.cxx
   vtkSpreadSheetRepresentation.cxx
@@ -136,3 +138,5 @@ set (${vtk-module}_HDRS vtkStreamingPriorityQueue.h)
 # Use a custom hints file for this module.
 set(${vtk-module}_WRAP_HINTS "${CMAKE_CURRENT_SOURCE_DIR}/hints")
 vtk_module_library(vtkPVClientServerCoreRendering ${Module_SRCS})
+include(vtkOpenGL)
+vtk_opengl_link(vtkPVClientServerCoreRendering)

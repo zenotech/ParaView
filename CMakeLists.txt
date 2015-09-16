@@ -30,6 +30,11 @@
 #==========================================================================
 cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
 
+# Link to Qt5's WinMain automatically (in executables).
+if (POLICY CMP0020)
+  cmake_policy(SET CMP0020 NEW)
+endif ()
+
 # Set a consistent MACOSX_RPATH default across all CMake versions.
 # When CMake 2.8.12 is required, change this default to 1.
 # When CMake 3.0.0 is required, remove this block (see CMP0042).
@@ -89,11 +94,11 @@ include(CMakeDependentOption)
 #------------------------------------------------------------------------------
 # Determine ParaView Source Version
 set (PARAVIEW_VERSION_MAJOR 4)
-set (PARAVIEW_VERSION_MINOR 3)
-set (PARAVIEW_VERSION_PATCH 1)
+set (PARAVIEW_VERSION_MINOR 4)
+set (PARAVIEW_VERSION_PATCH 0)
 set (PARAVIEW_VERSION_PATCH_EXTRA)
-set (PARAVIEW_VERSION "4.3")
-set (PARAVIEW_VERSION_FULL "4.3.1")
+set (PARAVIEW_VERSION "4.4")
+set (PARAVIEW_VERSION_FULL "4.4.0")
 
 determine_version(${ParaView_SOURCE_DIR} ${GIT_EXECUTABLE} "PARAVIEW")
 
@@ -196,7 +201,12 @@ endif()
 #------------------------------------------------------------------------------
 # Define ParaView specific options.
 #------------------------------------------------------------------------------
-option(BUILD_TESTING "Build ParaView Testing" ON)
+set(default_testing ON)
+if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.ExternalData/README.rst")
+  # Source tarball without the data, so turn off testing.
+  set(default_testing OFF)
+endif ()
+option(BUILD_TESTING "Build ParaView Testing" ${default_testing})
 option(BUILD_EXAMPLES "Build ParaView examples" OFF)
 option(BUILD_SHARED_LIBS "Build ParaView using shared libraries" ON)
 option(PARAVIEW_BUILD_QT_GUI "Enable ParaView Qt-based client" ON)
@@ -204,6 +214,9 @@ option(PARAVIEW_USE_DAX "Build ParaView with Dax many-core filters" OFF)
 option(PARAVIEW_USE_MPI "Enable MPI support for parallel computing" OFF)
 option(PARAVIEW_USE_PISTON "Build ParaView with Piston GPGPU filters" OFF)
 option(PARAVIEW_USE_VISITBRIDGE "Build ParaView with VisIt readers." OFF)
+
+# Xdmf3 is not ON by default since it depends on Boost.
+option(PARAVIEW_ENABLE_XDMF3 "Enable Xdmf3 support (requires Boost)." OFF)
 
 if (UNIX)
   option(PARAVIEW_ENABLE_FFMPEG "Enable FFMPEG Support." OFF)
@@ -234,6 +247,13 @@ mark_as_advanced(PARAVIEW_USE_ICE_T
 cmake_dependent_option(PARAVIEW_ENABLE_QT_SUPPORT
   "Build ParaView with Qt support (without GUI)" OFF
   "NOT PARAVIEW_BUILD_QT_GUI" ON)
+
+# Add an option to enable using Qt Webkit for widgets, as needed.
+# Default is OFF. We don't want to depend on WebKit unless absolutely needed.
+cmake_dependent_option(PARAVIEW_USE_QTWEBKIT
+  "Use Qt WebKit components as needed." OFF
+  "PARAVIEW_ENABLE_QT_SUPPORT" OFF)
+mark_as_advanced(PARAVIEW_USE_QTWEBKIT)
 
 # If PARAVIEW_BUILD_QT_GUI is OFF, provide an option to the user to turn other command line
 # executables ON/OFF.
@@ -305,9 +325,16 @@ if (APPLE AND PARAVIEW_DO_UNIX_STYLE_INSTALLS)
   endif()
   unset(MACOSX_APP_INSTALL_PREFIX CACHE)
 
-  # Set CMAKE_INSTALL_NAME_DIR to point to the libraries directory relative to
-  # the executable.
-  set(CMAKE_INSTALL_NAME_DIR "@executable_path/../${VTK_INSTALL_LIBRARY_DIR}")
+  if (PARAVIEW_CUSTOM_INSTALL_NAME_DIR)
+    # Allow the user to set a custom install_name directory. This is useful for
+    # using ParaView as an SDK where the binaries are not necessarily in the
+    # same place as ParaView's binaries.
+    set(CMAKE_INSTALL_NAME_DIR "${PARAVIEW_CUSTOM_INSTALL_NAME_DIR}/${VTK_INSTALL_LIBRARY_DIR}")
+  else ()
+    # Set CMAKE_INSTALL_NAME_DIR to point to the libraries directory relative
+    # to the executable.
+    set(CMAKE_INSTALL_NAME_DIR "@executable_path/../${VTK_INSTALL_LIBRARY_DIR}")
+  endif ()
 
   # ensure that we don't build forwarding executables on apple.
   set(VTK_BUILD_FORWARDING_EXECUTABLES FALSE)
@@ -450,6 +477,9 @@ if (PARAVIEW_ENABLE_QT_SUPPORT)
       UiTools
       Widgets
       Xml)
+    if(PARAVIEW_USE_QTWEBKIT)
+      list(APPEND Qt5_FIND_COMPONENTS WebKitWidgets)
+    endif()
     include (ParaViewQt5)
     if (NOT QT5_FOUND)
       message( SEND_ERROR "Qt ${QT_MIN_VERSION} or greater not found. "
@@ -583,6 +613,9 @@ else()
   # needed.
   set(VTK_Group_StandAlone OFF CACHE BOOL "" FORCE)
   set(VTK_Group_Rendering OFF CACHE BOOL "" FORCE)
+
+  # set the default backend for PV to be OpenGL
+  set(VTK_RENDERING_BACKEND_DEFAULT "OpenGL")
 
 endif()
 
@@ -871,3 +904,29 @@ if(PARAVIEW_DATA_EXCLUDE_FROM_ALL)
     add_dependencies(ParaViewData VTKData)
   endif()
 endif()
+
+set(is_git FALSE)
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
+  set(is_git TRUE)
+endif ()
+
+if (NOT WIN32 AND is_git)
+  set(source_all)
+  if (PARAVIEW_SOURCE_TARBALL_TARGETS)
+    set(source_all ALL)
+  endif ()
+
+  add_custom_target(paraview-source ${source_all})
+  foreach (format tgz txz zip)
+    add_custom_target("paraview-source-${format}" ${source_all}
+      COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/Utilities/Maintenance/create_tarballs.bash"
+              "--${format}"
+      WORKING_DIRECTORY
+              "${CMAKE_CURRENT_BINARY_DIR}"
+      COMMENT "Creating source tarball in ${format} format")
+    add_dependencies("paraview-source-${format}"
+      ParaViewData)
+    add_dependencies(paraview-source
+      "paraview-source-${format}")
+  endforeach ()
+endif ()
