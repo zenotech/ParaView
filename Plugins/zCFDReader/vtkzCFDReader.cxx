@@ -515,8 +515,32 @@ int vtkzCFDReader::RequestInformation(vtkInformation *vtkNotUsed(request),
       }
       else
       {
-        bc[detail::BoundaryCondition::toString(faceBC[i])].insert(z);
+        std::string str = detail::BoundaryCondition::toString(faceBC[i]);
+        if(str != "interior")
+          bc[str].insert(z);
       }
+    }
+
+    std::set<int> cellZoneSet;
+    {
+      std::vector<int> cellZones(numCells,0);
+      try{
+        // Read cells zones
+        
+        meshg->openDataset("cellZones")->readData(cellZones);
+        
+      }
+      catch(...){
+      }
+      for(int i = 0; i < cellZones.size(); ++i){
+        cellZoneSet.insert(cellZones[i]);
+      }
+    }
+    for(std::set<int>::iterator itr = cellZoneSet.begin(); itr != cellZoneSet.end(); ++itr){
+      char buf[1024];
+      std::sprintf(buf, "%d", *itr);
+
+      bc["interior-"+std::string(buf)].insert(*itr);
     }
 
     int count = 0;
@@ -819,6 +843,17 @@ int vtkzCFDReader::RequestData(vtkInformation *vtkNotUsed(request),
   std::vector<int> faceCell(numAllFaces*2);
   meshg->openDataset("faceCell")->readData(faceCell);
 
+  // Read cell zones
+  std::vector<int> cellZones(numCells,0);
+  try{
+    // Read cells zones
+    
+    meshg->openDataset("cellZones")->readData(cellZones);
+    
+  }
+  catch(...){
+  }
+
   std::vector<int> cellType(totalNumCells);
   // Check for cellFace
   try
@@ -891,7 +926,7 @@ int vtkzCFDReader::RequestData(vtkInformation *vtkNotUsed(request),
   {
     std::string name = GetSelectionArrayName(ZoneDataArraySelection,i);
 
-    if(name != "interior" && GetSelectionArrayStatus(ZoneDataArraySelection,name.c_str()))
+    if(name.find("interior") != 0 && GetSelectionArrayStatus(ZoneDataArraySelection,name.c_str()))
     {
       // User has selected zone for extraction
 
@@ -1002,15 +1037,31 @@ int vtkzCFDReader::RequestData(vtkInformation *vtkNotUsed(request),
       //polyData->Delete();
 
     }
-    else if(name == "interior" && GetSelectionArrayStatus(ZoneDataArraySelection,name.c_str()))
+    else if(name.find("interior") == 0 && GetSelectionArrayStatus(ZoneDataArraySelection,name.c_str()))
     {
+
+      // Get list of cells
+      std::set<int> &zoneSet = selectionToZone[i];
+
+      std::vector<int> cellList;
+      cellList.reserve(totalNumCells);
+      for(std::set<int>::iterator it = zoneSet.begin(); it != zoneSet.end(); ++it){
+        for(int i = 0; i < totalNumCells; ++i){
+          if(cellZone[i] == *it){
+            cellList.push_back(i);
+          }
+        }        
+      }
+
       // Add interior
       vtkSmartPointer<vtkUnstructuredGrid> uGrid = vtkSmartPointer<
           vtkUnstructuredGrid>::New();
-      uGrid->Allocate(totalNumCells);
+      uGrid->Allocate(cellList.size());
 
-      for(int i = 0; i < totalNumCells; ++i)
+      for(int j = 0; j < cellList.size(); ++j)
       {
+        int i = cellList[j];
+
         std::set<vtkIdType> cellNodeList;
         std::vector<vtkIdType> faceStream;
 
