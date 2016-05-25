@@ -1047,7 +1047,7 @@ int vtkzCFDReader::RequestData(vtkInformation *vtkNotUsed(request),
       cellList.reserve(totalNumCells);
       for(std::set<int>::iterator it = zoneSet.begin(); it != zoneSet.end(); ++it){
         for(int i = 0; i < totalNumCells; ++i){
-          if(cellZone[i] == *it){
+          if(cellZones[i] == *it){
             cellList.push_back(i);
           }
         }        
