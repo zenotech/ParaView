@@ -527,7 +527,7 @@ int vtkzCFDReader::RequestInformation(vtkInformation *vtkNotUsed(request),
       try{
         // Read cells zones
         
-        meshg->openDataset("cellZones")->readData(cellZones);
+        meshg->openDataset("cellZone")->readData(cellZones);
         
       }
       catch(...){
@@ -848,7 +848,7 @@ int vtkzCFDReader::RequestData(vtkInformation *vtkNotUsed(request),
   try{
     // Read cells zones
     
-    meshg->openDataset("cellZones")->readData(cellZones);
+    meshg->openDataset("cellZone")->readData(cellZones);
     
   }
   catch(...){
