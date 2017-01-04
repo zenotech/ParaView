@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -33,8 +33,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _pqFlatTreeViewEventTranslator_h
 #define _pqFlatTreeViewEventTranslator_h
 
-#include "pqWidgetEventTranslator.h"
 #include "pqCoreModule.h"
+#include "pqWidgetEventTranslator.h"
 #include <QPoint>
 
 /**
@@ -46,13 +46,15 @@ Translates low-level Qt events into high-level ParaView events that can be recor
 class PQCORE_EXPORT pqFlatTreeViewEventTranslator : public pqWidgetEventTranslator
 {
   Q_OBJECT
-  
+  typedef pqWidgetEventTranslator Superclass;
+
 public:
-  pqFlatTreeViewEventTranslator(QObject* p=0);
-  
+  pqFlatTreeViewEventTranslator(QObject* p = 0);
+
+  using Superclass::translateEvent;
   virtual bool translateEvent(QObject* Object, QEvent* Event, bool& Error);
 
-protected: 
+protected:
   QPoint LastPos;
 
 private:
@@ -61,4 +63,3 @@ private:
 };
 
 #endif // !_pqFlatTreeViewEventTranslator_h
-

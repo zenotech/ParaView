@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -33,15 +33,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _pqXMLEventSource_h
 #define _pqXMLEventSource_h
 
-#include "pqEventSource.h"
 #include "pqCoreModule.h"
+#include "pqEventSource.h"
 
 class QString;
 
 /** Concrete implementation of pqEventSource that retrieves events recorded
 by pqXMLEventObserver */
-class PQCORE_EXPORT pqXMLEventSource :
-  public pqEventSource
+class PQCORE_EXPORT pqXMLEventSource : public pqEventSource
 {
   Q_OBJECT
 public:
@@ -50,10 +49,10 @@ public:
 
   virtual void setContent(const QString& path);
 
-  virtual int getNextEvent(
-    QString& object,
-    QString& command,
-    QString& arguments);
+  /**
+  * Get the next event from the event source
+  */
+  virtual int getNextEvent(QString& object, QString& command, QString& arguments, int& eventType);
 
 private:
   class pqImplementation;

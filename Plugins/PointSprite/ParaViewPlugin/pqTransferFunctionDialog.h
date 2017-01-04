@@ -27,8 +27,8 @@
 //
 // </verbatim>
 
-#ifndef __pqTransferFunctionDialog_h
-#define __pqTransferFunctionDialog_h
+#ifndef pqTransferFunctionDialog_h
+#define pqTransferFunctionDialog_h
 
 #include <QDialog>
 
@@ -39,6 +39,7 @@ class pqTransferFunctionDialog : public QDialog
 {
   Q_OBJECT
   typedef QDialog Superclass;
+
 public:
   pqTransferFunctionDialog(QWidget* parent);
   ~pqTransferFunctionDialog();
@@ -46,18 +47,15 @@ public:
   pqTransferFunctionEditor* opacityEditor();
   pqTransferFunctionEditor* radiusEditor();
 
-  void  setRepresentation(pqPipelineRepresentation* repr);
+  void setRepresentation(pqPipelineRepresentation* repr);
 
-  void  show(pqTransferFunctionEditor* editor);
+  void show(pqTransferFunctionEditor* editor);
 
 private:
   class pqInternals;
   pqInternals* Internals;
 
-  pqTransferFunctionDialog(const pqTransferFunctionDialog&); // Not implemented.
-  void operator=(const pqTransferFunctionDialog&); // Not implemented.
+  Q_DISABLE_COPY(pqTransferFunctionDialog)
 };
 
 #endif
-
-

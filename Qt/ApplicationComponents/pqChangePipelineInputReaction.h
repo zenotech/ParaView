@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,37 +29,43 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqChangePipelineInputReaction_h 
-#define __pqChangePipelineInputReaction_h
+#ifndef pqChangePipelineInputReaction_h
+#define pqChangePipelineInputReaction_h
 
 #include "pqReaction.h"
 
-/// @ingroup Reactions
-/// Reaction for change pipeline input for the currently selected element.
+/**
+* @ingroup Reactions
+* Reaction for change pipeline input for the currently selected element.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqChangePipelineInputReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
-public:
-  pqChangePipelineInputReaction(QAction* parent=0);
 
-  /// Changes the input for the active source.
+public:
+  pqChangePipelineInputReaction(QAction* parent = 0);
+
+  /**
+  * Changes the input for the active source.
+  */
   static void changeInput();
 
 public slots:
-  /// Updates the enabled state. Applications need not explicitly call
-  /// this.
+  /**
+  * Updates the enabled state. Applications need not explicitly call
+  * this.
+  */
   void updateEnableState();
 
 protected:
-  /// Called when the action is triggered.
-  virtual void onTriggered()
-    { pqChangePipelineInputReaction::changeInput(); }
+  /**
+  * Called when the action is triggered.
+  */
+  virtual void onTriggered() { pqChangePipelineInputReaction::changeInput(); }
 
 private:
   Q_DISABLE_COPY(pqChangePipelineInputReaction)
 };
 
 #endif
-
-

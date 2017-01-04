@@ -13,48 +13,49 @@
 
 =========================================================================*/
 
-// .NAME vtkCleanUnstructuredGrid - merge duplicate points
-//
-// .SECTION Description
-// vtkCleanUnstructuredGrid is a filter that takes unstructured grid data as 
-// input and generates unstructured grid data as output. vtkCleanUnstructuredGrid can 
-// merge duplicate points (with coincident coordinates) using the vtkMergePoints object
-// to merge points.
+/**
+ * @class   vtkCleanUnstructuredGrid
+ * @brief   merge duplicate points
+ *
+ *
+ * vtkCleanUnstructuredGrid is a filter that takes unstructured grid data as
+ * input and generates unstructured grid data as output. vtkCleanUnstructuredGrid can
+ * merge duplicate points (with coincident coordinates) using the vtkMergePoints object
+ * to merge points.
+ *
+ * @sa
+ * vtkCleanPolyData
+*/
 
-// .SECTION See Also
-// vtkCleanPolyData
-
-#ifndef __vtkCleanUnstructuredGrid_h
-#define __vtkCleanUnstructuredGrid_h
+#ifndef vtkCleanUnstructuredGrid_h
+#define vtkCleanUnstructuredGrid_h
 
 #include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkUnstructuredGridAlgorithm.h"
 
 class vtkPointLocator;
 
-class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkCleanUnstructuredGrid: public vtkUnstructuredGridAlgorithm
+class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkCleanUnstructuredGrid
+  : public vtkUnstructuredGridAlgorithm
 {
 public:
-  static vtkCleanUnstructuredGrid *New();
+  static vtkCleanUnstructuredGrid* New();
 
   vtkTypeMacro(vtkCleanUnstructuredGrid, vtkUnstructuredGridAlgorithm);
 
   void PrintSelf(ostream& os, vtkIndent indent);
 
 protected:
-
   vtkCleanUnstructuredGrid();
   ~vtkCleanUnstructuredGrid();
 
-  vtkPointLocator *Locator;
+  vtkPointLocator* Locator;
 
-  virtual int RequestData(vtkInformation *, vtkInformationVector **,
-                          vtkInformationVector *);
-  virtual int FillInputPortInformation(int port, vtkInformation *info);
+  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  virtual int FillInputPortInformation(int port, vtkInformation* info);
 
 private:
-
-  vtkCleanUnstructuredGrid(const vtkCleanUnstructuredGrid&); // Not implemented
-  void operator=(const vtkCleanUnstructuredGrid&); // Not implemented
+  vtkCleanUnstructuredGrid(const vtkCleanUnstructuredGrid&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkCleanUnstructuredGrid&) VTK_DELETE_FUNCTION;
 };
 #endif

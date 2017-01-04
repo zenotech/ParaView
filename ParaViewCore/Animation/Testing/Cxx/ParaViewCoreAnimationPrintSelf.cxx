@@ -1,7 +1,9 @@
 #include "vtkPVConfig.h"
 
-#define PRINT_SELF(classname)\
-  c = classname::New(); c->Print(cout); c->Delete();
+#define PRINT_SELF(classname)                                                                      \
+  c = classname::New();                                                                            \
+  c->Print(cout);                                                                                  \
+  c->Delete();
 
 #include "vtkCompositeAnimationPlayer.h"
 #include "vtkPVBooleanKeyFrame.h"
@@ -10,24 +12,24 @@
 #include "vtkPVCameraKeyFrame.h"
 #include "vtkPVCompositeKeyFrame.h"
 #include "vtkPVExponentialKeyFrame.h"
+#include "vtkPVKeyFrame.h"
 #include "vtkPVKeyFrameAnimationCueForProxies.h"
 #include "vtkPVKeyFrameCueManipulator.h"
-#include "vtkPVKeyFrame.h"
 #include "vtkPVRampKeyFrame.h"
 #include "vtkPVRepresentationAnimationHelper.h"
 //#include "vtkPVServerSideAnimationPlayer.h"
 #include "vtkPVSinusoidKeyFrame.h"
 #include "vtkRealtimeAnimationPlayer.h"
-#include "vtkSequenceAnimationPlayer.h"
 #include "vtkSIXMLAnimationWriterRepresentationProperty.h"
 #include "vtkSMAnimationScene.h"
 #include "vtkSMAnimationSceneGeometryWriter.h"
 #include "vtkSMAnimationSceneImageWriter.h"
 #include "vtkSMAnimationSceneProxy.h"
+#include "vtkSequenceAnimationPlayer.h"
 #include "vtkTimestepsAnimationPlayer.h"
 #include "vtkXMLPVAnimationWriter.h"
 
-int ParaViewCoreAnimationPrintSelf(int, char*[])
+int ParaViewCoreAnimationPrintSelf(int, char* [])
 {
   vtkObject* c;
   PRINT_SELF(vtkCompositeAnimationPlayer);
@@ -42,7 +44,7 @@ int ParaViewCoreAnimationPrintSelf(int, char*[])
   PRINT_SELF(vtkPVKeyFrame);
   PRINT_SELF(vtkPVRampKeyFrame);
   PRINT_SELF(vtkPVRepresentationAnimationHelper);
-//  PRINT_SELF(vtkPVServerSideAnimationPlayer);
+  //  PRINT_SELF(vtkPVServerSideAnimationPlayer);
   PRINT_SELF(vtkPVSinusoidKeyFrame);
   PRINT_SELF(vtkRealtimeAnimationPlayer);
   PRINT_SELF(vtkSequenceAnimationPlayer);

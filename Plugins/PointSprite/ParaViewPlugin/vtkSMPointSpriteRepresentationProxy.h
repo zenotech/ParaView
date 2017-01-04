@@ -33,8 +33,8 @@
 // This code doesn nothing since all we have done is changed the types in the
 // xml description to create sprite mappers etc.
 
-#ifndef __vtkSMPointSpriteRepresentationProxy_h
-#define __vtkSMPointSpriteRepresentationProxy_h
+#ifndef vtkSMPointSpriteRepresentationProxy_h
+#define vtkSMPointSpriteRepresentationProxy_h
 
 #include "vtkSMRepresentationProxy.h"
 
@@ -51,7 +51,7 @@ public:
   static void InitializeDefaultValues(vtkSMProxy*);
 
 protected:
-   vtkSMPointSpriteRepresentationProxy();
+  vtkSMPointSpriteRepresentationProxy();
   ~vtkSMPointSpriteRepresentationProxy();
 
   // Description:
@@ -61,9 +61,9 @@ protected:
   virtual int ReadXMLAttributes(vtkSMSessionProxyManager* pm, vtkPVXMLElement* element);
 
 private:
-  vtkSMPointSpriteRepresentationProxy(const vtkSMPointSpriteRepresentationProxy&); // Not implemented
-  void operator=(const vtkSMPointSpriteRepresentationProxy&); // Not implemented
+  vtkSMPointSpriteRepresentationProxy(
+    const vtkSMPointSpriteRepresentationProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMPointSpriteRepresentationProxy&) VTK_DELETE_FUNCTION;
 };
 
 #endif
-

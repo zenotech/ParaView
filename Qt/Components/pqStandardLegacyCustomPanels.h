@@ -29,32 +29,38 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqStandardLegacyCustomPanels_h
-#define __pqStandardLegacyCustomPanels_h
+#ifndef pqStandardLegacyCustomPanels_h
+#define pqStandardLegacyCustomPanels_h
 
-#include <QObject>
 #include "pqObjectPanelInterface.h"
+#include <QObject>
 
 #include "pqComponentsModule.h"
 
-/// pqStandardLegacyCustomPanels is used by pqPropertiesPanel to create legacy
-/// custom panels. In time, this class needs to disappear with all panels being
-/// created using the newer panels API.
-class PQCOMPONENTS_EXPORT pqStandardLegacyCustomPanels :
-  public QObject,
-  public pqObjectPanelInterface
+/**
+* pqStandardLegacyCustomPanels is used by pqPropertiesPanel to create legacy
+* custom panels. In time, this class needs to disappear with all panels being
+* created using the newer panels API.
+*/
+class PQCOMPONENTS_EXPORT pqStandardLegacyCustomPanels : public QObject,
+                                                         public pqObjectPanelInterface
 {
   Q_OBJECT
   Q_INTERFACES(pqObjectPanelInterface)
   typedef QObject Superclass;
+
 public:
-  pqStandardLegacyCustomPanels(QObject* parent=0);
+  pqStandardLegacyCustomPanels(QObject* parent = 0);
   virtual ~pqStandardLegacyCustomPanels();
 
-  /// create panel for proxy.
+  /**
+  * create panel for proxy.
+  */
   virtual pqObjectPanel* createPanel(pqProxy* proxy, QWidget* parent);
 
-  /// returns if a panel can be created.
+  /**
+  * returns if a panel can be created.
+  */
   virtual bool canCreatePanel(pqProxy* proxy) const;
 
 private:

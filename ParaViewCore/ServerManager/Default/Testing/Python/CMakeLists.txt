@@ -12,6 +12,7 @@ paraview_test_load_data(""
   quadraticTetra01.vtu
   sonic.pht
   TestRepresentationTypePlugin.xml
+  PythonProgrammableFilterParameters.xml
   )
 
 ###############################################################################
@@ -20,12 +21,15 @@ paraview_test_load_data(""
 # Add python script names here.
 set(PY_TESTS
   Animation.py
+  AnimationCache.py,NO_VALID
+  AxesGridTestGridLines.py
   ProxyPropertyLinks.py
   PythonPVSimpleCone.py
   PythonPVSimpleExII.py
   PythonPVSimpleSphere.py
   PythonSMTraceTest1.py
   PythonSMTraceTest2.py,NO_VALID
+  PythonTestBenchmark.py,NO_VALID
   PythonAnimationTrack.py
   GhostCellsInMergeBlocks.py
   CellIntegrator.py,NO_VALID
@@ -39,6 +43,9 @@ set(PY_TESTS
   ValidateSources.py,NO_VALID
   ColorAttributeTypeBackwardsCompatibility.py,NO_VALID
   RepresentationTypeHint.py,NO_VALID
+  PythonProgrammableFilterParameters.py,NO_VALID
+  ProxyBackwardsCompatibilityTest.py,NO_VALID
+  ReaderReload.py,NO_VALID
   )
 
 include(FindPythonModules)
@@ -53,6 +60,11 @@ if (BUILD_SHARED_LIBS
   list(APPEND PY_TESTS
     Plugins.py,NO_VALID)
 endif ()
+
+# This test makes use of "Point Gaussian" representation, only available with OpenGL2
+if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL2")
+    list(APPEND PY_TESTS PointGaussianProperties.py)
+endif()
 
 set(SMSTATE_FILE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(${vtk-module}_ARGS
@@ -129,7 +141,9 @@ if (PARAVIEW_USE_MPI AND VTK_MPIRUN_EXE AND NOT WIN32)
     --symmetric)
   paraview_add_test_pvbatch_mpi(
     NO_DATA NO_OUTPUT NO_VALID
+    TestCleanArrays.py
     TestMPI4PY.py
+    ParallelPythonImport.py
     )
   set(PARAVIEW_PVBATCH_ARGS)
 endif()
@@ -149,18 +163,4 @@ if (PARAVIEW_BUILD_QT_GUI)
       -P ${CMAKE_CURRENT_SOURCE_DIR}/SavePythonState.cmake)
     set_tests_properties(SavePythonState PROPERTIES LABELS "PARAVIEW")
   endif()
-endif()
-
-if(PYTHON_EXECUTABLE AND PARAVIEW_USE_MPI AND BUILD_SHARED_LIBS AND UNIX AND NOT APPLE)
-  # if we are building with MPI and Python enabled then we should
-  # also be building mpi4py and can import that for this test
-  add_test(ParallelPythonImport
-    ${VTK_MPIRUN_EXE} ${VTK_MPI_PRENUMPROC_FLAGS} ${VTK_MPI_NUMPROC_FLAG} ${VTK_MPI_MAX_NUMPROCS}
-    ${VTK_MPI_PREFLAGS}
-    ${PYTHON_EXECUTABLE}
-    ${CMAKE_CURRENT_SOURCE_DIR}/ParallelPythonImport.py
-    ${VTK_MPI_POSTFLAGS}
-    )
-  set_tests_properties(ParallelPythonImport PROPERTIES LABELS PARAVIEW
-    ENVIRONMENT "PYTHONPATH=${VTK_PYTHONPATH}:${VTK_PYTHONPATH}/site-packages:${PYTHONPATH}" )
 endif()

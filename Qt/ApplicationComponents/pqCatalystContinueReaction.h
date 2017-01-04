@@ -29,26 +29,29 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqCatalystContinueReaction_h
-#define __pqCatalystContinueReaction_h
+#ifndef pqCatalystContinueReaction_h
+#define pqCatalystContinueReaction_h
 
 #include "pqCatalystPauseSimulationReaction.h"
 #include <QPointer>
 
 class pqLiveInsituVisualizationManager;
 
-
-/// Reaction for setting a breakpoint to Catalyst CoProcessing Engine
-/// for Live-Data Visualization.
-/// @ingroup Reactions
-/// @ingroup LiveInsitu
-class PQAPPLICATIONCOMPONENTS_EXPORT pqCatalystContinueReaction :
-  public pqCatalystPauseSimulationReaction
+/**
+* Reaction for setting a breakpoint to Catalyst CoProcessing Engine
+* for Live-Data Visualization.
+* @ingroup Reactions
+* @ingroup LiveInsitu
+*/
+class PQAPPLICATIONCOMPONENTS_EXPORT pqCatalystContinueReaction
+  : public pqCatalystPauseSimulationReaction
 {
   Q_OBJECT
   typedef pqCatalystPauseSimulationReaction Superclass;
+
 public:
-  pqCatalystContinueReaction(QAction* parentTemp=0) : Superclass(parentTemp)
+  pqCatalystContinueReaction(QAction* parentTemp = 0)
+    : Superclass(parentTemp)
   {
   }
 
@@ -59,9 +62,10 @@ public slots:
   }
 
 protected:
-  /// Called when the action is triggered.
-  virtual void onTriggered()
-  { this->setPauseSimulation(false); }
+  /**
+  * Called when the action is triggered.
+  */
+  virtual void onTriggered() { this->setPauseSimulation(false); }
 
 private:
   Q_DISABLE_COPY(pqCatalystContinueReaction)

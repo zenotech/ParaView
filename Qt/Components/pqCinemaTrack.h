@@ -29,28 +29,31 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqCinemaTrack_h
-#define __pqCinemaTrack_h
+#ifndef pqCinemaTrack_h
+#define pqCinemaTrack_h
 
 #include "pqComponentsModule.h"
+#include <QScopedPointer>
 #include <QString>
 #include <QStringList>
-#include <QWidget>
-#include <QScopedPointer>
 #include <QVariantList>
+#include <QWidget>
 
 class pqPipelineFilter;
 class pqScalarValueListPropertyWidget;
 
-namespace Ui { class CinemaTrack; }
+namespace Ui
+{
+class CinemaTrack;
+}
 
 class PQCOMPONENTS_EXPORT pqCinemaTrack : public QWidget
 {
   Q_OBJECT
   typedef QWidget Superclass;
+
 public:
-  pqCinemaTrack(
-    QWidget *parentObject, Qt::WindowFlags parentFlags, pqPipelineFilter *filter);
+  pqCinemaTrack(QWidget* parentObject, Qt::WindowFlags parentFlags, pqPipelineFilter* filter);
   ~pqCinemaTrack();
 
   bool explore() const;
@@ -59,11 +62,11 @@ public:
 
 public slots:
 
-  void toggleTrack(bool checked);
+  void setFilterName(QString const& name);
 
 private:
   Q_DISABLE_COPY(pqCinemaTrack)
   QScopedPointer<Ui::CinemaTrack> Track;
-  pqScalarValueListPropertyWidget *valsWidget;
+  pqScalarValueListPropertyWidget* valsWidget;
 };
 #endif

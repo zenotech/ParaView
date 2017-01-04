@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __vtkVRQueueHandler_h
-#define __vtkVRQueueHandler_h
+#ifndef vtkVRQueueHandler_h
+#define vtkVRQueueHandler_h
 
 #include <QtCore/QObject>
 #include <QtCore/QPointer>
@@ -47,8 +47,9 @@ class pqVRQueueHandler : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
-  pqVRQueueHandler(vtkVRQueue* queue, QObject* parent=0);
+  pqVRQueueHandler(vtkVRQueue* queue, QObject* parent = 0);
   virtual ~pqVRQueueHandler();
 
   /// Add/remove interactor style.
@@ -80,7 +81,7 @@ protected slots:
   void processEvents();
 
 private:
-  Q_DISABLE_COPY(pqVRQueueHandler);
+  Q_DISABLE_COPY(pqVRQueueHandler)
   void render();
   class pqInternals;
   pqInternals* Internals;

@@ -19,8 +19,8 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
-#ifndef __pqSLACActionGroup_h
-#define __pqSLACActionGroup_h
+#ifndef pqSLACActionGroup_h
+#define pqSLACActionGroup_h
 
 #include <QActionGroup>
 
@@ -29,12 +29,12 @@
 class pqSLACActionGroup : public QActionGroup
 {
   Q_OBJECT;
+
 public:
-  pqSLACActionGroup(QObject *p);
+  pqSLACActionGroup(QObject* p);
 
 private:
-  pqSLACActionGroup(const pqSLACActionGroup &);     // Not implemented
-  void operator=(const pqSLACActionGroup &);        // Not implemented
+  Q_DISABLE_COPY(pqSLACActionGroup)
 };
 
-#endif //__pqSLACActionGroup_h
+#endif // pqSLACActionGroup_h

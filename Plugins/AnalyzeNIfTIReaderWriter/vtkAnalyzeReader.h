@@ -21,8 +21,8 @@
 // .SECTION See Also
 // vtkAnalyzeWriter vtkNIfTIReader vtkNIfTIWriter
 
-#ifndef __vtkAnalyzeReader_h
-#define __vtkAnalyzeReader_h
+#ifndef vtkAnalyzeReader_h
+#define vtkAnalyzeReader_h
 
 #include "vtkImageReader.h"
 
@@ -38,8 +38,8 @@ class vtkFieldData;
 class vtkAnalyzeReader : public vtkImageReader
 {
 public:
-  static vtkAnalyzeReader *New();
-  vtkTypeMacro(vtkAnalyzeReader,vtkImageReader);
+  static vtkAnalyzeReader* New();
+  vtkTypeMacro(vtkAnalyzeReader, vtkImageReader);
   virtual void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description: is the given file name a png file?
@@ -49,33 +49,27 @@ public:
   // Get the file extensions for this format.
   // Returns a string with a space separated list of extensions in
   // the format .extension
-  virtual const char* GetFileExtensions()
-  {
-    return ".img .hdr";
-  }
+  virtual const char* GetFileExtensions() { return ".img .hdr"; }
 
   // Description:
   // Return a descriptive name for the file format that might be useful in a GUI.
-  virtual const char* GetDescriptiveName()
-  {
-    return "Analyze";
-  }
+  virtual const char* GetDescriptiveName() { return "Analyze"; }
 
-  char * GetFileName(){return(FileName);};
-  unsigned int getImageSizeInBytes(){return(imageSizeInBytes);};
-  
+  char* GetFileName() { return (FileName); };
+  unsigned int getImageSizeInBytes() { return (imageSizeInBytes); };
+
 protected:
   vtkAnalyzeReader();
   ~vtkAnalyzeReader();
 
   virtual void ExecuteInformation();
-  virtual void ExecuteDataWithInformation(vtkDataObject *out, vtkInformation* outInfo);
+  virtual void ExecuteDataWithInformation(vtkDataObject* out, vtkInformation* outInfo);
 
 private:
-  vtkAnalyzeReader(const vtkAnalyzeReader&);  // Not implemented.
-  void operator=(const vtkAnalyzeReader&);  // Not implemented.
+  vtkAnalyzeReader(const vtkAnalyzeReader&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkAnalyzeReader&) VTK_DELETE_FUNCTION;
 
-  void vtkAnalyzeReaderUpdateVTKBit(vtkImageData *data, void *outPtr);
+  void vtkAnalyzeReaderUpdateVTKBit(vtkImageData* data, void* outPtr);
 
   unsigned int numberOfDimensions;
   unsigned int imageSizeInBytes;
@@ -86,15 +80,15 @@ private:
   int diskDimensions[3];
   int diskExtent[6];
   double diskSpacing[3];
-  //int width;
-  //int height;
-  //int depth;
+  // int width;
+  // int height;
+  // int depth;
   int binaryOnDiskWidth;
   int binaryOnDiskHeight;
   int binaryOnDiskDepth;
 
-  vtkUnsignedCharArray *analyzeHeader;
-  unsigned char * analyzeHeaderUnsignedCharArray;
+  vtkUnsignedCharArray* analyzeHeader;
+  unsigned char* analyzeHeaderUnsignedCharArray;
   int analyzeHeaderSize;
 
   bool fixFlipError;

@@ -58,23 +58,6 @@
                             information_property="CameraViewAngleInfo"
                             name="CameraViewAngle"
                             number_of_elements="1"></DoubleVectorProperty>
-      <DoubleVectorProperty default_values="4.63 0.30"
-                            information_only="1"
-                            name="CameraClippingRangeInfo"
-                            number_of_elements="2">
-        <SimpleDoubleInformationHelper />
-        <!-- bogus property, only left to avoid backwards compatibility issues
-             for now-->
-      </DoubleVectorProperty>
-      <DoubleVectorProperty default_values="4.63 0.30"
-                            ignore_synchronization="1"
-                            immediate_update="1"
-                            information_property="CameraClippingRangeInfo"
-                            name="CameraClippingRange"
-                            number_of_elements="2">
-        <!-- bogus property, only left to avoid backwards compatibility issues
-             for now-->
-        </DoubleVectorProperty>
       <DoubleVectorProperty command="SetParallelScale"
                             default_values="1.73"
                             ignore_synchronization="1"
@@ -88,13 +71,6 @@
                             number_of_elements="1">
         <SimpleDoubleInformationHelper />
       </DoubleVectorProperty>
-      <IntVectorProperty command="SetParallelProjection"
-                         default_values="0"
-                         ignore_synchronization="1"
-                         name="CameraParallelProjection"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-      </IntVectorProperty>
       <DoubleVectorProperty command="SetEyeAngle"
                             default_values="2.0"
                             ignore_synchronization="1"
@@ -225,6 +201,9 @@
       </IntVectorProperty>
       <!-- End of FixedPointVolumeRayCastMapper -->
     </Proxy>
+    <Proxy class="vtkSmartVolumeMapper"
+           name="UnstructuredGridResampleToImageMapper"
+           processes="client|renderserver|dataserver"></Proxy>
     <!-- End of "mappers" -->
   </ProxyGroup>
   <ProxyGroup name="ugrid_raycast_functions">

@@ -29,32 +29,36 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqMacroReaction_h
-#define __pqMacroReaction_h
+#ifndef pqMacroReaction_h
+#define pqMacroReaction_h
 
 #include "pqMasterOnlyReaction.h"
 
-/// @ingroup Reactions
-/// Reaction for creating or deleting a python macro
+/**
+* @ingroup Reactions
+* Reaction for creating or deleting a python macro
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqMacroReaction : public pqMasterOnlyReaction
 {
   Q_OBJECT
   typedef pqMasterOnlyReaction Superclass;
+
 public:
   pqMacroReaction(QAction* parent);
 
-  /// define a python file as a macro and save it.
+  /**
+  * define a python file as a macro and save it.
+  */
   static void createMacro();
 
 protected slots:
   void enable(bool);
 
 protected:
-  /// Called when the action is triggered.
-  virtual void onTriggered()
-    {
-    pqMacroReaction::createMacro();
-    }
+  /**
+  * Called when the action is triggered.
+  */
+  virtual void onTriggered() { pqMacroReaction::createMacro(); }
 
 private:
   Q_DISABLE_COPY(pqMacroReaction)

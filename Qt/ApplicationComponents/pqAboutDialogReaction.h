@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,34 +29,37 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqAboutDialogReaction_h 
-#define __pqAboutDialogReaction_h
+#ifndef pqAboutDialogReaction_h
+#define pqAboutDialogReaction_h
 
 #include "pqReaction.h"
 
-/// @ingroup Reactions
-/// pqAboutDialogReaction used to show the standard about dialog for the
-/// application.
+/**
+* @ingroup Reactions
+* pqAboutDialogReaction used to show the standard about dialog for the
+* application.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqAboutDialogReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
+
 public:
   pqAboutDialogReaction(QAction* parent);
 
-  /// Shows the about dialog for the application.
+  /**
+  * Shows the about dialog for the application.
+  */
   static void showAboutDialog();
 
 protected:
-  /// Called when the action is triggered.
-  virtual void onTriggered()
-    { pqAboutDialogReaction::showAboutDialog(); }
-
+  /**
+  * Called when the action is triggered.
+  */
+  virtual void onTriggered() { pqAboutDialogReaction::showAboutDialog(); }
 
 private:
   Q_DISABLE_COPY(pqAboutDialogReaction)
 };
 
 #endif
-
-

@@ -33,15 +33,16 @@
 // in the Multiply mode, the two colors are scaled to 0-1, multiplied, and rescaled to 0-255.
 // in the Add mode, the two components are simply added and clamped to 0-255.
 
-#ifndef __vtkTwoScalarsToColorsPainter_h__
-#define __vtkTwoScalarsToColorsPainter_h__
+#ifndef vtkTwoScalarsToColorsPainter_h
+#define vtkTwoScalarsToColorsPainter_h
 
-#include "vtkPointSpriteRenderingModule.h" //needed for exports
 #include "vtkOpenGLScalarsToColorsPainter.h"
+#include "vtkPointSpriteRenderingModule.h" //needed for exports
 
-class VTKPOINTSPRITERENDERING_EXPORT vtkTwoScalarsToColorsPainter : public vtkOpenGLScalarsToColorsPainter
+class VTKPOINTSPRITERENDERING_EXPORT vtkTwoScalarsToColorsPainter
+  : public vtkOpenGLScalarsToColorsPainter
 {
-public :
+public:
   static vtkTwoScalarsToColorsPainter* New();
   vtkTypeMacro(vtkTwoScalarsToColorsPainter, vtkOpenGLScalarsToColorsPainter);
   void PrintSelf(ostream& os, vtkIndent indent);
@@ -63,28 +64,24 @@ public :
   vtkSetMacro(OpacityScalarMode, int);
   vtkGetMacro(OpacityScalarMode, int);
 
-protected :
-  char *OpacityArrayName;
+protected:
+  char* OpacityArrayName;
   int EnableOpacity;
   int OpacityScalarMode;
-  vtkTimeStamp  BlendTime;
+  vtkTimeStamp BlendTime;
 
-  void PrepareForRendering(vtkRenderer* renderer,
-      vtkActor* actor);
+  void PrepareForRendering(vtkRenderer* renderer, vtkActor* actor);
 
-  void RenderInternals(vtkRenderer* renderer,
-      vtkActor* actor,
-      unsigned long typeflags,
-      bool forceCompileOnly);
+  void RenderInternals(
+    vtkRenderer* renderer, vtkActor* actor, unsigned long typeflags, bool forceCompileOnly);
 
-  virtual void MapScalars(vtkDataSet* output,
-    double alpha, int multiply_with_alpha,
-    vtkDataSet* input, vtkActor* actor);
-  virtual void MapScalars(vtkDataSet* output, double alpha,
-    int multiply_with_alpha, vtkDataSet* input)
-    {
+  virtual void MapScalars(
+    vtkDataSet* output, double alpha, int multiply_with_alpha, vtkDataSet* input, vtkActor* actor);
+  virtual void MapScalars(
+    vtkDataSet* output, double alpha, int multiply_with_alpha, vtkDataSet* input)
+  {
     this->Superclass::MapScalars(output, alpha, multiply_with_alpha, input);
-    }
+  }
   // Description:
   // Create a new shallow-copied clone for data with no scalars.
   virtual vtkDataObject* NewClone(vtkDataObject* data);
@@ -93,8 +90,8 @@ protected :
   ~vtkTwoScalarsToColorsPainter();
 
 private:
-  vtkTwoScalarsToColorsPainter(const vtkTwoScalarsToColorsPainter&); // Not implemented.
-  void operator=(const vtkTwoScalarsToColorsPainter&); // Not implemented.
+  vtkTwoScalarsToColorsPainter(const vtkTwoScalarsToColorsPainter&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkTwoScalarsToColorsPainter&) VTK_DELETE_FUNCTION;
 };
 
 #endif

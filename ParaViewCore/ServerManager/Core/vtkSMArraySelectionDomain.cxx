@@ -15,9 +15,14 @@
 #include "vtkSMArraySelectionDomain.h"
 
 #include "vtkObjectFactory.h"
+#include "vtkPVXMLElement.h"
+#include "vtkSMPropertyHelper.h"
 #include "vtkSMVectorProperty.h"
 
 vtkStandardNewMacro(vtkSMArraySelectionDomain);
+
+//---------------------------------------------------------------------------
+bool vtkSMArraySelectionDomain::LoadAllVariables = false;
 
 //---------------------------------------------------------------------------
 vtkSMArraySelectionDomain::vtkSMArraySelectionDomain()
@@ -35,14 +40,31 @@ int vtkSMArraySelectionDomain::SetDefaultValues(vtkSMProperty* prop, bool use_un
   vtkSMVectorProperty* vprop = vtkSMVectorProperty::SafeDownCast(prop);
   vtkSMVectorProperty* infoProp = vtkSMVectorProperty::SafeDownCast(prop->GetInformationProperty());
   if (vprop && infoProp)
-    {
+  {
     if (use_unchecked_values)
-      {
+    {
       vtkWarningMacro("Developer Warnings: missing unchecked implementation.");
-      }
-    vprop->Copy(infoProp);
-    return 1;
     }
+
+    vprop->Copy(infoProp);
+
+    if (vtkSMArraySelectionDomain::LoadAllVariables == true)
+    {
+      vtkSMPropertyHelper helper(vprop);
+
+      for (unsigned int i = 0; i < this->GetNumberOfStrings(); i++)
+      {
+        vtkPVXMLElement* omitFromLoadAllVariablesHint =
+          (prop->GetHints() ? prop->GetHints()->FindNestedElementByName("OmitFromLoadAllVariables")
+                            : NULL);
+        if (!omitFromLoadAllVariablesHint)
+        {
+          helper.SetStatus(this->GetString(i), 1);
+        }
+      }
+    }
+    return 1;
+  }
   return this->Superclass::SetDefaultValues(prop, use_unchecked_values);
 }
 

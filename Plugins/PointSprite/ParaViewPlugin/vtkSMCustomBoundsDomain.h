@@ -16,8 +16,8 @@
 // .SECTION Description
 //
 
-#ifndef __vtkSMCustomBoundsDomain_h
-#define __vtkSMCustomBoundsDomain_h
+#ifndef vtkSMCustomBoundsDomain_h
+#define vtkSMCustomBoundsDomain_h
 
 #include "vtkSMBoundsDomain.h"
 
@@ -38,7 +38,6 @@ public:
   // property.
   virtual int SetDefaultValues(vtkSMProperty*, bool use_unchecked_values);
 
-//BTX
 protected:
   vtkSMCustomBoundsDomain();
   ~vtkSMCustomBoundsDomain();
@@ -46,9 +45,8 @@ protected:
   virtual void UpdateFromInformation(vtkPVDataInformation* information);
 
 private:
-  vtkSMCustomBoundsDomain(const vtkSMCustomBoundsDomain&); // Not implemented
-  void operator=(const vtkSMCustomBoundsDomain&); // Not implemented
-//ETX
+  vtkSMCustomBoundsDomain(const vtkSMCustomBoundsDomain&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMCustomBoundsDomain&) VTK_DELETE_FUNCTION;
 };
 
 #endif

@@ -12,12 +12,12 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#ifndef __vtkProcessModuleInternals_h
-#define __vtkProcessModuleInternals_h
+#ifndef vtkProcessModuleInternals_h
+#define vtkProcessModuleInternals_h
 
-#include "vtkWeakPointer.h"
-#include "vtkSmartPointer.h"
 #include "vtkSession.h"
+#include "vtkSmartPointer.h"
+#include "vtkWeakPointer.h"
 
 #include <map>
 #include <vector>

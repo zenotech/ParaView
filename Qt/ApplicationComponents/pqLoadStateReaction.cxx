@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -35,9 +35,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqApplicationCore.h"
 #include "pqCoreUtilities.h"
 #include "pqFileDialog.h"
-#include "pqRecentlyUsedResourcesList.h"
+#include "pqPVApplicationCore.h"
 #include "pqServer.h"
-#include "pqServerResource.h"
+#include "pqStandardRecentlyUsedResourceLoaderImplementation.h"
+#include "vtkNew.h"
+#include "vtkPVConfig.h"
 #include "vtkPVXMLParser.h"
 
 #include <QFileInfo>
@@ -49,8 +51,8 @@ pqLoadStateReaction::pqLoadStateReaction(QAction* parentObject)
   // load state enable state depends on whether we are connected to an active
   // server or not and whether
   pqActiveObjects* activeObjects = &pqActiveObjects::instance();
-  QObject::connect(activeObjects, SIGNAL(serverChanged(pqServer*)),
-    this, SLOT(updateEnableState()));
+  QObject::connect(
+    activeObjects, SIGNAL(serverChanged(pqServer*)), this, SLOT(updateEnableState()));
   this->updateEnableState();
 }
 
@@ -62,51 +64,59 @@ void pqLoadStateReaction::updateEnableState()
 }
 
 //-----------------------------------------------------------------------------
-void pqLoadStateReaction::loadState(const QString& filename)
+void pqLoadStateReaction::loadState(const QString& filename, pqServer* server)
 {
-  pqActiveObjects* activeObjects = &pqActiveObjects::instance();
-  pqServer *server = activeObjects->activeServer();
+  if (server == NULL)
+  {
+    server = pqActiveObjects::instance().activeServer();
+  }
 
-  // Read in the xml file to restore.
-  vtkPVXMLParser *xmlParser = vtkPVXMLParser::New();
-  xmlParser->SetFileName(filename.toLatin1().data());
-  xmlParser->Parse();
+  if (!server)
+  {
+    return;
+  }
 
-  // Get the root element from the parser.
-  vtkPVXMLElement *root = xmlParser->GetRootElement();
-  if (root)
+  if (filename.endsWith(".pvsm"))
+  {
+    vtkNew<vtkPVXMLParser> xmlParser;
+    xmlParser->SetFileName(filename.toLatin1().data());
+    xmlParser->Parse();
+
+    vtkPVXMLElement* root = xmlParser->GetRootElement();
+    if (root)
     {
-    pqApplicationCore::instance()->loadState(root, server);
-
-    // Add this to the list of recent server resources ...
-    pqServerResource resource;
-    resource.setScheme("session");
-    resource.setPath(filename);
-    resource.setSessionServer(server->getResource());
-    pqApplicationCore::instance()->recentlyUsedResources().add(resource);
-    pqApplicationCore::instance()->recentlyUsedResources().save(
-      *pqApplicationCore::instance()->settings());
+      pqApplicationCore::instance()->loadState(root, server);
+      // Add this to the list of recent server resources ...
+      pqStandardRecentlyUsedResourceLoaderImplementation::addStateFileToRecentResources(
+        server, filename);
     }
+  }
   else
-    {
-    qCritical("Root does not exist. Either state file could not be opened "
-      "or it does not contain valid xml");
-    }
-  xmlParser->Delete();
+  { // python file
+#ifdef PARAVIEW_ENABLE_PYTHON
+    pqPVApplicationCore::instance()->loadStateFromPythonFile(filename, server);
+    pqStandardRecentlyUsedResourceLoaderImplementation::addStateFileToRecentResources(
+      server, filename);
+#else
+    qWarning("ParaView was not built with Python support so it cannot open a python file");
+#endif
+  }
 }
 
 //-----------------------------------------------------------------------------
 void pqLoadStateReaction::loadState()
 {
-  pqFileDialog fileDialog(NULL,
-    pqCoreUtilities::mainWidget(),
-    tr("Load State File"), QString(),
-    "ParaView state file (*.pvsm);;All files (*)");
+  pqFileDialog fileDialog(NULL, pqCoreUtilities::mainWidget(), tr("Load State File"), QString(),
+    "ParaView state file (*.pvsm"
+#ifdef PARAVIEW_ENABLE_PYTHON
+    " *.py"
+#endif
+    ");;All files (*)");
   fileDialog.setObjectName("FileLoadServerStateDialog");
   fileDialog.setFileMode(pqFileDialog::ExistingFile);
   if (fileDialog.exec() == QDialog::Accepted)
-    {
+  {
     QString selectedFile = fileDialog.getSelectedFiles()[0];
     pqLoadStateReaction::loadState(selectedFile);
-    }
+  }
 }

@@ -12,13 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVSILInformation
-// .SECTION Description
-// Information object used to retreived the SIL graph from a file reader or
-// any compatible source.
+/**
+ * @class   vtkPVSILInformation
+ *
+ * Information object used to retreived the SIL graph from a file reader or
+ * any compatible source.
+*/
 
-#ifndef __vtkPVSILInformation_h
-#define __vtkPVSILInformation_h
+#ifndef vtkPVSILInformation_h
+#define vtkPVSILInformation_h
 
 #include "vtkPVClientServerCoreCoreModule.h" //needed for exports
 #include "vtkPVInformation.h"
@@ -32,33 +34,36 @@ public:
   vtkTypeMacro(vtkPVSILInformation, vtkPVInformation);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Transfer information about a single object into this object.
+  /**
+   * Transfer information about a single object into this object.
+   */
   virtual void CopyFromObject(vtkObject*);
 
-  //BTX
-  // Description:
-  // Manage a serialized version of the information.
+  //@{
+  /**
+   * Manage a serialized version of the information.
+   */
   virtual void CopyToStream(vtkClientServerStream*);
   virtual void CopyFromStream(const vtkClientServerStream*);
-  //ETX
+  //@}
 
-  // Description:
-  // Returns the SIL.
+  //@{
+  /**
+   * Returns the SIL.
+   */
   vtkGetObjectMacro(SIL, vtkGraph);
+  //@}
 
-//BTX
 protected:
   vtkPVSILInformation();
   ~vtkPVSILInformation();
 
   void SetSIL(vtkGraph*);
   vtkGraph* SIL;
+
 private:
-  vtkPVSILInformation(const vtkPVSILInformation&); // Not implemented
-  void operator=(const vtkPVSILInformation&); // Not implemented
-//ETX
+  vtkPVSILInformation(const vtkPVSILInformation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVSILInformation&) VTK_DELETE_FUNCTION;
 };
 
 #endif
-

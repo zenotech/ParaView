@@ -12,14 +12,17 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVAlgorithmPortsInformation - Holds number of outputs
-// .SECTION Description
-// This information object collects the number of outputs from the
-// sources.  This is separate from vtkPVDataInformation because the number of
-// outputs can be determined before Update is called.
+/**
+ * @class   vtkPVAlgorithmPortsInformation
+ * @brief   Holds number of outputs
+ *
+ * This information object collects the number of outputs from the
+ * sources.  This is separate from vtkPVDataInformation because the number of
+ * outputs can be determined before Update is called.
+*/
 
-#ifndef __vtkPVAlgorithmPortsInformation_h
-#define __vtkPVAlgorithmPortsInformation_h
+#ifndef vtkPVAlgorithmPortsInformation_h
+#define vtkPVAlgorithmPortsInformation_h
 
 #include "vtkPVClientServerCoreCoreModule.h" //needed for exports
 #include "vtkPVInformation.h"
@@ -29,28 +32,39 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVAlgorithmPortsInformation : public v
 public:
   static vtkPVAlgorithmPortsInformation* New();
   vtkTypeMacro(vtkPVAlgorithmPortsInformation, vtkPVInformation);
-  void PrintSelf(ostream &os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Get number of outputs for a particular source.
+  //@{
+  /**
+   * Get number of outputs for a particular source.
+   */
   vtkGetMacro(NumberOfOutputs, int);
+  //@}
 
-  // Description:
-  // Get the number of required inputs for a particular algorithm.
+  //@{
+  /**
+   * Get the number of required inputs for a particular algorithm.
+   */
   vtkGetMacro(NumberOfRequiredInputs, int);
+  //@}
 
-  // Description:
-  // Transfer information about a single object into this object.
+  /**
+   * Transfer information about a single object into this object.
+   */
   virtual void CopyFromObject(vtkObject*);
 
-  // Description:
-  // Merge another information object.
+  /**
+   * Merge another information object.
+   */
   virtual void AddInformation(vtkPVInformation*);
 
-  // Description:
-  // Manage a serialized version of the information.
+  //@{
+  /**
+   * Manage a serialized version of the information.
+   */
   virtual void CopyToStream(vtkClientServerStream*);
   virtual void CopyFromStream(const vtkClientServerStream*);
+  //@}
 
 protected:
   vtkPVAlgorithmPortsInformation();
@@ -60,9 +74,10 @@ protected:
   int NumberOfRequiredInputs;
 
   vtkSetMacro(NumberOfOutputs, int);
+
 private:
-  vtkPVAlgorithmPortsInformation(const vtkPVAlgorithmPortsInformation&); // Not implemented
-  void operator=(const vtkPVAlgorithmPortsInformation&); // Not implemented
+  vtkPVAlgorithmPortsInformation(const vtkPVAlgorithmPortsInformation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVAlgorithmPortsInformation&) VTK_DELETE_FUNCTION;
 };
 
 #endif

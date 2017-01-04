@@ -23,8 +23,8 @@
 //
 // .SECTION Thanks
 // This class was contributed by SciberQuest Inc.
-#ifndef __vtkSQHemisphereSourceConfigurationFileInfo_h
-#define __vtkSQHemisphereSourceConfigurationFileInfo_h
+#ifndef vtkSQHemisphereSourceConfigurationFileInfo_h
+#define vtkSQHemisphereSourceConfigurationFileInfo_h
 
 #include "vtkObject.h"
 
@@ -32,24 +32,23 @@ class VTK_EXPORT vtkSQHemisphereSourceConfigurationFileInfo
 {
 public:
   vtkSQHemisphereSourceConfigurationFileInfo()
-        :
-    FileIdentifier("SQHemisphereSourceSourceConfiguration"),
-    FileDescription("SciberQuest HemisphereSource Source configuration"),
-    FileExtension(".sqhsc")
-       {}
-  virtual ~vtkSQHemisphereSourceConfigurationFileInfo(){}
+    : FileIdentifier("SQHemisphereSourceSourceConfiguration")
+    , FileDescription("SciberQuest HemisphereSource Source configuration")
+    , FileExtension(".sqhsc")
+  {
+  }
+  virtual ~vtkSQHemisphereSourceConfigurationFileInfo() {}
 
-  virtual void PrintSelf(ostream &os, vtkIndent indent)
-    {
-    os
-      << indent << "FileIdentifier: " << this->FileIdentifier << std::endl
-      << indent << "FileDescription: " << this->FileDescription << std::endl
-      << indent << "FileExtension: " << this->FileExtension << std::endl;
-    }
+  virtual void PrintSelf(ostream& os, vtkIndent indent)
+  {
+    os << indent << "FileIdentifier: " << this->FileIdentifier << std::endl
+       << indent << "FileDescription: " << this->FileDescription << std::endl
+       << indent << "FileExtension: " << this->FileExtension << std::endl;
+  }
 
-  const char *FileIdentifier;
-  const char *FileDescription;
-  const char *FileExtension;
+  const char* FileIdentifier;
+  const char* FileDescription;
+  const char* FileExtension;
 };
 
 #endif

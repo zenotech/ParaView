@@ -12,15 +12,17 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSelectionDeliveryFilter
-// .SECTION Description
-// vtkSelectionDeliveryFilter is a filter that can deliver vtkSelection from
-// data-server nodes to the client. This should not be instantiated on the
-// pure-render-server nodes to avoid odd side effects (We can fix this later if
-// the need arises).
+/**
+ * @class   vtkSelectionDeliveryFilter
+ *
+ * vtkSelectionDeliveryFilter is a filter that can deliver vtkSelection from
+ * data-server nodes to the client. This should not be instantiated on the
+ * pure-render-server nodes to avoid odd side effects (We can fix this later if
+ * the need arises).
+*/
 
-#ifndef __vtkSelectionDeliveryFilter_h
-#define __vtkSelectionDeliveryFilter_h
+#ifndef vtkSelectionDeliveryFilter_h
+#define vtkSelectionDeliveryFilter_h
 
 #include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 #include "vtkSelectionAlgorithm.h"
@@ -28,29 +30,28 @@
 class vtkClientServerMoveData;
 class vtkReductionFilter;
 
-class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkSelectionDeliveryFilter : public vtkSelectionAlgorithm
+class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkSelectionDeliveryFilter
+  : public vtkSelectionAlgorithm
 {
 public:
   static vtkSelectionDeliveryFilter* New();
   vtkTypeMacro(vtkSelectionDeliveryFilter, vtkSelectionAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-//BTX
 protected:
   vtkSelectionDeliveryFilter();
   ~vtkSelectionDeliveryFilter();
 
   virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int RequestData(vtkInformation* request,
-    vtkInformationVector** inputVector, vtkInformationVector* outputVector);
+  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector);
 
   vtkReductionFilter* ReductionFilter;
   vtkClientServerMoveData* DeliveryFilter;
 
 private:
-  vtkSelectionDeliveryFilter(const vtkSelectionDeliveryFilter&); // Not implemented
-  void operator=(const vtkSelectionDeliveryFilter&); // Not implemented
-//ETX
+  vtkSelectionDeliveryFilter(const vtkSelectionDeliveryFilter&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSelectionDeliveryFilter&) VTK_DELETE_FUNCTION;
 };
 
 #endif

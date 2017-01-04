@@ -20,16 +20,16 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkSMRepresentationProxy.h"
 #include "vtkSMSession.h"
 #include "vtkSMSessionProxyManager.h"
-#include "vtkSmartPointer.h"
 #include "vtkSMViewProxy.h"
+#include "vtkSmartPointer.h"
 #include "vtkTestUtilities.h"
 
-#include <sstream>
 #include <assert.h>
+#include <sstream>
 
 int TestParaViewPipelineController(int argc, char* argv[])
 {
-  (void) argc;
+  (void)argc;
   vtkInitializationHelper::Initialize(argv[0], vtkProcessModule::PROCESS_CLIENT);
 
   vtkNew<vtkSMParaViewPipelineController> controller;
@@ -38,39 +38,40 @@ int TestParaViewPipelineController(int argc, char* argv[])
   vtkSMSession* session = vtkSMSession::New();
   vtkSMSessionProxyManager* pxm = session->GetSessionProxyManager();
   if (!controller->InitializeSession(session))
-    {
+  {
     cerr << "Failed to initialize ParaView session." << endl;
     return EXIT_FAILURE;
-    }
+  }
 
   if (controller->FindTimeKeeper(session) == NULL)
-    {
+  {
     cerr << "Failed at line " << __LINE__ << endl;
     return EXIT_FAILURE;
-    }
+  }
 
   if (controller->FindAnimationScene(session) == NULL)
-    {
+  {
     cerr << "Failed at line " << __LINE__ << endl;
     return EXIT_FAILURE;
-    }
+  }
 
   if (controller->GetTimeAnimationTrack(controller->GetAnimationScene(session)) == NULL)
-    {
+  {
     cerr << "Failed at line " << __LINE__ << endl;
     return EXIT_FAILURE;
-    }
+  }
 
-
-    {
+  {
     // Create reader.
     vtkSmartPointer<vtkSMProxy> exodusReader;
     exodusReader.TakeReference(pxm->NewProxy("sources", "ExodusIIReader"));
 
     controller->PreInitializeProxy(exodusReader);
-    vtkSMPropertyHelper(exodusReader, "FileName").Set(
-      "/home/utkarsh/Kitware/ParaView3/ParaViewData/Data/can.ex2");
-     // "/Users/utkarsh/Kitware/ParaView3/ParaViewData/Data/can.ex2");
+
+    char* fname = vtkTestUtilities::ExpandDataFileName(argc, argv, "can.ex2");
+    vtkSMPropertyHelper(exodusReader, "FileName").Set(fname);
+    delete[] fname;
+
     vtkSMPropertyHelper(exodusReader, "ApplyDisplacements").Set(0);
     exodusReader->UpdateVTKObjects();
 
@@ -86,8 +87,8 @@ int TestParaViewPipelineController(int argc, char* argv[])
 
     // Create display.
     vtkSmartPointer<vtkSMProxy> repr;
-    repr.TakeReference(vtkSMViewProxy::SafeDownCast(view)->CreateDefaultRepresentation(
-        exodusReader, 0));
+    repr.TakeReference(
+      vtkSMViewProxy::SafeDownCast(view)->CreateDefaultRepresentation(exodusReader, 0));
     controller->PreInitializeProxy(repr);
     vtkSMPropertyHelper(repr, "Input").Set(exodusReader);
     controller->PostInitializeProxy(repr);
@@ -95,19 +96,19 @@ int TestParaViewPipelineController(int argc, char* argv[])
 
     vtkSMPropertyHelper(view, "Representations").Add(repr);
     view->UpdateVTKObjects();
-    }
+  }
 
-  char *tempDir = vtkTestUtilities::GetArgOrEnvOrDefault(
-    "-T", argc, argv, "VTK_TEMP_DIR", "Testing/Temporary");
+  char* tempDir =
+    vtkTestUtilities::GetArgOrEnvOrDefault("-T", argc, argv, "VTK_TEMP_DIR", "Testing/Temporary");
   if (!tempDir)
-    {
+  {
     cerr << "Could not determine temporary directory.\n";
     return EXIT_FAILURE;
-    }
+  }
   std::string path = tempDir;
   path += "/state.pvsm";
   pxm->SaveXMLState(path.c_str());
-  delete [] tempDir;
+  delete[] tempDir;
   session->Delete();
   vtkInitializationHelper::Finalize();
   return EXIT_SUCCESS;

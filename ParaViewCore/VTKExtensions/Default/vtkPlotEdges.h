@@ -12,68 +12,55 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPlotEdges - 
-// .SECTION Description
+/**
+ * @class   vtkPlotEdges
+ *
+*/
 
+#ifndef vtkPlotEdges_h
+#define vtkPlotEdges_h
 
-#ifndef __vtkPlotEdges_h
-#define __vtkPlotEdges_h
-
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkMultiBlockDataSetAlgorithm.h"
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 
-//BTX
 class Node;
 class Segment;
 class vtkPolyData;
 class vtkCollection;
 class vtkMultiBlockDataSet;
-//ETX
 
 class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPlotEdges : public vtkMultiBlockDataSetAlgorithm
 {
 public:
   vtkTypeMacro(vtkPlotEdges, vtkMultiBlockDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
-  
-  static vtkPlotEdges *New();
-//BTX
+
+  static vtkPlotEdges* New();
+
 protected:
   vtkPlotEdges();
   virtual ~vtkPlotEdges();
 
   virtual int FillInputPortInformation(int port, vtkInformation* info);
   // Usual data generation method
-  int RequestData(vtkInformation *, vtkInformationVector **, 
-                  vtkInformationVector *);
-
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
   void Process(vtkPolyData* input, vtkMultiBlockDataSet* output);
   static void ReducePolyData(vtkPolyData* polyData, vtkPolyData* output);
 
-  void ExtractSegments (vtkPolyData* polyData, vtkCollection* segments, 
-                        vtkCollection* nodes);
-  static void ExtractSegmentsFromExtremity (vtkPolyData* polyData,
-                                            vtkCollection* segments,
-                                            vtkCollection* nodes, 
-                                            char* visitedCells,
-                                            vtkIdType cellId,
-                                            vtkIdType pointId,
-                                            Node* node);
-  static void ConnectSegmentsWithNodes (vtkCollection* segments,
-                                        vtkCollection* nodes);
-  static void SaveToMultiBlockDataSet (vtkCollection* segments,
-                                       vtkMultiBlockDataSet* output);
-  static void MergeSegments (vtkCollection* segments, vtkCollection* nodes,
-                             Node* node, 
-                             Segment* segmentA, Segment* segmentB);
+  void ExtractSegments(vtkPolyData* polyData, vtkCollection* segments, vtkCollection* nodes);
+  static void ExtractSegmentsFromExtremity(vtkPolyData* polyData, vtkCollection* segments,
+    vtkCollection* nodes, char* visitedCells, vtkIdType cellId, vtkIdType pointId, Node* node);
+  static void ConnectSegmentsWithNodes(vtkCollection* segments, vtkCollection* nodes);
+  static void SaveToMultiBlockDataSet(vtkCollection* segments, vtkMultiBlockDataSet* output);
+  static void MergeSegments(vtkCollection* segments, vtkCollection* nodes, Node* node,
+    Segment* segmentA, Segment* segmentB);
   static Node* GetNodeAtPoint(vtkCollection* nodes, vtkIdType pointId);
   static void PrintSegments(vtkCollection* segments);
 
 private:
-  vtkPlotEdges(const vtkPlotEdges&);  // Not implemented.
-  void operator=(const vtkPlotEdges&);  // Not implemented.
-//ETX
+  vtkPlotEdges(const vtkPlotEdges&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPlotEdges&) VTK_DELETE_FUNCTION;
 };
 
 #endif

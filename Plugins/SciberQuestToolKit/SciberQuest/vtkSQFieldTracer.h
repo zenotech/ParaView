@@ -1,11 +1,32 @@
 /*
-   ____    _ __           ____               __    ____
-  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
- _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
-
-Copyright 2012 SciberQuest Inc.
-*/
+ * Copyright 2012 SciberQuest Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  * Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ *  * Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ *  * Neither name of SciberQuest Inc. nor the names of any contributors may be
+ *    used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS''
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 // .NAME vtkSQFieldTracer - Streamline generator
 // .SECTION Description
 //
@@ -14,8 +35,8 @@ Copyright 2012 SciberQuest Inc.
 // surfaces.
 // TODO verify that VTK rk45 implementation increases step size!!
 
-#ifndef __vtkSQFieldTracer_h
-#define __vtkSQFieldTracer_h
+#ifndef vtkSQFieldTracer_h
+#define vtkSQFieldTracer_h
 
 #include "vtkSciberQuestModule.h" // for export macro
 #include "vtkDataSetAlgorithm.h"
@@ -26,13 +47,11 @@ class vtkMultiProcessController;
 class vtkInitialValueProblemSolver;
 class vtkPointSet;
 class vtkPVXMLElement;
-//BTX
+
 class IdBlock;
 class FieldLine;
 class FieldTraceData;
 class TerminationCondition;
-//ETX
-
 
 class VTKSCIBERQUEST_EXPORT vtkSQFieldTracer : public vtkDataSetAlgorithm
 {
@@ -71,7 +90,7 @@ public:
   // PV gets confused if you try to change Mode later.
   vtkSetMacro(Mode,int);
   vtkGetMacro(Mode,int);
-  //BTX
+
   enum
     {
     MODE_STREAM=1,
@@ -79,7 +98,6 @@ public:
     MODE_POINCARE=3,
     MODE_DISPLACEMENT=4
     };
-  //ETX
 
   // Description:
   // If set then only forward traces is carried out.
@@ -90,7 +108,7 @@ public:
   // Set integrator type. RK2=1, RK4=2, RK45=3
   void SetIntegratorType(int type);
   int GetIntegratorType(){ return this->IntegratorType; }
-  //BTX
+
   enum
     {
     INTEGRATOR_NONE=0,
@@ -98,7 +116,6 @@ public:
     INTEGRATOR_RK4=2,
     INTEGRATOR_RK45=3
     };
-  //ETX
 
   // Description:
   // Specify a uniform integration step unit for MinimumIntegrationStep,
@@ -208,7 +225,7 @@ protected:
   int RequestDataObject(vtkInformation *info,vtkInformationVector** input,vtkInformationVector* output);
 
 private:
-  //BTX
+
   // Description:
   // Integrate over all local cells. This assumes that each process has a unique
   // subset of the work (i.e. seed source cells are statically distributed),
@@ -253,7 +270,6 @@ private:
         const char *fieldName,
         FieldLine *line,
         TerminationCondition *tcon);
-  //ETX
 
   // Description:
   // Determine the start id of the cells in data relative
@@ -275,8 +291,8 @@ private:
   // Convert from cell fractional unit into length.
   static double ConvertToLength(double interval,int unit,double cellLength);
 
-  vtkSQFieldTracer(const vtkSQFieldTracer&);  // Not implemented.
-  void operator=(const vtkSQFieldTracer&);  // Not implemented.
+  vtkSQFieldTracer(const vtkSQFieldTracer&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSQFieldTracer&) VTK_DELETE_FUNCTION;
 
 private:
   int WorldSize;
@@ -313,14 +329,13 @@ private:
 
   int LogLevel;
 
-  //BTX
   // units
   enum
     {
     ARC_LENGTH=1,
     CELL_FRACTION=2
     };
- //ETX
+
 };
 
 #endif

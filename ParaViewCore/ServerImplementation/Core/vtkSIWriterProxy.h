@@ -12,12 +12,14 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSIWriterProxy
-// .SECTION Description
-// ServerImplementation for WriterProxy
+/**
+ * @class   vtkSIWriterProxy
+ *
+ * ServerImplementation for WriterProxy
+*/
 
-#ifndef __vtkSIWriterProxy_h
-#define __vtkSIWriterProxy_h
+#ifndef vtkSIWriterProxy_h
+#define vtkSIWriterProxy_h
 
 #include "vtkPVServerImplementationCoreModule.h" //needed for exports
 #include "vtkSISourceProxy.h"
@@ -29,41 +31,45 @@ public:
   vtkTypeMacro(vtkSIWriterProxy, vtkSISourceProxy);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // These methods are called to add/remove input connections by
-  // vtkSIInputProperty. This indirection makes it possible for subclasses to
-  // insert VTK-algorithms in the input pipeline.
-  // Overridden to insert "CompleteArrays" filter in the pipeline.
-  virtual void AddInput(int input_port,
-    vtkAlgorithmOutput* connection, const char* method);
+  //@{
+  /**
+   * These methods are called to add/remove input connections by
+   * vtkSIInputProperty. This indirection makes it possible for subclasses to
+   * insert VTK-algorithms in the input pipeline.
+   * Overridden to insert "CompleteArrays" filter in the pipeline.
+   */
+  virtual void AddInput(int input_port, vtkAlgorithmOutput* connection, const char* method);
   virtual void CleanInputs(const char* method);
+  //@}
 
-  // Description:
-  // Update the requested time for the pipeline. This needs to be
-  // separate than vtkSISourceProxy because there are no output
-  // ports to do this on.
+  /**
+   * Update the requested time for the pipeline. This needs to be
+   * separate than vtkSISourceProxy because there are no output
+   * ports to do this on.
+   */
   virtual void UpdatePipelineTime(double time);
 
-//BTX
 protected:
   vtkSIWriterProxy();
   ~vtkSIWriterProxy();
 
-  // Description:
-  // Creates the VTKObjects. Overridden to add post-filters to the pipeline.
-  virtual bool CreateVTKObjects(vtkSMMessage* message);
+  /**
+   * Overridden to setup stuff on the writer e.g piece request, gather helpers
+   * etc.
+   */
+  void OnCreateVTKObjects() VTK_OVERRIDE;
 
-  // Description:
-  // Read xml-attributes.
+  /**
+   * Read xml-attributes.
+   */
   virtual bool ReadXMLAttributes(vtkPVXMLElement* element);
 
   char* FileNameMethod;
   vtkSetStringMacro(FileNameMethod);
 
 private:
-  vtkSIWriterProxy(const vtkSIWriterProxy&); // Not implemented
-  void operator=(const vtkSIWriterProxy&); // Not implemented
-//ETX
+  vtkSIWriterProxy(const vtkSIWriterProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSIWriterProxy&) VTK_DELETE_FUNCTION;
 };
 
 #endif

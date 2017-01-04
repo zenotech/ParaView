@@ -12,12 +12,14 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSIIdTypeVectorProperty
-// .SECTION Description
-// IdType ServerSide Property use to set IdType array as method parameter.
+/**
+ * @class   vtkSIIdTypeVectorProperty
+ *
+ * IdType ServerSide Property use to set IdType array as method parameter.
+*/
 
-#ifndef __vtkSIIdTypeVectorProperty_h
-#define __vtkSIIdTypeVectorProperty_h
+#ifndef vtkSIIdTypeVectorProperty_h
+#define vtkSIIdTypeVectorProperty_h
 
 #include "vtkPVServerImplementationCoreModule.h" //needed for exports
 #include "vtkSIVectorProperty.h"
@@ -36,15 +38,13 @@ public:
   vtkTypeMacro(vtkSIIdTypeVectorProperty, vtkSIVectorProperty);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-//BTX
 protected:
   vtkSIIdTypeVectorProperty();
   ~vtkSIIdTypeVectorProperty();
 
 private:
-  vtkSIIdTypeVectorProperty(const vtkSIIdTypeVectorProperty&); // Not implemented
-  void operator=(const vtkSIIdTypeVectorProperty&); // Not implemented
-//ETX
+  vtkSIIdTypeVectorProperty(const vtkSIIdTypeVectorProperty&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSIIdTypeVectorProperty&) VTK_DELETE_FUNCTION;
 };
 
 #endif

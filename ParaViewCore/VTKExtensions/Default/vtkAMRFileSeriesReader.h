@@ -13,11 +13,11 @@
 
 =========================================================================*/
 
-#ifndef __vtkAMRFileSeriesReader_h
-#define __vtkAMRFileSeriesReader_h
+#ifndef vtkAMRFileSeriesReader_h
+#define vtkAMRFileSeriesReader_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkFileSeriesReader.h"
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 
 class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkAMRFileSeriesReader : public vtkFileSeriesReader
 {
@@ -27,24 +27,18 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent);
 
 protected:
-  virtual int RequestInformation(vtkInformation* request,
-                                 vtkInformationVector** inputVector,
-                                 vtkInformationVector* outputVector);
+  virtual int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector);
 
-  virtual int RequestUpdateTime (vtkInformation*,
-                                  vtkInformationVector**,
-                                 vtkInformationVector*);
+  virtual int RequestUpdateTime(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
-
-  virtual int RequestUpdateTimeDependentInformation (vtkInformation*,
-                                                     vtkInformationVector**,
-                                                     vtkInformationVector*);
-
+  virtual int RequestUpdateTimeDependentInformation(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
 private:
   vtkAMRFileSeriesReader();
-  vtkAMRFileSeriesReader(const vtkAMRFileSeriesReader&); // Not implemented.
-  void operator=(const vtkAMRFileSeriesReader&); // Not implemented.
+  vtkAMRFileSeriesReader(const vtkAMRFileSeriesReader&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkAMRFileSeriesReader&) VTK_DELETE_FUNCTION;
 };
 
 #endif

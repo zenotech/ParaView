@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __vtkVRTrackStyle_h_
-#define __vtkVRTrackStyle_h_
+#ifndef vtkVRTrackStyle_h_
+#define vtkVRTrackStyle_h_
 
 #include "vtkVRInteractorStyle.h"
 
@@ -45,20 +45,19 @@ struct vtkVREventData;
 class vtkVRTrackStyle : public vtkVRInteractorStyle
 {
 public:
-  static vtkVRTrackStyle *New();
-  vtkTypeMacro(vtkVRTrackStyle, vtkVRInteractorStyle)
-  void PrintSelf(ostream &os, vtkIndent indent);
+  static vtkVRTrackStyle* New();
+  vtkTypeMacro(vtkVRTrackStyle, vtkVRInteractorStyle) void PrintSelf(ostream& os, vtkIndent indent);
 
   virtual int GetControlledPropertySize() { return 16; }
 
 protected:
   vtkVRTrackStyle();
   ~vtkVRTrackStyle();
-  virtual void HandleTracker( const vtkVREventData& data );
+  virtual void HandleTracker(const vtkVREventData& data);
 
 private:
-  vtkVRTrackStyle(const vtkVRTrackStyle&); // Not implemented.
-  void operator=(const vtkVRTrackStyle&); // Not implemented.
+  vtkVRTrackStyle(const vtkVRTrackStyle&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkVRTrackStyle&) VTK_DELETE_FUNCTION;
 };
 
-#endif //__vtkVRTrackStyle.h_
+#endif // vtkVRTrackStyle.h_

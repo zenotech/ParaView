@@ -12,32 +12,36 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMBagChartSeriesListDomain - extends vtkSMChartSeriesListDomain to
-// setup defaults specific for bag plot representations.
-// .SECTION Description
-// vtkSMBagChartSeriesListDomain extends vtkSMChartSeriesListDomain to
-// setup defaults specific for bag plot representations.
-#ifndef __vtkSMBagChartSeriesListDomain_h
-#define __vtkSMBagChartSeriesListDomain_h
+/**
+ * @class   vtkSMBagChartSeriesListDomain
+ * @brief   extends vtkSMChartSeriesListDomain to
+ * setup defaults specific for bag plot representations.
+ *
+ * vtkSMBagChartSeriesListDomain extends vtkSMChartSeriesListDomain to
+ * setup defaults specific for bag plot representations.
+*/
 
-#include "vtkSMChartSeriesListDomain.h"
+#ifndef vtkSMBagChartSeriesListDomain_h
+#define vtkSMBagChartSeriesListDomain_h
+
 #include "vtkPVServerManagerRenderingModule.h" // needed for exports
+#include "vtkSMChartSeriesListDomain.h"
 
 class vtkPVDataInformation;
 
-class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMBagChartSeriesListDomain :
-  public vtkSMChartSeriesListDomain
+class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMBagChartSeriesListDomain
+  : public vtkSMChartSeriesListDomain
 {
 public:
   static vtkSMBagChartSeriesListDomain* New();
   vtkTypeMacro(vtkSMBagChartSeriesListDomain, vtkSMChartSeriesListDomain);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Set the default values for the property.
+  /**
+   * Set the default values for the property.
+   */
   virtual int SetDefaultValues(vtkSMProperty*, bool use_unchecked_values);
 
-//BTX
 protected:
   vtkSMBagChartSeriesListDomain();
   ~vtkSMBagChartSeriesListDomain();
@@ -47,9 +51,8 @@ protected:
   int ArrayType;
 
 private:
-  vtkSMBagChartSeriesListDomain(const vtkSMBagChartSeriesListDomain&); // Not implemented
-  void operator=(const vtkSMBagChartSeriesListDomain&); // Not implemented
-//ETX
+  vtkSMBagChartSeriesListDomain(const vtkSMBagChartSeriesListDomain&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMBagChartSeriesListDomain&) VTK_DELETE_FUNCTION;
 };
 
 #endif

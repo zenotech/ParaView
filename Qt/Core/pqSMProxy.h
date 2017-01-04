@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -33,15 +33,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _pqSMProxy_h
 #define _pqSMProxy_h
 
-#include "vtkSmartPointer.h"
+#include "pqCoreModule.h"
 #include "vtkSMProxy.h"
+#include "vtkSmartPointer.h"
 #include <QMetaType>
 
-/// make pqSMProxy synonymous to a smart pointer of a vtkSMProxy
+/**
+* make pqSMProxy synonymous to a smart pointer of a vtkSMProxy
+*/
 typedef vtkSmartPointer<vtkSMProxy> pqSMProxy;
 
-/// declare pqSMProxy for use with QVariant
+/**
+* declare pqSMProxy for use with QVariant
+*/
 Q_DECLARE_METATYPE(pqSMProxy)
 
-#endif
+extern PQCORE_EXPORT const int pqSMProxyMetaTypeId;
 
+#endif

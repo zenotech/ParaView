@@ -29,15 +29,15 @@
 // .SECTION Description - 1D transfer function that maps values
 // to the max of a set af gaussians
 
-#ifndef __vtk1DGaussianTransferFunction_h
-#define __vtk1DGaussianTransferFunction_h
+#ifndef vtk1DGaussianTransferFunction_h
+#define vtk1DGaussianTransferFunction_h
 
-#include "vtkPointSpriteGraphicsModule.h" //needed for exports
 #include "vtk1DTransferFunction.h"
+#include "vtkPointSpriteGraphicsModule.h" //needed for exports
 
 class vtkDoubleArray;
 
-class VTKPOINTSPRITEGRAPHICS_EXPORT vtk1DGaussianTransferFunction: public vtk1DTransferFunction
+class VTKPOINTSPRITEGRAPHICS_EXPORT vtk1DGaussianTransferFunction : public vtk1DTransferFunction
 {
 public:
   static vtk1DGaussianTransferFunction* New();
@@ -46,28 +46,28 @@ public:
 
   // Description:
   // Set/Get the number of Gaussian control points.
-  virtual void  SetNumberOfGaussianControlPoints(vtkIdType);
-  virtual vtkIdType  GetNumberOfGaussianControlPoints();
+  virtual void SetNumberOfGaussianControlPoints(vtkIdType);
+  virtual vtkIdType GetNumberOfGaussianControlPoints();
 
   // Description:
   // Set/Get a single Gaussian control point.
-  virtual void  SetGaussianControlPoint(vtkIdType, double, double, double, double, double);
-  virtual void  SetGaussianControlPoint(vtkIdType, double*);
-  virtual void  GetGaussianControlPoint(vtkIdType, double*);
+  virtual void SetGaussianControlPoint(vtkIdType, double, double, double, double, double);
+  virtual void SetGaussianControlPoint(vtkIdType, double*);
+  virtual void GetGaussianControlPoint(vtkIdType, double*);
 
   // Description:
   // add/remove a Gaussian control point.
-  virtual void  AddGaussianControlPoint(double, double, double, double, double);
-  virtual void  AddGaussianControlPoint(double*);
-  virtual void  RemoveGaussianControlPoint(vtkIdType);
+  virtual void AddGaussianControlPoint(double, double, double, double, double);
+  virtual void AddGaussianControlPoint(double*);
+  virtual void RemoveGaussianControlPoint(vtkIdType);
 
   // Description:
   // clean all control points.
-  virtual void  RemoveAllGaussianControlPoints();
+  virtual void RemoveAllGaussianControlPoints();
 
   // map a value and store it in the output at the given index
   // using the Lookup Table
-  virtual double  MapValue(double value, double* range);
+  virtual double MapValue(double value, double* range);
 
 protected:
   vtk1DGaussianTransferFunction();
@@ -76,9 +76,8 @@ protected:
   vtkDoubleArray* GaussianControlPoints;
 
 private:
-  vtk1DGaussianTransferFunction(const vtk1DGaussianTransferFunction&); // Not implemented.
-  void operator=(const vtk1DGaussianTransferFunction&); // Not implemented.
+  vtk1DGaussianTransferFunction(const vtk1DGaussianTransferFunction&) VTK_DELETE_FUNCTION;
+  void operator=(const vtk1DGaussianTransferFunction&) VTK_DELETE_FUNCTION;
 };
 
 #endif
-

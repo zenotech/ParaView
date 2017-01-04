@@ -12,46 +12,65 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVXMLParser parses ParaView XML configuration files.
-// .SECTION Description
-// This is a subclass of vtkXMLParser that constructs a representation
-// of parsed XML using vtkPVXMLElement.
-#ifndef __vtkPVXMLParser_h
-#define __vtkPVXMLParser_h
+/**
+ * @class   vtkPVXMLParser
+ *
+ * This is a subclass of vtkXMLParser that constructs a representation
+ * of parsed XML using vtkPVXMLElement.
+*/
 
-#include "vtkXMLParser.h"
+#ifndef vtkPVXMLParser_h
+#define vtkPVXMLParser_h
+
 #include "vtkPVCommonModule.h" // needed for export macro
+#include "vtkSmartPointer.h"   // needed for vtkSmartPointer.
+#include "vtkXMLParser.h"
 
 class vtkPVXMLElement;
 
 class VTKPVCOMMON_EXPORT vtkPVXMLParser : public vtkXMLParser
 {
 public:
-  vtkTypeMacro(vtkPVXMLParser,vtkXMLParser);
+  vtkTypeMacro(vtkPVXMLParser, vtkXMLParser);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkPVXMLParser* New();
 
-  // Description:
-  // Write the parsed XML into the output stream.
+  /**
+   * Write the parsed XML into the output stream.
+   */
   void PrintXML(ostream& os);
 
-  // Description:
-  // Get the root element from the XML document.
+  /**
+   * Get the root element from the XML document.
+   */
   vtkPVXMLElement* GetRootElement();
 
-  // Description:
-  // Get/Set the file from which to read the configuration.
+  //@{
+  /**
+   * Get/Set the file from which to read the configuration.
+   */
   vtkSetStringMacro(FileName);
   vtkGetStringMacro(FileName);
+  //@}
 
-  // Description:
-  // If on, then the Parse method will NOT report an error using vtkErrorMacro.
-  // Rather, it will just return false.  This feature is useful when simply
-  // checking to see if a file is a valid XML file or there is otherwise a way
-  // to recover from the failed parse.  This flag is off by default.
+  //@{
+  /**
+   * If on, then the Parse method will NOT report an error using vtkErrorMacro.
+   * Rather, it will just return false.  This feature is useful when simply
+   * checking to see if a file is a valid XML file or there is otherwise a way
+   * to recover from the failed parse.  This flag is off by default.
+   */
   vtkGetMacro(SuppressErrorMessages, int);
   vtkSetMacro(SuppressErrorMessages, int);
   vtkBooleanMacro(SuppressErrorMessages, int);
+  //@}
+
+  /**
+   * Convenience method to parse XML contents. Will return NULL is the
+   * xmlcontents cannot be parsed.
+   */
+  static vtkSmartPointer<vtkPVXMLElement> ParseXML(
+    const char* xmlcontents, bool suppress_errors = false);
 
 protected:
   vtkPVXMLParser();
@@ -86,8 +105,8 @@ protected:
   virtual void ReportXmlParseError();
 
 private:
-  vtkPVXMLParser(const vtkPVXMLParser&);  // Not implemented.
-  void operator=(const vtkPVXMLParser&);  // Not implemented.
+  vtkPVXMLParser(const vtkPVXMLParser&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVXMLParser&) VTK_DELETE_FUNCTION;
 };
 
 #endif

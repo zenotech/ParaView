@@ -12,15 +12,18 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVSelectionInformation - Used to gather selection information
-// .SECTION Description
-// Used to get information about selection from server to client.
-// The results are stored in a vtkSelection. 
-// .SECTION See Also
-// vtkSelection
+/**
+ * @class   vtkPVSelectionInformation
+ * @brief   Used to gather selection information
+ *
+ * Used to get information about selection from server to client.
+ * The results are stored in a vtkSelection.
+ * @sa
+ * vtkSelection
+*/
 
-#ifndef __vtkPVSelectionInformation_h
-#define __vtkPVSelectionInformation_h
+#ifndef vtkPVSelectionInformation_h
+#define vtkPVSelectionInformation_h
 
 #include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 #include "vtkPVInformation.h"
@@ -36,25 +39,31 @@ public:
   vtkTypeMacro(vtkPVSelectionInformation, vtkPVInformation);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Copy information from a selection to internal datastructure.
+  /**
+   * Copy information from a selection to internal datastructure.
+   */
   virtual void CopyFromObject(vtkObject*);
 
-  // Description:
-  // Merge another information object.
+  /**
+   * Merge another information object.
+   */
   virtual void AddInformation(vtkPVInformation*);
 
-  //BTX
-  // Description:
-  // Manage a serialized version of the information.
+  //@{
+  /**
+   * Manage a serialized version of the information.
+   */
   virtual void CopyToStream(vtkClientServerStream*);
   virtual void CopyFromStream(const vtkClientServerStream*);
-  //ETX
+  //@}
 
-  // Description:
-  // Returns the selection. Selection is created and populated
-  // at the end of GatherInformation.
+  //@{
+  /**
+   * Returns the selection. Selection is created and populated
+   * at the end of GatherInformation.
+   */
   vtkGetObjectMacro(Selection, vtkSelection);
+  //@}
 
 protected:
   vtkPVSelectionInformation();
@@ -64,8 +73,8 @@ protected:
   vtkSelection* Selection;
 
 private:
-  vtkPVSelectionInformation(const vtkPVSelectionInformation&); // Not implemented
-  void operator=(const vtkPVSelectionInformation&); // Not implemented
+  vtkPVSelectionInformation(const vtkPVSelectionInformation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVSelectionInformation&) VTK_DELETE_FUNCTION;
 };
 
 #endif

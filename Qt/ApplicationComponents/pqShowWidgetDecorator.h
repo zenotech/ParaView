@@ -29,21 +29,22 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqShowWidgetDecorator_h
-#define __pqShowWidgetDecorator_h
+#ifndef pqShowWidgetDecorator_h
+#define pqShowWidgetDecorator_h
 
 #include "pqApplicationComponentsModule.h"
 #include "pqBoolPropertyWidgetDecorator.h"
 #include "vtkWeakPointer.h"
 
-
-/// pqShowWidgetDecorator can be used to show/hide a widget based on the
-/// status of another property not directly controlled by the widget.
-class PQAPPLICATIONCOMPONENTS_EXPORT pqShowWidgetDecorator :
-  public pqBoolPropertyWidgetDecorator
+/**
+* pqShowWidgetDecorator can be used to show/hide a widget based on the
+* status of another property not directly controlled by the widget.
+*/
+class PQAPPLICATIONCOMPONENTS_EXPORT pqShowWidgetDecorator : public pqBoolPropertyWidgetDecorator
 {
   Q_OBJECT
   typedef pqBoolPropertyWidgetDecorator Superclass;
+
 public:
   pqShowWidgetDecorator(vtkPVXMLElement* config, pqPropertyWidget* parent);
 
@@ -54,7 +55,7 @@ public:
   }
 
 private:
-  Q_DISABLE_COPY(pqShowWidgetDecorator);
+  Q_DISABLE_COPY(pqShowWidgetDecorator)
 };
 
 #endif

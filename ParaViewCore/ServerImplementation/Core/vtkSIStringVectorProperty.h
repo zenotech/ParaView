@@ -12,12 +12,14 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSIStringVectorProperty
-// .SECTION Description
-// ServerImplementation Property to deal with String array as method arguments.
+/**
+ * @class   vtkSIStringVectorProperty
+ *
+ * ServerImplementation Property to deal with String array as method arguments.
+*/
 
-#ifndef __vtkSIStringVectorProperty_h
-#define __vtkSIStringVectorProperty_h
+#ifndef vtkSIStringVectorProperty_h
+#define vtkSIStringVectorProperty_h
 
 #include "vtkPVServerImplementationCoreModule.h" //needed for exports
 #include "vtkSIVectorProperty.h"
@@ -29,36 +31,41 @@ public:
   vtkTypeMacro(vtkSIStringVectorProperty, vtkSIVectorProperty);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-
-//BTX
 protected:
   vtkSIStringVectorProperty();
   ~vtkSIStringVectorProperty();
 
-  enum ElementTypes{ INT, DOUBLE, STRING };
+  enum ElementTypes
+  {
+    INT,
+    DOUBLE,
+    STRING
+  };
 
-  // Description:
-  // Push a new state to the underneath implementation
+  /**
+   * Push a new state to the underneath implementation
+   */
   virtual bool Push(vtkSMMessage*, int);
 
-  // Description:
-  // Pull the current state of the underneath implementation
+  /**
+   * Pull the current state of the underneath implementation
+   */
   virtual bool Pull(vtkSMMessage*);
 
-  // Description:
-  // Parse the xml for the property.
+  /**
+   * Parse the xml for the property.
+   */
   virtual bool ReadXMLAttributes(vtkSIProxy* proxyhelper, vtkPVXMLElement* element);
 
 private:
-  vtkSIStringVectorProperty(const vtkSIStringVectorProperty&); // Not implemented
-  void operator=(const vtkSIStringVectorProperty&); // Not implemented
+  vtkSIStringVectorProperty(const vtkSIStringVectorProperty&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSIStringVectorProperty&) VTK_DELETE_FUNCTION;
 
   class vtkVectorOfStrings;
   class vtkVectorOfInts;
 
-  bool Push(const vtkVectorOfStrings &values);
+  bool Push(const vtkVectorOfStrings& values);
   vtkVectorOfInts* ElementTypes;
-//ETX
 };
 
 #endif

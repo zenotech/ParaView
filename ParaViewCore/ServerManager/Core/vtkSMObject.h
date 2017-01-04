@@ -12,16 +12,19 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMObject - superclass for most server manager classes
-// .SECTION Description
-// vtkSMObject is mostly to tag a class hierarchy that it belong to the
-// servermanager.
+/**
+ * @class   vtkSMObject
+ * @brief   superclass for most server manager classes
+ *
+ * vtkSMObject is mostly to tag a class hierarchy that it belong to the
+ * servermanager.
+*/
 
-#ifndef __vtkSMObject_h
-#define __vtkSMObject_h
+#ifndef vtkSMObject_h
+#define vtkSMObject_h
 
-#include "vtkPVServerManagerCoreModule.h" //needed for exports
 #include "vtkObject.h"
+#include "vtkPVServerManagerCoreModule.h" //needed for exports
 
 class vtkSMApplication;
 
@@ -37,8 +40,8 @@ protected:
   ~vtkSMObject();
 
 private:
-  vtkSMObject(const vtkSMObject&); // Not implemented
-  void operator=(const vtkSMObject&); // Not implemented
+  vtkSMObject(const vtkSMObject&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMObject&) VTK_DELETE_FUNCTION;
 };
 
 #endif

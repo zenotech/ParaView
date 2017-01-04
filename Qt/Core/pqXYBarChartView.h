@@ -29,16 +29,18 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqXYBarChartView_h
-#define __pqXYBarChartView_h
+#ifndef pqXYBarChartView_h
+#define pqXYBarChartView_h
 
 #include "pqContextView.h"
 
 class vtkSMSourceProxy;
 class pqDataRepresentation;
 
-/// pqContextView subclass for "Bar Chart View". Doesn't do much expect adds
-/// the API to get the chartview type and name.
+/**
+* pqContextView subclass for "Bar Chart View". Doesn't do much expect adds
+* the API to get the chartview type and name.
+*/
 class PQCORE_EXPORT pqXYBarChartView : public pqContextView
 {
   Q_OBJECT
@@ -47,21 +49,19 @@ class PQCORE_EXPORT pqXYBarChartView : public pqContextView
 public:
   static QString XYBarChartViewType() { return "XYBarChartView"; }
 
-  /// Currently the bar chart view is not supporting selection.
-  virtual bool supportsSelection() const {return false;}
+  /**
+  * Currently the bar chart view is not supporting selection.
+  */
+  virtual bool supportsSelection() const { return false; }
 
 public:
-  pqXYBarChartView(const QString& group,
-                 const QString& name,
-                 vtkSMContextViewProxy* viewModule,
-                 pqServer* server,
-                 QObject* parent=NULL);
+  pqXYBarChartView(const QString& group, const QString& name, vtkSMContextViewProxy* viewModule,
+    pqServer* server, QObject* parent = NULL);
 
   virtual ~pqXYBarChartView();
 
 private:
-  pqXYBarChartView(const pqXYBarChartView&); // Not implemented.
-  void operator=(const pqXYBarChartView&); // Not implemented.
+  Q_DISABLE_COPY(pqXYBarChartView)
 };
 
 #endif

@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqVRAddStyleDialog_h
-#define __pqVRAddStyleDialog_h
+#ifndef pqVRAddStyleDialog_h
+#define pqVRAddStyleDialog_h
 
 #include <QDialog>
 
@@ -40,11 +40,12 @@ class pqVRAddStyleDialog : public QDialog
 {
   Q_OBJECT
   typedef QDialog Superclass;
+
 public:
-  pqVRAddStyleDialog(QWidget* parent=0, Qt::WindowFlags f=0);
+  pqVRAddStyleDialog(QWidget* parent = 0, Qt::WindowFlags f = 0);
   virtual ~pqVRAddStyleDialog();
 
-  void setInteractorStyle(vtkVRInteractorStyle *, const QString &name);
+  void setInteractorStyle(vtkVRInteractorStyle*, const QString& name);
   void updateInteractorStyle();
 
   // Returns true if there are any user-configurable options.

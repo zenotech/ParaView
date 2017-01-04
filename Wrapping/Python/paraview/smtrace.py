@@ -67,7 +67,12 @@ garbage collected since there's no reference to it.
 import weakref
 import paraview.servermanager as sm
 import paraview.simple as simple
+import sys
 from paraview.vtk import vtkTimeStamp
+
+
+if sys.version_info >= (3,):
+    xrange = range
 
 class TraceOutput:
   """Internal class used to collect the trace output. Everytime anything is pushed into
@@ -81,10 +86,10 @@ class TraceOutput:
   def append(self, data):
     if isinstance(data, list):
       self.__data += data
-      #print "\n".join(data),"\n"
+      #print ("\n".join(data),"\n")
     elif isinstance(data, str):
       self.__data.append(data)
-      #print data,"\n"
+      #print (data,"\n")
 
   def append_separator(self):
     try:
@@ -143,7 +148,8 @@ class Trace(object):
 
     @classmethod
     def unregister_accessor(cls, accessor):
-        del cls.__REGISTERED_ACCESSORS[accessor.get_object()]
+        if accessor.get_object() in cls.__REGISTERED_ACCESSORS:
+            del cls.__REGISTERED_ACCESSORS[accessor.get_object()]
 
     @classmethod
     def get_accessor(cls, obj):
@@ -168,7 +174,7 @@ class Trace(object):
 
     @classmethod
     def has_accessor(cls, obj):
-        return cls.__REGISTERED_ACCESSORS.has_key(obj)
+        return obj in cls.__REGISTERED_ACCESSORS
 
     @classmethod
     def create_accessor(cls, obj):
@@ -264,6 +270,19 @@ class Trace(object):
                     "# get layout",
                     "%s = GetLayout()" % accessor])
                 return True
+            else:
+                varname = cls.get_varname(cls.get_registered_name(obj, "layouts"))
+                accessor = ProxyAccessor(varname, obj)
+                cls.Output.append_separated([\
+                    "# get layout",
+                    "%s = GetLayoutByName(\"%s\")" % (accessor, cls.get_registered_name(obj, "layouts"))])
+                return True
+        if obj.SMProxy.IsA("vtkSMTimeKeeperProxy"):
+            tkAccessor = ProxyAccessor(cls.get_varname(cls.get_registered_name(obj, "timekeeper")), obj)
+            cls.Output.append_separated([\
+                    "# get the time-keeper",
+                    "%s = GetTimeKeeper()" % tkAccessor])
+            return True
         return False
 
     @classmethod
@@ -458,11 +477,12 @@ class RealProxyAccessor(Accessor):
         pld_props = [x for x in self.OrderedProperties if x.has_proxy_list_domain()]
         for prop in pld_props:
             paccessor = Trace.get_accessor(prop.get_property_value())
-            sub_trace = paccessor.trace_ctor(None, filter)
-            if sub_trace:
-                trace.append_separated(\
-                    "# init the %s selected for '%s'" % (prop.get_value(), prop.get_property_name()))
-                trace.append(sub_trace)
+            if not prop.DisableSubTrace:
+              sub_trace = paccessor.trace_ctor(None, filter)
+              if sub_trace:
+                  trace.append_separated(\
+                      "# init the %s selected for '%s'" % (prop.get_value(), prop.get_property_name()))
+                  trace.append(sub_trace)
         return trace.raw_data()
 
 def ProxyAccessor(*args, **kwargs):
@@ -494,7 +514,7 @@ class PropertyTraceHelper(object):
         pld_domain = pyprop.FindDomain("vtkSMProxyListDomain")
         self.HasProxyListDomain = isinstance(pyprop, sm.ProxyProperty) and pld_domain != None
         self.ProxyListDomainProxyAccessors = []
-
+        self.DisableSubTrace = pyprop.GetDisableSubTrace()
         if self.HasProxyListDomain:
             # register accessors for proxies in the proxy list domain.
             # This is cheating. Since there's no accessor for a proxy in the domain
@@ -584,7 +604,7 @@ class ProxyFilter(object):
         # should we hide properties hidden from panels? yes, generally, except
         # Views.
         if hide_gui_hidden == True and prop.get_object().GetPanelVisibility() == "never":
-            if prop.get_property_name() == "ViewSize": print "skipping hidden"
+            if prop.get_property_name() == "ViewSize": print ("skipping hidden")
             return True
         # if a property is "linked" to settings, then skip it here too. We
         # should eventually add an option for user to save, yes, save these too.
@@ -652,7 +672,7 @@ class ViewProxyFilter(ProxyFilter):
         # missing something in the design of vtkSMProperties here. We need to
         # reclassify properties to cleanly address all its "roles".
         if prop.get_property_name() in [\
-            "ViewTime", "CacheKey", "Representations", "CameraClippingRange"]: return True
+            "ViewTime", "CacheKey", "Representations"]: return True
         return ProxyFilter.should_never_trace(self, prop, hide_gui_hidden=False)
 
 class AnimationProxyFilter(ProxyFilter):
@@ -796,7 +816,7 @@ class PropertiesModified(NestableTraceItem):
             # is shown on the same pqProxyWidget as the ColorTransferFunction proxy --
             # which is non-standard.
             if proxy.ScalarOpacityFunction:
-                self.ScalarOpacityFunctionHack = PropertiesModified(proxy.ScalarOpacityFunction)
+                self.ScalarOpacityFunctionHack = PropertiesModified(self.proxy.ScalarOpacityFunction)
         except: pass
 
     def finalize(self):
@@ -812,12 +832,13 @@ class PropertiesModified(NestableTraceItem):
             val = prop.get_property_value()
             if val:
                 valaccessor = Trace.get_accessor(val)
-                props = valaccessor.get_properties()
-                props_to_trace = [k for k in props if self.MTime.GetMTime() < k.get_object().GetMTime()]
-                if props_to_trace:
-                  Trace.Output.append_separated([
-                      "# Properties modified on %s" % valaccessor,
-                      valaccessor.trace_properties(props_to_trace, in_ctor=False)])
+                if not prop.DisableSubTrace:
+                  props = valaccessor.get_properties()
+                  props_to_trace = [k for k in props if self.MTime.GetMTime() < k.get_object().GetMTime()]
+                  if props_to_trace:
+                    Trace.Output.append_separated([
+                        "# Properties modified on %s" % valaccessor,
+                        valaccessor.trace_properties(props_to_trace, in_ctor=False)])
         TraceItem.finalize(self)
 
         try:
@@ -889,27 +910,41 @@ class Hide(TraceItem):
 
 class SetScalarColoring(TraceItem):
     """Trace vtkSMPVRepresentationProxy.SetScalarColoring"""
-    def __init__(self, display, arrayname, attribute_type):
+    def __init__(self, display, arrayname, attribute_type, component=None, lut=None):
         TraceItem.__init__(self)
 
         self.Display = sm._getPyProxy(display)
         self.ArrayName = arrayname
         self.AttributeType = attribute_type
+        self.Component = component
+        self.Lut = sm._getPyProxy(lut)
 
     def finalize(self):
         TraceItem.finalize(self)
 
         if self.ArrayName:
-            Trace.Output.append_separated([\
-                "# set scalar coloring",
-                "ColorBy(%s, ('%s', '%s'))" % (\
-                    str(Trace.get_accessor(self.Display)),
-                    sm.GetAssociationAsString(self.AttributeType),
-                    self.ArrayName)])
+            if self.Component is None:
+              Trace.Output.append_separated([\
+                  "# set scalar coloring",
+                  "ColorBy(%s, ('%s', '%s'))" % (\
+                      str(Trace.get_accessor(self.Display)),
+                      sm.GetAssociationAsString(self.AttributeType),
+                      self.ArrayName)])
+            else:
+              Trace.Output.append_separated([\
+                  "# set scalar coloring",
+                  "ColorBy(%s, ('%s', '%s', '%s'))" % (\
+                      str(Trace.get_accessor(self.Display)),
+                      sm.GetAssociationAsString(self.AttributeType),
+                      self.ArrayName, self.Component)])
         else:
             Trace.Output.append_separated([\
                 "# turn off scalar coloring",
                 "ColorBy(%s, None)" % str(Trace.get_accessor(self.Display))])
+
+        # only for "Fully Trace Supplemental Proxies" support
+        if self.Lut:
+          Trace.get_accessor(self.Lut)
 
 class RegisterViewProxy(TraceItem):
     """Traces creation of a new view (vtkSMParaViewPipelineController::RegisterViewProxy)."""
@@ -986,12 +1021,6 @@ class SaveData(TraceItem):
         del writerAccessor
         del writer
         Trace.Output.append_separated(trace.raw_data())
-
-class EnsureLayout(TraceItem):
-    def __init__(self, layout):
-        TraceItem.__init__(self)
-        layout = sm._getPyProxy(layout)
-        accessor = Trace.get_accessor(layout)
 
 class RegisterLayoutProxy(TraceItem):
     def __init__(self, layout):
@@ -1093,7 +1122,7 @@ class CallMethod(TraceItem):
             pass
         accessor = Trace.get_accessor(sm._getPyProxy(proxy))
         args = [str(CallMethod.marshall(x)) for x in args]
-        args += ["%s=%s" % (key, CallMethod.marshall(val)) for key, val in kwargs.iteritems()]
+        args += ["%s=%s" % (key, CallMethod.marshall(val)) for key, val in kwargs.items()]
         to_trace.append("%s.%s(%s)" % (accessor, methodname, ", ".join(args)))
         return to_trace
 
@@ -1146,7 +1175,7 @@ class CallFunction(TraceItem):
         except KeyError:
             pass
         args = [str(CallMethod.marshall(x)) for x in args]
-        args += ["%s=%s" % (key, CallMethod.marshall(val)) for key, val in kwargs.iteritems()]
+        args += ["%s=%s" % (key, CallMethod.marshall(val)) for key, val in kwargs.items()]
         to_trace.append("%s(%s)" % (functionname, ", ".join(args)))
         Trace.Output.append_separated(to_trace)
 
@@ -1205,7 +1234,7 @@ def _create_trace_item_internal(key, args=None, kwargs=None):
     __ActiveTraceItems = [x for x in __ActiveTraceItems if not x() is None]
 
     g = globals()
-    if g.has_key(key) and callable(g[key]):
+    if key in g and callable(g[key]):
         args = args if args else []
         kwargs = kwargs if kwargs else {}
         traceitemtype = g[key]
@@ -1216,7 +1245,7 @@ def _create_trace_item_internal(key, args=None, kwargs=None):
             return instance
         raise Untraceable("Non-nestable trace item. Ignoring in current context.")
     raise Untraceable("Unknown trace item type %s" % key)
-    #print "Hello again", key, args
+    #print ("Hello again", key, args)
     #return A(key)
 
 def _start_trace_internal():
@@ -1281,12 +1310,12 @@ def reset_trace_output():
 
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
-    print "Running test"
+    print ("Running test")
     start_trace()
 
     s = simple.Sphere()
     c = simple.PlotOverLine()
     simple.Show()
 
-    print "***** TRACE RESULT *****"
-    print stop_trace()
+    print ("***** TRACE RESULT *****")
+    print (stop_trace())

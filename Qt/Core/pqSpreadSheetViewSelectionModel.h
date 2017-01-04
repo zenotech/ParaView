@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -29,45 +29,46 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqSpreadSheetViewSelectionModel_h 
-#define __pqSpreadSheetViewSelectionModel_h
+#ifndef pqSpreadSheetViewSelectionModel_h
+#define pqSpreadSheetViewSelectionModel_h
 
-#include <QItemSelectionModel>
 #include "pqCoreModule.h"
+#include <QItemSelectionModel>
 
 class pqSpreadSheetViewModel;
 class vtkSMSourceProxy;
 
-/// This is the selection model used by spread sheet view. It manages two
-/// operations:
-/// \li When the QItemSelectionModel is updated by the QAbstractItemView
-///     due to user interaction, pqSpreadSheetViewModel::select() gets called.
-///     In that overload, this class creates a 'ParaView Selection' i.e. create a
-///     selection source proxy for an ID based selection and set it as the
-///     selection-input (vtkSMSourceProxy::SetSelectionInput) on the
-///     data-source being shown in the view.
-/// \li Whenever the pqSpreadSheetViewModel receives new selection data from the
-///     data-server, it updates its internal QItemSelection and fires
-///     pqSpreadSheetViewModel::selectionChanged signal.
-///     pqSpreadSheetViewSelectionModel handles that signal by updating itself to
-///     mark the corresponding elements as selected.
+/**
+* This is the selection model used by spread sheet view. It manages two
+* operations:
+* \li When the QItemSelectionModel is updated by the QAbstractItemView
+*     due to user interaction, pqSpreadSheetViewModel::select() gets called.
+*     In that overload, this class creates a 'ParaView Selection' i.e. create a
+*     selection source proxy for an ID based selection and set it as the
+*     selection-input (vtkSMSourceProxy::SetSelectionInput) on the
+*     data-source being shown in the view.
+* \li Whenever the pqSpreadSheetViewModel receives new selection data from the
+*     data-server, it updates its internal QItemSelection and fires
+*     pqSpreadSheetViewModel::selectionChanged signal.
+*     pqSpreadSheetViewSelectionModel handles that signal by updating itself to
+*     mark the corresponding elements as selected.
+*/
 class PQCORE_EXPORT pqSpreadSheetViewSelectionModel : public QItemSelectionModel
 {
   Q_OBJECT
   typedef QItemSelectionModel Superclass;
+
 public:
-  pqSpreadSheetViewSelectionModel(pqSpreadSheetViewModel* model, QObject* parent=0);
+  pqSpreadSheetViewSelectionModel(pqSpreadSheetViewModel* model, QObject* parent = 0);
   ~pqSpreadSheetViewSelectionModel();
 
 public slots:
-  virtual void select(const QModelIndex& index, 
-    QItemSelectionModel::SelectionFlags command)
-    {
+  virtual void select(const QModelIndex& index, QItemSelectionModel::SelectionFlags command)
+  {
     this->Superclass::select(index, command);
-    }
+  }
 
-  virtual void select(const QItemSelection& selection, 
-    QItemSelectionModel::SelectionFlags command);
+  virtual void select(const QItemSelection& selection, QItemSelectionModel::SelectionFlags command);
 
 signals:
   void selection(vtkSMSourceProxy*);
@@ -76,21 +77,20 @@ protected slots:
   void serverSelectionChanged(const QItemSelection&);
 
 protected:
-  /// Locate the selection source currently set on the representation being shown.
-  /// If no selection exists, or selection present is not "updatable" by this
-  /// model, we create a new selection.
+  /**
+  * Locate the selection source currently set on the representation being shown.
+  * If no selection exists, or selection present is not "updatable" by this
+  * model, we create a new selection.
+  */
   vtkSMSourceProxy* getSelectionSource();
 
   bool UpdatingSelection;
 
 private:
-  pqSpreadSheetViewSelectionModel(const pqSpreadSheetViewSelectionModel&); // Not implemented.
-  void operator=(const pqSpreadSheetViewSelectionModel&); // Not implemented.
+  Q_DISABLE_COPY(pqSpreadSheetViewSelectionModel)
 
   class pqInternal;
   pqInternal* Internal;
 };
 
 #endif
-
-

@@ -29,39 +29,44 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqCameraManipulatorWidget_h
-#define __pqCameraManipulatorWidget_h
-
+#ifndef pqCameraManipulatorWidget_h
+#define pqCameraManipulatorWidget_h
 
 #include "pqApplicationComponentsModule.h"
 #include "pqPropertyWidget.h"
 
-/// pqCameraManipulatorWidget used on "Camera2DManipulators" and
-/// "Camera3DManipulators" property on a RenderView proxy.
-class PQAPPLICATIONCOMPONENTS_EXPORT pqCameraManipulatorWidget :
-  public pqPropertyWidget
+/**
+* pqCameraManipulatorWidget used on "Camera2DManipulators" and
+* "Camera3DManipulators" property on a RenderView proxy.
+*/
+class PQAPPLICATIONCOMPONENTS_EXPORT pqCameraManipulatorWidget : public pqPropertyWidget
 {
   Q_OBJECT;
   typedef pqPropertyWidget Superclass;
   Q_PROPERTY(QList<QVariant> manipulatorTypes READ manipulatorTypes WRITE setManipulatorTypes);
+
 public:
-  pqCameraManipulatorWidget(vtkSMProxy* proxy, vtkSMProperty* smproperty, QWidget* parent=0);
+  pqCameraManipulatorWidget(vtkSMProxy* proxy, vtkSMProperty* smproperty, QWidget* parent = 0);
   virtual ~pqCameraManipulatorWidget();
 
-  /// returns a list for the selected manipulator types. This has exactly 9
-  /// items always.
+  /**
+  * returns a list for the selected manipulator types. This has exactly 9
+  * items always.
+  */
   QList<QVariant> manipulatorTypes() const;
 
 public slots:
-  /// Set the manipulator types selection. This must have exactly 9 items or
-  /// less. Any missing items are treated as "None".
+  /**
+  * Set the manipulator types selection. This must have exactly 9 items or
+  * less. Any missing items are treated as "None".
+  */
   void setManipulatorTypes(const QList<QVariant>& value);
 
 signals:
   void manipulatorTypesChanged();
 
 private:
-  Q_DISABLE_COPY(pqCameraManipulatorWidget);
+  Q_DISABLE_COPY(pqCameraManipulatorWidget)
   class pqInternals;
   pqInternals* Internals;
   class PropertyLinksConnection;

@@ -12,8 +12,8 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#ifndef __vtkCPInputDataDescription_h
-#define __vtkCPInputDataDescription_h
+#ifndef vtkCPInputDataDescription_h
+#define vtkCPInputDataDescription_h
 
 class vtkDataObject;
 class vtkDataSet;
@@ -95,7 +95,6 @@ public:
   vtkSetVector6Macro(WholeExtent, int);
   vtkGetVector6Macro(WholeExtent, int);
 
-//BTX
 protected:
   vtkCPInputDataDescription();
   ~vtkCPInputDataDescription();
@@ -123,13 +122,12 @@ protected:
   vtkDataObject* Grid;
 
 private:
-  vtkCPInputDataDescription(const vtkCPInputDataDescription&); // Not implemented.
-  void operator=(const vtkCPInputDataDescription&); // Not implemented.
+  vtkCPInputDataDescription(const vtkCPInputDataDescription&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkCPInputDataDescription&) VTK_DELETE_FUNCTION;
 
   class vtkInternals;
   vtkInternals* Internals;
   int WholeExtent[6];
-//ETX
 };
 
 #endif

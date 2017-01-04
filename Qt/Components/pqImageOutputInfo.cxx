@@ -42,39 +42,52 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ui_pqImageOutputInfo.h"
 
-
+//-----------------------------------------------------------------------------
+pqImageOutputInfo::pqImageOutputInfo(QWidget* parent_)
+  : QWidget(parent_)
+  , Ui(new Ui::ImageOutputInfo())
+{
+  this->initialize(0, NULL, "");
+}
 //-----------------------------------------------------------------------------
 pqImageOutputInfo::pqImageOutputInfo(
-  QWidget *parentObject, Qt::WindowFlags parentFlags,
-  pqView* view, QString& viewName):
-  QWidget(parentObject, parentFlags),
-  Info(new Ui::ImageOutputInfo()),
-  View(view)
+  QWidget* parentObject, Qt::WindowFlags parentFlags, pqView* view, QString& viewName)
+  : QWidget(parentObject, parentFlags)
+  , Ui(new Ui::ImageOutputInfo())
+  , View(view)
 {
-  this->Info->setupUi(this);
+  this->initialize(parentFlags, view, viewName);
+};
 
-  this->Info->imageFileName->setText(viewName);
+//-----------------------------------------------------------------------------
+void pqImageOutputInfo::initialize(
+  Qt::WindowFlags parentFlags, pqView* view, QString const& viewName)
+{
+  this->View = view;
+  QWidget::setWindowFlags(parentFlags);
+  this->Ui->setupUi(this);
+  this->Ui->imageFileName->setText(viewName);
+
   QObject::connect(
-    this->Info->imageFileName, SIGNAL(editingFinished()),
-    this, SLOT(updateImageFileName()));
+    this->Ui->imageFileName, SIGNAL(editingFinished()), this, SLOT(updateImageFileName()));
+
+  QObject::connect(this->Ui->imageType, SIGNAL(currentIndexChanged(const QString&)), this,
+    SLOT(updateImageFileNameExtension(const QString&)));
+
+  QObject::connect(this->Ui->cinemaExport, SIGNAL(currentIndexChanged(const QString&)), this,
+    SLOT(updateCinemaType(const QString&)));
 
   QObject::connect(
-    this->Info->imageType, SIGNAL(currentIndexChanged(const QString&)),
-    this, SLOT(updateImageFileNameExtension(const QString&)));
+    this->Ui->composite, SIGNAL(stateChanged(int)), this, SLOT(updateComposite(int)));
 
-  QObject::connect(
-    this->Info->cinemaExport, SIGNAL(currentIndexChanged(const QString&)),
-    this, SLOT(updateCinemaType(const QString&)));
-
-  this->hideCinema();
+  this->setCinemaVisible(false);
 
   this->setupScreenshotInfo();
-};
+}
 
 //-----------------------------------------------------------------------------
 pqImageOutputInfo::~pqImageOutputInfo()
 {
-
 }
 
 //-----------------------------------------------------------------------------
@@ -84,120 +97,156 @@ pqView* pqImageOutputInfo::getView()
 }
 
 //-----------------------------------------------------------------------------
+void pqImageOutputInfo::setView(pqView* const view)
+{
+  this->View = view;
+}
+
+//-----------------------------------------------------------------------------
 QString pqImageOutputInfo::getImageFileName()
 {
-  return this->Info->imageFileName->displayText();
+  return this->Ui->imageFileName->displayText();
 }
+
 //-----------------------------------------------------------------------------
 void pqImageOutputInfo::hideFrequencyInput()
 {
-  this->Info->imageWriteFrequency->hide();
-  this->Info->imageWriteFrequencyLabel->hide();
+  this->Ui->imageWriteFrequency->hide();
+  this->Ui->imageWriteFrequencyLabel->hide();
 }
 
 //-----------------------------------------------------------------------------
 void pqImageOutputInfo::showFrequencyInput()
 {
-  this->Info->imageWriteFrequency->show();
-    this->Info->imageWriteFrequencyLabel->show();
+  this->Ui->imageWriteFrequency->show();
+  this->Ui->imageWriteFrequencyLabel->show();
 }
+
 //-----------------------------------------------------------------------------
 void pqImageOutputInfo::hideFitToScreen()
 {
-  this->Info->fitToScreen->hide();
+  this->Ui->fitToScreen->hide();
+  this->Ui->fitToScreenLabel->hide();
 }
 
 //-----------------------------------------------------------------------------
 void pqImageOutputInfo::showFitToScreen()
 {
-  this->Info->fitToScreen->show();
+  this->Ui->fitToScreen->show();
+  this->Ui->fitToScreenLabel->show();
 }
+
+//-----------------------------------------------------------------------------
+void pqImageOutputInfo::hideMagnification()
+{
+  this->Ui->imageMagnification->hide();
+  this->Ui->imageMagnificationLabel->hide();
+}
+
+//-----------------------------------------------------------------------------
+void pqImageOutputInfo::showMagnification()
+{
+  this->Ui->imageMagnification->show();
+  this->Ui->imageMagnificationLabel->show();
+}
+
 //-----------------------------------------------------------------------------
 int pqImageOutputInfo::getWriteFrequency()
 {
-  return this->Info->imageWriteFrequency->value();
+  return this->Ui->imageWriteFrequency->value();
 }
 
 //-----------------------------------------------------------------------------
 bool pqImageOutputInfo::fitToScreen()
 {
-  return this->Info->fitToScreen->isChecked();
+  return this->Ui->fitToScreen->isChecked();
 }
 
 //-----------------------------------------------------------------------------
 int pqImageOutputInfo::getMagnification()
 {
-  return this->Info->imageMagnification->value();
+  return this->Ui->imageMagnification->value();
+}
+
+//-----------------------------------------------------------------------------
+bool pqImageOutputInfo::getComposite()
+{
+  return this->Ui->composite->isChecked();
+}
+
+//-----------------------------------------------------------------------------
+bool pqImageOutputInfo::getUseFloatValues()
+{
+  return this->Ui->cbUseFloatValues->isChecked();
 }
 
 //-----------------------------------------------------------------------------
 void pqImageOutputInfo::updateImageFileName()
 {
-  QString fileName = this->Info->imageFileName->displayText();
-  if(fileName.isNull() || fileName.isEmpty())
-    {
+  QString fileName = this->Ui->imageFileName->displayText();
+  if (fileName.isNull() || fileName.isEmpty())
+  {
     fileName = "image";
-    }
+  }
   QRegExp regExp("\\.(png|bmp|ppm|tif|tiff|jpg|jpeg)$");
-  if(fileName.contains(regExp) == 0)
-    {
+  if (fileName.contains(regExp) == 0)
+  {
     fileName.append(".");
-    fileName.append(this->Info->imageType->currentText());
-    }
+    fileName.append(this->Ui->imageType->currentText());
+  }
   else
-    {  // update imageType if it is different
+  { // update imageType if it is different
     int extensionIndex = fileName.lastIndexOf(".");
-    QString anExtension = fileName.right(fileName.size()-extensionIndex-1);
-    int index = this->Info->imageType->findText(anExtension);
-    this->Info->imageType->setCurrentIndex(index);
-    fileName = this->Info->imageFileName->displayText();
-    }
+    QString anExtension = fileName.right(fileName.size() - extensionIndex - 1);
+    int index = this->Ui->imageType->findText(anExtension);
+    this->Ui->imageType->setCurrentIndex(index);
+    fileName = this->Ui->imageFileName->displayText();
+  }
 
-  if(fileName.contains("%t") == 0)
-    {
+  if (fileName.contains("%t") == 0)
+  {
     fileName.insert(fileName.lastIndexOf("."), "_%t");
-    }
+  }
 
-  this->Info->imageFileName->setText(fileName);
+  this->Ui->imageFileName->setText(fileName);
 }
 
 //-----------------------------------------------------------------------------
-void pqImageOutputInfo::updateImageFileNameExtension(
-  const QString& fileExtension)
+void pqImageOutputInfo::updateImageFileNameExtension(const QString& fileExtension)
 {
-  QString displayText = this->Info->imageFileName->text();
-  std::string newFileName = vtksys::SystemTools::GetFilenameWithoutExtension(
-    displayText.toLocal8Bit().constData());
+  QString displayText = this->Ui->imageFileName->text();
+  std::string newFileName =
+    vtksys::SystemTools::GetFilenameWithoutExtension(displayText.toLocal8Bit().constData());
 
   newFileName.append(".");
   newFileName.append(fileExtension.toLocal8Bit().constData());
-  this->Info->imageFileName->setText(QString::fromStdString(newFileName));
+  this->Ui->imageFileName->setText(QString::fromStdString(newFileName));
 }
 
 //-----------------------------------------------------------------------------
 void pqImageOutputInfo::setupScreenshotInfo()
 {
-  this->Info->thumbnailLabel->setVisible(true);
-  if(!this->View)
-    {
-    cerr << "no view available which seems really weird\n";
+  this->Ui->thumbnailLabel->setVisible(true);
+  if (!this->View)
+  {
+    cerr << "No view has been set!" << '\n';
     return;
-    }
+  }
 
   QSize viewSize = this->View->getSize();
   QSize thumbnailSize;
-  if(viewSize.width() > viewSize.height())
-    {
+  if (viewSize.width() > viewSize.height())
+  {
     thumbnailSize.setWidth(100);
-    thumbnailSize.setHeight(100*viewSize.height()/viewSize.width());
-    }
+    thumbnailSize.setHeight(100 * viewSize.height() / viewSize.width());
+  }
   else
-    {
+  {
     thumbnailSize.setHeight(100);
-    thumbnailSize.setWidth(100*viewSize.width()/viewSize.height());
-    }
-  if(this->View->widget()->isVisible())
-    {
+    thumbnailSize.setWidth(100 * viewSize.width() / viewSize.height());
+  }
+  if (this->View->widget()->isVisible())
+  {
     vtkSmartPointer<vtkImageData> image;
     image.TakeReference(this->View->captureImage(thumbnailSize));
     vtkNew<vtkPNGWriter> pngWriter;
@@ -208,82 +257,120 @@ void pqImageOutputInfo::setupScreenshotInfo()
     vtkUnsignedCharArray* result = pngWriter->GetResult();
     QPixmap thumbnail;
     thumbnail.loadFromData(
-      result->GetPointer(0),
-      result->GetNumberOfTuples()*result->GetNumberOfComponents(), "PNG");
+      result->GetPointer(0), result->GetNumberOfTuples() * result->GetNumberOfComponents(), "PNG");
 
-    this->Info->thumbnailLabel->setPixmap(thumbnail);
-    }
+    this->Ui->thumbnailLabel->setPixmap(thumbnail);
+  }
 }
 
 //-----------------------------------------------------------------------------
-void pqImageOutputInfo::hideCinema()
+void pqImageOutputInfo::setCinemaVisible(bool status)
 {
-  this->Info->cinemaLabel->hide();
-  this->Info->cinemaExport->setEnabled(false);
-  this->Info->cinemaExport->hide();
-  this->Info->phiLabel->hide();
-  this->Info->phiResolution->setEnabled(false);
-  this->Info->phiResolution->hide();
-  this->Info->thetaLabel->hide();
-  this->Info->thetaResolution->setEnabled(false);
-  this->Info->thetaResolution->hide();
+  if (status)
+  {
+    this->updateSpherical();
+    this->Ui->gbCinemaOptions->show();
+    this->Ui->laComposite->show();
+    this->Ui->composite->show();
+    this->Ui->laFloatValue->show();
+    this->Ui->cbUseFloatValues->show();
+  }
+  else
+  {
+    this->Ui->gbCinemaOptions->hide();
+    this->Ui->laComposite->hide();
+    this->Ui->composite->hide();
+    this->Ui->laFloatValue->hide();
+    this->Ui->cbUseFloatValues->hide();
+  }
 }
 
 //-----------------------------------------------------------------------------
-void pqImageOutputInfo::showCinema()
-{
-  this->Info->cinemaLabel->show();
-  this->Info->cinemaExport->setEnabled(true);
-  this->Info->cinemaExport->show();
-  this->updateSpherical();
-}
-
-//-----------------------------------------------------------------------------
-void pqImageOutputInfo::updateCinemaType(
-  const QString&)
+void pqImageOutputInfo::updateCinemaType(const QString&)
 {
   this->updateSpherical();
+}
+
+//-----------------------------------------------------------------------------
+void pqImageOutputInfo::updateComposite(int choseComposite)
+{
+  int index = this->Ui->cinemaExport->currentIndex();
+  this->Ui->cinemaExport->clear();
+  this->Ui->cbUseFloatValues->setEnabled(choseComposite);
+  if (choseComposite)
+  {
+    this->Ui->cinemaExport->addItem("none");
+    this->Ui->cinemaExport->addItem("static");
+    this->Ui->cinemaExport->addItem("phi-theta");
+    this->Ui->cinemaExport->addItem("azimuth-elevation-roll");
+    this->Ui->cinemaExport->addItem("yaw-pitch-roll");
+    this->Ui->cinemaExport->setCurrentIndex(index);
+    emit compositeChanged(true);
+  }
+  else
+  {
+    this->Ui->cinemaExport->addItem("none");
+    this->Ui->cinemaExport->addItem("static");
+    this->Ui->cinemaExport->addItem("phi-theta");
+    this->Ui->cinemaExport->setCurrentIndex(index > 2 ? 2 : index);
+    emit compositeChanged(false);
+  }
 }
 
 //------------------------------------------------------------------------------
 void pqImageOutputInfo::updateSpherical()
 {
-  const QString& exportChoice =
-    this->Info->cinemaExport->currentText();
-  if (exportChoice == "Spherical")
-    {
-    this->Info->phiLabel->show();
-    this->Info->phiResolution->setEnabled(true);
-    this->Info->phiResolution->show();
-    this->Info->thetaLabel->show();
-    this->Info->thetaResolution->setEnabled(true);
-    this->Info->thetaResolution->show();
-    }
+  const QString& exportChoice = this->Ui->cinemaExport->currentText();
+  if (exportChoice != "none" && exportChoice != "static")
+  {
+    this->Ui->wCameraOptions->setEnabled(true);
+  }
   else
-    {
-    this->Info->phiLabel->hide();
-    this->Info->phiResolution->setEnabled(false);
-    this->Info->phiResolution->hide();
-    this->Info->thetaLabel->hide();
-    this->Info->thetaResolution->setEnabled(false);
-    this->Info->thetaResolution->hide();
-    }
+  {
+    this->Ui->wCameraOptions->setEnabled(false);
+  }
+  if (exportChoice == "none" || exportChoice == "static" || exportChoice == "phi-theta")
+  {
+    this->Ui->rollLabel->setEnabled(false);
+    this->Ui->rollResolution->setEnabled(false);
+    this->Ui->trackObjectLabel->setEnabled(false);
+    this->Ui->trackObjectName->setEnabled(false);
+  }
+  else
+  {
+    this->Ui->rollLabel->setEnabled(true);
+    this->Ui->rollResolution->setEnabled(true);
+    this->Ui->trackObjectLabel->setEnabled(true);
+    this->Ui->trackObjectName->setEnabled(true);
+  }
 }
 
 //------------------------------------------------------------------------------
 const QString pqImageOutputInfo::getCameraType()
 {
-  return this->Info->cinemaExport->currentText();
+  return this->Ui->cinemaExport->currentText();
 }
 
 //------------------------------------------------------------------------------
 double pqImageOutputInfo::getPhi()
 {
-  return this->Info->phiResolution->value();
+  return this->Ui->phiResolution->value();
 }
 
 //------------------------------------------------------------------------------
 double pqImageOutputInfo::getTheta()
 {
-  return this->Info->thetaResolution->value();
+  return this->Ui->thetaResolution->value();
+}
+
+//------------------------------------------------------------------------------
+double pqImageOutputInfo::getRoll()
+{
+  return this->Ui->rollResolution->value();
+}
+
+//-----------------------------------------------------------------------------
+QString pqImageOutputInfo::getTrackObjectName()
+{
+  return this->Ui->trackObjectName->displayText();
 }

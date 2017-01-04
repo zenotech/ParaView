@@ -54,9 +54,6 @@
      </item>
      <item>
       <widget class="QToolButton" name="EditScalarBar">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
        <property name="toolTip">
         <string>Edit color legend properties</string>
        </property>
@@ -208,9 +205,6 @@
             <iconset resource="../../../Components/Resources/pqComponents.qrc">
              <normaloff>:/pqWidgets/Icons/pqUpdate16.png</normaloff>:/pqWidgets/Icons/pqUpdate16.png</iconset>
            </property>
-           <property name="shortcut">
-            <string>Alt+A</string>
-           </property>
            <property name="default">
             <bool>true</bool>
            </property>
@@ -227,9 +221,6 @@
            <property name="icon">
             <iconset resource="../../../Components/Resources/pqComponents.qrc">
              <normaloff>:/pqWidgets/Icons/pqUpdate16.png</normaloff>:/pqWidgets/Icons/pqUpdate16.png</iconset>
-           </property>
-           <property name="shortcut">
-            <string>Alt+A</string>
            </property>
            <property name="checkable">
             <bool>true</bool>
@@ -272,22 +263,6 @@
   <include location="../../../Components/Resources/pqComponents.qrc"/>
  </resources>
  <connections>
-  <connection>
-   <sender>ShowScalarBar</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>EditScalarBar</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>280</x>
-     <y>22</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>304</x>
-     <y>22</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>AutoUpdate</sender>
    <signal>toggled(bool)</signal>

@@ -8,7 +8,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -34,8 +34,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _pqTimerLogDisplay_h
 #define _pqTimerLogDisplay_h
 
-#include <QDialog>
 #include "pqComponentsModule.h"
+#include <QDialog>
 
 class pqTimerLogDisplayUi;
 
@@ -46,7 +46,7 @@ class PQCOMPONENTS_EXPORT pqTimerLogDisplay : public QDialog
   Q_OBJECT
 
 public:
-  pqTimerLogDisplay(QWidget *p = NULL);
+  pqTimerLogDisplay(QWidget* p = NULL);
   ~pqTimerLogDisplay();
   typedef QDialog Superclass;
 
@@ -61,15 +61,14 @@ public slots:
   void setBufferLength(int value);
   void setEnable(bool state);
   void save();
-  void save(const QString &filename);
-  void save(const QStringList &files);
+  void save(const QString& filename);
+  void save(const QStringList& files);
 
   void saveState();
   void restoreState();
 
 protected:
-  virtual void addToLog(const QString &source,
-                        vtkPVTimerInformation *timerInfo);
+  virtual void addToLog(const QString& source, vtkPVTimerInformation* timerInfo);
 
   virtual void showEvent(QShowEvent*);
   virtual void hideEvent(QHideEvent*);
@@ -79,11 +78,10 @@ protected slots:
   void setBufferLengthById(int id);
 
 private:
-  pqTimerLogDisplay(const pqTimerLogDisplay &); // Not implemented
-  void operator=(const pqTimerLogDisplay &);    // Not implemented
+  Q_DISABLE_COPY(pqTimerLogDisplay)
 
   double LogThreshold;
-  pqTimerLogDisplayUi *ui;
+  pqTimerLogDisplayUi* ui;
 };
 
 #endif //_pqTimerLogDisplay_h

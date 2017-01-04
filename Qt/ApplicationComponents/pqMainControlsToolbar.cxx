@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -34,7 +34,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqAutoApplyReaction.h"
 #include "pqDataQueryReaction.h"
+#ifdef PARAVIEW_USE_QTHELP
 #include "pqHelpReaction.h"
+#endif
 #include "pqLoadDataReaction.h"
 #include "pqLoadPaletteReaction.h"
 #include "pqSaveDataReaction.h"
@@ -55,14 +57,16 @@ void pqMainControlsToolbar::constructor()
   new pqServerDisconnectReaction(ui.actionServerDisconnect);
   new pqUndoRedoReaction(ui.actionUndo, true);
   new pqUndoRedoReaction(ui.actionRedo, false);
+#ifdef PARAVIEW_USE_QTHELP
   new pqHelpReaction(ui.actionHelp);
+#endif
   new pqAutoApplyReaction(ui.actionAutoApply);
   new pqDataQueryReaction(ui.actionQuery);
   new pqLoadPaletteReaction(ui.actionLoadPalette);
 
   QToolButton* tb = qobject_cast<QToolButton*>(this->widgetForAction(ui.actionLoadPalette));
   if (tb)
-    {
+  {
     tb->setPopupMode(QToolButton::InstantPopup);
-    }
+  }
 }

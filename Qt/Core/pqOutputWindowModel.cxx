@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -31,14 +31,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =========================================================================*/
 
 #include <QDebug>
+#include <QIcon>
 #include <QStyleFactory>
 #include <QTableView>
-#include <QIcon>
 
-
-#include "pqOutputWindowModel.h"
-#include "pqOutputWindow.h"
 #include "pqCheckBoxDelegate.h"
+#include "pqOutputWindow.h"
+#include "pqOutputWindowModel.h"
 
 #include <iostream>
 
@@ -55,204 +54,213 @@ enum ColumnLocation
 };
 };
 
+//-----------------------------------------------------------------------------
 struct pqOutputWindowModel::pqInternals
 {
   QList<QIcon> Icons;
 };
 
-pqOutputWindowModel::pqOutputWindowModel(
-  QObject *_parent, const QList<MessageT>& messages) :
-  QAbstractTableModel(_parent),
-  Messages(messages),
-  View(NULL),
-  Internals(new pqInternals())
+//-----------------------------------------------------------------------------
+pqOutputWindowModel::pqOutputWindowModel(QObject* _parent, const QList<MessageT>& messages)
+  : QAbstractTableModel(_parent)
+  , Messages(messages)
+  , View(NULL)
+  , Internals(new pqInternals())
 {
-  Q_ASSERT (EXPANDED_ROW_EXTRA == 1);
+  Q_ASSERT(EXPANDED_ROW_EXTRA == 1);
 }
 
+//-----------------------------------------------------------------------------
 pqOutputWindowModel::~pqOutputWindowModel()
 {
 }
 
-int pqOutputWindowModel::rowCount(const QModelIndex &_parent) const
+//-----------------------------------------------------------------------------
+int pqOutputWindowModel::rowCount(const QModelIndex& parent_) const
 {
-  (void)_parent;
+  Q_UNUSED(parent_);
   return this->Rows.size();
 }
 
-int pqOutputWindowModel::columnCount(const QModelIndex &_parent) const
+//-----------------------------------------------------------------------------
+int pqOutputWindowModel::columnCount(const QModelIndex& parent_) const
 {
-  (void)_parent;
+  Q_UNUSED(parent_);
   return NUMBER_OF_COLUMNS;
 }
 
-Qt::ItemFlags pqOutputWindowModel::flags(const QModelIndex & _index) const
+//-----------------------------------------------------------------------------
+Qt::ItemFlags pqOutputWindowModel::flags(const QModelIndex& index_) const
 {
-  int r = _index.row();
+  int r = index_.row();
   Qt::ItemFlags f;
-  if (! this->Messages[this->Rows[r]].Location.isEmpty() ||
-      _index.column() != COLUMN_EXPANDED)
-    {
+  if (!this->Messages[this->Rows[r]].Location.isEmpty() || index_.column() != COLUMN_EXPANDED)
+  {
     f |= Qt::ItemIsEnabled;
-    }
+  }
   return f;
 }
 
-QVariant pqOutputWindowModel::data(const QModelIndex &_index, int role) const
+//-----------------------------------------------------------------------------
+QVariant pqOutputWindowModel::data(const QModelIndex& index_, int role) const
 {
-  int r = _index.row();
-  switch(role)
-    {
+  int r = index_.row();
+  switch (role)
+  {
     case Qt::DisplayRole:
+    {
+      if (r - EXPANDED_ROW_EXTRA >= 0 && this->Rows[r] == this->Rows[r - EXPANDED_ROW_EXTRA])
       {
-      if (r - EXPANDED_ROW_EXTRA >= 0 &&
-          this->Rows[r] == this->Rows[r - EXPANDED_ROW_EXTRA])
-        {
         // row expansion.
-        return (_index.column() == COLUMN_MESSAGE) ? 
-          this->Messages[this->Rows[r]].Location :
-          QVariant();
-        }
+        return (index_.column() == COLUMN_MESSAGE) ? this->Messages[this->Rows[r]].Location
+                                                   : QVariant();
+      }
       else
-        {
+      {
         // regular row (not an expansion)
-        switch (_index.column())
-          {
+        switch (index_.column())
+        {
           case COLUMN_EXPANDED:
-            return this->Messages[this->Rows[r]].Location.isEmpty() ? 
-              pqCheckBoxDelegate::NOT_EXPANDED_DISABLED :
-            ((r == this->Rows.size() - 1 || 
-              this->Rows[r] != this->Rows[r + 1]) ? 
-             pqCheckBoxDelegate::NOT_EXPANDED : pqCheckBoxDelegate::EXPANDED);
+            return this->Messages[this->Rows[r]].Location.isEmpty()
+              ? pqCheckBoxDelegate::NOT_EXPANDED_DISABLED
+              : ((r == this->Rows.size() - 1 || this->Rows[r] != this->Rows[r + 1])
+                    ? pqCheckBoxDelegate::NOT_EXPANDED
+                    : pqCheckBoxDelegate::EXPANDED);
+
           case COLUMN_COUNT:
             return QString::number(this->Messages[this->Rows[r]].Count);
+
           case COLUMN_MESSAGE:
             return this->Messages[this->Rows[r]].Message;
-          }
+        }
         return QVariant();
-        }
-      break;
       }
-    case Qt::TextAlignmentRole:
-      {      
-      if (_index.column() == COLUMN_COUNT)
-        {
-        return Qt::AlignCenter;
-        }
       break;
-      }
-    case Qt::DecorationRole:
-      {
-      if ((r - EXPANDED_ROW_EXTRA < 0 ||
-           this->Rows[r] != this->Rows[r - EXPANDED_ROW_EXTRA]) &&
-          (_index.column() == COLUMN_TYPE))
-        {
-        return this->Internals->Icons[this->Messages[this->Rows[r]].Type];
-        }
-      break;
-      }
     }
+    case Qt::TextAlignmentRole:
+    {
+      if (index_.column() == COLUMN_COUNT)
+      {
+        return Qt::AlignCenter;
+      }
+      break;
+    }
+    case Qt::DecorationRole:
+    {
+      if ((r - EXPANDED_ROW_EXTRA < 0 || this->Rows[r] != this->Rows[r - EXPANDED_ROW_EXTRA]) &&
+        (index_.column() == COLUMN_TYPE))
+      {
+        return this->Internals->Icons[this->Messages[this->Rows[r]].Type];
+      }
+      break;
+    }
+  }
+
   return QVariant();
 }
 
-bool pqOutputWindowModel::setData(const QModelIndex & _index, 
-                                  const QVariant & value, int role)
+//-----------------------------------------------------------------------------
+bool pqOutputWindowModel::setData(const QModelIndex& index_, const QVariant& value, int role)
 {
-  int r = _index.row();  
+  int r = index_.row();
   if (role == Qt::EditRole)
+  {
+    if (r - EXPANDED_ROW_EXTRA < 0 || this->Rows[r] != this->Rows[r - EXPANDED_ROW_EXTRA])
     {
-      if (r - EXPANDED_ROW_EXTRA < 0 ||
-          this->Rows[r] != this->Rows[r - EXPANDED_ROW_EXTRA])
+      // regular row (not an expansion)
+      if (index_.column() == COLUMN_EXPANDED)
+      {
+        switch (value.toInt())
         {
-        // regular row (not an expansion)
-        if (_index.column() == COLUMN_EXPANDED)
-          {
-          switch (value.toInt())
-            {
-            case pqCheckBoxDelegate::EXPANDED:
-              this->expandRow(r);
-              break;
-            case pqCheckBoxDelegate::NOT_EXPANDED:
-              this->contractRow(r);
-              break;
-            }
-          }
+          case pqCheckBoxDelegate::EXPANDED:
+            this->expandRow(r);
+            break;
+
+          case pqCheckBoxDelegate::NOT_EXPANDED:
+            this->contractRow(r);
+            break;
         }
+      }
     }
+  }
   return true;
 }
 
+//-----------------------------------------------------------------------------
 void pqOutputWindowModel::appendLastRow()
 {
   this->beginInsertRows(QModelIndex(), this->Rows.size(), this->Rows.size());
   this->Rows.push_back(this->Messages.size() - 1);
   this->endInsertRows();
   if (this->Rows.size() == 1)
-    {
+  {
     this->resizeColumnsToContents();
-    }
+  }
   this->View->resizeRowToContents(this->Rows.size() - 1);
 }
 
-
+//-----------------------------------------------------------------------------
 void pqOutputWindowModel::expandRow(int r)
 {
-  this->beginInsertRows(QModelIndex(), r+1, r+1);
-  this->Rows.insert(r+1, this->Rows[r]);
+  this->beginInsertRows(QModelIndex(), r + 1, r + 1);
+  this->Rows.insert(r + 1, this->Rows[r]);
   this->endInsertRows();
-  this->View->resizeRowToContents(r+1);
+  this->View->resizeRowToContents(r + 1);
 }
 
+//-----------------------------------------------------------------------------
 void pqOutputWindowModel::contractRow(int r)
 {
-  beginRemoveRows(QModelIndex(), r+1, r+1);
-  this->Rows.removeAt(r+1);
+  beginRemoveRows(QModelIndex(), r + 1, r + 1);
+  this->Rows.removeAt(r + 1);
   endRemoveRows();
 }
 
-
+//-----------------------------------------------------------------------------
 void pqOutputWindowModel::clear()
 {
   if (this->Rows.size() > 0)
-    {
+  {
     beginRemoveRows(QModelIndex(), 0, this->Rows.size() - 1);
     this->Rows.clear();
     endRemoveRows();
-    }
+  }
 }
 
+//-----------------------------------------------------------------------------
 void pqOutputWindowModel::ShowMessages(bool* show)
 {
   this->clear();
   int _rowCount = 0;
   for (int i = 0; i < this->Messages.size(); ++i)
-    {
+  {
     for (int j = 0; j < pqOutputWindow::MESSAGE_TYPE_COUNT; ++j)
-      {
+    {
       if (show[j] && this->Messages[i].Type == j)
-        {
+      {
         ++_rowCount;
         break;
-        }
       }
     }
+  }
   this->Rows.reserve(_rowCount);
   this->beginInsertRows(QModelIndex(), 0, _rowCount - 1);
   for (int i = 0; i < this->Messages.size(); ++i)
-    {
+  {
     for (int j = 0; j < pqOutputWindow::MESSAGE_TYPE_COUNT; ++j)
-      {
+    {
       if (show[j] && this->Messages[i].Type == j)
-        {
+      {
         this->Rows.push_back(i);
         break;
-        }
       }
     }
+  }
   this->endInsertRows();
   this->View->resizeRowsToContents();
 }
 
+//-----------------------------------------------------------------------------
 void pqOutputWindowModel::setView(QTableView* view)
 {
   Q_ASSERT(this->View == NULL);
@@ -260,35 +268,32 @@ void pqOutputWindowModel::setView(QTableView* view)
   QStyle* style = this->View->style();
   // WARNING: the order has to match pqOutputWindow::MessageType
   // error
-  this->Internals->Icons.push_back(
-    style->standardIcon(QStyle::SP_MessageBoxCritical));
+  this->Internals->Icons.push_back(style->standardIcon(QStyle::SP_MessageBoxCritical));
   // warning; warning looks similar with error (also red), so we use a different
   // icon
-  this->Internals->Icons.push_back(
-    QIcon(":/pqWidgets/Icons/warning.png"));
+  this->Internals->Icons.push_back(QIcon(":/pqWidgets/Icons/warning.png"));
   // debug
-  this->Internals->Icons.push_back(
-    style->standardIcon(QStyle::SP_MessageBoxInformation));
+  this->Internals->Icons.push_back(style->standardIcon(QStyle::SP_MessageBoxInformation));
 }
 
+//-----------------------------------------------------------------------------
 void pqOutputWindowModel::resizeColumnsToContents()
 {
   for (int i = 0; i < NUMBER_OF_COLUMNS - 1; ++i)
-    {
+  {
     this->View->resizeColumnToContents(i);
-    }
+  }
 }
 
-
+//-----------------------------------------------------------------------------
 void pqOutputWindowModel::updateCount(int messageIndex)
 {
   for (int i = 0; i < this->Rows.size(); ++i)
-    {
+  {
     if (this->Rows[i] == messageIndex)
-      {
-      emit this->dataChanged(this->createIndex(i, 0), 
-                             this->createIndex(i, NUMBER_OF_COLUMNS - 1));
+    {
+      emit this->dataChanged(this->createIndex(i, 0), this->createIndex(i, NUMBER_OF_COLUMNS - 1));
       this->resizeColumnsToContents();
-      }
     }
+  }
 }

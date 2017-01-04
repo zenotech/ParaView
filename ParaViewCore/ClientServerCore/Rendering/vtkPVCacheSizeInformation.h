@@ -12,13 +12,16 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVCacheSizeInformation - information obeject to 
-// collect cache size information from a vtkCacheSizeKeeper.
-// .SECTION Description
-// Gather information about cache size from vtkCacheSizeKeeper.
+/**
+ * @class   vtkPVCacheSizeInformation
+ * @brief   information obeject to
+ * collect cache size information from a vtkCacheSizeKeeper.
+ *
+ * Gather information about cache size from vtkCacheSizeKeeper.
+*/
 
-#ifndef __vtkPVCacheSizeInformation_h
-#define __vtkPVCacheSizeInformation_h
+#ifndef vtkPVCacheSizeInformation_h
+#define vtkPVCacheSizeInformation_h
 
 #include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 #include "vtkPVInformation.h"
@@ -30,32 +33,36 @@ public:
   vtkTypeMacro(vtkPVCacheSizeInformation, vtkPVInformation);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Transfer information about a single object into this object.
+  /**
+   * Transfer information about a single object into this object.
+   */
   virtual void CopyFromObject(vtkObject*);
 
-  // Description:
-  // Merge another information object.
+  /**
+   * Merge another information object.
+   */
   virtual void AddInformation(vtkPVInformation*);
 
-  //BTX
-  // Description:
-  // Manage a serialized version of the information.
+  //@{
+  /**
+   * Manage a serialized version of the information.
+   */
   virtual void CopyToStream(vtkClientServerStream*);
   virtual void CopyFromStream(const vtkClientServerStream*);
-  //ETX
+  //@}
 
   vtkGetMacro(CacheSize, unsigned long);
   vtkSetMacro(CacheSize, unsigned long);
+
 protected:
   vtkPVCacheSizeInformation();
   ~vtkPVCacheSizeInformation();
 
   unsigned long CacheSize;
+
 private:
-  vtkPVCacheSizeInformation(const vtkPVCacheSizeInformation&); // Not implemented.
-  void operator=(const vtkPVCacheSizeInformation&); // Not implemented.
+  vtkPVCacheSizeInformation(const vtkPVCacheSizeInformation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVCacheSizeInformation&) VTK_DELETE_FUNCTION;
 };
 
 #endif
-

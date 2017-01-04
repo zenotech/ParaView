@@ -29,7 +29,7 @@ class vtkCPDataDescription;
 class VTKPVCATALYST_EXPORT vtkCPPipeline : public vtkObject
 {
 public:
-  vtkTypeMacro(vtkCPPipeline,vtkObject);
+  vtkTypeMacro(vtkCPPipeline, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   /// Configuration Step:
@@ -53,8 +53,8 @@ protected:
   virtual ~vtkCPPipeline();
 
 private:
-  vtkCPPipeline(const vtkCPPipeline&); // Not implemented
-  void operator=(const vtkCPPipeline&); // Not implemented
+  vtkCPPipeline(const vtkCPPipeline&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkCPPipeline&) VTK_DELETE_FUNCTION;
 };
 
 #endif

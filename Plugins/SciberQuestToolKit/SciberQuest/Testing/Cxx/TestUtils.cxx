@@ -11,7 +11,7 @@ Copyright 2012 SciberQuest Inc.
 #include "vtkInitializationHelper.h"
 #include "vtkSQLog.h"
 #include "vtkMultiProcessController.h"
-#if defined(PARAVIEW_USE_MPI) && !defined(WIN32)
+#if defined(PARAVIEW_USE_MPI) && !defined(_WIN32)
 #include "vtkMPIController.h"
 #else
 #include "vtkDummyController.h"
@@ -37,6 +37,7 @@ Copyright 2012 SciberQuest Inc.
 #include "vtkDataArray.h"
 #include "vtkDoubleArray.h"
 #include "vtkColorTransferFunction.h"
+#include "vtkInformation.h"
 #include <cfloat>
 #include <iostream>
 #include <string>
@@ -88,7 +89,7 @@ vtkMultiProcessController *Initialize(int *argc, char ***argv)
 
   vtkMultiProcessController *controller;
 
-  #if defined(PARAVIEW_USE_MPI) && !defined(WIN32)
+  #if defined(PARAVIEW_USE_MPI) && !defined(_WIN32)
   controller=vtkMPIController::New();
   controller->Initialize(argc,argv,0);
   #else
@@ -244,11 +245,11 @@ vtkStreamingDemandDrivenPipeline *GetParallelExec(
 
   vtkInformation *info  = exec->GetOutputInformation(0);
 
-  exec->SetUpdateNumberOfPieces(info,worldSize);
-  exec->SetUpdatePiece(info,worldRank);
   exec->UpdateInformation();
-  exec->SetUpdateExtent(info,worldRank,worldSize,0);
-  exec->SetUpdateTimeStep(0,t);
+  typedef vtkStreamingDemandDrivenPipeline vtkSDDP;
+  info->Set(vtkSDDP::UPDATE_PIECE_NUMBER(), worldRank);
+  info->Set(vtkSDDP::UPDATE_NUMBER_OF_PIECES(), worldSize);
+  info->Set(vtkSDDP::UPDATE_TIME_STEP(), t);
   exec->PropagateUpdateExtent(0);
 
   return exec;
@@ -458,7 +459,7 @@ vtkActor *MapArrayToActor(
 std::string NativePath(std::string path)
 {
   std::string nativePath;
-  #ifdef WIN32
+  #ifdef _WIN32
   size_t n=path.size();
   for (size_t i=0; i<n; ++i)
     {

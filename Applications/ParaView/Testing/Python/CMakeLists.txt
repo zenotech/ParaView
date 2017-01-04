@@ -24,6 +24,7 @@ if (numpy_found)
     TestPythonAnnotationFilter.py
     TestPythonAnnotationFilterNoMerge.py
     TestAnnotateAttributeData.py
+    CinemaAERTest.py
     )
   set(PARAVIEW_PYTHON_ARGS)
 
@@ -43,9 +44,18 @@ endif()
 
 paraview_add_test_python(
   NO_DATA NO_RT
-  TestPythonViewScript.py
-  TestColorHistogram.py
+  ColorBy.py
+  PartialArrayIndication.py
   TestClipCylinder.py
+  TestColorHistogram.py
+  TestHoudiniWriter.py
+  TestLineChartLabelPrefix.py
+  TestPythonViewScript.py
+)
+
+paraview_add_test_python(
+  NO_DATA NO_VALID NO_OUTPUT NO_RT
+  TestResetProperty.py
 )
 
 paraview_add_test_pvbatch(
@@ -53,11 +63,17 @@ paraview_add_test_pvbatch(
   CinemaTest.py
 )
 
-# these tests could run safely in serial and
-# in parallel.
+# These tests could run safely in serial and parallel (and with both GL backends).
 set(PVBATCH_TESTS
   StructuredGridVolumeRendering.py
+  PLYWriter.py
   )
+
+# Tests only concerning GL2.
+if ("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL2")
+  list(APPEND PVBATCH_TESTS VolumeCellSelection.py)
+endif ()
+
 foreach (tfile IN LISTS PVBATCH_TESTS)
   get_filename_component(test ${tfile} NAME_WE)
   set(${test}_ARGS

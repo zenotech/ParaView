@@ -12,13 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVCameraAnimationCue
-// .SECTION Description
-// vtkPVCameraAnimationCue is a specialization of the vtkPVKeyFrameAnimationCue suitable
-// for animating cameras from a vtkPVRenderView.
+/**
+ * @class   vtkPVCameraAnimationCue
+ *
+ * vtkPVCameraAnimationCue is a specialization of the vtkPVKeyFrameAnimationCue suitable
+ * for animating cameras from a vtkPVRenderView.
+*/
 
-#ifndef __vtkPVCameraAnimationCue_h
-#define __vtkPVCameraAnimationCue_h
+#ifndef vtkPVCameraAnimationCue_h
+#define vtkPVCameraAnimationCue_h
 
 #include "vtkPVAnimationModule.h" //needed for exports
 #include "vtkPVKeyFrameAnimationCue.h"
@@ -35,35 +37,40 @@ public:
   vtkTypeMacro(vtkPVCameraAnimationCue, vtkPVKeyFrameAnimationCue);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Get/Set the render view.
+  //@{
+  /**
+   * Get/Set the render view.
+   */
   void SetView(vtkPVRenderView*);
   vtkGetObjectMacro(View, vtkPVRenderView);
+  //@}
 
-  // Description:
-  // Returns the animated camera, if any.
+  /**
+   * Returns the animated camera, if any.
+   */
   vtkCamera* GetCamera();
 
-  // Description:
-  // Forwarded to vtkPVCameraCueManipulator.
+  /**
+   * Forwarded to vtkPVCameraCueManipulator.
+   */
   void SetMode(int mode);
 
   virtual void BeginUpdateAnimationValues() {}
-  virtual void SetAnimationValue(int, double){}
+  virtual void SetAnimationValue(int, double) {}
   virtual void EndUpdateAnimationValues();
 
-  void SetDataSourceProxy(vtkSMProxy *dataSourceProxy);
-//BTX
+  void SetDataSourceProxy(vtkSMProxy* dataSourceProxy);
+
 protected:
   vtkPVCameraAnimationCue();
   ~vtkPVCameraAnimationCue();
 
   vtkPVRenderView* View;
   vtkSMProxy* DataSourceProxy;
+
 private:
-  vtkPVCameraAnimationCue(const vtkPVCameraAnimationCue&); // Not implemented
-  void operator=(const vtkPVCameraAnimationCue&); // Not implemented
-//ETX
+  vtkPVCameraAnimationCue(const vtkPVCameraAnimationCue&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVCameraAnimationCue&) VTK_DELETE_FUNCTION;
 };
 
 #endif

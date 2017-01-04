@@ -37,6 +37,10 @@
       { "name":"VTK_ENABLE_KITS",
         "type":"BOOL",
         "value":"ON"
+      },
+      { "name":"VTK_RENDERING_BACKEND",
+        "type":"STRING",
+        "value":"OpenGL"
       }
     ]
   },
@@ -70,6 +74,10 @@
     },
     { "name":"vtkUtilitiesKWSys",
       "path":"VTK/Utilities/KWSys"
+    },
+    {
+      "name":"vtkkwiml",
+      "path":"VTK/Utilities/KWIML"
     },
     { "name":"vtkPVServerManagerCore",
       "path":"ParaViewCore/ServerManager/Core",
@@ -194,6 +202,9 @@
     { "name":"vtkThirdPartyzlib",
       "path":"VTK/ThirdParty/zlib"
     },
+    { "name":"vtkThirdPartylz4",
+      "path":"VTK/ThirdParty/lz4"
+    },
     { "name":"vtkThirdPartyexpat",
       "path":"VTK/ThirdParty/expat"
     },
@@ -247,6 +258,7 @@
     { "path":"VTK/Copyright.txt" },
     { "path":"License_v1.2.txt" },
     { "path":"CMakeLists.txt" },
+    { "path":"version.txt" },
     { "path":"CTestConfig.cmake" },
     { "path":"CMake" },
     { "path":"VTK/CMake" },

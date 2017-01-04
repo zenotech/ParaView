@@ -14,13 +14,13 @@
 =========================================================================*/
 // .NAME vtkAnalyzeWriter - Writes Analyze files.
 // .SECTION Description
-// vtkAnalyzeWriter writes Analyze files. 
+// vtkAnalyzeWriter writes Analyze files.
 //
 // .SECTION See Also
 // vtkAnalyzeReader vtkNIfTIReader vtkNIfTIWriter
 
-#ifndef __vtkAnalyzeWriter_h
-#define __vtkAnalyzeWriter_h
+#ifndef vtkAnalyzeWriter_h
+#define vtkAnalyzeWriter_h
 
 #include "vtkImageWriter.h"
 
@@ -32,25 +32,25 @@ class vtkUnsignedCharArray;
 class vtkAnalyzeWriter : public vtkImageWriter
 {
 public:
-  static vtkAnalyzeWriter *New();
-  vtkTypeMacro(vtkAnalyzeWriter,vtkImageWriter);
+  static vtkAnalyzeWriter* New();
+  vtkTypeMacro(vtkAnalyzeWriter, vtkImageWriter);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   void SetFileType(int inValue);
   int getFileType();
 
-  unsigned int getImageSizeInBytes(){return(imageSizeInBytes);};
+  unsigned int getImageSizeInBytes() { return (imageSizeInBytes); };
 
 protected:
   vtkAnalyzeWriter();
   ~vtkAnalyzeWriter();
-  
-  virtual void WriteFile(ofstream *file, vtkImageData *data, int ext[6], int wExtent[6]);
-  virtual void WriteFileHeader(ofstream *file, vtkImageData *cache, int wholeExtent[6]);
+
+  virtual void WriteFile(ofstream* file, vtkImageData* data, int ext[6], int wExtent[6]);
+  virtual void WriteFileHeader(ofstream* file, vtkImageData* cache, int wholeExtent[6]);
 
 private:
-  vtkAnalyzeWriter(const vtkAnalyzeWriter&);  // Not implemented.
-  void operator=(const vtkAnalyzeWriter&);  // Not implemented.
+  vtkAnalyzeWriter(const vtkAnalyzeWriter&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkAnalyzeWriter&) VTK_DELETE_FUNCTION;
 
   int FileType;
   unsigned int imageSizeInBytes;
@@ -59,8 +59,8 @@ private:
   int imageDataType;
   bool foundAnalayzeHeader;
   bool foundNiftiHeader;
-  int * savedFlipAxis;
-  int * savedInPlaceFilteredAxes;
+  int* savedFlipAxis;
+  int* savedInPlaceFilteredAxes;
   bool fixFlipError;
 };
 

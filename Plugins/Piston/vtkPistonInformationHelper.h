@@ -20,13 +20,12 @@
 // the corresponding vtkPVDataInformation with information from a
 // PistonDataObject.
 
-#ifndef __vtkPistonInformationHelper_h
-#define __vtkPistonInformationHelper_h
+#ifndef vtkPistonInformationHelper_h
+#define vtkPistonInformationHelper_h
 
 #include "vtkPVDataInformationHelper.h"
 
-class VTK_EXPORT vtkPistonInformationHelper :
-  public vtkPVDataInformationHelper
+class VTK_EXPORT vtkPistonInformationHelper : public vtkPVDataInformationHelper
 {
 public:
   static vtkPistonInformationHelper* New();
@@ -39,18 +38,18 @@ protected:
   vtkPistonInformationHelper();
   ~vtkPistonInformationHelper();
 
-  bool ValidateType(vtkDataObject *data);
+  bool ValidateType(vtkDataObject* data);
 
-  //API to access information I fill the PVDataInformation I am friend of with
-  double *GetBounds();
+  // API to access information I fill the PVDataInformation I am friend of with
+  double* GetBounds();
   int GetNumberOfDataSets();
   vtkTypeInt64 GetNumberOfCells();
   vtkTypeInt64 GetNumberOfPoints();
   vtkTypeInt64 GetNumberOfRows();
 
 private:
-  vtkPistonInformationHelper(const vtkPistonInformationHelper&); // Not implemented
-  void operator=(const vtkPistonInformationHelper&); // Not implemented
+  vtkPistonInformationHelper(const vtkPistonInformationHelper&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPistonInformationHelper&) VTK_DELETE_FUNCTION;
 };
 
 #endif

@@ -35,25 +35,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqApplicationComponentsModule.h" // for export macros
 #include "pqPropertyWidget.h"
 
-/// A property widget for editing a transfer function. 
-///
-/// To use this widget for a property add the 
-/// 'panel_widget="transfer_function_editor"' to the property's XML.
-class PQAPPLICATIONCOMPONENTS_EXPORT pqTransferFunctionWidgetPropertyWidget : public pqPropertyWidget
+class vtkSMTransferFunctionProxy;
+
+/**
+* A property widget for editing a transfer function.
+*
+* To use this widget for a property add the
+* 'panel_widget="transfer_function_editor"' to the property's XML.
+*/
+class PQAPPLICATIONCOMPONENTS_EXPORT pqTransferFunctionWidgetPropertyWidget
+  : public pqPropertyWidget
 {
   Q_OBJECT
 
 public:
-  explicit pqTransferFunctionWidgetPropertyWidget(vtkSMProxy *proxy,
-                                                  vtkSMProperty *property,
-                                                  QWidget *parent = 0);
+  explicit pqTransferFunctionWidgetPropertyWidget(
+    vtkSMProxy* proxy, vtkSMProperty* property, QWidget* parent = 0);
   ~pqTransferFunctionWidgetPropertyWidget();
 
 private slots:
   void buttonClicked();
+  void minXChanged(double newMinX);
+  void maxXChanged(double newMaxX);
 
 private:
   vtkSMProperty* Property;
+  double xRange[2];
+
+  void propagateProxyPointsProperty(vtkSMTransferFunctionProxy* tfp);
+  void updateTransferFunctionRanges(vtkSMTransferFunctionProxy* tfp);
 };
 
 #endif // _pqTransferFunctionWidgetPropertyWidget_h

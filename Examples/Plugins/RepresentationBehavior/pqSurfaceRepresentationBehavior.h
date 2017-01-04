@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqSurfaceRepresentationBehavior_h
-#define __pqSurfaceRepresentationBehavior_h
+#ifndef pqSurfaceRepresentationBehavior_h
+#define pqSurfaceRepresentationBehavior_h
 
 #include <QObject>
 
@@ -44,15 +44,16 @@ class pqSurfaceRepresentationBehavior : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
-  pqSurfaceRepresentationBehavior(QObject* parent=0);
+  pqSurfaceRepresentationBehavior(QObject* parent = 0);
 
 protected slots:
   void onRepresentationAdded(pqRepresentation*);
   void onViewAdded(pqView*);
 
 private:
-  Q_DISABLE_COPY(pqSurfaceRepresentationBehavior);
+  Q_DISABLE_COPY(pqSurfaceRepresentationBehavior)
 };
 
 #endif

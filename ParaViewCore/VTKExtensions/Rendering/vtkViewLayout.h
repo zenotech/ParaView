@@ -12,13 +12,16 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkViewLayout - used by vtkSMViewLayoutProxy.
-// .SECTION Description
-// vtkViewLayout is the server-side object corresponding to
-// vtkSMViewLayoutProxy.
+/**
+ * @class   vtkViewLayout
+ * @brief   used by vtkSMViewLayoutProxy.
+ *
+ * vtkViewLayout is the server-side object corresponding to
+ * vtkSMViewLayoutProxy.
+*/
 
-#ifndef __vtkViewLayout_h
-#define __vtkViewLayout_h
+#ifndef vtkViewLayout_h
+#define vtkViewLayout_h
 
 #include "vtkObject.h"
 #include "vtkPVVTKExtensionsRenderingModule.h" // needed for export macro
@@ -33,15 +36,13 @@ public:
   void ResetTileDisplay();
   void ShowOnTileDisplay(unsigned int);
 
-//BTX
 protected:
   vtkViewLayout();
   ~vtkViewLayout();
 
 private:
-  vtkViewLayout(const vtkViewLayout&); // Not implemented
-  void operator=(const vtkViewLayout&); // Not implemented
-//ETX
+  vtkViewLayout(const vtkViewLayout&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkViewLayout&) VTK_DELETE_FUNCTION;
 };
 
 #endif

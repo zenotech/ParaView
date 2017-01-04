@@ -29,35 +29,42 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqObjectPickingBehavior_h
-#define __pqObjectPickingBehavior_h
+#ifndef pqObjectPickingBehavior_h
+#define pqObjectPickingBehavior_h
 
+#include "pqApplicationComponentsModule.h"
 #include <QObject>
 #include <QPoint>
-#include "pqApplicationComponentsModule.h"
 
 class pqView;
 class pqOutputPort;
 
-/// @ingroup Behaviors
-/// pqObjectPickingBehavior is used to add support for picking "source" by
-/// clicking on it in a view. This currently only supports render-view. But we
-/// can add support for other views as needed.
+/**
+* @ingroup Behaviors
+* pqObjectPickingBehavior is used to add support for picking "source" by
+* clicking on it in a view. This currently only supports render-view. But we
+* can add support for other views as needed.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqObjectPickingBehavior : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
-  pqObjectPickingBehavior(QObject* parent=0);
+  pqObjectPickingBehavior(QObject* parent = 0);
   virtual ~pqObjectPickingBehavior();
 
 protected:
-  /// event filter to capture the left-click.
+  /**
+  * event filter to capture the left-click.
+  */
   virtual bool eventFilter(QObject* caller, QEvent* e);
 
 protected slots:
-  /// Called when a new view is added. We install event-filter to get click
-  /// events.
+  /**
+  * Called when a new view is added. We install event-filter to get click
+  * events.
+  */
   void onViewAdded(pqView*);
 
 private:

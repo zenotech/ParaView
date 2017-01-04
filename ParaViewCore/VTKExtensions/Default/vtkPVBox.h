@@ -12,15 +12,18 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVBox - extends vtkBox to add ParaView specific API.
-// .SECTION Description
-// vtkPVBox extends vtkBox to add ParaView specific API.
+/**
+ * @class   vtkPVBox
+ * @brief   extends vtkBox to add ParaView specific API.
+ *
+ * vtkPVBox extends vtkBox to add ParaView specific API.
+*/
 
-#ifndef __vtkPVBox_h
-#define __vtkPVBox_h
+#ifndef vtkPVBox_h
+#define vtkPVBox_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkBox.h"
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 
 class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVBox : public vtkBox
 {
@@ -29,37 +32,45 @@ public:
   vtkTypeMacro(vtkPVBox, vtkBox);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Get/Set Position of the box.
+  //@{
+  /**
+   * Get/Set Position of the box.
+   */
   void SetPosition(double x, double y, double z)
-    {
-    double pos[3] = {x, y, z};
+  {
+    double pos[3] = { x, y, z };
     this->SetPosition(pos);
-    }
+  }
   void SetPosition(const double pos[3]);
   vtkGetVector3Macro(Position, double);
+  //@}
 
-  // Description:
-  // Get/Set Rotation for the box.
+  //@{
+  /**
+   * Get/Set Rotation for the box.
+   */
   void SetRotation(double x, double y, double z)
-    {
-    double pos[3] = {x, y, z};
+  {
+    double pos[3] = { x, y, z };
     this->SetRotation(pos);
-    }
+  }
   void SetRotation(const double pos[3]);
   vtkGetVector3Macro(Rotation, double);
+  //@}
 
-  // Description:
-  // Get/Set Scale for the box.
+  //@{
+  /**
+   * Get/Set Scale for the box.
+   */
   void SetScale(double x, double y, double z)
-    {
-    double pos[3] = {x, y, z};
+  {
+    double pos[3] = { x, y, z };
     this->SetScale(pos);
-    }
+  }
   void SetScale(const double pos[3]);
   vtkGetVector3Macro(Scale, double);
+  //@}
 
-//BTX
 protected:
   vtkPVBox();
   ~vtkPVBox();
@@ -70,9 +81,8 @@ protected:
   double Scale[3];
 
 private:
-  vtkPVBox(const vtkPVBox&); // Not implemented
-  void operator=(const vtkPVBox&); // Not implemented
-//ETX
+  vtkPVBox(const vtkPVBox&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVBox&) VTK_DELETE_FUNCTION;
 };
 
 #endif

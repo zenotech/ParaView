@@ -12,29 +12,31 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMTextWidgetRepresentationProxy 
-// .SECTION Description
+/**
+ * @class   vtkSMTextWidgetRepresentationProxy
+ *
+*/
 
-#ifndef __vtkSMTextWidgetRepresentationProxy_h
-#define __vtkSMTextWidgetRepresentationProxy_h
+#ifndef vtkSMTextWidgetRepresentationProxy_h
+#define vtkSMTextWidgetRepresentationProxy_h
 
 #include "vtkPVServerManagerRenderingModule.h" //needed for exports
 #include "vtkSMNewWidgetRepresentationProxy.h"
 
 class vtkSMViewProxy;
 
-class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMTextWidgetRepresentationProxy : public vtkSMNewWidgetRepresentationProxy
+class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMTextWidgetRepresentationProxy
+  : public vtkSMNewWidgetRepresentationProxy
 {
 public:
   static vtkSMTextWidgetRepresentationProxy* New();
   vtkTypeMacro(vtkSMTextWidgetRepresentationProxy, vtkSMNewWidgetRepresentationProxy);
   void PrintSelf(ostream& os, vtkIndent indent);
-  
+
 protected:
-//BTX
   vtkSMTextWidgetRepresentationProxy();
   ~vtkSMTextWidgetRepresentationProxy();
-  
+
   virtual void CreateVTKObjects();
 
   vtkSMProxy* TextActorProxy;
@@ -43,10 +45,8 @@ protected:
   friend class vtkSMTextSourceRepresentationProxy;
 
 private:
-  vtkSMTextWidgetRepresentationProxy(const vtkSMTextWidgetRepresentationProxy&); // Not implemented
-  void operator=(const vtkSMTextWidgetRepresentationProxy&); // Not implemented
-//ETX
+  vtkSMTextWidgetRepresentationProxy(const vtkSMTextWidgetRepresentationProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMTextWidgetRepresentationProxy&) VTK_DELETE_FUNCTION;
 };
 
 #endif
-

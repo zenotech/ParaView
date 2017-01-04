@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,30 +29,37 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqOrbitCreatorDialog_h 
-#define __pqOrbitCreatorDialog_h
+#ifndef pqOrbitCreatorDialog_h
+#define pqOrbitCreatorDialog_h
 
+#include "pqComponentsModule.h"
 #include <QDialog>
 #include <QList>
 #include <QVariant>
-#include "pqComponentsModule.h"
 
-/// pqOrbitCreatorDialog is used by pqAnimationViewWidget to request the orbit
-/// parameters from the user when the user want to create a camera animation track
-/// that orbits some object(s). It's a simple dialog with a bunch of entries for
-/// normal/center/radius of the orbit.
+/**
+* pqOrbitCreatorDialog is used by pqAnimationViewWidget to request the orbit
+* parameters from the user when the user want to create a camera animation track
+* that orbits some object(s). It's a simple dialog with a bunch of entries for
+* normal/center/radius of the orbit.
+*/
 class PQCOMPONENTS_EXPORT pqOrbitCreatorDialog : public QDialog
 {
   Q_OBJECT
   typedef QDialog Superclass;
+
 public:
-  pqOrbitCreatorDialog(QWidget* parent=0);
+  pqOrbitCreatorDialog(QWidget* parent = 0);
   virtual ~pqOrbitCreatorDialog();
 
-  /// Returns the points the orbit based on the user chosen options.
+  /**
+  * Returns the points the orbit based on the user chosen options.
+  */
   QList<QVariant> orbitPoints(int resolution) const;
 
-  /// Returns the center for the orbit.
+  /**
+  * Returns the center for the orbit.
+  */
   QList<QVariant> center() const;
 
   void setNormal(double xyz[3]);
@@ -63,13 +70,10 @@ protected slots:
   void resetBounds();
 
 private:
-  pqOrbitCreatorDialog(const pqOrbitCreatorDialog&); // Not implemented.
-  void operator=(const pqOrbitCreatorDialog&); // Not implemented.
+  Q_DISABLE_COPY(pqOrbitCreatorDialog)
 
   class pqInternals;
   pqInternals* Internals;
 };
 
 #endif
-
-

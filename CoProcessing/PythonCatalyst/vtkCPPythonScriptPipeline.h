@@ -16,8 +16,8 @@
 #define vtkCPPythonScriptPipeline_h
 
 #include "vtkCPPipeline.h"
-#include "vtkStdString.h"  // for the string
 #include "vtkPVPythonCatalystModule.h" // For windows import/export of shared libraries
+#include "vtkStdString.h"              // for the string
 
 class vtkCPDataDescription;
 
@@ -30,10 +30,10 @@ class VTKPVPYTHONCATALYST_EXPORT vtkCPPythonScriptPipeline : public vtkCPPipelin
 {
 public:
   static vtkCPPythonScriptPipeline* New();
-  vtkTypeMacro(vtkCPPythonScriptPipeline,vtkCPPipeline);
+  vtkTypeMacro(vtkCPPythonScriptPipeline, vtkCPPipeline);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  /// Initialize this pipeline from given the file name of a 
+  /// Initialize this pipeline from given the file name of a
   /// python script. Returns 1 for success and 0 for failure.
   int Initialize(const char* fileName);
 
@@ -65,8 +65,8 @@ protected:
   vtkGetStringMacro(PythonScriptName);
 
 private:
-  vtkCPPythonScriptPipeline(const vtkCPPythonScriptPipeline&); // Not implemented
-  void operator=(const vtkCPPythonScriptPipeline&); // Not implemented
+  vtkCPPythonScriptPipeline(const vtkCPPythonScriptPipeline&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkCPPythonScriptPipeline&) VTK_DELETE_FUNCTION;
 
   /// The name of the python script (without the path or extension)
   /// that is used as the namespace of the functions of the script.

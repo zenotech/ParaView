@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,24 +29,31 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqAutoApplyReaction_h 
-#define __pqAutoApplyReaction_h
+#ifndef pqAutoApplyReaction_h
+#define pqAutoApplyReaction_h
 
 #include "pqReaction.h"
 
-/// @ingroup Reactions
-/// Reaction for enabling/disabling auto-apply.
+/**
+* @ingroup Reactions
+* Reaction for enabling/disabling auto-apply.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqAutoApplyReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
-public:
-  pqAutoApplyReaction(QAction* parent=0);
 
-  /// Set the status of auto-apply.
+public:
+  pqAutoApplyReaction(QAction* parent = 0);
+
+  /**
+  * Set the status of auto-apply.
+  */
   static void setAutoApply(bool);
 
-  /// Get the status of auto-apply.
+  /**
+  * Get the status of auto-apply.
+  */
   static bool autoApply();
 
 protected slots:
@@ -58,5 +65,3 @@ private:
 };
 
 #endif
-
-

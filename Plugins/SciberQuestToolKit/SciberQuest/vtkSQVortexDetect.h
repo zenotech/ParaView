@@ -17,8 +17,8 @@
 // .SECTION Caveats
 // .SECTION See Also
 
-#ifndef __vtkSQVortexDetect_h
-#define __vtkSQVortexDetect_h
+#ifndef vtkSQVortexDetect_h
+#define vtkSQVortexDetect_h
 
 #include "vtkSciberQuestModule.h" // for export macro
 #include "vtkDataSetAlgorithm.h"
@@ -135,8 +135,8 @@ private:
   int ComputeEigenvalueDiagnostic;
 
 private:
-  vtkSQVortexDetect(const vtkSQVortexDetect&);  // Not implemented.
-  void operator=(const vtkSQVortexDetect&);  // Not implemented.
+  vtkSQVortexDetect(const vtkSQVortexDetect&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSQVortexDetect&) VTK_DELETE_FUNCTION;
 };
 
 #endif

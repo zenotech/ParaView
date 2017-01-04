@@ -1,11 +1,32 @@
 /*
-   ____    _ __           ____               __    ____
-  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
- _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
-
-Copyright 2012 SciberQuest Inc.
-*/
+ * Copyright 2012 SciberQuest Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  * Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ *  * Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ *  * Neither name of SciberQuest Inc. nor the names of any contributors may be
+ *    used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS''
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 // .NAME vtkSQBOVReaderBase -- Connects the VTK pipeline to BOVReader class.
 // .SECTION Description
 //
@@ -16,8 +37,8 @@ Copyright 2012 SciberQuest Inc.
 // .SECTION See Also
 // BOVReader
 
-#ifndef __vtkSQBOVReaderBase_h
-#define __vtkSQBOVReaderBase_h
+#ifndef vtkSQBOVReaderBase_h
+#define vtkSQBOVReaderBase_h
 
 #include "vtkSciberQuestModule.h" // for export macro
 #include "vtkDataSetAlgorithm.h"
@@ -27,7 +48,6 @@ Copyright 2012 SciberQuest Inc.
 
 // #define vtkSQBOVReaderDEBUG
 
-//BTX
 class BOVReader;
 class vtkPVXMLElement;
 class vtkInformationStringKey;
@@ -35,7 +55,6 @@ class vtkInformationDoubleKey;
 class vtkInformationDoubleVectorKey;
 class vtkInformationIntegerKey;
 class vtkInformationIntegerVectorKey;
-//ETX
 
 class VTKSCIBERQUEST_EXPORT vtkSQBOVReaderBase : public vtkDataSetAlgorithm
 {
@@ -48,12 +67,11 @@ public:
   // Iitialize the reader from an XML document. You also need to
   // pass in the bov file name so that subsetting and array selection
   // can be applied which has to occur after the file has been opened.
-  //BTX
+
   virtual int Initialize(
         vtkPVXMLElement *root,
         const char *fileName,
         std::vector<std::string> &arrays);
-  //ETX
 
   // Description:
   // Get/Set the file to read. Setting the file name opens
@@ -111,7 +129,6 @@ public:
   virtual int GetNumberOfTimeSteps();
   virtual void GetTimeSteps(double *times);
 
-  //BTX
   enum
     {
     HINT_DEFAULT=0,
@@ -119,7 +136,7 @@ public:
     HINT_DISABLED=1,
     HINT_ENABLED=2
     };
-  //ETX
+
   // Description:
   // Set/Get MPI file hints.
   vtkSetMacro(UseCollectiveIO,int);
@@ -176,8 +193,8 @@ protected:
   virtual int GetTimeStepId(vtkInformation *inInfo, vtkInformation *outInfo);
 
 private:
-  vtkSQBOVReaderBase(const vtkSQBOVReaderBase &); // Not implemented
-  void operator=(const vtkSQBOVReaderBase &); // Not implemented
+  vtkSQBOVReaderBase(const vtkSQBOVReaderBase &) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSQBOVReaderBase &) VTK_DELETE_FUNCTION;
 
 protected:
   BOVReader *Reader;       // Implementation

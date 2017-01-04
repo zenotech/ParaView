@@ -29,18 +29,21 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqViewManager_h
-#define __pqViewManager_h
+#ifndef pqViewManager_h
+#define pqViewManager_h
 
 #include "pqTabbedMultiViewWidget.h"
 
-/// pqViewManager is deprecated. Use pqTabbedMultiViewWidget.
+/**
+* pqViewManager is deprecated. Use pqTabbedMultiViewWidget.
+*/
 class PQCOMPONENTS_EXPORT pqViewManager : public pqTabbedMultiViewWidget
 {
   Q_OBJECT
   typedef pqTabbedMultiViewWidget Superclass;
+
 public:
-  pqViewManager(QWidget* parentW=0);
+  pqViewManager(QWidget* parentW = 0);
   virtual ~pqViewManager();
 
 private:

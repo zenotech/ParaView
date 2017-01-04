@@ -17,39 +17,39 @@
  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
 ----------------------------------------------------------------------------*/
 
-// .NAME vtkBalancedRedistributePolyData - do balance of cells on processors
+/**
+ * @class   vtkBalancedRedistributePolyData
+ * @brief   do balance of cells on processors
+*/
 
-#ifndef __vtkBalancedRedistributePolyData_h
-#define __vtkBalancedRedistributePolyData_h
+#ifndef vtkBalancedRedistributePolyData_h
+#define vtkBalancedRedistributePolyData_h
 
-#include "vtkWeightedRedistributePolyData.h"
 #include "vtkPVVTKExtensionsRenderingModule.h" // needed for export macro
+#include "vtkWeightedRedistributePolyData.h"
 class vtkMultiProcessController;
-
 
 //*******************************************************************
 
-class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkBalancedRedistributePolyData : public vtkWeightedRedistributePolyData
+class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkBalancedRedistributePolyData
+  : public vtkWeightedRedistributePolyData
 {
 public:
   vtkTypeMacro(vtkBalancedRedistributePolyData, vtkWeightedRedistributePolyData);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  static vtkBalancedRedistributePolyData *New();
+  static vtkBalancedRedistributePolyData* New();
 
 protected:
   vtkBalancedRedistributePolyData();
   ~vtkBalancedRedistributePolyData();
-  void MakeSchedule (vtkPolyData*, vtkCommSched*);
+  void MakeSchedule(vtkPolyData*, vtkCommSched*);
 
 private:
-  vtkBalancedRedistributePolyData(const vtkBalancedRedistributePolyData&); // Not implemented
-  void operator=(const vtkBalancedRedistributePolyData&); // Not implemented
+  vtkBalancedRedistributePolyData(const vtkBalancedRedistributePolyData&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkBalancedRedistributePolyData&) VTK_DELETE_FUNCTION;
 };
 
 //****************************************************************
 
 #endif
-
-

@@ -33,22 +33,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "vtkObjectFactory.h"
 #include "vtkPVXMLElement.h"
-#include "vtkRenderer.h"
 #include "vtkRenderWindow.h"
+#include "vtkRenderer.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMProxy.h"
 #include "vtkSMProxyLocator.h"
 #include "vtkVRQueue.h"
 
-#include <sstream>
 #include <algorithm>
+#include <sstream>
 
 // ----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkVRTrackStyle)
 
-// ----------------------------------------------------------------------------
-vtkVRTrackStyle::vtkVRTrackStyle() :
-  Superclass()
+  // ----------------------------------------------------------------------------
+  vtkVRTrackStyle::vtkVRTrackStyle()
+  : Superclass()
 {
   this->AddTrackerRole("Tracker");
 }
@@ -59,23 +59,22 @@ vtkVRTrackStyle::~vtkVRTrackStyle()
 }
 
 // ----------------------------------------------------------------------------
-void vtkVRTrackStyle::HandleTracker( const vtkVREventData& data )
+void vtkVRTrackStyle::HandleTracker(const vtkVREventData& data)
 {
   vtkStdString role = this->GetTrackerRole(data.name);
   if (role == "Tracker")
-    {
+  {
     if (this->ControlledProxy && this->ControlledPropertyName != NULL &&
-        this->ControlledPropertyName[0] != '\0')
-      {
-      vtkSMPropertyHelper(this->ControlledProxy,
-                          this->ControlledPropertyName).Set(
-            data.data.tracker.matrix, 16);
+      this->ControlledPropertyName[0] != '\0')
+    {
+      vtkSMPropertyHelper(this->ControlledProxy, this->ControlledPropertyName)
+        .Set(data.data.tracker.matrix, 16);
       this->ControlledProxy->UpdateVTKObjects();
-      }
     }
+  }
 }
 
-void vtkVRTrackStyle::PrintSelf(ostream &os, vtkIndent indent)
+void vtkVRTrackStyle::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }

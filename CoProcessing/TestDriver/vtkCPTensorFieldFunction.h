@@ -12,12 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkCPTensorFieldFunction - Abstract class for specifying tensor fields at points.
-// .SECTION Description
-// Abstract class for specifying tensor fields at specified points.  
+/**
+ * @class   vtkCPTensorFieldFunction
+ * @brief   Abstract class for specifying tensor fields at points.
+ *
+ * Abstract class for specifying tensor fields at specified points.
+*/
 
-#ifndef __vtkCPTensorFieldFunction_h
-#define __vtkCPTensorFieldFunction_h
+#ifndef vtkCPTensorFieldFunction_h
+#define vtkCPTensorFieldFunction_h
 
 #include "vtkObject.h"
 #include "vtkPVCatalystTestDriverModule.h" // needed for export macros
@@ -28,23 +31,25 @@ public:
   vtkTypeMacro(vtkCPTensorFieldFunction, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Get the NumberOfComponents.  This is abstract to make sure 
-  // that the value for the NumberOfComponents cannot be changed.
+  /**
+   * Get the NumberOfComponents.  This is abstract to make sure
+   * that the value for the NumberOfComponents cannot be changed.
+   */
   virtual unsigned int GetNumberOfComponents() = 0;
 
-  // Description:
-  // Compute the field value at Point.
-  virtual double ComputeComponenentAtPoint(unsigned int component, double point[3],
-                                           unsigned long timeStep, double time) = 0;
+  /**
+   * Compute the field value at Point.
+   */
+  virtual double ComputeComponenentAtPoint(
+    unsigned int component, double point[3], unsigned long timeStep, double time) = 0;
 
 protected:
   vtkCPTensorFieldFunction();
   ~vtkCPTensorFieldFunction();
 
 private:
-  vtkCPTensorFieldFunction(const vtkCPTensorFieldFunction&); // Not implemented
-  void operator=(const vtkCPTensorFieldFunction&); // Not implemented
+  vtkCPTensorFieldFunction(const vtkCPTensorFieldFunction&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkCPTensorFieldFunction&) VTK_DELETE_FUNCTION;
 };
 
 #endif

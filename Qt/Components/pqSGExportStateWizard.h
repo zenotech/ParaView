@@ -29,14 +29,14 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqSGExportStateWizard_h
-#define __pqSGExportStateWizard_h
+#ifndef pqSGExportStateWizard_h
+#define pqSGExportStateWizard_h
 
 #include "pqComponentsModule.h"
-#include <QWizard>
-#include <QWizardPage>
 #include <QString>
 #include <QStringList>
+#include <QWizard>
+#include <QWizardPage>
 
 class QLabel;
 class pqImageOutputInfo;
@@ -45,9 +45,9 @@ class PQCOMPONENTS_EXPORT pqSGExportStateWizard : public QWizard
 {
   Q_OBJECT
   typedef QWizard Superclass;
+
 public:
-  pqSGExportStateWizard(
-    QWidget *parentObject=0, Qt::WindowFlags parentFlags=0);
+  pqSGExportStateWizard(QWidget* parentObject = 0, Qt::WindowFlags parentFlags = 0);
   virtual ~pqSGExportStateWizard();
 
   virtual bool validateCurrentPage();
@@ -59,11 +59,7 @@ protected slots:
   void onShowAllSources(bool);
   void onAdd();
   void onRemove();
-  void incrementView();
-  void decrementView();
   void toggleCinema(bool);
-  void incrementTrack();
-  void decrementTrack();
 
 protected:
   virtual bool getCommandString(QString& command) = 0;
@@ -75,8 +71,6 @@ protected:
 private:
   Q_DISABLE_COPY(pqSGExportStateWizard)
 
-  int CurrentView;
-  int CurrentTrack;
   friend class pqSGExportStateWizardPage2;
   friend class pqSGExportStateWizardPage3;
 };
@@ -84,27 +78,26 @@ private:
 class pqSGExportStateWizardPage2 : public QWizardPage
 {
   pqSGExportStateWizard::pqInternals* Internals;
+
 public:
-  pqSGExportStateWizardPage2(QWidget* _parent=0);
+  pqSGExportStateWizardPage2(QWidget* _parent = 0);
 
   virtual void initializePage();
 
   virtual bool isComplete() const;
 
-  void emitCompleteChanged()
-  { emit this->completeChanged(); }
+  void emitCompleteChanged() { emit this->completeChanged(); }
 };
 
-class pqSGExportStateWizardPage3: public QWizardPage
+class pqSGExportStateWizardPage3 : public QWizardPage
 {
   pqSGExportStateWizard::pqInternals* Internals;
+
 public:
-  pqSGExportStateWizardPage3(QWidget* _parent=0);
+  pqSGExportStateWizardPage3(QWidget* _parent = 0);
 
   virtual void initializePage();
 };
-
-
 
 #include "ui_pqExportStateWizard.h"
 

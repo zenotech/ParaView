@@ -12,22 +12,25 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVContourFilter - generate isosurfaces/isolines from scalar values
-// .SECTION Description
-// vtkPVContourFilter is an extension to vtkContourFilter. It adds the
-// ability to generate isosurfaces / isolines for AMR dataset.
-//
-// .SECTION Caveats
-// Certain flags in vtkAMRDualContour are assumed to be ON.
-//
-// .SECTION See Also
-// vtkContourFilter vtkAMRDualContour
+/**
+ * @class   vtkPVContourFilter
+ * @brief   generate isosurfaces/isolines from scalar values
+ *
+ * vtkPVContourFilter is an extension to vtkContourFilter. It adds the
+ * ability to generate isosurfaces / isolines for AMR dataset.
+ *
+ * @warning
+ * Certain flags in vtkAMRDualContour are assumed to be ON.
+ *
+ * @sa
+ * vtkContourFilter vtkAMRDualContour
+*/
 
-#ifndef __vtkPVContourFilter_h
-#define __vtkPVContourFilter_h
+#ifndef vtkPVContourFilter_h
+#define vtkPVContourFilter_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkContourFilter.h"
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 
 class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVContourFilter : public vtkContourFilter
 {
@@ -38,37 +41,31 @@ public:
 
   static vtkPVContourFilter* New();
 
-  virtual int ProcessRequest(vtkInformation*,
-                             vtkInformationVector**,
-                             vtkInformationVector*);
-
+  virtual int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
 protected:
-
   vtkPVContourFilter();
- ~vtkPVContourFilter();
+  ~vtkPVContourFilter();
 
- virtual int RequestData(vtkInformation* request,
-                         vtkInformationVector** inputVector,
-                         vtkInformationVector* outputVector);
+  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector);
 
- virtual int RequestDataObject(vtkInformation* request,
-                               vtkInformationVector** inputVector,
-                               vtkInformationVector* outputVector);
+  virtual int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector);
 
- virtual int FillInputPortInformation(int port, vtkInformation* info);
- virtual int FillOutputPortInformation(int port, vtkInformation* info);
+  virtual int FillInputPortInformation(int port, vtkInformation* info);
+  virtual int FillOutputPortInformation(int port, vtkInformation* info);
 
- // Description:
- // Class superclass request data. Also handles iterating over
- // vtkHierarchicalBoxDataSet.
- int ContourUsingSuperclass(
-   vtkInformation* request, vtkInformationVector** inputVector,
-   vtkInformationVector* outputVector);
+  /**
+   * Class superclass request data. Also handles iterating over
+   * vtkHierarchicalBoxDataSet.
+   */
+  int ContourUsingSuperclass(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector);
 
 private:
- vtkPVContourFilter(const vtkPVContourFilter&); // Not implemented.
- void operator=(const vtkPVContourFilter&);     // Not implemented.
+  vtkPVContourFilter(const vtkPVContourFilter&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVContourFilter&) VTK_DELETE_FUNCTION;
 };
 
-#endif // __vtkPVContourFilter_h
+#endif // vtkPVContourFilter_h

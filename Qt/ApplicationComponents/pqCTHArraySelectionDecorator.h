@@ -29,21 +29,23 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqCTHArraySelectionDecorator_h
-#define __pqCTHArraySelectionDecorator_h
+#ifndef pqCTHArraySelectionDecorator_h
+#define pqCTHArraySelectionDecorator_h
 
 #include "pqApplicationComponentsModule.h"
 #include "pqPropertyWidgetDecorator.h"
 
-/// pqCTHArraySelectionDecorator is used by ExtractCTH filter (and similar
-/// filters) to ensure only 1 of the array-selection properties is set at any
-/// given time. When the user changes the state of a selection property,
-/// selections on other properties are cleared.
-class PQAPPLICATIONCOMPONENTS_EXPORT pqCTHArraySelectionDecorator :
-  public pqPropertyWidgetDecorator
+/**
+* pqCTHArraySelectionDecorator is used by ExtractCTH filter (and similar
+* filters) to ensure only 1 of the array-selection properties is set at any
+* given time. When the user changes the state of a selection property,
+* selections on other properties are cleared.
+*/
+class PQAPPLICATIONCOMPONENTS_EXPORT pqCTHArraySelectionDecorator : public pqPropertyWidgetDecorator
 {
   Q_OBJECT
   typedef pqPropertyWidgetDecorator Superclass;
+
 public:
   pqCTHArraySelectionDecorator(vtkPVXMLElement* config, pqPropertyWidget* parent);
   virtual ~pqCTHArraySelectionDecorator();

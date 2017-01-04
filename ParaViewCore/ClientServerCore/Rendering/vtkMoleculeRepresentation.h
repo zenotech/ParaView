@@ -13,50 +13,78 @@
 
 =========================================================================*/
 
-#ifndef _vtkMoleculeRepresentation_h
-#define _vtkMoleculeRepresentation_h
+#ifndef vtkMoleculeRepresentation_h
+#define vtkMoleculeRepresentation_h
 
 #include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 #include "vtkPVDataRepresentation.h"
 
-class vtkActor;
-class vtkMoleculeMapper;
+#include "vtkNew.h" // For vtkNew.
 
-class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkMoleculeRepresentation : public vtkPVDataRepresentation
+class vtkActor;
+class vtkMolecule;
+class vtkMoleculeMapper;
+class vtkPVCacheKeeper;
+class vtkScalarsToColors;
+
+class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkMoleculeRepresentation
+  : public vtkPVDataRepresentation
 {
 public:
   static vtkMoleculeRepresentation* New();
-  vtkTypeMacro(vtkMoleculeRepresentation, vtkPVDataRepresentation)
-  void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkMoleculeRepresentation, vtkPVDataRepresentation) void PrintSelf(
+    ostream& os, vtkIndent indent);
 
-  virtual int ProcessViewRequest(vtkInformationRequestKey *requestType,
-                                 vtkInformation *inputInfo,
-                                 vtkInformation *outputInfo);
+  virtual int ProcessViewRequest(
+    vtkInformationRequestKey* requestType, vtkInformation* inputInfo, vtkInformation* outputInfo);
 
   virtual void SetVisibility(bool value);
 
-  vtkGetMacro(MoleculeRenderMode, int)
-  void SetMoleculeRenderMode(int mode);
+  vtkGetMacro(MoleculeRenderMode, int) void SetMoleculeRenderMode(int mode);
 
-//BTX
+  vtkGetMacro(UseCustomRadii, bool) void SetUseCustomRadii(bool val);
+
+  void SetLookupTable(vtkScalarsToColors* lut);
+
+  // Description:
+  // No-op. For compatibility with vtkPVCompositeRepresentation, which calls
+  // SetRepresentation on it's subproxies.
+  void SetRepresentation(const char*) {}
+
+  // Description:
+  // Returns the data object that is rendered from the given input port.
+  virtual vtkDataObject* GetRenderedDataObject(int port);
+
+  void MarkModified();
+
 protected:
   vtkMoleculeRepresentation();
   ~vtkMoleculeRepresentation();
 
   virtual int FillInputPortInformation(int port, vtkInformation* info);
   virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
-  virtual bool AddToView(vtkView *view);
-  virtual bool RemoveFromView(vtkView *view);
+  virtual bool AddToView(vtkView* view);
+  virtual bool RemoveFromView(vtkView* view);
 
-  vtkActor *Actor;
-  vtkMoleculeMapper *Mapper;
+  bool IsCached(double cache_key);
+
+  void SyncMapper();
+  void UpdateColoringParameters();
+
+  vtkActor* Actor;
+  vtkMoleculeMapper* Mapper;
+
+  vtkNew<vtkPVCacheKeeper> CacheKeeper;
+  vtkNew<vtkMolecule> DummyMolecule;
 
   int MoleculeRenderMode;
+  bool UseCustomRadii;
+
+  double DataBounds[6];
 
 private:
-  vtkMoleculeRepresentation(const vtkMoleculeRepresentation&); // Not implemented
-  void operator=(const vtkMoleculeRepresentation&); // Not implemented
-//ETX
+  vtkMoleculeRepresentation(const vtkMoleculeRepresentation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkMoleculeRepresentation&) VTK_DELETE_FUNCTION;
 };
 
-#endif // _vtkMoleculeRepresentation_h
+#endif // vtkMoleculeRepresentation_h

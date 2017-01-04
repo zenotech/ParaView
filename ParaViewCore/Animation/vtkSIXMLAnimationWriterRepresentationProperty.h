@@ -12,39 +12,42 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSIXMLAnimationWriterRepresentationProperty
-// .SECTION Description
-// vtkSIXMLAnimationWriterRepresentationProperty extends vtkSIInputProperty to
-// add push-API specific to vtkXMLPVAnimationWriter to add representations while
-// assigning them unique names consistently across all processes.
+/**
+ * @class   vtkSIXMLAnimationWriterRepresentationProperty
+ *
+ * vtkSIXMLAnimationWriterRepresentationProperty extends vtkSIInputProperty to
+ * add push-API specific to vtkXMLPVAnimationWriter to add representations while
+ * assigning them unique names consistently across all processes.
+*/
 
-#ifndef __vtkSIXMLAnimationWriterRepresentationProperty_h
-#define __vtkSIXMLAnimationWriterRepresentationProperty_h
+#ifndef vtkSIXMLAnimationWriterRepresentationProperty_h
+#define vtkSIXMLAnimationWriterRepresentationProperty_h
 
 #include "vtkPVAnimationModule.h" //needed for exports
 #include "vtkSIInputProperty.h"
 
-class VTKPVANIMATION_EXPORT vtkSIXMLAnimationWriterRepresentationProperty : public vtkSIInputProperty
+class VTKPVANIMATION_EXPORT vtkSIXMLAnimationWriterRepresentationProperty
+  : public vtkSIInputProperty
 {
 public:
   static vtkSIXMLAnimationWriterRepresentationProperty* New();
   vtkTypeMacro(vtkSIXMLAnimationWriterRepresentationProperty, vtkSIInputProperty);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-//BTX
 protected:
   vtkSIXMLAnimationWriterRepresentationProperty();
   ~vtkSIXMLAnimationWriterRepresentationProperty();
 
-  // Description:
-  // Overridden to call AddRepresentation on the vtkXMLPVAnimationWriter
-  // instance with correct API.
+  /**
+   * Overridden to call AddRepresentation on the vtkXMLPVAnimationWriter
+   * instance with correct API.
+   */
   virtual bool Push(vtkSMMessage*, int);
 
 private:
-  vtkSIXMLAnimationWriterRepresentationProperty(const vtkSIXMLAnimationWriterRepresentationProperty&); // Not implemented
-  void operator=(const vtkSIXMLAnimationWriterRepresentationProperty&); // Not implemented
-//ETX
+  vtkSIXMLAnimationWriterRepresentationProperty(
+    const vtkSIXMLAnimationWriterRepresentationProperty&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSIXMLAnimationWriterRepresentationProperty&) VTK_DELETE_FUNCTION;
 };
 
 #endif

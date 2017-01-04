@@ -37,25 +37,24 @@ set (Module_SRCS
   vtkSMDirectoryProxy.cxx
   vtkSMEnsembleDataReaderProxy.cxx
   vtkSMExporterProxy.cxx
+  vtkSMGL2PSExporterProxy.cxx
   vtkSMInteractionUndoStackBuilder.cxx
   vtkSMInteractiveSelectionPipeline.cxx
   vtkSMMultiServerSourceProxy.cxx
+  vtkSMPLYWriterProxyInitializationHelper.cxx
+  vtkSMPreselectionPipeline.cxx
   vtkSMPropertyModificationUndoElement.cxx
   vtkSMProxyClipboard.cxx
   vtkSMProxyConfigurationReader.cxx
   vtkSMProxyConfigurationWriter.cxx
   vtkSMPSWriterProxy.cxx
+  vtkSMReaderReloadHelper.cxx
   vtkSMRenderViewExporterProxy.cxx
   vtkSMTesting.cxx
+  vtkSMTooltipSelectionPipeline.cxx
   vtkSMViewExportHelper.cxx
 )
 
-# Disabled unless using the OpenGL backend.
-if ("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL")
-  list(APPEND Module_SRCS
-    vtkSMGL2PSExporterProxy.cxx
-    )
-endif()
 if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL2")
   add_definitions(-DVTKGL2)
 endif()

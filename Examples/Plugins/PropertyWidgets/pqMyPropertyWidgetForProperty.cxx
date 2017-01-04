@@ -33,13 +33,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqPropertiesPanel.h"
 
+#include <QCheckBox>
 #include <QGridLayout>
 #include <QLabel>
-#include <QCheckBox>
 
 //-----------------------------------------------------------------------------
 pqMyPropertyWidgetForProperty::pqMyPropertyWidgetForProperty(
-  vtkSMProxy *smproxy, vtkSMProperty *smproperty, QWidget *parentObject)
+  vtkSMProxy* smproxy, vtkSMProperty* smproperty, QWidget* parentObject)
   : Superclass(smproxy, parentObject)
 {
   this->setShowLabel(false);

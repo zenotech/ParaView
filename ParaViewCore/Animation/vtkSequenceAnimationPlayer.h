@@ -12,12 +12,14 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSequenceAnimationPlayer
-// .SECTION Description
-//
+/**
+ * @class   vtkSequenceAnimationPlayer
+ *
+ *
+*/
 
-#ifndef __vtkSequenceAnimationPlayer_h
-#define __vtkSequenceAnimationPlayer_h
+#ifndef vtkSequenceAnimationPlayer_h
+#define vtkSequenceAnimationPlayer_h
 
 #include "vtkAnimationPlayer.h"
 #include "vtkPVAnimationModule.h" // needed for export macro
@@ -32,16 +34,16 @@ public:
   vtkSetClampMacro(NumberOfFrames, int, 2, VTK_INT_MAX);
   vtkGetMacro(NumberOfFrames, int);
 
-//BTX
 protected:
   vtkSequenceAnimationPlayer();
   ~vtkSequenceAnimationPlayer();
 
   virtual void StartLoop(double, double, double*);
-  virtual void EndLoop() {};
+  virtual void EndLoop(){};
 
-  // Description:
-  // Return the next time given the current time.
+  /**
+   * Return the next time given the current time.
+   */
   virtual double GetNextTime(double currentime);
 
   virtual double GoToNext(double start, double end, double currenttime);
@@ -52,10 +54,10 @@ protected:
   double StartTime;
   double EndTime;
   int FrameNo;
+
 private:
-  vtkSequenceAnimationPlayer(const vtkSequenceAnimationPlayer&); // Not implemented
-  void operator=(const vtkSequenceAnimationPlayer&); // Not implemented
-//ETX
+  vtkSequenceAnimationPlayer(const vtkSequenceAnimationPlayer&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSequenceAnimationPlayer&) VTK_DELETE_FUNCTION;
 };
 
 #endif

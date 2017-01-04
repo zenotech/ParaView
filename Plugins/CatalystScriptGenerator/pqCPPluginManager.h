@@ -29,19 +29,20 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqCPPluginManager_h
-#define __pqCPPluginManager_h
+#ifndef pqCPPluginManager_h
+#define pqCPPluginManager_h
 
 #include <pqSGPluginManager.h>
 
 /// pqCPPluginManager is the central class that orchestrates the behaviour of
 /// this co-processing plugin.
-class pqCPPluginManager :  public pqSGPluginManager
+class pqCPPluginManager : public pqSGPluginManager
 {
   Q_OBJECT
   typedef pqSGPluginManager Superclass;
+
 public:
-  pqCPPluginManager(QObject* parent=0);
+  pqCPPluginManager(QObject* parent = 0);
   ~pqCPPluginManager();
 
   /// Get the name of the writers menu from the concrete subclass.
@@ -51,8 +52,7 @@ public:
   virtual const char* getObjectMenuName();
 
 private:
-  pqCPPluginManager(const pqCPPluginManager&); // Not implemented.
-  void operator=(const pqCPPluginManager&); // Not implemented.
+  Q_DISABLE_COPY(pqCPPluginManager)
 };
 
 #endif

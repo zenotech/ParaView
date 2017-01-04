@@ -12,53 +12,52 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkImageData.h"
-#include "vtkImageReader.h"
 #include "vtkImageContinuousDilate3D.h"
 #include "vtkImageContinuousErode3D.h"
-#include "vtkImageMedian3D.h"
+#include "vtkImageData.h"
 #include "vtkImageGradient.h"
-#include "vtkImageViewer.h"
 #include "vtkImageGradientMagnitude.h"
+#include "vtkImageMedian3D.h"
+#include "vtkImageReader.h"
+#include "vtkImageViewer.h"
 #include "vtkTestUtilities.h"
 #include "vtkTesting.h"
 
 int TestContinuousClose3D(int argc, char* argv[])
 {
-  char* fname = 
-    vtkTestUtilities::ExpandDataFileName(argc, argv, "Data/headsq/quarter");
+  char* fname = vtkTestUtilities::ExpandDataFileName(argc, argv, "Data/headsq/quarter");
 
   // Image pipeline
-  vtkImageReader *reader = vtkImageReader::New();
+  vtkImageReader* reader = vtkImageReader::New();
   reader->SetDataByteOrderToLittleEndian();
-  reader->SetDataExtent (0, 63, 0, 63, 1, 93);
-  reader->SetFilePrefix ( fname );
-  reader->SetDataMask (0x7fff);
+  reader->SetDataExtent(0, 63, 0, 63, 1, 93);
+  reader->SetFilePrefix(fname);
+  reader->SetDataMask(0x7fff);
 
-  delete [] fname;
+  delete[] fname;
 
-  vtkImageContinuousDilate3D *dilate = vtkImageContinuousDilate3D::New();
+  vtkImageContinuousDilate3D* dilate = vtkImageContinuousDilate3D::New();
   dilate->SetInputConnection(reader->GetOutputPort());
-  dilate->SetKernelSize( 11, 11, 1);
+  dilate->SetKernelSize(11, 11, 1);
 
-  vtkImageContinuousErode3D *erode = vtkImageContinuousErode3D::New();
-  erode->SetInputConnection (dilate->GetOutputPort());
-  erode->SetKernelSize(11,11,1);
-  
-  vtkImageMedian3D *median = vtkImageMedian3D::New();
-  median->SetInputConnection( erode->GetOutputPort() );
-  
-  vtkImageGradient *gradient = vtkImageGradient::New();
-  gradient->SetInputConnection( median->GetOutputPort() );
-  gradient->SetDimensionality (3);
-  gradient->Update(); //discard gradient
+  vtkImageContinuousErode3D* erode = vtkImageContinuousErode3D::New();
+  erode->SetInputConnection(dilate->GetOutputPort());
+  erode->SetKernelSize(11, 11, 1);
 
-  vtkImageGradientMagnitude *magnitude = vtkImageGradientMagnitude::New();
-  magnitude->SetInputConnection( erode->GetOutputPort() );
-  magnitude->SetDimensionality (3);
+  vtkImageMedian3D* median = vtkImageMedian3D::New();
+  median->SetInputConnection(erode->GetOutputPort());
 
-  vtkImageViewer *viewer = vtkImageViewer::New();
-  viewer->SetInputConnection ( magnitude->GetOutputPort() );
+  vtkImageGradient* gradient = vtkImageGradient::New();
+  gradient->SetInputConnection(median->GetOutputPort());
+  gradient->SetDimensionality(3);
+  gradient->Update(); // discard gradient
+
+  vtkImageGradientMagnitude* magnitude = vtkImageGradientMagnitude::New();
+  magnitude->SetInputConnection(erode->GetOutputPort());
+  magnitude->SetDimensionality(3);
+
+  vtkImageViewer* viewer = vtkImageViewer::New();
+  viewer->SetInputConnection(magnitude->GetOutputPort());
   viewer->SetColorWindow(2000);
   viewer->SetColorLevel(1000);
   viewer->Render();

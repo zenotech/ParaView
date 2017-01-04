@@ -40,7 +40,6 @@ set (Module_SRCS
   vtkChartWarning.cxx
   vtkClientServerMoveData.cxx
   vtkCompositeRepresentation.cxx
-  vtkCubeAxesRepresentation.cxx
   vtkDataLabelRepresentation.cxx
   vtkGeometryRepresentation.cxx
   vtkGeometryRepresentationWithFaces.cxx
@@ -52,6 +51,8 @@ set (Module_SRCS
   vtkMPIMoveData.cxx
   vtkOutlineRepresentation.cxx
   vtkPExtentTranslator.cxx
+  vtkPolarAxesRepresentation.cxx
+  vtkProgressBarSourceRepresentation.cxx
   vtkPVBagChartRepresentation.cxx
   vtkPVBoxChartRepresentation.cxx
   vtkPVCacheKeeper.cxx
@@ -60,6 +61,7 @@ set (Module_SRCS
   vtkPVClientServerSynchronizedRenderers.cxx
   vtkPVCompositeOrthographicSliceRepresentation.cxx
   vtkPVCompositeRepresentation.cxx
+  vtkPVContextInteractorStyle.cxx
   vtkPVContextView.cxx
   vtkPVDataDeliveryManager.cxx
   vtkPVDataRepresentation.cxx
@@ -69,6 +71,7 @@ set (Module_SRCS
   vtkPVHistogramChartRepresentation.cxx
   vtkPVImageSliceMapper.cxx
   vtkPVImplicitPlaneRepresentation.cxx
+  vtkPVImplicitCylinderRepresentation.cxx
   vtkPVLastSelectionInformation.cxx
   vtkPVMultiSliceView.cxx
   vtkPVOpenGLInformation.cxx
@@ -89,6 +92,7 @@ set (Module_SRCS
   vtkPVView.cxx
   vtkPVXYChartView.cxx
   vtkQuartileChartRepresentation.cxx
+  vtkRulerSourceRepresentation.cxx
   vtkSelectionDeliveryFilter.cxx
   vtkSelectionRepresentation.cxx
   vtkSpreadSheetRepresentation.cxx
@@ -103,6 +107,8 @@ set (Module_SRCS
 
 if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL2")
   add_definitions(-DVTKGL2)
+  list(APPEND Module_SRCS
+    vtkPointGaussianRepresentation.cxx)
 endif()
 
 if (PARAVIEW_ENABLE_PYTHON)

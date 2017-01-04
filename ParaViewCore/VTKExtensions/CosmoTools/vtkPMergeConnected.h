@@ -12,14 +12,16 @@
  PURPOSE.  See the above copyright notice for more information.
 
  =========================================================================*/
-// .NAME vtkPMergeConnected.h -- Merges connected voronoi tesselation regions.
-//
-// .SECTION Description
-//  This filter merges connected voroni tesselation regions based on the
-//  global region ID.
+/**
+ * @class   vtkPMergeConnected
+ *
+ *
+ *  This filter merges connected voroni tesselation regions based on the
+ *  global region ID.
+*/
 
-#ifndef __vtkPMergeConnected_h
-#define __vtkPMergeConnected_h
+#ifndef vtkPMergeConnected_h
+#define vtkPMergeConnected_h
 
 #include "vtkMultiBlockDataSetAlgorithm.h"
 #include "vtkPVVTKExtensionsCosmoToolsModule.h" // For export macro
@@ -30,8 +32,7 @@ class vtkIdList;
 class vtkFloatArray;
 class vtkIdTypeArray;
 
-class VTKPVVTKEXTENSIONSCOSMOTOOLS_EXPORT vtkPMergeConnected :
-  public vtkMultiBlockDataSetAlgorithm
+class VTKPVVTKEXTENSIONSCOSMOTOOLS_EXPORT vtkPMergeConnected : public vtkMultiBlockDataSetAlgorithm
 {
 public:
   static vtkPMergeConnected* New();
@@ -53,21 +54,22 @@ protected:
   int FillOutputPortInformation(int port, vtkInformation* info);
 
 private:
-  vtkPMergeConnected(const vtkPMergeConnected&);  // Not implemented.
-  void operator=(const vtkPMergeConnected&);  // Not implemented.
+  vtkPMergeConnected(const vtkPMergeConnected&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPMergeConnected&) VTK_DELETE_FUNCTION;
 
-  //parallelism
+  // parallelism
   int NumProcesses;
   int MyId;
-  vtkMultiProcessController *Controller;
-  void SetController(vtkMultiProcessController *c);
+  vtkMultiProcessController* Controller;
+  void SetController(vtkMultiProcessController* c);
 
-  //filter
-  void LocalToGlobalRegionId(vtkMultiProcessController *contr, vtkMultiBlockDataSet *data);
-  void MergeCellsOnRegionId(vtkUnstructuredGrid *ugrid, int target, vtkIdList* facestream);
-  float MergeCellDataOnRegionId(vtkFloatArray *data_array, vtkIdTypeArray *rid_array, vtkIdType target);
+  // filter
+  void LocalToGlobalRegionId(vtkMultiProcessController* contr, vtkMultiBlockDataSet* data);
+  void MergeCellsOnRegionId(vtkUnstructuredGrid* ugrid, int target, vtkIdList* facestream);
+  float MergeCellDataOnRegionId(
+    vtkFloatArray* data_array, vtkIdTypeArray* rid_array, vtkIdType target);
 
-  void delete_key(FaceWithKey *key);
+  void delete_key(FaceWithKey* key);
   FaceWithKey* IdsToKey(vtkIdList* ids);
 };
 

@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,45 +29,50 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqSaveScreenshotReaction_h 
-#define __pqSaveScreenshotReaction_h
+#ifndef pqSaveScreenshotReaction_h
+#define pqSaveScreenshotReaction_h
 
 #include "pqReaction.h"
 
-/// @ingroup Reactions
-/// Reaction to save a screen shot. This reaction can only be used when
-/// pqTabbedMultiViewWidget is used as the widget containing the views.
+/**
+* @ingroup Reactions
+* Reaction to save a screen shot.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqSaveScreenshotReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
+
 public:
-  /// Constructor. Parent cannot be NULL.
+  /**
+  * Constructor. Parent cannot be NULL.
+  */
   pqSaveScreenshotReaction(QAction* parent);
 
-  /// Saves the screenshot.
-  /// Note that this method is static. Applications can simply use this without
-  /// having to create a reaction instance.
+  /**
+  * Saves the screenshot.
+  * Note that this method is static. Applications can simply use this without
+  * having to create a reaction instance.
+  */
   static void saveScreenshot();
-  static void saveScreenshot(const QString& filename,
-    const QSize& size,
-    int quality,
-    bool all_views=false);
+  static void saveScreenshot(
+    const QString& filename, const QSize& size, int quality, bool all_views = false);
 
 public slots:
-  /// Updates the enabled state. Applications need not explicitly call
-  /// this.
+  /**
+  * Updates the enabled state. Applications need not explicitly call
+  * this.
+  */
   void updateEnableState();
 
 protected:
-  /// Called when the action is triggered.
-  virtual void onTriggered()
-    { pqSaveScreenshotReaction::saveScreenshot(); }
+  /**
+  * Called when the action is triggered.
+  */
+  virtual void onTriggered() { pqSaveScreenshotReaction::saveScreenshot(); }
 
 private:
   Q_DISABLE_COPY(pqSaveScreenshotReaction)
 };
 
 #endif
-
-

@@ -1,11 +1,32 @@
 /*
-   ____    _ __           ____               __    ____
-  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
- _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
-
-Copyright 2012 SciberQuest Inc.
-*/
+ * Copyright 2012 SciberQuest Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  * Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ *  * Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ *  * Neither name of SciberQuest Inc. nor the names of any contributors may be
+ *    used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS''
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 // .NAME vtkSQLog -- Distributed log.
 // .SECTION Description
@@ -15,8 +36,8 @@ Copyright 2012 SciberQuest Inc.
 //  writes the data to the disk in rank order.
 //
 
-#ifndef __vtkSQLog_h
-#define __vtkSQLog_h
+#ifndef vtkSQLog_h
+#define vtkSQLog_h
 
 #define vtkSQLogDEBUG -1
 //#ifdef SQTK_DEBUG
@@ -26,7 +47,6 @@ Copyright 2012 SciberQuest Inc.
 #include "vtkSciberQuestModule.h" // for export macro
 #include "vtkObject.h"
 
-//BTX
 #include "LogBuffer.h" // for LogBuffer
 
 #include <vector> // for vector
@@ -36,13 +56,10 @@ Copyright 2012 SciberQuest Inc.
 #if vtkSQLogDEBUG > 0
 #include <iostream> // for cerr
 #endif
-//ETX
-
 
 class vtkPVXMLElement;
 class vtkSQLog;
 
-//BTX
 /**
 A class responsible for delete'ing the global instance of the log.
 */
@@ -77,7 +94,6 @@ class VTKSCIBERQUEST_EXPORT LogBodyType
 public:
   template<typename T> LogBodyType &operator<<(const T& s);
 };
-//ETX
 
 //=============================================================================
 class VTKSCIBERQUEST_EXPORT vtkSQLog : public vtkObject
@@ -102,9 +118,8 @@ public:
   // ROOT_RANKS_PID.log
   vtkSetStringMacro(FileName);
   vtkGetStringMacro(FileName);
-  //BTX
+
   void SetFileName(const std::string &fileName){ this->SetFileName(fileName.c_str()); }
-  //ETX
 
   // Description:
   // The log works as an event stack. EventStart pushes the
@@ -120,7 +135,6 @@ public:
   void EndEventSynch(const char *event);
   void EndEventSynch(int rank, const char *event);
 
-  //BTX
   // Description:
   // Insert text into the log header on the writer rank.
   template<typename T>
@@ -133,7 +147,6 @@ public:
   // Description:
   // stream output to log body(all ranks).
   LogBodyType GetBody(){ return LogBodyType(); }
-  //ETX
 
   // Description:
   // Clear the log.
@@ -181,8 +194,8 @@ protected:
   virtual ~vtkSQLog();
 
 private:
-  vtkSQLog(const vtkSQLog&); // Not implemented
-  void operator=(const vtkSQLog&); // Not implemented
+  vtkSQLog(const vtkSQLog&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSQLog&) VTK_DELETE_FUNCTION;
 
 private:
   int GlobalLevel;
@@ -207,7 +220,6 @@ private:
   friend class LogBodyType;
 };
 
-//BTX
  //-----------------------------------------------------------------------------
 template<typename T>
 vtkSQLog &vtkSQLog::operator<<(const T& s)
@@ -252,6 +264,5 @@ LogBodyType &LogBodyType::operator<<(const T& s)
 
   return *this;
 }
-//ETX
 
 #endif

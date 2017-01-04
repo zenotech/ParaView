@@ -58,7 +58,7 @@ class VTKPVCATALYST_EXPORT vtkCPProcessor : public vtkObject
 {
 public:
   static vtkCPProcessor* New();
-  vtkTypeMacro(vtkCPProcessor,vtkObject);
+  vtkTypeMacro(vtkCPProcessor, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   /// Add in a pipeline that is externally configured. Returns 1 if
@@ -82,7 +82,9 @@ public:
   /// MPI_COMM_WORLD isn't the proper one. Catalyst is initialized
   /// to use MPI_COMM_WORLD by default.
   virtual int Initialize();
+#ifndef __WRAP__
   virtual int Initialize(vtkMPICommunicatorOpaqueComm& comm);
+#endif
 
   /// Configuration Step:
   /// The coprocessor first determines if any coprocessing needs to be done
@@ -91,8 +93,7 @@ public:
   /// it fills in the FieldNames array that the coprocessor requires
   /// in order to fulfill all the coprocessing requests for this
   /// TimeStep/Time combination.
-  virtual int RequestDataDescription(
-    vtkCPDataDescription* dataDescription);
+  virtual int RequestDataDescription(vtkCPDataDescription* dataDescription);
 
   /// Processing Step:
   /// Provides the grid and the field data for the co-procesor to process.
@@ -111,8 +112,8 @@ protected:
   virtual vtkObject* NewInitializationHelper();
 
 private:
-  vtkCPProcessor(const vtkCPProcessor&); // Not implemented
-  void operator=(const vtkCPProcessor&); // Not implemented
+  vtkCPProcessor(const vtkCPProcessor&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkCPProcessor&) VTK_DELETE_FUNCTION;
 
   vtkCPProcessorInternals* Internal;
   vtkObject* InitializationHelper;

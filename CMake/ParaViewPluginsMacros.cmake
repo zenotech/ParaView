@@ -145,6 +145,10 @@ macro(pv_plugin_search_under_root root_src root_build)
   endforeach()
 endmacro()
 
+set(PARAVIEW_EXTRA_EXTERNAL_PLUGINS ""
+  CACHE STRING "A list of plugins to autoload (but not built as part of ParaView itself)")
+mark_as_advanced(PARAVIEW_EXTRA_EXTERNAL_PLUGINS)
+
 #------------------------------------------------------------------------------
 # pv_process_plugins() serves as the entry point for processing plugins. A
 # top-level cmake file simply sets the plugin paths to search using
@@ -178,8 +182,9 @@ macro(pv_process_plugins root_src root_build)
     set(PARAVIEW_BUILD_PLUGIN_${pv-plugin} ${${pv-plugin}_DEFAULT_ENABLED}
       CACHE BOOL "Build ${pv-plugin} Plugin")
     mark_as_advanced(PARAVIEW_BUILD_PLUGIN_${pv-plugin})
-    cmake_dependent_option(PARAVIEW_AUTOLOAD_PLUGIN_${pv-plugin} "Load ${pv-plugin} Plugin Automatically" OFF
-                           "PARAVIEW_BUILD_PLUGIN_${pv-plugin}" ${${pv-plugin}_AUTOLOAD})
+    cmake_dependent_option(PARAVIEW_AUTOLOAD_PLUGIN_${pv-plugin}
+      "Load ${pv-plugin} Plugin Automatically"
+      ${${pv-plugin}_AUTOLOAD} "PARAVIEW_BUILD_PLUGIN_${pv-plugin}" OFF)
     mark_as_advanced(PARAVIEW_AUTOLOAD_PLUGIN_${pv-plugin})
   endforeach()
 
@@ -206,6 +211,16 @@ macro(pv_process_plugins root_src root_build)
       message(STATUS "Plugin: ${pv-plugin} - ${${pv-plugin}_DESCRIPTION} : Disabled")
     endif()
   endforeach()
+
+  foreach (pv-plugin IN LISTS PARAVIEW_EXTRA_EXTERNAL_PLUGINS)
+    list(APPEND PARAVIEW_PLUGINS_ALL
+      "${pv-plugin}")
+    # Assume the plugin will exist.
+    set(PARAVIEW_BUILD_PLUGIN_${pv-plugin} TRUE)
+    set(${pv-plugin}_PLUGIN_NAMES "${pv-plugin}")
+    # Assume the plugin is to be autoloaded.
+    set(PARAVIEW_AUTOLOAD_PLUGIN_${pv-plugin} TRUE)
+  endforeach ()
  
   # write the .plugins file.
   set (PARAVIEW_PLUGINLIST)

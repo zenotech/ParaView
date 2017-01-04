@@ -22,16 +22,16 @@
 // .SECTION See Also
 // vtkPistonInformationHelper.h vtkPVDataInformation.h
 
-#ifndef __vtkPVDataSetToPiston_h
-#define __vtkPVDataSetToPiston_h
+#ifndef vtkPVDataSetToPiston_h
+#define vtkPVDataSetToPiston_h
 
 #include "vtkDataSetToPiston.h"
 
 class VTK_EXPORT vtkPVDataSetToPiston : public vtkDataSetToPiston
 {
 public:
-  static vtkPVDataSetToPiston *New();
-  vtkTypeMacro(vtkPVDataSetToPiston,vtkDataSetToPiston);
+  static vtkPVDataSetToPiston* New();
+  vtkTypeMacro(vtkPVDataSetToPiston, vtkDataSetToPiston);
   void PrintSelf(ostream& os, vtkIndent indent);
 
 protected:
@@ -39,8 +39,8 @@ protected:
   ~vtkPVDataSetToPiston();
 
 private:
-  vtkPVDataSetToPiston(const vtkPVDataSetToPiston&);  // Not implemented.
-  void operator=(const vtkPVDataSetToPiston&);  // Not implemented.
+  vtkPVDataSetToPiston(const vtkPVDataSetToPiston&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVDataSetToPiston&) VTK_DELETE_FUNCTION;
 };
 
 #endif

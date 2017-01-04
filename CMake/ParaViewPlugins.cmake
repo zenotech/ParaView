@@ -1,7 +1,5 @@
 include(ParaViewMacros)
 
-# Requires ParaView_QT_DIR and ParaView_BINARY_DIR to be set.
-
 # Macro to install a plugin that's included in the ParaView source directory.
 # This is a macro internal to ParaView and should not be directly used by
 # external applications. This may change in future without notice.
@@ -661,34 +659,17 @@ Display Panel Decorators are no longer applicaple.")
 ENDMACRO()
 
 
-# Creates implementation for a pq3DWidgetInterface to add new 3D widgets to
-# ParaView.
-# ADD_3DWIDGET(OUTIFACES OUTSRCS
-#   CLASS_NAME <pq3DWidget subclass being added>
-#   WIDGET_TYPE <string identifying the 3DWidget typically used in the <Hints/>
-#               for the proxy when specifying the PropertyGroup.
-#   )
+#--------------------------------------------------------------------------------------
+# DEPRECATED: 3DWidgets are simply custom property panels (pqPropertyWidget
+# subclasses). Thus, use add_paraview_property_group_widget() to resgiter a new
+# 3D widget panel after having updated the code accordingly.
+# Creates implementation for a pq3DWidgetInterface to add new 3D widgets to ParaView.
 MACRO(ADD_3DWIDGET OUTIFACES OUTSRCS)
-  PV_PLUGIN_PARSE_ARGUMENTS(ARG "CLASS_NAME;WIDGET_TYPE" "" ${ARGN})
-
-  SET(${OUTIFACES} ${ARG_CLASS_NAME})
-  CONFIGURE_FILE(${ParaView_CMAKE_DIR}/pq3DWidgetImplementation.h.in
-                 ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h @ONLY)
-  CONFIGURE_FILE(${ParaView_CMAKE_DIR}/pq3DWidgetImplementation.cxx.in
-                 ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx @ONLY)
-
-  SET(ACTION_MOC_SRCS)
-  IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
-    QT5_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
-  ELSE ()
-    QT4_WRAP_CPP(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
-  ENDIF ()
-
-  SET(${OUTSRCS}
-      ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx
-      ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h
-      ${ACTION_MOC_SRCS}
-      )
+  message(FATAL_ERROR
+"'ADD_3DWIDGET' macro is no longer supported.
+ParaView's Properties panel has been refactored in 3.98. Legacy 3DWidget support
+was dropped in 5.1. Please refer to 'Major API Changes' in ParaView developer
+documentation for details.")
 ENDMACRO()
 
 
@@ -787,36 +768,6 @@ MACRO(ADD_PARAVIEW_GUI_EXTENSION OUTSRCS NAME VERSION)
 
   SET(${OUTSRCS} ${PLUGIN_MOC_SRCS})
 
-ENDMACRO()
-
-# internal macro to work around deficiency in FindQt4.cmake, will be removed in
-# the future.
-MACRO(PARAVIEW_QT4_ADD_RESOURCES outfiles )
-  FOREACH (it ${ARGN})
-    GET_FILENAME_COMPONENT(outfilename ${it} NAME_WE)
-    GET_FILENAME_COMPONENT(infile ${it} ABSOLUTE)
-    GET_FILENAME_COMPONENT(rc_path ${infile} PATH)
-    SET(outfile ${CMAKE_CURRENT_BINARY_DIR}/qrc_${outfilename}.cxx)
-    #  parse file for dependencies
-    #  all files are absolute paths or relative to the location of the qrc file
-    FILE(READ "${infile}" _RC_FILE_CONTENTS)
-    STRING(REGEX MATCHALL "<file[^<]+" _RC_FILES "${_RC_FILE_CONTENTS}")
-    SET(_RC_DEPENDS)
-    FOREACH(_RC_FILE ${_RC_FILES})
-      STRING(REGEX REPLACE "^<file[^>]*>" "" _RC_FILE "${_RC_FILE}")
-      STRING(REGEX MATCH "^/|([A-Za-z]:/)" _ABS_PATH_INDICATOR "${_RC_FILE}")
-      IF(NOT _ABS_PATH_INDICATOR)
-        SET(_RC_FILE "${rc_path}/${_RC_FILE}")
-      ENDIF()
-      SET(_RC_DEPENDS ${_RC_DEPENDS} "${_RC_FILE}")
-    ENDFOREACH()
-    ADD_CUSTOM_COMMAND(OUTPUT ${outfile}
-      COMMAND ${QT_RCC_EXECUTABLE}
-      ARGS ${rcc_options} -name ${outfilename} -o ${outfile} ${infile}
-      MAIN_DEPENDENCY ${infile}
-      DEPENDS ${_RC_DEPENDS})
-    SET(${outfiles} ${${outfiles}} ${outfile})
-  ENDFOREACH ()
 ENDMACRO()
 
 # create a plugin
@@ -938,19 +889,6 @@ FUNCTION(ADD_PARAVIEW_PLUGIN NAME VERSION)
   ENDIF ()
 
   IF(PARAVIEW_BUILD_QT_GUI)
-
-    IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
-      SET(Qt5_FIND_COMPONENTS
-        Gui
-        Help
-        Widgets
-        )
-      INCLUDE (ParaViewQt5)
-    ELSE ()
-      FIND_PACKAGE (Qt4)
-      INCLUDE (${QT_USE_FILE})
-    ENDIF ()
-
     # if server-manager xmls are specified, we can generate documentation from
     # them, if Qt is enabled.
     if (ARG_SERVER_MANAGER_XML)
@@ -961,23 +899,26 @@ FUNCTION(ADD_PARAVIEW_PLUGIN NAME VERSION)
     endif()
 
     # generate the qch file for the plugin if any documentation is provided.
-    if (proxy_documentation_files OR ARG_DOCUMENTATION_DIR)
+    if ((proxy_documentation_files OR ARG_DOCUMENTATION_DIR) AND
+        IS_DIRECTORY "${ARG_DOCUMENTATION_DIR}")
       build_help_project(${NAME}
         DESTINATION_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc"
         DOCUMENTATION_SOURCE_DIR "${ARG_DOCUMENTATION_DIR}"
         FILEPATTERNS "*.html;*.css;*.png;*.jpg"
         DEPENDS "${proxy_documentation_files}" )
 
-      # we don't compile the help project as a Qt resource. Instead it's
-      # packaged as a SM resource. This makes it possible for
-      # server-only plugins to provide documentation to the client without
-      generate_header("${CMAKE_CURRENT_BINARY_DIR}/${NAME}_doc.h"
-        SUFFIX "_doc"
-        VARIABLE function_names
-        BINARY
-        FILES "${CMAKE_CURRENT_BINARY_DIR}/doc/${NAME}.qch")
-      list(APPEND binary_resources ${CMAKE_CURRENT_BINARY_DIR}/${NAME}_doc.h)
-      set (EXTRA_INCLUDES "${EXTRA_INCLUDES}#include \"${CMAKE_CURRENT_BINARY_DIR}/${NAME}_doc.h\"")
+      if (PARAVIEW_ENABLE_EMBEDDED_DOCUMENTATION)
+        # we don't compile the help project as a Qt resource. Instead it's
+        # packaged as a SM resource. This makes it possible for
+        # server-only plugins to provide documentation to the client without
+        generate_header("${CMAKE_CURRENT_BINARY_DIR}/${NAME}_doc.h"
+          SUFFIX "_doc"
+          VARIABLE function_names
+          BINARY
+          FILES "${CMAKE_CURRENT_BINARY_DIR}/doc/${NAME}.qch")
+        list(APPEND binary_resources ${CMAKE_CURRENT_BINARY_DIR}/${NAME}_doc.h)
+        set (EXTRA_INCLUDES "${EXTRA_INCLUDES}#include \"${CMAKE_CURRENT_BINARY_DIR}/${NAME}_doc.h\"")
+      endif()
       foreach (func_name ${function_names})
         set (BINARY_RESOURCES_INIT
           "${BINARY_RESOURCES_INIT}  PushBack(resources, ${func_name});\n")
@@ -1005,8 +946,7 @@ FUNCTION(ADD_PARAVIEW_PLUGIN NAME VERSION)
             "${QRC_RESOURCES_INIT}Q_INIT_RESOURCE(${rc_name});\n")
         endforeach()
       endif()
-
-      PARAVIEW_QT4_ADD_RESOURCES(QT_RCS ${ARG_GUI_RESOURCES})
+      pv_qt_add_resources(QT_RCS ${ARG_GUI_RESOURCES})
       SET(GUI_SRCS ${GUI_SRCS} ${QT_RCS})
     ENDIF()
 
@@ -1108,7 +1048,8 @@ FUNCTION(ADD_PARAVIEW_PLUGIN NAME VERSION)
     ENDIF()
 
     IF(plugin_type_gui OR GUI_SRCS)
-      target_link_libraries(${NAME} LINK_PUBLIC pqComponents)
+      target_link_libraries(${NAME}
+        LINK_PUBLIC pqComponents)
     ENDIF()
     IF(SM_SRCS)
       target_link_libraries(${NAME} LINK_PUBLIC vtkPVServerManagerApplication
@@ -1327,11 +1268,21 @@ macro(pv_setup_module_environment _name)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
   endif()
 
-  set (VTK_INSTALL_RUNTIME_DIR "bin")
-  set (VTK_INSTALL_LIBRARY_DIR "lib")
-  set (VTK_INSTALL_ARCHIVE_DIR "lib")
-  set (VTK_INSTALL_INCLUDE_DIR "include")
-  set (VTK_INSTALL_PACKAGE_DIR "lib/cmake/${_name}")
+  if (NOT VTK_INSTALL_RUNTIME_DIR)
+    set(VTK_INSTALL_RUNTIME_DIR "bin")
+  endif ()
+  if (NOT VTK_INSTALL_LIBRARY_DIR)
+    set(VTK_INSTALL_LIBRARY_DIR "lib/paraview-${PARAVIEW_VERSION}")
+  endif ()
+  if (NOT VTK_INSTALL_ARCHIVE_DIR)
+    set(VTK_INSTALL_ARCHIVE_DIR "lib/paraview-${PARAVIEW_VERSION}")
+  endif ()
+  if (NOT VTK_INSTALL_INCLUDE_DIR)
+    set(VTK_INSTALL_INCLUDE_DIR "include")
+  endif ()
+  if (NOT VTK_INSTALL_PACKAGE_DIR)
+    set (VTK_INSTALL_PACKAGE_DIR "lib/cmake/${_name}")
+  endif ()
 
   if (NOT VTK_FOUND)
     set (VTK_FOUND ${ParaView_FOUND})

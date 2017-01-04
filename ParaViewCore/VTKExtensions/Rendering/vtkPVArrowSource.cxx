@@ -13,21 +13,19 @@
 
 =========================================================================*/
 #include "vtkPVArrowSource.h"
+#include "vtkInformation.h"
 #include "vtkObjectFactory.h"
 #include "vtkPolyData.h"
-#include "vtkInformation.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
 vtkStandardNewMacro(vtkPVArrowSource);
-
 
 void vtkPVArrowSource::ExecuteInformation()
 {
   this->GetOutputInformation(0)->Set(CAN_HANDLE_PIECE_REQUEST(), 1);
 }
 
-
 void vtkPVArrowSource::PrintSelf(ostream& os, vtkIndent indent)
 {
-  this->Superclass::PrintSelf(os,indent);
+  this->Superclass::PrintSelf(os, indent);
 }

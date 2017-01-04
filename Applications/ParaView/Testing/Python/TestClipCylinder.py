@@ -8,12 +8,12 @@ Show()
 clip = Clip()
 clip.ClipType = "Cylinder"
 clip.InsideOut = True
-Show()
 
 cylinder = clip.ClipType
 cylinder.Axis = [-1, 1, -1]
 cylinder.Center = [8, 4, -3]
 cylinder.Radius = 3
+Show()
 
 Render()
 
@@ -24,7 +24,7 @@ try:
   baselineIndex = sys.argv.index('-B')+1
   baselinePath = sys.argv[baselineIndex]
 except:
-  print "Could not get baseline directory. Test failed."
+  print ("Could not get baseline directory. Test failed.")
   exit(1)
 baseline_file = os.path.join(baselinePath, "TestClipCylinder.png")
 import vtk.test.Testing

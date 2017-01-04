@@ -12,14 +12,17 @@ the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMPlotMatrixViewProxy - Proxy class for plot matrix view
+/**
+ * @class   vtkSMPlotMatrixViewProxy
+ * @brief   Proxy class for plot matrix view
+*/
 
-#ifndef __vtkSMPlotMatrixViewProxy_h
-#define __vtkSMPlotMatrixViewProxy_h
+#ifndef vtkSMPlotMatrixViewProxy_h
+#define vtkSMPlotMatrixViewProxy_h
 
+#include "vtkClientServerStream.h"             // For CS stream methods.
 #include "vtkPVServerManagerRenderingModule.h" //needed for exports
 #include "vtkSMContextViewProxy.h"
-#include "vtkClientServerStream.h" // For CS stream methods.
 
 class vtkAbstractContextItem;
 
@@ -30,10 +33,11 @@ public:
   vtkTypeMacro(vtkSMPlotMatrixViewProxy, vtkSMContextViewProxy);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Provides access to the vtk plot matrix.
+  /**
+   * Provides access to the vtk plot matrix.
+   */
   virtual vtkAbstractContextItem* GetContextItem();
-//BTX
+
 protected:
   virtual void CreateVTKObjects();
   void ActivePlotChanged();
@@ -48,9 +52,8 @@ protected:
   void AnimationTickEvent();
 
 private:
-  vtkSMPlotMatrixViewProxy(const vtkSMPlotMatrixViewProxy&); // Not implemented
-  void operator=(const vtkSMPlotMatrixViewProxy&); // Not implemented
-//ETX
+  vtkSMPlotMatrixViewProxy(const vtkSMPlotMatrixViewProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMPlotMatrixViewProxy&) VTK_DELETE_FUNCTION;
 };
 
 #endif

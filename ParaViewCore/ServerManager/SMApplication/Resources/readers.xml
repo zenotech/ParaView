@@ -1443,12 +1443,6 @@
         <Documentation>Specify which mode shape to animate when HasModeShapes
         is on.</Documentation>
       </IntVectorProperty>
-      <Property command="UpdateTimeInformation"
-                name="Refresh">
-        <Documentation>Read in additional time steps that have been written to
-        the file since it was first opened in ParaView. Useful for monitoring a
-        simulation while it is running.</Documentation>
-      </Property>
       <StringVectorProperty information_only="1"
                             name="EdgeBlocksInfo">
         <ArraySelectionInformationHelper attribute_name="EdgeBlock" />
@@ -1675,6 +1669,9 @@
         the edge blocks of a file) from their offset in the file to some
         arbitrary integers, usually specifying a unique global ID across a set
         of files.</Documentation>
+        <Hints>
+          <OmitFromLoadAllVariables />
+        </Hints>
       </StringVectorProperty>
       <StringVectorProperty information_only="1"
                             name="FaceMapInfo">
@@ -1697,6 +1694,9 @@
         face blocks of a file) from their offset in the file to some arbitrary
         integers, usually specifying a unique global ID across a set of
         files.</Documentation>
+        <Hints>
+          <OmitFromLoadAllVariables />
+        </Hints>
       </StringVectorProperty>
       <StringVectorProperty information_only="1"
                             name="ElementMapInfo">
@@ -1721,6 +1721,9 @@
         ID across a set of files. These are sometimes called new-style maps
         because they are specified differently than in older Exodus files,
         which only allowed a single element map.</Documentation>
+        <Hints>
+          <OmitFromLoadAllVariables />
+        </Hints>
       </StringVectorProperty>
       <StringVectorProperty information_only="1"
                             name="NodeSetInfo">
@@ -1745,6 +1748,9 @@
         should be loaded. The accompanying NodeSetResultArrayStatus property
         specifies which variables defined over those sets should be
         loaded.</Documentation>
+        <Hints>
+          <OmitFromLoadAllVariables />
+        </Hints>
       </StringVectorProperty>
       <StringVectorProperty information_only="1"
                             name="SideSetInfo">
@@ -1771,6 +1777,9 @@
         individually called out in a set and assigned a result value. The
         accompanying SideSetResultArrayStatus property specifies which
         variables defined over those sets should be loaded.</Documentation>
+        <Hints>
+          <OmitFromLoadAllVariables />
+        </Hints>
       </StringVectorProperty>
       <StringVectorProperty information_only="1"
                             name="FaceSetInfo">
@@ -1795,6 +1804,9 @@
         specifying a single number per face. The accompanying
         FaceSetResultArrayStatus property specifies which variables defined
         over those sets should be loaded.</Documentation>
+        <Hints>
+          <OmitFromLoadAllVariables />
+        </Hints>
       </StringVectorProperty>
       <StringVectorProperty information_only="1"
                             name="EdgeSetInfo">
@@ -1819,6 +1831,9 @@
         specifying a single number per edge. The accompanying
         EdgeSetResultArrayStatus property specifies which variables defined
         over those sets should be loaded.</Documentation>
+        <Hints>
+          <OmitFromLoadAllVariables />
+        </Hints>
       </StringVectorProperty>
       <StringVectorProperty information_only="1"
                             name="ElementSetInfo">
@@ -1843,6 +1858,9 @@
         specifying a single number per element. The accompanying
         ElementSetResultArrayStatus property specifies which variables defined
         over those sets should be loaded.</Documentation>
+        <Hints>
+          <OmitFromLoadAllVariables />
+        </Hints>
       </StringVectorProperty>
       <StringVectorProperty information_only="1"
                             name="ElementSetResultArrayInfo">
@@ -1867,6 +1885,9 @@
         which of those variables should be loaded. The corresponding set must
         also be loaded using the ElementSetArrayStatus property in order for
         the variable to appear.</Documentation>
+        <Hints>
+          <OmitFromLoadAllVariables />
+        </Hints>
       </StringVectorProperty>
       <StringVectorProperty information_only="1"
                             name="SideSetResultArrayInfo">
@@ -1893,6 +1914,9 @@
         property specifies which of those variables should be loaded. The
         corresponding set must also be loaded using the SideSetArrayStatus
         property in order for the variable to appear.</Documentation>
+        <Hints>
+          <OmitFromLoadAllVariables />
+        </Hints>
       </StringVectorProperty>
       <StringVectorProperty information_only="1"
                             name="FaceSetResultArrayInfo">
@@ -1917,6 +1941,9 @@
         which of those variables should be loaded. The corresponding set must
         also be loaded using the FaceSetArrayStatus property in order for the
         variable to appear.</Documentation>
+        <Hints>
+          <OmitFromLoadAllVariables />
+        </Hints>
       </StringVectorProperty>
       <StringVectorProperty information_only="1"
                             name="EdgeSetResultArrayInfo">
@@ -1941,6 +1968,9 @@
         which of those variables should be loaded. The corresponding set must
         also be loaded using the EdgeSetArrayStatus property in order for the
         variable to appear.</Documentation>
+        <Hints>
+          <OmitFromLoadAllVariables />
+        </Hints>
       </StringVectorProperty>
       <StringVectorProperty information_only="1"
                             name="NodeSetResultArrayInfo">
@@ -1965,6 +1995,9 @@
         variables should be loaded. The corresponding set must also be loaded
         using the NodeSetArrayStatus property in order for the variable to
         appear.</Documentation>
+        <Hints>
+          <OmitFromLoadAllVariables />
+        </Hints>
       </StringVectorProperty>
       <IntVectorProperty command="SetApplyDisplacements"
                          default_values="1"
@@ -2191,14 +2224,116 @@
         <Documentation>This property specifies the file name to read for the
         points and field information.</Documentation>
       </StringVectorProperty>
-      <IntVectorProperty command="SetSingleLevel"
-                         default_values="0"
-                         name="SingleLevel"
+      <IntVectorProperty command="SetVerticalDimension"
+                         default_values="1"
+                         name="VerticalDimension"
                          number_of_elements="1">
-        <Documentation>Specify whether to only read in a single level and any
-        variables that are prescribed over this surface.</Documentation>
-        <BooleanDomain name="bool" />
+        <Documentation>Specify whether to read variables from the
+        single layer, from midpoint layers or from interface
+        layers.</Documentation>
+        <EnumerationDomain name="enum">
+          <Entry text="Single layer [time, ncol]"
+                 value="0" />
+          <Entry text="Midpoint layers [time, lev, ncol]"
+                 value="1" />
+          <Entry text="Interface layers [time, ilev, ncol]"
+                 value="2" />
+        </EnumerationDomain>
       </IntVectorProperty>
+      <StringVectorProperty information_only="1"
+                            name="PointArrayInfo">
+        <ArraySelectionInformationHelper attribute_name="Point" />
+      </StringVectorProperty>
+      <StringVectorProperty command="SetPointArrayStatus"
+                            element_types="2 0"
+                            information_property="PointArrayInfo"
+                            name="PointArrayStatus"
+                            number_of_elements="2"
+                            number_of_elements_per_command="2"
+                            repeat_command="1"
+                            panel_visibility="advanced">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property function="ArrayList"
+                      name="PointArrayInfo" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>This property lists which NetCDF CAM point
+        variables to load.</Documentation>
+      </StringVectorProperty>
+
+      <IntVectorProperty name="SingleMidpointLayer"
+                         command="SetSingleMidpointLayer"
+                         number_of_elements="1"
+                         default_values="0"
+                         panel_visibility="advanced">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Load only one layer from variables on the midpoint layers. The layer
+          is specified by MidpointLayerIndex.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="GetMidpointLayersRange"
+                         information_only="1"
+                         name="MidpointLayersRangeInfo"></IntVectorProperty>
+      <IntVectorProperty name="MidpointLayerIndex"
+                            command="SetMidpointLayerIndex"
+                            number_of_elements="1"
+                            default_values="0"
+                            panel_visibility="advanced">
+        <IntRangeDomain name="range"  default_mode="min">
+          <RequiredProperties>
+            <Property function="Range"
+                      name="MidpointLayersRangeInfo" />
+          </RequiredProperties>
+        </IntRangeDomain>
+        <Hints>
+          <PropertyWidgetDecorator type="EnableWidgetDecorator">
+            <Property name="SingleMidpointLayer" function="boolean" />
+          </PropertyWidgetDecorator>
+        </Hints>
+        <Documentation>
+          Specifies which layer to load from the midpoint layers. Note that
+          the layer indexes 0 to n-1 map to Z values n-1 to 0.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="SingleInterfaceLayer"
+                         command="SetSingleInterfaceLayer"
+                         number_of_elements="1"
+                         default_values="0"
+                         panel_visibility="advanced">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Load only one layer from variables on the interface layers. The layer
+          is specified by InterfaceLayerIndex.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="GetInterfaceLayersRange"
+                         information_only="1"
+                         name="InterfaceLayersRangeInfo"></IntVectorProperty>
+      <IntVectorProperty name="InterfaceLayerIndex"
+                            command="SetInterfaceLayerIndex"
+                            number_of_elements="1"
+                            default_values="0"
+                            panel_visibility="advanced">
+        <IntRangeDomain name="range"  default_mode="min">
+          <RequiredProperties>
+            <Property function="Range"
+                      name="InterfaceLayersRangeInfo" />
+          </RequiredProperties>
+        </IntRangeDomain>
+        <Hints>
+          <PropertyWidgetDecorator type="EnableWidgetDecorator">
+            <Property name="SingleInterfaceLayer" function="boolean" />
+          </PropertyWidgetDecorator>
+        </Hints>
+        <Documentation>
+          Specifies which layer to load from the interface layers. Note that
+          the layer indexes 0 to n-1 map to Z values n-1 to 0.
+        </Documentation>
+      </IntVectorProperty>
+
       <IntVectorProperty default_values="1"
                          name="CellLayerRight"
                          number_of_elements="1"
@@ -2675,7 +2810,10 @@
                             panel_visibility="default">
         <FileListDomain name="files" />
         <Documentation>This property specifies the .q (solution) file name for
-        the PLOT3D reader.</Documentation>
+          the PLOT3D reader.</Documentation>
+        <Hints>
+          <FileChooser extensions="q" file_description="Solution files" />
+        </Hints>
       </StringVectorProperty>
       <StringVectorProperty animateable="0"
                             command="SetFunctionFileName"
@@ -2774,6 +2912,12 @@
           <!-- <Entry value="100" text="Scalar - Density"/> -->
           <Entry text="Scalar - Pressure"
                  value="110" />
+          <Entry text="Scalar - Pressure Coefficient"
+                 value="111" />
+          <Entry text="Scalar - Mach Number"
+                 value="112" />
+          <Entry text="Scalar - Sound Speed"
+                 value="113" />
           <Entry text="Scalar - Temperature"
                  value="120" />
           <Entry text="Scalar - Enthalpy"
@@ -3185,8 +3329,79 @@
         <ReaderFactory extensions="dem"
                        file_description="Digital Elevation Map Files" />
       </Hints>
-      <!-- End DEMReader -->
     </SourceProxy>
+      <!-- End DEMReader -->
+    <SourceProxy class="vtkPTSReader"
+                 label="PTS Reader"
+                 name="PTSReader">
+      <Documentation long_help="Reads a PTS ASCII Point Cloud file."
+                     short_help="Read a pointset in PTS format">The PTS reader
+                     reads  ASCII PTS Point Cloud files containing
+                     points as well as optional intensity and color information. The default
+                     file extension is .pts. This reader produces a
+                     polydata set of a single vertex cell containing all of
+                     the points.</Documentation>
+      <StringVectorProperty animateable="0"
+                            command="SetFileName"
+                            name="FileName"
+                            number_of_elements="1">
+        <FileListDomain name="files" />
+        <Documentation>This property specifies the file name for the PTS
+        (ASCII Point Cloud) reader.</Documentation>
+      </StringVectorProperty>
+      <IntVectorProperty command="SetLimitToMaxNumberOfPoints"
+                         name="LimitNumberOfPointsRead"
+                         default_values="0"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Limits the number of points read in from file
+        </Documentation>
+      </IntVectorProperty>
+       <IntVectorProperty command="SetMaxNumberOfPoints"
+                         name="MaxNumberOfPoints"
+                         default_values="100000"
+                         number_of_elements="1">
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="LimitNumberOfPointsRead"
+                                   value="1" />
+        </Hints>
+        <Documentation>
+          Specify the max number of point to be read.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetLimitReadToBounds"
+                         name="LimitPointCloudToBounds"
+                         default_values="0"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Restrict the point to cloud to a specified volume.
+        </Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty animateable="0"
+                            command="SetReadBounds"
+                            name="ReadBounds"
+                            number_of_elements="6"
+                            default_values="0 100 0 100 0 100">
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="LimitPointCloudToBounds"
+                                   value="1" />
+        </Hints>
+        <Documentation>Define the spatial volume that wil restrict the
+        extent of the point cloud [xmin, xmax, ymin, ymax, zmin, zmax]</Documentation>
+
+      </DoubleVectorProperty>
+       <Hints>
+        <ReaderFactory extensions="pts"
+                       file_description="PTS (Point Cloud)  Files" />
+      </Hints>
+    </SourceProxy>
+      <!-- End PTSReader -->
     <SourceProxy class="vtkPVDReader"
                  label="PVD Reader"
                  name="PVDReader">
@@ -4521,14 +4736,14 @@
       </Hints>
       <!-- End pdbreader -->
     </SourceProxy>
-    <SourceProxy class="vtkXYZMolReader"
+    <SourceProxy class="vtkXYZMolReader2"
                  label="XYZ Reader"
                  name="xyzreader">
       <Documentation long_help="Reads XYZ molecular data files into a polygonal dataset."
                      short_help="Read XYZ molecular data files.">The XYZ reader
                      reads XYZ molecular data files. The expected file
                      extension is .xyz. The output of this reader is a
-                     polygonal dataset.</Documentation>
+                     vtkMolecule</Documentation>
       <StringVectorProperty animateable="0"
                             command="SetFileName"
                             name="FileName"
@@ -4538,15 +4753,12 @@
         <Documentation>This property specifies the file name for the XYZ
         reader.</Documentation>
       </StringVectorProperty>
-      <IntVectorProperty animateable="1"
-                         command="SetTimeStep"
-                         default_values="0"
-                         name="TimeStep"
-                         number_of_elements="1">
-        <IntRangeDomain name="range" />
-        <Documentation>This property specifies the timestep the XYZ reader
-        should load.</Documentation>
-      </IntVectorProperty>
+      <DoubleVectorProperty information_only="1"
+                            name="TimestepValues"
+                            repeatable="1">
+        <TimeStepsInformationHelper />
+        <Documentation>Available timestep values.</Documentation>
+      </DoubleVectorProperty>
       <Hints>
         <ReaderFactory extensions="xyz"
                        file_description="XMol Molecule Files" />
@@ -4676,16 +4888,16 @@
       </Hints>
       <!-- End vtkOBJReader -->
     </SourceProxy>
-    <SourceProxy class="vtkGaussianCubeReader"
+    <SourceProxy class="vtkGaussianCubeReader2"
                  label="Gaussian Cube Reader"
                  name="gaussiancubereader">
-      <Documentation long_help="Produce polygonal data by reading a Gaussian Cube file."
+      <Documentation long_help="Produce a vtkMolecule by reading a Gaussian Cube file."
                      short_help="Read Gaussian Cube data files.">The Gaussian
-                     Cube reader produces polygonal data by reading data files
+                     Cube reader produces vtkMolecule data by reading data files
                      produced by the Gaussian software package. The expected
                      file extension is .cube.</Documentation>
       <OutputPort index="0"
-                  name="Output" />
+                  name="Molecule" />
       <OutputPort index="1"
                   name="Gridded Data" />
       <StringVectorProperty animateable="0"
@@ -4697,22 +4909,6 @@
         <Documentation>This property specifies the file name for the Gaussian
         Cube reader.</Documentation>
       </StringVectorProperty>
-      <DoubleVectorProperty command="SetHBScale"
-                            default_values="1.0"
-                            name="HBScale"
-                            number_of_elements="1">
-        <DoubleRangeDomain name="range" />
-        <Documentation>A scaling factor to compute bonds with hydrogen
-        atoms.</Documentation>
-      </DoubleVectorProperty>
-      <DoubleVectorProperty command="SetBScale"
-                            default_values="1.0"
-                            name="BScale"
-                            number_of_elements="1">
-        <DoubleRangeDomain name="range" />
-        <Documentation>A scaling factor to compute bonds between non-hydrogen
-        atoms</Documentation>
-      </DoubleVectorProperty>
       <Hints>
         <ReaderFactory extensions="cube"
                        file_description="Gaussian Cube Files" />
@@ -5447,7 +5643,6 @@
             <Property name="XMLFileNameInfo" />
           </PropertyGroup>
           <Property name="GenerateFileIdArray" />
-          <Property name="Refresh" />
         </ExposedProperties>
       </SubProxy>
       <StringVectorProperty command="GetCurrentFileName"
@@ -5589,7 +5784,6 @@
             <Property name="XMLFileNameInfo" />
           </PropertyGroup>
           <Property name="GenerateFileIdArray" />
-          <Property name="Refresh" />
         </ExposedProperties>
       </SubProxy>
       <StringVectorProperty command="GetCurrentFileName"
@@ -5770,6 +5964,26 @@
         reconstructed mesh should be read</Documentation>
       </IntVectorProperty>
       <IntVectorProperty animateable="0"
+                         command="SetUse64BitLabels"
+                         default_values="0"
+                         label="Expect 64-bit Labels"
+                         name="Use64BitLabels"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Expect the openFOAM case to use 64-bit label values.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty animateable="0"
+                         command="SetUse64BitFloats"
+                         default_values="0"
+                         label="Expect 64-bit Floats/Scalars"
+                         name="Use64BitFloats"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Expect the openFOAM case to use 64-bit label values.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty animateable="0"
                          command="SetCreateCellToPoint"
                          default_values="1"
                          label="Create cell-to-point filtered data"
@@ -5921,7 +6135,8 @@
       </IntVectorProperty>
       <Hints>
         <ReaderFactory extensions="foam"
-                       file_description="OpenFOAM" />
+          file_description="OpenFOAM" />
+        <ReloadFiles property="Refresh" />
       </Hints>
     </SourceProxy>
     <!-- End of OpenFOAM Reader -->
@@ -6567,6 +6782,61 @@
       </Hints>
       <!-- End of CSVReader -->
     </SourceProxy>
+    <SourceProxy class="vtkTecplotTableReader"
+                 label="Tecplot Table Reader"
+                 name="TecplotTableReaderCore">
+      <Documentation>The Tecplot
+                     table reader reads a .DAT file containing tabular
+                     data into a spreadsheet view.</Documentation>
+      <StringVectorProperty command="SetFileName"
+                            name="FileName"
+                            number_of_elements="1"
+                            panel_visibility="never"
+                            >
+        <FileListDomain name="files" />
+        <Documentation>The name of the file to read.</Documentation>
+      </StringVectorProperty>
+      <StringVectorProperty command="GetFileName"
+                            information_only="1"
+                            name="FileNameInfo">
+        <SimpleStringInformationHelper />
+      </StringVectorProperty>
+      <IntVectorProperty command="SetMaxRecords"
+                         default_values="0"
+                         name="Max. Number of Records"
+                         number_of_elements="1">
+        <Documentation>The maximum number of records to read.
+                       Use this to preview a file.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetHeaderLines"
+                         default_values="2"
+                         name="Number of header lines"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <Documentation>The number of lines that form the header.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetColumnNamesOnLine"
+                         default_values="1"
+                         name="Line with column names"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <Documentation>The line that contains the column names.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetSkipColumnNames"
+                         default_values="1"
+                         name="Skip #column name fields"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <Documentation>Number of fiels to skip while reading column names.</Documentation>
+      </IntVectorProperty>
+      <Hints>
+        <!-- View can be used to specify the preferred view for the proxy -->
+        <View type="SpreadSheetView" />
+        <ReaderFactory extensions="dat DAT"
+                       file_description="Tecplot Table" />
+      </Hints>
+      <!-- End of TecplotTableReader -->
+    </SourceProxy>
     <SourceProxy class="vtkFileSeriesReader"
                  file_name_method="SetFileName"
                  label="Particles Reader"
@@ -6924,7 +7194,12 @@
                proxyname="NetCDFCAMReaderCore"></Proxy>
         <ExposedProperties>
           <Property name="ConnectivityFileName" />
-          <Property name="SingleLevel" />
+          <Property name="VerticalDimension" />
+          <Property name="PointArrayStatus" />
+          <Property name="SingleMidpointLayer" />
+          <Property name="MidpointLayerIndex" />
+          <Property name="SingleInterfaceLayer" />
+          <Property name="InterfaceLayerIndex" />
           <Property name="CellLayerRight" />
         </ExposedProperties>
       </SubProxy>
@@ -7097,6 +7372,16 @@
         <Documentation>This property specifies the file name to read. It should
         be an MPAS format NetCDF file ending in .nc.</Documentation>
       </StringVectorProperty>
+      <IntVectorProperty animateable="0"
+                         command="SetUseDimensionedArrayNames"
+                         name="UseDimensionedArrayNames"
+                         number_of_elements="1"
+                         default_values="1"
+                         panel_visibility="never">
+        <BooleanDomain name="bool" />
+        <Documentation>This property ensures that the dimension info is always
+        shown in the ParaView GUI.</Documentation>
+      </IntVectorProperty>
       <StringVectorProperty information_only="1"
                             name="PointArrayInfo">
         <ArraySelectionInformationHelper attribute_name="Point" />
@@ -7137,14 +7422,30 @@
         <Documentation>This property lists which NetCDF dual-grid cell
         variables to load.</Documentation>
       </StringVectorProperty>
-      <IntVectorProperty command="SetProjectLatLon"
-                         default_values="0"
-                         name="ProjectLatLon"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation>This property indicates whether to view the data in the
-        lat/lon projection.</Documentation>
-      </IntVectorProperty>
+      <!-- Dimensions table: -->
+      <!-- Elements are [arrayName] [currentIndex] [dimSize]: -->
+      <StringVectorProperty information_only="1"
+                            name="DimensionInfo"
+                            command="Dimension"
+                            si_class="vtkSIIndexSelectionProperty">
+      </StringVectorProperty>
+      <!-- Elements are [arrayName] [currentIndex]: -->
+      <StringVectorProperty command="SetDimensionCurrentIndex"
+                            name="DimensionCurrentIndex"
+                            label="Extra Dimension Indices"
+                            element_types="2 0"
+                            number_of_elements="2"
+                            number_of_elements_per_command="2"
+                            repeat_command="1"
+                            panel_widget="index_selection">
+        <IndexSelectionDomain name="index_selection">
+          <RequiredProperties>
+            <Property function="Info"
+                      name="DimensionInfo" />
+          </RequiredProperties>
+        </IndexSelectionDomain>
+      </StringVectorProperty>
+      <!-- End dimensions table -->
       <IntVectorProperty command="SetShowMultilayerView"
                          default_values="0"
                          name="ShowMultilayerView"
@@ -7157,6 +7458,37 @@
         center of the sphere. For atmospheric data, the layers correspond to
         data at vertical levels increasing away from the
         center.</Documentation>
+      </IntVectorProperty>
+      <StringVectorProperty command="GetAllDimensions"
+                            information_only="1"
+                            name="DimensionList">
+        <StringArrayHelper />
+      </StringVectorProperty>
+      <StringVectorProperty command="SetVerticalDimension"
+                            name="VerticalDimension"
+                            label="Vertical Dimension"
+                            number_of_elements="1"
+                            default_values="nVertLevels"
+                            panel_visibility="default">
+        <StringListDomain name="array_list">
+          <RequiredProperties>
+            <Property function="ArrayList"
+                      name="DimensionList" />
+          </RequiredProperties>
+        </StringListDomain>
+        <Hints>
+          <PropertyWidgetDecorator type="EnableWidgetDecorator">
+            <Property name="ShowMultilayerView" function="boolean" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </StringVectorProperty>
+      <IntVectorProperty command="SetProjectLatLon"
+                         default_values="0"
+                         name="ProjectLatLon"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>This property indicates whether to view the data in the
+        lat/lon projection.</Documentation>
       </IntVectorProperty>
       <IntVectorProperty command="SetIsAtmosphere"
                          default_values="0"
@@ -7208,28 +7540,6 @@
         <Documentation>This property specifies where the center will be viewed
         for a lat/lon projection.</Documentation>
       </IntVectorProperty>
-      <IntVectorProperty command="GetVerticalLevelRange"
-                         information_only="1"
-                         name="VerticalLevelRangeInfo">
-        <SimpleIntInformationHelper />
-      </IntVectorProperty>
-      <IntVectorProperty command="SetVerticalLevel"
-                         default_values="0"
-                         name="VerticalLevel"
-                         number_of_elements="1">
-        <IntRangeDomain name="range">
-          <RequiredProperties>
-            <Property function="Range"
-                      name="VerticalLevelRangeInfo" />
-          </RequiredProperties>
-        </IntRangeDomain>
-        <Documentation>This property specifies which vertical level is viewed
-        if not in multilayer view. Only the data for that vertical level will
-        be viewed. The grid is essentially the same for each vertical level,
-        however at some ocean levels, especially the lower ones, due to the
-        topography, the grid becomes more sparse where there is
-        land.</Documentation>
-      </IntVectorProperty>
       <DoubleVectorProperty information_only="1"
                             name="TimestepValues"
                             repeatable="1">
@@ -7265,6 +7575,9 @@
         There can be more than one. If more that one file is specified, the
         reader will switch to file-series mode in which it will pretend that it
         can support time and provide one file per time step.</Documentation>
+        <Hints>
+          <FileChooser extensions="q" file_description="Solution files" />
+        </Hints>
       </StringVectorProperty>
       <SubProxy>
         <Proxy name="Reader"
@@ -7364,7 +7677,66 @@ series.
       </Hints>
     </SourceProxy>
     <!-- End CML Reader -->
-
+    <SourceProxy class="vtkVASPAnimationReader"
+                 label="VASP Animation Reader"
+                 name="VASPAnimationReader">
+      <Documentation long_help="Reads a VASP NPT_Z_ANIMATE.out file."
+                     short_help="Read a VASP animation file.">
+      </Documentation>
+      <StringVectorProperty animateable="0"
+                            command="SetFileName"
+                            name="FileName"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <FileListDomain name="files" />
+        <Documentation>The name of the file to load.</Documentation>
+      </StringVectorProperty>
+      <DoubleVectorProperty information_only="1"
+                            name="TimestepValues"
+                            repeatable="1">
+        <TimeStepsInformationHelper />
+        <Documentation>
+          Reports time values to the GUI.
+        </Documentation>
+      </DoubleVectorProperty>
+      <Hints>
+        <ReaderFactory extensions="out"
+                       file_description="VASP Animation Files" />
+      </Hints>
+    </SourceProxy>
+    <!-- End VASPAnimationReader -->
+    <SourceProxy class="vtkVASPTessellationReader"
+                 label="VASP Tessellation Reader"
+                 name="VASPTessellationReader">
+      <Documentation long_help="Reads a VASP NPT_Z_TESSELLATE.out file."
+                     short_help="Read a VASP tessellation file.">
+      </Documentation>
+      <StringVectorProperty animateable="0"
+                            command="SetFileName"
+                            name="FileName"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <FileListDomain name="files" />
+        <Documentation>The name of the file to load.</Documentation>
+      </StringVectorProperty>
+      <DoubleVectorProperty information_only="1"
+                            name="TimestepValues"
+                            repeatable="1">
+        <TimeStepsInformationHelper />
+        <Documentation>
+          Reports time values to the GUI.
+        </Documentation>
+      </DoubleVectorProperty>
+      <Hints>
+        <ReaderFactory extensions="out"
+                       file_description="VASP Tessellation Files" />
+      </Hints>
+      <OutputPort index="0"
+                  name="Molecule" />
+      <OutputPort index="1"
+                  name="Voronoi Tessellation" />
+    </SourceProxy>
+    <!-- End VASPTessellationReader -->
     <!-- Begin Ensemble Data Reader -->
     <EnsembleDataReaderProxy class="vtkEnsembleDataReader"
                              label="Ensemble Data Reader"
@@ -7419,5 +7791,98 @@ series.
       </Hints>
     </EnsembleDataReaderProxy>
     <!-- End Ensemble Data Reader -->
+
+    <!-- GE/LANL TRUCHAS Reader -->
+    <SourceProxy class="vtkTRUCHASReader"
+                 label="TRUCHAS Reader"
+                 name="TruchasReader">
+      <Documentation long_help="Reads TRUCHAS data from hdf5"
+                     short_help="Reads TRUCHAS data">Reads TRUCHAS simulation output stored in hdf5.</Documentation>
+      <StringVectorProperty animateable="0"
+                            command="SetFileName"
+                            name="FileName"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <FileListDomain name="files" />
+        <Documentation>This property specifies the hdf5 file name</Documentation>
+      </StringVectorProperty>
+      <DoubleVectorProperty information_only="1"
+                            name="TimestepValues"
+                            repeatable="1">
+        <TimeStepsInformationHelper />
+        <Documentation>Available timestep values.</Documentation>
+      </DoubleVectorProperty>
+            <StringVectorProperty information_only="1"
+                            name="PointArrayInfo">
+        <ArraySelectionInformationHelper attribute_name="Point" />
+      </StringVectorProperty>
+      <StringVectorProperty command="SetPointArrayStatus"
+                            element_types="2 0"
+                            information_property="PointArrayInfo"
+                            label="Point Arrays"
+                            name="PointArrayStatus"
+                            number_of_elements="0"
+                            number_of_elements_per_command="2"
+                            panel_visibility="default"
+                            repeat_command="1">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property function="ArrayList"
+                      name="PointArrayInfo" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>This property lists which point-centered arrays to
+        read.</Documentation>
+      </StringVectorProperty>
+      <StringVectorProperty information_only="1"
+                            name="CellArrayInfo">
+        <ArraySelectionInformationHelper attribute_name="Cell" />
+      </StringVectorProperty>
+      <StringVectorProperty command="SetCellArrayStatus"
+                            element_types="2 0"
+                            information_property="CellArrayInfo"
+                            label="Cell Arrays"
+                            name="CellArrayStatus"
+                            number_of_elements="0"
+                            number_of_elements_per_command="2"
+                            panel_visibility="default"
+                            repeat_command="1">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property function="ArrayList"
+                      name="CellArrayInfo" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>This property lists which cell-centered arrays to
+        read.</Documentation>
+      </StringVectorProperty>
+      <StringVectorProperty information_only="1"
+                            name="BlockInfo">
+        <ArraySelectionInformationHelper attribute_name="Block" />
+      </StringVectorProperty>
+      <StringVectorProperty command="SetBlockArrayStatus"
+                            element_types="2 0"
+                            information_property="BlockInfo"
+                            label="Blocks"
+                            name="BlockArrayStatus"
+                            number_of_elements="2"
+                            number_of_elements_per_command="2"
+                            repeat_command="1">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property function="ArrayList"
+                      name="BlockInfo" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>Select the grids to be loaded from the dataset, if
+        any.</Documentation>
+      </StringVectorProperty>
+
+      <Hints>
+        <ReaderFactory extensions="hdf5 h5"
+                       file_description="TRUCHAS dataset" />
+      </Hints>
+    </SourceProxy>
+
   </ProxyGroup>
 </ServerManagerConfiguration>

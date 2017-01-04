@@ -17,25 +17,24 @@
 // This class is an adapter between composite data produced by the data
 // processing pipeline and the non composite capable vtkMantaPolyDataMapper.
 
-#ifndef __vtkMantaCompositeMapper_h
-#define __vtkMantaCompositeMapper_h
+#ifndef vtkMantaCompositeMapper_h
+#define vtkMantaCompositeMapper_h
 
 #include "vtkCompositePolyDataMapper.h"
 #include "vtkMantaModule.h"
 class vtkPolyDataMapper;
 
-class VTKMANTA_EXPORT vtkMantaCompositeMapper :
-  public vtkCompositePolyDataMapper
+class VTKMANTA_EXPORT vtkMantaCompositeMapper : public vtkCompositePolyDataMapper
 {
 
 public:
-  static vtkMantaCompositeMapper *New();
+  static vtkMantaCompositeMapper* New();
   vtkTypeMacro(vtkMantaCompositeMapper, vtkCompositePolyDataMapper);
   virtual void PrintSelf(ostream& os, vtkIndent indent);
 
-  //Description:
-  //Helper to cleanly track our inputs mtime, and participate in manta
-  //state tracking.
+  // Description:
+  // Helper to cleanly track our inputs mtime, and participate in manta
+  // state tracking.
   virtual unsigned long GetInputTime();
 
 protected:
@@ -44,11 +43,11 @@ protected:
 
   // Description:
   // Need to define the type of data handled by this mapper.
-  virtual vtkPolyDataMapper * MakeAMapper();
+  virtual vtkPolyDataMapper* MakeAMapper();
 
 private:
-  vtkMantaCompositeMapper(const vtkMantaCompositeMapper&);  // Not implemented.
-  void operator=(const vtkMantaCompositeMapper&);    // Not implemented.
+  vtkMantaCompositeMapper(const vtkMantaCompositeMapper&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkMantaCompositeMapper&) VTK_DELETE_FUNCTION;
 };
 
 #endif

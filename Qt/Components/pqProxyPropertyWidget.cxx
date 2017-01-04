@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -40,85 +40,58 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMProperty.h"
 #include "vtkSMProxyListDomain.h"
 
-pqProxyPropertyWidget::pqProxyPropertyWidget(vtkSMProperty *smProperty,
-                                             vtkSMProxy *smProxy,
-                                             QWidget *parentObject)
-  : pqPropertyWidget(smProxy, parentObject),
-  HideWidgetsInDefaultView(false)
+pqProxyPropertyWidget::pqProxyPropertyWidget(
+  vtkSMProperty* smProperty, vtkSMProxy* smProxy, QWidget* parentObject)
+  : pqPropertyWidget(smProxy, parentObject)
 {
-  QVBoxLayout *vbox = new QVBoxLayout;
+  QVBoxLayout* vbox = new QVBoxLayout;
   vbox->setMargin(0);
   vbox->setSpacing(0);
 
-  bool selection_input = (smProperty->GetHints() &&
-    smProperty->GetHints()->FindNestedElementByName("SelectionInput"));
+  bool selection_input =
+    (smProperty->GetHints() && smProperty->GetHints()->FindNestedElementByName("SelectionInput"));
   if (selection_input)
-    {
+  {
     pqSelectionInputWidget* siw = new pqSelectionInputWidget(this);
     siw->setObjectName(smProxy->GetPropertyName(smProperty));
     vbox->addWidget(siw);
     this->SelectionInputWidget = siw;
-    this->addPropertyLink(siw, "selection",
-      SIGNAL(selectionChanged(pqSMProxy)), smProperty);
+    this->addPropertyLink(siw, "selection", SIGNAL(selectionChanged(pqSMProxy)), smProperty);
 
     // call this after the above property link is setup so that we don't
     // override the default value.
     siw->initializeDefaultValueIfNeeded();
 
-    this->connect(siw, SIGNAL(selectionChanged(pqSMProxy)),
-      this, SIGNAL(changeAvailable()));
-    this->connect(siw, SIGNAL(selectionChanged(pqSMProxy)),
-      this, SIGNAL(changeFinished()));
+    this->connect(siw, SIGNAL(selectionChanged(pqSMProxy)), this, SIGNAL(changeAvailable()));
+    this->connect(siw, SIGNAL(selectionChanged(pqSMProxy)), this, SIGNAL(changeFinished()));
 
     // don't show label for the proxy selection widget
     this->setShowLabel(false);
 
     PV_DEBUG_PANELS() << "pqSelectionInputWidget for a ProxyProperty with a "
-                  << "SelectionInput hint";
-    }
-  else
-    {
-    // find the domain
-    vtkSMProxyListDomain *domain = vtkSMProxyListDomain::SafeDownCast(
-      smProperty->FindDomain("vtkSMProxyListDomain"));
+                      << "SelectionInput hint";
+  }
+  else if (vtkSMProxyListDomain* pld =
+             vtkSMProxyListDomain::SafeDownCast(smProperty->FindDomain("vtkSMProxyListDomain")))
+  {
+    PV_DEBUG_PANELS() << "pqProxySelectionWidget for a "
+                      << "ProxyListDomain (" << pld->GetXMLName() << ")";
+    pqProxySelectionWidget* widget = new pqProxySelectionWidget(smProperty, smProxy, this);
+    widget->setView(this->view());
+    this->connect(widget, SIGNAL(changeAvailable()), SIGNAL(changeAvailable()));
+    this->connect(widget, SIGNAL(changeFinished()), SIGNAL(changeFinished()));
+    this->connect(widget, SIGNAL(restartRequired()), SIGNAL(restartRequired()));
+    widget->connect(this, SIGNAL(viewChanged(pqView*)), SLOT(setView(pqView*)));
 
-    if (domain)
-      {
-      pqProxySelectionWidget *widget = new pqProxySelectionWidget(smProxy,
-        smProxy->GetPropertyName(smProperty),
-        smProperty->GetXMLLabel(),
-        this);
-      widget->setView(this->view());
-      this->addPropertyLink(widget,
-        "proxy",
-        SIGNAL(proxyChanged(pqSMProxy)),
-        smProperty);
-      this->connect(widget, SIGNAL(modified()), this, SIGNAL(changeAvailable()));
-      this->connect(widget, SIGNAL(modified()), this, SIGNAL(changeFinished()));
-      this->connect(this, SIGNAL(viewChanged(pqView*)), widget,
-        SLOT(setView(pqView*)));
+    vbox->addWidget(widget);
 
-      vbox->addWidget(widget);
+    // store the proxy selection widget so that we can call
+    // its accept() method when our apply() is called
+    this->ProxySelectionWidget = widget;
 
-      // store the proxy selection widget so that we can call
-      // its accept() method when our apply() is called
-      this->ProxySelectionWidget = widget;
-
-      // don't show label for the proxy selection widget
-      this->setShowLabel(false);
-
-
-      // If selected_proxy_panel_visibility="advanced" hint is specified, we
-      // only show the widgets for the selected proxy in advanced mode.
-      vtkPVXMLElement* hints = smProperty->GetHints()?
-        smProperty->GetHints()->FindNestedElementByName("ProxyPropertyWidget") : NULL;
-      this->HideWidgetsInDefaultView = (hints &&
-        strcmp(hints->GetAttributeOrDefault("selected_proxy_panel_visibility", ""), "advanced") == 0);
-
-      PV_DEBUG_PANELS() << "pqProxySelectionWidget for a "
-                    << "ProxyListDomain (" << domain->GetXMLName() << ")";
-      }
-    }
+    // don't show label for the proxy selection widget
+    this->setShowLabel(false);
+  }
 
   this->setLayout(vbox);
 }
@@ -127,30 +100,30 @@ pqProxyPropertyWidget::pqProxyPropertyWidget(vtkSMProperty *smProperty,
 void pqProxyPropertyWidget::apply()
 {
   if (this->SelectionInputWidget)
-    {
+  {
     this->SelectionInputWidget->preAccept();
-    }
+  }
   this->Superclass::apply();
 
   // apply properties for the proxy selection widget
-  if(this->ProxySelectionWidget)
-    {
-    this->ProxySelectionWidget->accept();
-    }
+  if (this->ProxySelectionWidget)
+  {
+    this->ProxySelectionWidget->apply();
+  }
 
   if (this->SelectionInputWidget)
-    {
+  {
     this->SelectionInputWidget->postAccept();
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void pqProxyPropertyWidget::reset()
 {
   if (this->ProxySelectionWidget)
-    {
+  {
     this->ProxySelectionWidget->reset();
-    }
+  }
   this->Superclass::reset();
 }
 
@@ -158,25 +131,25 @@ void pqProxyPropertyWidget::reset()
 void pqProxyPropertyWidget::select()
 {
   if (this->ProxySelectionWidget)
-    {
+  {
     this->ProxySelectionWidget->select();
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void pqProxyPropertyWidget::deselect()
 {
   if (this->ProxySelectionWidget)
-    {
+  {
     this->ProxySelectionWidget->deselect();
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void pqProxyPropertyWidget::updateWidget(bool showing_advanced_properties)
 {
-  if (this->ProxySelectionWidget && this->HideWidgetsInDefaultView)
-    {
-    this->ProxySelectionWidget->setSelectedProxyWidgetVisibility(showing_advanced_properties);
-    }
+  if (this->ProxySelectionWidget)
+  {
+    this->ProxySelectionWidget->updateWidget(showing_advanced_properties);
+  }
 }

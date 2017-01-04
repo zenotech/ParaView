@@ -15,17 +15,17 @@ PURPOSE.  See the above copyright notice for more information.
 
 #include "vtkSMPropertyHelperTest.h"
 
-#include "vtkSMProxyManager.h"
+#include "vtkSMPropertyHelper.h"
 #include "vtkSMProxy.h"
+#include "vtkSMProxyManager.h"
 #include "vtkSMSession.h"
 #include "vtkSMSessionProxyManager.h"
-#include "vtkSMPropertyHelper.h"
 
 void vtkSMPropertyHelperTest::Set()
 {
-  vtkSMSession *session = vtkSMSession::New();
-  vtkSMSessionProxyManager *pxm = session->GetSessionProxyManager();
-  vtkSMProxy *proxy = pxm->NewProxy("sources", "SphereSource");
+  vtkSMSession* session = vtkSMSession::New();
+  vtkSMSessionProxyManager* pxm = session->GetSessionProxyManager();
+  vtkSMProxy* proxy = pxm->NewProxy("sources", "SphereSource");
   QVERIFY(proxy != NULL);
   QCOMPARE(vtkSMPropertyHelper(proxy, "Radius").GetAsDouble(), 0.5);
 

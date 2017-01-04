@@ -12,13 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVKeyFrameAnimationCue
-// .SECTION Description
-// vtkPVKeyFrameAnimationCue is a specialization of vtkPVAnimationCue that uses
-// the vtkPVKeyFrameCueManipulator as the manipulator.
+/**
+ * @class   vtkPVKeyFrameAnimationCue
+ *
+ * vtkPVKeyFrameAnimationCue is a specialization of vtkPVAnimationCue that uses
+ * the vtkPVKeyFrameCueManipulator as the manipulator.
+*/
 
-#ifndef __vtkPVKeyFrameAnimationCue_h
-#define __vtkPVKeyFrameAnimationCue_h
+#ifndef vtkPVKeyFrameAnimationCue_h
+#define vtkPVKeyFrameAnimationCue_h
 
 #include "vtkPVAnimationCue.h"
 
@@ -31,14 +33,16 @@ public:
   vtkTypeMacro(vtkPVKeyFrameAnimationCue, vtkPVAnimationCue);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Forwarded to the internal vtkPVKeyFrameCueManipulator.
-  int AddKeyFrame (vtkPVKeyFrame* keyframe);
+  //@{
+  /**
+   * Forwarded to the internal vtkPVKeyFrameCueManipulator.
+   */
+  int AddKeyFrame(vtkPVKeyFrame* keyframe);
   int GetLastAddedKeyFrameIndex();
   void RemoveKeyFrame(vtkPVKeyFrame*);
   void RemoveAllKeyFrames();
+  //@}
 
-//BTX
 protected:
   vtkPVKeyFrameAnimationCue();
   ~vtkPVKeyFrameAnimationCue();
@@ -46,9 +50,8 @@ protected:
   vtkPVKeyFrameCueManipulator* GetKeyFrameManipulator();
 
 private:
-  vtkPVKeyFrameAnimationCue(const vtkPVKeyFrameAnimationCue&); // Not implemented
-  void operator=(const vtkPVKeyFrameAnimationCue&); // Not implemented
-//ETX
+  vtkPVKeyFrameAnimationCue(const vtkPVKeyFrameAnimationCue&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVKeyFrameAnimationCue&) VTK_DELETE_FUNCTION;
 };
 
 #endif

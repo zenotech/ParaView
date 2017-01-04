@@ -44,7 +44,6 @@ set(Module_SRCS
   vtkCleanUnstructuredGridCells.cxx
   vtkCleanUnstructuredGrid.cxx
   vtkCSVWriter.cxx
-  vtkDataSetRegionSurfaceFilter.cxx
   vtkEnsembleDataReader.cxx
   vtkEquivalenceSet.cxx
   vtkExodusFileSeriesReader.cxx
@@ -86,6 +85,7 @@ set(Module_SRCS
   vtkPEnSightReader.cxx
   vtkPEquivalenceSet.cxx
   vtkPExtractHistogram.cxx
+  vtkPExtractTemporalFieldData.cxx
   vtkPGenericEnSightReader.cxx
   vtkPhastaReader.cxx
   vtkPlotEdges.cxx
@@ -125,10 +125,12 @@ set(Module_SRCS
   vtkPVMetaSliceDataSet.cxx
   vtkPVNullSource.cxx
   vtkPVPlane.cxx
+  vtkPVPLYWriter.cxx
   vtkPVSelectionSource.cxx
   vtkPVTextSource.cxx
   vtkPVTransform.cxx
   vtkPVTransposeTable.cxx
+  vtkRulerLineForInput.cxx
   vtkQuerySelectionSource.cxx
   vtkRectilinearGridConnectivity.cxx
   vtkSciVizStatistics.cxx
@@ -141,12 +143,16 @@ set(Module_SRCS
   vtkSpyPlotReaderMap.cxx
   vtkSpyPlotUniReader.cxx
   vtkSurfaceVectors.cxx
+  vtkTimeStepProgressFilter.cxx
   vtkTimeToTextConvertor.cxx
   vtkUnstructuredPOPReader.cxx
   vtkVRMLSource.cxx
   vtkXMLCollectionReader.cxx
   vtkXMLPVDWriter.cxx
 )
+if (PARAVIEW_USE_MPI)
+  list(APPEND Module_SRCS vtkInSituPParticlePathFilter.cxx)
+endif()
 
 # Disabled unless using the OpenGL backend.
 if ("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL")
@@ -179,6 +185,11 @@ set_source_files_properties(
   vtkSpyPlotReaderMap
   vtkSpyPlotUniReader
   WRAP_EXCLUDE
+  )
+
+set_source_files_properties(
+  vtkSpyPlotBlockIterator
+  PROPERTIES WRAP_EXCLUDE_PYTHON 1
   )
 
 set_source_files_properties(

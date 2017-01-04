@@ -33,8 +33,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _pqPluginTreeWidgetEventTranslator_h
 #define _pqPluginTreeWidgetEventTranslator_h
 
-#include "pqWidgetEventTranslator.h"
 #include "pqComponentsModule.h"
+#include "pqWidgetEventTranslator.h"
 #include <QPointer>
 
 class QModelIndex;
@@ -44,10 +44,12 @@ class PQCOMPONENTS_EXPORT pqPluginTreeWidgetEventTranslator : public pqWidgetEve
 {
   Q_OBJECT
   typedef pqWidgetEventTranslator Superclass;
+
 public:
   pqPluginTreeWidgetEventTranslator(QObject* parentObject = 0);
   ~pqPluginTreeWidgetEventTranslator();
 
+  using Superclass::translateEvent;
   virtual bool translateEvent(QObject* Object, QEvent* Event, bool& Error);
 
 private slots:
@@ -63,7 +65,7 @@ private:
   pqPluginTreeWidgetEventTranslator(const pqPluginTreeWidgetEventTranslator&);
   pqPluginTreeWidgetEventTranslator& operator=(const pqPluginTreeWidgetEventTranslator&);
 
-   QPointer<pqPluginTreeWidget> TreeView;
+  QPointer<pqPluginTreeWidget> TreeView;
 };
 
 #endif // !_pqPluginTreeWidgetEventTranslator_h

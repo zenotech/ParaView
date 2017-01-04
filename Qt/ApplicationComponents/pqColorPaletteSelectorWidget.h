@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqColorPaletteSelectorWidget_h
-#define __pqColorPaletteSelectorWidget_h
+#ifndef pqColorPaletteSelectorWidget_h
+#define pqColorPaletteSelectorWidget_h
 
 #include "pqApplicationComponentsModule.h"
 #include "pqPropertyWidget.h"
@@ -38,21 +38,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class QComboBox;
 
-/// pqColorPaletteSelectorWidget is used on a ColorPalette proxy to load a
-/// specific color palette.
+/**
+* pqColorPaletteSelectorWidget is used on a ColorPalette proxy to load a
+* specific color palette.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqColorPaletteSelectorWidget : public pqPropertyWidget
 {
   Q_OBJECT
   typedef pqPropertyWidget Superclass;
+
 public:
-  pqColorPaletteSelectorWidget(vtkSMProxy* smproxy, vtkSMProperty* smproperty, QWidget* parent=0);
+  pqColorPaletteSelectorWidget(vtkSMProxy* smproxy, vtkSMProperty* smproperty, QWidget* parent = 0);
   virtual ~pqColorPaletteSelectorWidget();
 
 private slots:
   void setCurrentIndex(int);
 
 private:
-  Q_DISABLE_COPY(pqColorPaletteSelectorWidget);
+  Q_DISABLE_COPY(pqColorPaletteSelectorWidget)
   QPointer<QComboBox> ComboBox;
 };
 

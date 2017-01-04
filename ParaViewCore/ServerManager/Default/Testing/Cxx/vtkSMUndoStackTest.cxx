@@ -15,29 +15,29 @@ PURPOSE.  See the above copyright notice for more information.
 
 #include "vtkSMUndoStackTest.h"
 
-#include "vtkSMUndoStack.h"
-#include "vtkUndoSet.h"
-#include "vtkSMSession.h"
+#include "vtkSMMessage.h"
 #include "vtkSMPropertyHelper.h"
-#include "vtkSMSessionProxyManager.h"
 #include "vtkSMPropertyModificationUndoElement.h"
 #include "vtkSMProxy.h"
 #include "vtkSMRemoteObjectUpdateUndoElement.h"
-#include "vtkSMMessage.h"
+#include "vtkSMSession.h"
+#include "vtkSMSessionProxyManager.h"
+#include "vtkSMUndoStack.h"
+#include "vtkUndoSet.h"
 
 void vtkSMUndoStackTest::UndoRedo()
 {
-  vtkSMSession *session = vtkSMSession::New();
-  vtkSMSessionProxyManager *pxm = session->GetSessionProxyManager();
+  vtkSMSession* session = vtkSMSession::New();
+  vtkSMSessionProxyManager* pxm = session->GetSessionProxyManager();
 
-  vtkSMProxy *sphere = pxm->NewProxy("sources", "SphereSource");
+  vtkSMProxy* sphere = pxm->NewProxy("sources", "SphereSource");
   sphere->UpdateVTKObjects();
   QVERIFY(sphere != NULL);
   QCOMPARE(vtkSMPropertyHelper(sphere, "Radius").GetAsDouble(), 0.5);
 
-  vtkSMUndoStack *undoStack = vtkSMUndoStack::New();
-  vtkUndoSet *undoSet = vtkUndoSet::New();
-  vtkSMRemoteObjectUpdateUndoElement *undoElement = vtkSMRemoteObjectUpdateUndoElement::New();
+  vtkSMUndoStack* undoStack = vtkSMUndoStack::New();
+  vtkUndoSet* undoSet = vtkUndoSet::New();
+  vtkSMRemoteObjectUpdateUndoElement* undoElement = vtkSMRemoteObjectUpdateUndoElement::New();
   undoElement->SetSession(session);
 
   vtkSMMessage before;
@@ -73,7 +73,7 @@ void vtkSMUndoStackTest::UndoRedo()
 
 void vtkSMUndoStackTest::StackDepth()
 {
-  vtkSMUndoStack *stack = vtkSMUndoStack::New();
+  vtkSMUndoStack* stack = vtkSMUndoStack::New();
   QCOMPARE(stack->GetStackDepth(), 10);
   stack->Delete();
 }

@@ -11,7 +11,7 @@ def setup_data(view):
   pass
 
 def render(view, width, height):
-  cb = numpy.zeros((height, width, 4), dtype=numpy.uint8)
+  cb = numpy.zeros((height, width, 3), dtype=numpy.uint8)
   for i in xrange(width):
     cb[:,i,0] = i%255
 
@@ -32,7 +32,7 @@ try:
   baselineIndex = sys.argv.index('-B')+1
   baselinePath = sys.argv[baselineIndex]
 except:
-  print "Could not get baseline directory. Test failed."
+  print ("Could not get baseline directory. Test failed.")
 
 import os
 baseline_file = os.path.join(baselinePath, "TestPythonViewNumpyScript.png")

@@ -16,19 +16,19 @@
 // Test simple sorting on a distributed wavelet
 // This test requires 4 MPI processes.
 
+#include "vtkAttributeDataToTableFilter.h"
+#include "vtkDistributedDataFilter.h"
+#include "vtkFloatArray.h"
+#include "vtkImageData.h"
+#include "vtkMPIController.h"
+#include "vtkObjectFactory.h"
+#include "vtkPieceScalars.h"
+#include "vtkRTAnalyticSource.h"
+#include "vtkSortedTableStreamer.h"
+#include "vtkStreamingDemandDrivenPipeline.h"
+#include "vtkTable.h"
 #include "vtkTestUtilities.h"
 #include "vtkUnstructuredGrid.h"
-#include "vtkImageData.h"
-#include "vtkRTAnalyticSource.h"
-#include "vtkDistributedDataFilter.h"
-#include "vtkPieceScalars.h"
-#include "vtkSortedTableStreamer.h"
-#include "vtkMPIController.h"
-#include "vtkAttributeDataToTableFilter.h"
-#include "vtkTable.h"
-#include "vtkFloatArray.h"
-#include "vtkStreamingDemandDrivenPipeline.h"
-#include "vtkObjectFactory.h"
 /*
 ** This test only builds if MPI is in use
 */
@@ -39,49 +39,47 @@
 class MyProcess : public vtkProcess
 {
 public:
-  static MyProcess *New();
+  static MyProcess* New();
   vtkTypeMacro(MyProcess, vtkProcess);
 
   virtual void Execute();
 
-  void SetArgs(int anArgc,
-               char *anArgv[]);
+  void SetArgs(int anArgc, char* anArgv[]);
 
 protected:
   MyProcess();
 
   int Argc;
-  char **Argv;
+  char** Argv;
 };
 
 vtkStandardNewMacro(MyProcess);
 
 MyProcess::MyProcess()
 {
-  this->Argc=0;
-  this->Argv=0;
+  this->Argc = 0;
+  this->Argv = 0;
 }
 
-void MyProcess::SetArgs(int anArgc,
-                        char *anArgv[])
+void MyProcess::SetArgs(int anArgc, char* anArgv[])
 {
-  this->Argc=anArgc;
-  this->Argv=anArgv;
+  this->Argc = anArgc;
+  this->Argv = anArgv;
 }
 
 void MyProcess::Execute()
 {
-  this->ReturnValue=1;
+  this->ReturnValue = 1;
   int me = this->Controller->GetLocalProcessId();
   int nbProc = this->Controller->GetNumberOfProcesses();
 
   // Dataset
-  vtkRTAnalyticSource *wavelet  = vtkRTAnalyticSource::New();
-  //wavelet->SetWholeExtent(-50,50,-50,50,-50,50);
+  vtkRTAnalyticSource* wavelet = vtkRTAnalyticSource::New();
+  // wavelet->SetWholeExtent(-50,50,-50,50,-50,50);
 
   // COLOR BY PROCESS NUMBER
 
-  vtkPieceScalars *ps = vtkPieceScalars::New();
+  vtkPieceScalars* ps = vtkPieceScalars::New();
   ps->SetInputConnection(wavelet->GetOutputPort());
   ps->SetScalarModeToCellData();
 
@@ -94,39 +92,35 @@ void MyProcess::Execute()
   sortFilter->SetInputConnection(dsToTableFilter->GetOutputPort());
   sortFilter->SetColumnNameToSort("RTData");
   sortFilter->SetSelectedComponent(0);
-
-  vtkStreamingDemandDrivenPipeline* exec= vtkStreamingDemandDrivenPipeline::SafeDownCast(sortFilter->GetExecutive());
-  exec->SetUpdateExtent(0, me, nbProc, 0);
-
   sortFilter->SetBlock(0);
   sortFilter->SetBlockSize(1024);
-  sortFilter->Update();
+  sortFilter->UpdatePiece(me, nbProc, 0);
 
-//  cout << "Full range ["
-//       << wavelet->GetOutput()->GetScalarRange()[0]
-//       << ", "
-//       << wavelet->GetOutput()->GetScalarRange()[1]
-//       << "]"
-//       << endl;
+  //  cout << "Full range ["
+  //       << wavelet->GetOutput()->GetScalarRange()[0]
+  //       << ", "
+  //       << wavelet->GetOutput()->GetScalarRange()[1]
+  //       << "]"
+  //       << endl;
 
-  if(me == 0)
-    {
+  if (me == 0)
+  {
     vtkFloatArray* data =
-        vtkFloatArray::SafeDownCast(
-            sortFilter->GetOutput()->GetColumnByName("RTData"));
+      vtkFloatArray::SafeDownCast(sortFilter->GetOutput()->GetColumnByName("RTData"));
     //      cout << ">>> Print block " << i << " range: [" << data->GetRange()[0]
     //           << ", " << data->GetRange()[1] << "] - size: "
     //           << data->GetNumberOfTuples() << endl;
     double goal = data->GetRange()[0];
     vtkIdType index = -1;
-    while(goal == data->GetValue(++index)) ;
-    cout << "the first "<<index<< " values are the same. The nb proc is " << nbProc << endl;
+    while (goal == data->GetValue(++index))
+      ;
+    cout << "the first " << index << " values are the same. The nb proc is " << nbProc << endl;
     this->ReturnValue = ((index % nbProc) == 0);
-    if(this->ReturnValue == 1)
-      {
+    if (this->ReturnValue == 1)
+    {
       cout << "First block values are the same. OK" << endl;
-      }
     }
+  }
 
   // CLEAN UP
   wavelet->Delete();
@@ -135,11 +129,11 @@ void MyProcess::Execute()
   dsToTableFilter->Delete();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
   int retVal = 1;
 
-  vtkMPIController *contr = vtkMPIController::New();
+  vtkMPIController* contr = vtkMPIController::New();
   contr->Initialize(&argc, &argv);
 
   vtkMultiProcessController::SetGlobalController(contr);
@@ -147,38 +141,38 @@ int main(int argc, char **argv)
   int numProcs = contr->GetNumberOfProcesses();
   int me = contr->GetLocalProcessId();
 
-  if(me == 0 && !vtkSortedTableStreamer::TestInternalClasses())
-    {
+  if (me == 0 && !vtkSortedTableStreamer::TestInternalClasses())
+  {
     contr->Delete();
     return retVal;
-    }
+  }
 
   if (numProcs < 2)
-    {
+  {
     if (me == 0)
-      {
+    {
       cout << "DistributedData test requires more than 1 processe" << endl;
-      }
+    }
     contr->Delete();
     return retVal;
-    }
+  }
 
   if (!contr->IsA("vtkMPIController"))
-    {
+  {
     if (me == 0)
-      {
+    {
       cout << "DistributedData test requires MPI" << endl;
-      }
-    contr->Delete();
-    return retVal;   // is this the right error val?   TODO
     }
+    contr->Delete();
+    return retVal; // is this the right error val?   TODO
+  }
 
-  MyProcess *p=MyProcess::New();
-  p->SetArgs(argc,argv);
+  MyProcess* p = MyProcess::New();
+  p->SetArgs(argc, argv);
   contr->SetSingleProcessObject(p);
   contr->SingleMethodExecute();
 
-  retVal=p->GetReturnValue();
+  retVal = p->GetReturnValue();
   p->Delete();
 
   contr->Finalize();

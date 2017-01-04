@@ -1,18 +1,39 @@
 /*
-   ____    _ __           ____               __    ____
-  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
- _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
-
-Copyright 2012 SciberQuest Inc.
-*/
+ * Copyright 2012 SciberQuest Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  * Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ *  * Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ *  * Neither name of SciberQuest Inc. nor the names of any contributors may be
+ *    used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS''
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 // .NAME vtkSQBinaryThreshold - Color an array using a threshold, low, and high value.
 // .SECTION Description
 // Given a threshold value and an array replace entries below the threshold
 // with a low value and entries above the partition with a high value.
 
-#ifndef __vtkSQBinaryThreshold_h
-#define __vtkSQBinaryThreshold_h
+#ifndef vtkSQBinaryThreshold_h
+#define vtkSQBinaryThreshold_h
 
 #include "vtkSciberQuestModule.h" // for export macro
 #include "vtkDataSetAlgorithm.h"
@@ -74,8 +95,8 @@ protected:
   int RequestData(vtkInformation *req, vtkInformationVector **input, vtkInformationVector *output);
 
 private:
-  vtkSQBinaryThreshold(const vtkSQBinaryThreshold&);  // Not implemented.
-  void operator=(const vtkSQBinaryThreshold&);  // Not implemented.
+  vtkSQBinaryThreshold(const vtkSQBinaryThreshold&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSQBinaryThreshold&) VTK_DELETE_FUNCTION;
 
 private:
   double Threshold;

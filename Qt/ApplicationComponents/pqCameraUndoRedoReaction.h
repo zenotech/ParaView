@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,41 +29,49 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqCameraUndoRedoReaction_h 
-#define __pqCameraUndoRedoReaction_h
+#ifndef pqCameraUndoRedoReaction_h
+#define pqCameraUndoRedoReaction_h
 
 #include "pqReaction.h"
 #include <QPointer>
 
 class pqView;
 
-/// @ingroup Reactions
-/// Reaction for camera undo or redo.
+/**
+* @ingroup Reactions
+* Reaction for camera undo or redo.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqCameraUndoRedoReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
-public:
-  /// Constructor parent cannot be NULL. When undo is true, acts as
-  /// undo-reaction, else acts as redo reaction.
-  /// If \c view ==NULL then active view is used.
-  pqCameraUndoRedoReaction(QAction* parent, bool undo, pqView* view=0);
 
-  /// undo. 
+public:
+  /**
+  * Constructor parent cannot be NULL. When undo is true, acts as
+  * undo-reaction, else acts as redo reaction.
+  * If \c view ==NULL then active view is used.
+  */
+  pqCameraUndoRedoReaction(QAction* parent, bool undo, pqView* view = 0);
+
+  /**
+  * undo.
+  */
   static void undo(pqView* view);
 
-  /// redo. 
+  /**
+  * redo.
+  */
   static void redo(pqView* view);
 
 protected slots:
-  void setEnabled(bool enable)
-    {
-    this->parentAction()->setEnabled(enable);
-    }
+  void setEnabled(bool enable) { this->parentAction()->setEnabled(enable); }
   void setActiveView(pqView*);
 
 protected:
-  /// Called when the action is triggered.
+  /**
+  * Called when the action is triggered.
+  */
   virtual void onTriggered();
 
 private:
@@ -73,5 +81,3 @@ private:
 };
 
 #endif
-
-

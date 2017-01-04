@@ -19,8 +19,8 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
-#ifndef __pqBlotWidget_h
-#define __pqBlotWidget_h
+#ifndef pqBlotWidget_h
+#define pqBlotWidget_h
 
 #include <QWidget>
 
@@ -41,14 +41,14 @@ class pqBlotShell : public QWidget
   Q_OBJECT;
 
 public:
-  pqBlotShell(QWidget *p);
+  pqBlotShell(QWidget* p);
   virtual ~pqBlotShell();
 
   // Description:
   // Get/set the server to direct commands.  This only has an effect on the
   // next time initialize is called.
-  virtual pqServer *activeServer() const {return this->ActiveServer;}
-  virtual void setActiveServer(pqServer *server) {this->ActiveServer = server;}
+  virtual pqServer* activeServer() const { return this->ActiveServer; }
+  virtual void setActiveServer(pqServer* server) { this->ActiveServer = server; }
 
 signals:
   /// Emitted whenever this widget starts or stops executing something.  The
@@ -57,40 +57,39 @@ signals:
 
 public slots:
   virtual void initialize();
-  virtual void initialize(const QString &filename);
-  virtual void executePythonCommand(const QString &command);
-  virtual void executeBlotCommand(const QString &command);
-  virtual void echoExecuteBlotCommand(const QString &command);
+  virtual void initialize(const QString& filename);
+  virtual void executePythonCommand(const QString& command);
+  virtual void executeBlotCommand(const QString& command);
+  virtual void echoExecuteBlotCommand(const QString& command);
 
   // Description:
   // Takes a filename of a blot script and executes it.
-  virtual void executeBlotScript(const QString &filename);
+  virtual void executeBlotScript(const QString& filename);
 
-  virtual void printStderr(const QString &text);
-  virtual void printStdout(const QString &text);
-  virtual void printMessage(const QString &text);
+  virtual void printStderr(const QString& text);
+  virtual void printStdout(const QString& text);
+  virtual void printMessage(const QString& text);
 
 protected:
-  pqConsoleWidget *Console;
+  pqConsoleWidget* Console;
 
   QString FileName;
-  pqServer *ActiveServer;
+  pqServer* ActiveServer;
 
-  vtkEventQtSlotConnect *VTKConnect;
+  vtkEventQtSlotConnect* VTKConnect;
   // Interpreter is spelled wrong.  Maybe someone should fix that.
-  vtkPythonInteractiveInterpreter *Interpretor;
+  vtkPythonInteractiveInterpreter* Interpretor;
 
   virtual void destroyInterpretor();
 
   virtual void promptForInput();
 
 protected slots:
-  virtual void printStderr(vtkObject *, unsigned long, void *, void *);
-  virtual void printStdout(vtkObject *, unsigned long, void *, void *);
+  virtual void printStderr(vtkObject*, unsigned long, void*, void*);
+  virtual void printStdout(vtkObject*, unsigned long, void*, void*);
 
 private:
-  pqBlotShell(const pqBlotShell &);     // Not implemented
-  void operator=(const pqBlotShell &);  // Not implemented
+  Q_DISABLE_COPY(pqBlotShell)
 };
 
-#endif //__pqBlotWidget_h
+#endif // pqBlotWidget_h

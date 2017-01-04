@@ -30,28 +30,28 @@
 #include "vtkSMPointSpriteRepresentationProxy.h"
 
 #include "vtkAbstractMapper.h"
-#include "vtkObjectFactory.h"
 #include "vtkGlyphSource2D.h"
+#include "vtkObjectFactory.h"
 #include "vtkProperty.h"
 
+#include "vtkPVDataInformation.h"
 #include "vtkProcessModule.h"
-#include "vtkSMProxyProperty.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkSMPropertyHelper.h"
+#include "vtkSMDoubleVectorProperty.h"
+#include "vtkSMIntVectorProperty.h"
 #include "vtkSMProperty.h"
+#include "vtkSMPropertyHelper.h"
+#include "vtkSMProxyIterator.h"
+#include "vtkSMProxyProperty.h"
 #include "vtkSMSessionProxyManager.h"
+#include "vtkSMSourceProxy.h"
 #include "vtkSmartPointer.h"
 #include "vtkType.h"
-#include "vtkPVDataInformation.h"
-#include "vtkSMProxyIterator.h"
-#include "vtkSMIntVectorProperty.h"
-#include "vtkSMDoubleVectorProperty.h"
 
 using std::string;
 
 vtkStandardNewMacro(vtkSMPointSpriteRepresentationProxy)
-//----------------------------------------------------------------------------
-vtkSMPointSpriteRepresentationProxy::vtkSMPointSpriteRepresentationProxy()
+  //----------------------------------------------------------------------------
+  vtkSMPointSpriteRepresentationProxy::vtkSMPointSpriteRepresentationProxy()
 {
 }
 
@@ -61,13 +61,12 @@ vtkSMPointSpriteRepresentationProxy::~vtkSMPointSpriteRepresentationProxy()
 }
 
 //----------------------------------------------------------------------------
-void vtkSMPointSpriteRepresentationProxy::InitializeDefaultValues(
-  vtkSMProxy* proxy)
+void vtkSMPointSpriteRepresentationProxy::InitializeDefaultValues(vtkSMProxy* proxy)
 {
-  if (vtkSMPropertyHelper(proxy, "PointSpriteDefaultsInitialized").GetAsInt()!=0)
-    {
+  if (vtkSMPropertyHelper(proxy, "PointSpriteDefaultsInitialized").GetAsInt() != 0)
+  {
     return;
-    }
+  }
 
   vtkSMPropertyHelper(proxy, "PointSpriteDefaultsInitialized").Set(1);
   proxy->GetProperty("ConstantRadius")->ResetToDefault();
@@ -76,29 +75,27 @@ void vtkSMPointSpriteRepresentationProxy::InitializeDefaultValues(
 }
 namespace
 {
-  void vtkInitializeTableValues(vtkSMProperty* prop)
-    {
-    vtkSMDoubleVectorProperty* tableprop = vtkSMDoubleVectorProperty::SafeDownCast(prop);
-    tableprop->SetNumberOfElements(256);
-    double values[256];
-    for (int i = 0; i < 256; i++)
-      {
-      values[i] = ((double) i) / 255.0;
-      }
-    tableprop->SetElements(values);
-    }
+void vtkInitializeTableValues(vtkSMProperty* prop)
+{
+  vtkSMDoubleVectorProperty* tableprop = vtkSMDoubleVectorProperty::SafeDownCast(prop);
+  tableprop->SetNumberOfElements(256);
+  double values[256];
+  for (int i = 0; i < 256; i++)
+  {
+    values[i] = ((double)i) / 255.0;
+  }
+  tableprop->SetElements(values);
+}
 }
 
 int vtkSMPointSpriteRepresentationProxy::ReadXMLAttributes(
   vtkSMSessionProxyManager* pm, vtkPVXMLElement* element)
 {
   if (!this->Superclass::ReadXMLAttributes(pm, element))
-    {
+  {
     return 0;
-    }
-  vtkInitializeTableValues(
-   this->GetProperty("OpacityTableValues"));
-  vtkInitializeTableValues(
-   this->GetProperty("RadiusTableValues"));
+  }
+  vtkInitializeTableValues(this->GetProperty("OpacityTableValues"));
+  vtkInitializeTableValues(this->GetProperty("RadiusTableValues"));
   return 1;
 }

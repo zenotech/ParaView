@@ -12,16 +12,18 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSIMetaReaderProxy
-// .SECTION Description
-// vtkSISourceProxy is the server-side helper for a vtkSMSourceProxy.
-// It adds support to handle various vtkAlgorithm specific Invoke requests
-// coming from the client. vtkSISourceProxy also inserts post-processing filters
-// for each output port from the vtkAlgorithm. These post-processing filters
-// deal with things like parallelizing the data etc.
+/**
+ * @class   vtkSIMetaReaderProxy
+ *
+ * vtkSISourceProxy is the server-side helper for a vtkSMSourceProxy.
+ * It adds support to handle various vtkAlgorithm specific Invoke requests
+ * coming from the client. vtkSISourceProxy also inserts post-processing filters
+ * for each output port from the vtkAlgorithm. These post-processing filters
+ * deal with things like parallelizing the data etc.
+*/
 
-#ifndef __vtkSIMetaReaderProxy_h
-#define __vtkSIMetaReaderProxy_h
+#ifndef vtkSIMetaReaderProxy_h
+#define vtkSIMetaReaderProxy_h
 
 #include "vtkPVServerImplementationCoreModule.h" //needed for exports
 #include "vtkSISourceProxy.h"
@@ -35,18 +37,15 @@ public:
   vtkTypeMacro(vtkSIMetaReaderProxy, vtkSISourceProxy);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-//BTX
-
 protected:
   vtkSIMetaReaderProxy();
   ~vtkSIMetaReaderProxy();
 
-  // Description:
-  // Creates the VTKObjects. Overridden to add post-filters to the pipeline.
-  virtual bool CreateVTKObjects(vtkSMMessage* message);
+  void OnCreateVTKObjects() VTK_OVERRIDE;
 
-  // Description:
-  // Read xml-attributes.
+  /**
+   * Read xml-attributes.
+   */
   virtual bool ReadXMLAttributes(vtkPVXMLElement* element);
 
   // This is the name of the method used to set the file name on the
@@ -57,10 +56,8 @@ protected:
   char* FileNameMethod;
 
 private:
-  vtkSIMetaReaderProxy(const vtkSIMetaReaderProxy&); // Not implemented
-  void operator=(const vtkSIMetaReaderProxy&); // Not implemented
-
-//ETX
+  vtkSIMetaReaderProxy(const vtkSIMetaReaderProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSIMetaReaderProxy&) VTK_DELETE_FUNCTION;
 };
 
 #endif

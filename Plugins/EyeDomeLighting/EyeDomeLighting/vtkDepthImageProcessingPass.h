@@ -46,11 +46,11 @@ Ph.D. thesis of Christian BOUCHENY.
 // .SECTION See Also
 // vtkRenderPass vtkDepthImageProcessingPass vtkEDLShading
 
-#ifndef __vtkDepthImageProcessingPass_h
-#define __vtkDepthImageProcessingPass_h
+#ifndef vtkDepthImageProcessingPass_h
+#define vtkDepthImageProcessingPass_h
 
-#include "vtkImageProcessingPass.h"
 #include "vtkEyeDomeLightingModule.h" // needed for exports.
+#include "vtkImageProcessingPass.h"
 
 class vtkOpenGLRenderWindow;
 class vtkDepthPeelingPassLayerList; // Pimpl
@@ -69,17 +69,17 @@ public:
   // Release graphics resources and ask components to release their own
   // resources.
   // \pre w_exists: w!=0
-  void ReleaseGraphicsResources(vtkWindow *w);
+  void ReleaseGraphicsResources(vtkWindow* w);
 
   // Description:
   // Delegate for rendering the image to be processed.
   // If it is NULL, nothing will be rendered and a warning will be emitted.
   // It is usually set to a vtkCameraPass or to a post-processing pass.
   // Initial value is a NULL pointer.
-  vtkGetObjectMacro(DelegatePass,vtkRenderPass);
-  virtual void SetDelegatePass(vtkRenderPass *delegatePass);
+  vtkGetObjectMacro(DelegatePass, vtkRenderPass);
+  virtual void SetDelegatePass(vtkRenderPass* delegatePass);
 
- protected:
+protected:
   // Description:
   // Default constructor. DelegatePass is set to NULL.
   vtkDepthImageProcessingPass();
@@ -96,20 +96,16 @@ public:
   // \pre fbo_has_context: fbo->GetContext()!=0
   // \pre colortarget_exists: colortarget!=0
   // \pre colortarget_has_context: colortarget->GetContext()!=0
-  virtual void RenderDelegate(const vtkRenderState *s,
-                      int width,
-                      int height,
-                      int newWidth,
-                      int newHeight,
-                      vtkFrameBufferObject *fbo,
-                      vtkTextureObject *colortarget,
-                      vtkTextureObject *depthtarget);
+  virtual void RenderDelegate(const vtkRenderState* s, int width, int height, int newWidth,
+    int newHeight, vtkFrameBufferObject* fbo, vtkTextureObject* colortarget,
+    vtkTextureObject* depthtarget);
 
   // Description:
-  // Test Hardware support for Framebuffer Objects, Texture Objets, GLSL shaders  - for sake of code clarity
+  // Test Hardware support for Framebuffer Objects, Texture Objets, GLSL shaders  - for sake of code
+  // clarity
   // This function is generic, can be useful in multiple image-based rendering classes
   // \pre s_exists: s!=0
-  bool TestHardwareSupport(const vtkRenderState *s);
+  bool TestHardwareSupport(const vtkRenderState* s);
 
   // Description:
   // Read parent size - for sake of code clarity
@@ -117,16 +113,16 @@ public:
   // \pre s_exists: s!=0
   void ReadWindowSize(const vtkRenderState* s);
 
-  vtkRenderPass *DelegatePass;
-  int    Width;       // parent window width
-  int    Height;      // parent window height
-  int    W;           // this width
-  int    H;           // this height
-  int    ExtraPixels; // w(h) = width(height) + 2*extrapixels
+  vtkRenderPass* DelegatePass;
+  int Width;       // parent window width
+  int Height;      // parent window height
+  int W;           // this width
+  int H;           // this height
+  int ExtraPixels; // w(h) = width(height) + 2*extrapixels
 
- private:
-  vtkDepthImageProcessingPass(const vtkDepthImageProcessingPass&);  // Not implemented.
-  void operator=(const vtkDepthImageProcessingPass&);  // Not implemented.
+private:
+  vtkDepthImageProcessingPass(const vtkDepthImageProcessingPass&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkDepthImageProcessingPass&) VTK_DELETE_FUNCTION;
 };
 
 #endif

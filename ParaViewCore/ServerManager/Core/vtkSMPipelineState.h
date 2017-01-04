@@ -12,20 +12,23 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMPipelineState - class that manage the state of the processing
-// pipeline
-// .SECTION Description
-// This class is used to provide a RemoteObject API to the vtkSMProxyManager
-// which allow Undo/Redo and state sharing across several ParaView clients.
-// Basically, we expose the state management API of RemoteObject to handle
-// registration and unregistration of proxies.
+/**
+ * @class   vtkSMPipelineState
+ * @brief   class that manage the state of the processing
+ * pipeline
+ *
+ * This class is used to provide a RemoteObject API to the vtkSMProxyManager
+ * which allow Undo/Redo and state sharing across several ParaView clients.
+ * Basically, we expose the state management API of RemoteObject to handle
+ * registration and unregistration of proxies.
+*/
 
-#ifndef __vtkSMPipelineState_h
-#define __vtkSMPipelineState_h
+#ifndef vtkSMPipelineState_h
+#define vtkSMPipelineState_h
 
 #include "vtkPVServerManagerCoreModule.h" //needed for exports
+#include "vtkSMMessageMinimal.h"          // needed for vtkSMMessage
 #include "vtkSMRemoteObject.h"
-#include "vtkSMMessageMinimal.h" // needed for vtkSMMessage
 #include "vtkWeakPointer.h" // needed for vtkWeakPointer
 
 class vtkSMSession;
@@ -38,37 +41,38 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMPipelineState : public vtkSMRemoteObjec
 
 public:
   static vtkSMPipelineState* New();
-  vtkTypeMacro(vtkSMPipelineState,vtkSMRemoteObject);
+  vtkTypeMacro(vtkSMPipelineState, vtkSMRemoteObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-//BTX
-
-  // Description:
-  // This method return the full object state that can be used to create that
-  // object from scratch.
-  // This method will be used to fill the undo stack.
-  // If not overriden this will return NULL.
+  /**
+   * This method return the full object state that can be used to create that
+   * object from scratch.
+   * This method will be used to fill the undo stack.
+   * If not overriden this will return NULL.
+   */
   virtual const vtkSMMessage* GetFullState();
 
-  // Description:
-  // This method is used to initialise the object to the given state
-  virtual void LoadState( const vtkSMMessage* msg, vtkSMProxyLocator* locator);
+  /**
+   * This method is used to initialise the object to the given state
+   */
+  virtual void LoadState(const vtkSMMessage* msg, vtkSMProxyLocator* locator);
 
   void ValidateState();
 
 protected:
-  // Description:
-  // Default constructor.
+  /**
+   * Default constructor.
+   */
   vtkSMPipelineState();
 
-  // Description:
-  // Destructor.
+  /**
+   * Destructor.
+   */
   virtual ~vtkSMPipelineState();
 
 private:
-  vtkSMPipelineState(const vtkSMPipelineState&); // Not implemented
-  void operator=(const vtkSMPipelineState&);       // Not implemented
-//ETX
+  vtkSMPipelineState(const vtkSMPipelineState&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMPipelineState&) VTK_DELETE_FUNCTION;
 };
 
-#endif // #ifndef __vtkSMPipelineState_h
+#endif // #ifndef vtkSMPipelineState_h

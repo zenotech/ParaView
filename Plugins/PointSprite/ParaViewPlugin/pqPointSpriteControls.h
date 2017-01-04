@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqPointSpriteControls_h
-#define __pqPointSpriteControls_h
+#ifndef pqPointSpriteControls_h
+#define pqPointSpriteControls_h
 
 #include "pqPropertyWidget.h"
 #include <QPointer>
@@ -48,9 +48,10 @@ class pqPointSpriteControls : public pqPropertyWidget
 {
   Q_OBJECT
   typedef pqPropertyWidget Superclass;
+
 public:
   pqPointSpriteControls(
-    vtkSMProxy* smproxy, vtkSMPropertyGroup* smgroup, QWidget* parentObject=0);
+    vtkSMProxy* smproxy, vtkSMPropertyGroup* smgroup, QWidget* parentObject = 0);
   virtual ~pqPointSpriteControls();
 
 private:
@@ -67,10 +68,10 @@ private slots:
   // slots called when the alpha array settings change
   void updateOpacityArray();
 
-  void  showRadiusDialog();
-  void  showOpacityDialog();
+  void showRadiusDialog();
+  void showOpacityDialog();
 
-  void  reloadGUI();
+  void reloadGUI();
 
 private:
   // setup the connections between the GUI and the proxies
@@ -79,12 +80,11 @@ private:
   // called when the representation has been modified to update the menus
   void setRepresentation(pqPipelineRepresentation* repr);
 
-  void  LinkWithRange(QWidget* widget, const char* signal, vtkSMProperty* prop,
+  void LinkWithRange(QWidget* widget, const char* signal, vtkSMProperty* prop,
     QPointer<pqWidgetRangeDomain>& widgetRangeDomain);
 
   class pqInternals;
   pqInternals* Internals;
-
 
 private:
   Q_DISABLE_COPY(pqPointSpriteControls)

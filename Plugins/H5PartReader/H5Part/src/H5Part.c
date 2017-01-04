@@ -82,13 +82,13 @@ Last modified on April 19, 2007.
 #include <fcntl.h>
 #include <hdf5.h>
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <unistd.h>
-#else /* WIN32 */
+#else /* _WIN32 */
 #include <io.h>
 #define open  _open
 #define close _close
-#endif /* WIN32 */
+#endif /* _WIN32 */
 
 #include "H5Part.h"
 #include "H5PartTypes.h"
@@ -522,7 +522,7 @@ H5PartSetNumParticles (
     for parallel IO, this is going to cause problems because
     we don't know if things have changed globally
  */
- if ( f->nparticles == nparticles ) {
+ if ( f->nparticles == (hsize_t)(nparticles)) {
   return H5PART_SUCCESS;
  }
 #endif
@@ -825,7 +825,7 @@ _H5Part_read_attrib (
  hid_t space_id;
  hid_t type_id;
  hid_t mytype;
- hsize_t nelem;
+ // hsize_t nelem;
 
  attrib_id = H5Aopen_name ( id, attrib_name );
  if ( attrib_id <= 0 ) return HANDLE_H5A_OPEN_NAME_ERR( attrib_name );
@@ -836,7 +836,7 @@ _H5Part_read_attrib (
  space_id = H5Aget_space ( attrib_id );
  if ( space_id < 0 ) return HANDLE_H5A_GET_SPACE_ERR;
 
- nelem = H5Sget_simple_extent_npoints ( space_id );
+ // nelem = H5Sget_simple_extent_npoints ( space_id );
  // Never gone to happen: if ( nelem < 0 ) return HANDLE_H5S_GET_SIMPLE_EXTENT_NPOINTS_ERR;
 
  type_id = _H5Part_normalize_h5_type ( mytype );

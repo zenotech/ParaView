@@ -12,39 +12,42 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSIUnstructuredGridVolumeRepresentationProxy - representation that can be used to
-// show a unstructured grid volume in a render view.
-// .SECTION Description
-// vtkSIUnstructuredGridVolumeRepresentationProxy is a concrete representation that can be used
-// to render the unstructured grid volume in a vtkSIRenderViewProxy.
+/**
+ * @class   vtkSIUnstructuredGridVolumeRepresentationProxy
+ * @brief   representation that can be used to
+ * show a unstructured grid volume in a render view.
+ *
+ * vtkSIUnstructuredGridVolumeRepresentationProxy is a concrete representation that can be used
+ * to render the unstructured grid volume in a vtkSIRenderViewProxy.
+*/
 
-#ifndef __vtkSIUnstructuredGridVolumeRepresentationProxy_h
-#define __vtkSIUnstructuredGridVolumeRepresentationProxy_h
+#ifndef vtkSIUnstructuredGridVolumeRepresentationProxy_h
+#define vtkSIUnstructuredGridVolumeRepresentationProxy_h
 
 #include "vtkPVServerImplementationRenderingModule.h" //needed for exports
 #include "vtkSIProxy.h"
 
-class VTKPVSERVERIMPLEMENTATIONRENDERING_EXPORT vtkSIUnstructuredGridVolumeRepresentationProxy : public vtkSIProxy
+class VTKPVSERVERIMPLEMENTATIONRENDERING_EXPORT vtkSIUnstructuredGridVolumeRepresentationProxy
+  : public vtkSIProxy
 {
 public:
   static vtkSIUnstructuredGridVolumeRepresentationProxy* New();
   vtkTypeMacro(vtkSIUnstructuredGridVolumeRepresentationProxy, vtkSIProxy);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-//BTX
 protected:
   vtkSIUnstructuredGridVolumeRepresentationProxy();
   ~vtkSIUnstructuredGridVolumeRepresentationProxy();
 
-  // Description:
-  // Register the mappers.
-  virtual void OnCreateVTKObjects();
-
+  /**
+   * Register the mappers
+   */
+  bool CreateVTKObjects() VTK_OVERRIDE;
 
 private:
-  vtkSIUnstructuredGridVolumeRepresentationProxy(const vtkSIUnstructuredGridVolumeRepresentationProxy&); // Not implemented
-  void operator=(const vtkSIUnstructuredGridVolumeRepresentationProxy&); // Not implemented
-//ETX
+  vtkSIUnstructuredGridVolumeRepresentationProxy(
+    const vtkSIUnstructuredGridVolumeRepresentationProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSIUnstructuredGridVolumeRepresentationProxy&) VTK_DELETE_FUNCTION;
 };
 
 #endif

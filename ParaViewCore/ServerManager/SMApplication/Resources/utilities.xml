@@ -397,20 +397,10 @@
                          number_of_elements="1">
         <BooleanDomain name="bool" />
       </IntVectorProperty>
-      <Hints>
-        <!-- Hints are metadata associated with the proxy.
-             As far as the ServerManager is concerned, Hints have no
-             significance. GUI is free to interpret the hints as
-             it chooses. Hints provide a mechanism to add some GUI
-             pertinant information to the server manager XML.
-        -->
-        <PropertyGroup type="Spline">
-          <Property function="HandlePositions"
-                    name="Points" />
-          <Property function="Closed"
-                    name="Closed" />
-        </PropertyGroup>
-      </Hints>
+      <PropertyGroup label="Spline Parameters" panel_widget="InteractiveSpline">
+        <Property function="HandlePositions" name="Points" />
+        <Property function="Closed" name="Closed" />
+      </PropertyGroup>
       <!-- end of Spline -->
     </Proxy>
   </ProxyGroup>
@@ -558,8 +548,93 @@
                   show="0" />
       </Hints>
     </Proxy>
+    <!-- incremental point locators end -->
   </ProxyGroup>
-  <!-- incremental point locators end -->
+
+  <ProxyGroup name="point_locators">
+    <Proxy name="StaticPointLocator" label="Static Point Locator" class="vtkStaticPointLocator">
+      <Documentation>
+        This uses a spatial search object to quickly locate points
+        in 3D.  This locator works by dividing a specified region of
+        space into a regular array of cuboid buckets, and then keeping a
+        list of points that lie in each bucket. Typical operation involves giving
+        a position in 3D and finding the closest point; or finding the N closest
+        points.
+
+        This locator is an accelerated version of a point locator. It is
+        threaded (via vtkSMPTools), and supports one-time static construction
+        (i.e., incremental point insertion is not supported).
+      </Documentation>
+
+      <IntVectorProperty name="Automatic"
+        command="SetAutomatic"
+        number_of_elements="1"
+        default_values="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Controls whether the locator resolution is computed automatically or not.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty command="SetDivisions"
+        default_values="50 50 50"
+        name="Divisions"
+        number_of_elements="3">
+        <Documentation>Specify the number of divisions in each axis / direction
+          (x, y, z) for creating a search structure of uniform fixed-resolution
+          bins / buckets.
+        </Documentation>
+        <IntRangeDomain name="range" min="1 1 1" />
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+            mode="enabled_state"
+            property="Automatic"
+            value="0" />
+        </Hints>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="NumberOfPointsPerBucket"
+        command="SetNumberOfPointsPerBucket"
+        number_of_elements="1"
+        default_values="5">
+        <IntRangeDomain name="range" min="1" />
+        <Documentation>
+          Specify the average number of points in each bucket. This is
+          used in conjunction with the **Automatic** (if enabled) to
+          determine the number of locator x-y-z divisions.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+            mode="enabled_state"
+            property="Automatic"
+            value="1" />
+        </Hints>
+      </IntVectorProperty>
+
+      <PropertyGroup label="Locator Parameters">
+        <Property name="Automatic" />
+        <Property name="Divisions" />
+        <Property name="NumberOfPointsPerBucket" />
+      </PropertyGroup>
+    </Proxy>
+
+  </ProxyGroup>
+
+  <ProxyGroup name="cell_locators">
+     <Proxy class="vtkCellLocator"
+            name="CellLocator"
+            label="Cell Locator"/>
+     <Proxy class="vtkCellTreeLocator"
+            name="CellTreeLocator"
+            label="Tree Cell Locator"/>
+     <Proxy class="vtkModifiedBSPTree"
+            name="ModifiedBSPTree"
+            label="BSP Tree Cell Locator"/>
+     <Proxy class="vtkOBBTree"
+            name="OBBTree"
+            label="OBB Tree Cell Locator"/>
+  </ProxyGroup>
+
   <ProxyGroup name="implicit_functions">
     <NullProxy name="None"></NullProxy>
     <NullProxy name="Scalar"></NullProxy>
@@ -592,6 +667,13 @@
                             name="Offset"
                             number_of_elements="1">
       </DoubleVectorProperty>
+
+      <PropertyGroup label="Plane Parameters" panel_widget="InteractivePlane">
+        <Property function="Origin" name="Origin" />
+        <Property function="Normal" name="Normal" />
+        <Property function="Input" name="Input" />
+      </PropertyGroup>
+
       <Hints>
         <!-- Hints are metadata associated with the proxy.
              As far as the ServerManager is concerned, Hints have no
@@ -599,12 +681,7 @@
              it chooses. Hints provide a mechanism to add some GUI
              pertinant information to the server manager XML.
         -->
-        <PropertyGroup type="Plane">
-          <Property function="Origin"
-                    name="Origin" />
-          <Property function="Normal"
-                    name="Normal" />
-        </PropertyGroup>
+
         <ProxyList>
           <!--
             ProxyList hints are used when this proxy
@@ -634,8 +711,8 @@
         </ProxyGroupDomain>
       </ProxyProperty>
     </Proxy>
-    <Proxy class="vtkPVBox"
-           name="Box">
+    <Proxy class="vtkPVBox" name="Box">
+      <InputProperty is_internal="1" name="Input" />
       <DoubleVectorProperty command="SetBounds"
                             default_values="0 1 0 1 0 1"
                             name="Bounds"
@@ -661,77 +738,93 @@
                             number_of_elements="3">
         <DoubleRangeDomain name="range" />
       </DoubleVectorProperty>
+      <PropertyGroup label="Box Parameters" panel_widget="InteractiveBox">
+        <Property function="Position" name="Position" />
+        <Property function="Rotation" name="Rotation" />
+        <Property function="Scale" name="Scale" />
+        <Property function="PlaceWidget" name="Bounds" />
+        <Property function="Input" name="Input" />
+      </PropertyGroup>
       <Hints>
-        <!-- Hints are metadata associated with the proxy.
-             As far as the ServerManager is concerned, Hints have no
-             significance. GUI is free to interpret the hints as
-             it chooses. Hints provide a mechanism to add some GUI
-             pertinant information to the server manager XML.
-        -->
-        <PropertyGroup type="Box">
-          <Property function="Position"
-                    name="Position" />
-          <Property function="Rotation"
-                    name="Rotation" />
-          <Property function="Scale"
-                    name="Scale" />
-          <Property function="PlaceWidget"
-                    name="Bounds" />
-        </PropertyGroup>
+        <ProxyList>
+          <Link name="Input" with_property="Input" />
+        </ProxyList>
       </Hints>
       <!-- End of Box -->
     </Proxy>
-    <Proxy class="vtkSphere"
-           name="Sphere">
+    <Proxy class="vtkSphere" name="Sphere">
+      <InputProperty is_internal="1" name="Input" />
       <DoubleVectorProperty command="SetCenter"
-                            default_values="none"
+                            default_values="0 0 0"
                             name="Center"
                             number_of_elements="3">
-        <DoubleRangeDomain name="range" />
+        <BoundsDomain default_mode="mid" mode="normal" name="range">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetRadius"
-                            default_values="none"
+                            default_values="1"
                             name="Radius"
                             number_of_elements="1">
-        <DoubleRangeDomain min="0"
-                           name="range" />
+        <BoundsDomain name="range" mode="scaled_extent" scale_factor="0.5" default_mode="max">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
       </DoubleVectorProperty>
+      <PropertyGroup label="Sphere Parameters" panel_widget="InteractiveSphere">
+        <Property function="Center" name="Center" />
+        <Property function="Radius" name="Radius" />
+        <Property function="Input" name="Input" />
+      </PropertyGroup>
       <Hints>
-        <!-- Hints are metadata associated with the proxy.
-             As far as the ServerManager is concerned, Hints have no
-             significance. GUI is free to interpret the hints as
-             it chooses. Hints provide a mechanism to add some GUI
-             pertinant information to the server manager XML.
-        -->
-        <PropertyGroup type="Sphere">
-          <Property function="Center"
-                    name="Center" />
-          <Property function="Radius"
-                    name="Radius" />
-        </PropertyGroup>
+        <ProxyList>
+          <Link name="Input" with_property="Input" />
+        </ProxyList>
       </Hints>
+      <!-- End of Sphere -->
     </Proxy>
-    <Proxy class="vtkPVCylinder"
-           name="Cylinder">
+    <Proxy class="vtkPVCylinder" name="Cylinder">
+      <InputProperty is_internal="1" name="Input" />
       <DoubleVectorProperty command="SetCenter"
-                            default_values="none"
+                            default_values="0 0 0"
                             name="Center"
                             number_of_elements="3">
-        <DoubleRangeDomain name="range" />
+        <BoundsDomain default_mode="mid" mode="normal" name="range">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetAxis"
                             default_values="0. 1. 0."
                             name="Axis"
                             number_of_elements="3">
-        <DoubleRangeDomain name="range" />
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetRadius"
                             default_values="0.5"
                             name="Radius"
                             number_of_elements="1">
-        <DoubleRangeDomain min="0"
-                           name="range" />
+        <BoundsDomain name="range" mode="scaled_extent" scale_factor="0.5" default_mode="max">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
       </DoubleVectorProperty>
+      <PropertyGroup label="Cylinder Parameters" panel_widget="InteractiveCylinder">
+        <Property function="Center" name="Center" />
+        <Property function="Axis" name="Axis" />
+        <Property function="Radius" name="Radius" />
+        <Property function="Input" name="Input" />
+      </PropertyGroup>
+      <Hints>
+        <ProxyList>
+          <Link name="Input" with_property="Input" />
+        </ProxyList>
+      </Hints>
+      <!-- End of Cylinder -->
     </Proxy>
   </ProxyGroup>
   <ProxyGroup name="transforms">
@@ -1080,6 +1173,14 @@
                     name="FontSize" />
         </ExposedProperties>
       </SubProxy>
+      <!--annotation text property -->
+      <SubProxy command="SetAnnotationTextProperty">
+        <Proxy name="AnnotationTextProperty"
+               proxygroup="properties"
+               proxyname="TextProperty"></Proxy>
+        <ShareProperties subproxy="LabelTextProperty" />
+      </SubProxy>
+
       <!--title text property -->
       <SubProxy command="SetTitleTextProperty">
         <Proxy name="TitleTextProperty"
@@ -1817,18 +1918,14 @@
                      name="DummyInput">
         <!-- Used when this source is added to a proxy list domain. -->
       </InputProperty>
+     <PropertyGroup label="Line Parameters" panel_widget="InteractiveLine">
+          <Property function="Point1WorldPosition" name="Point1" />
+          <Property function="Point2WorldPosition" name="Point2" />
+          <Property function="Input" name="DummyInput" />
+      </PropertyGroup>
       <Hints>
-        <PropertyGroup type="LineSource">
-          <Property function="Point1WorldPosition"
-                    name="Point1" />
-          <Property function="Point2WorldPosition"
-                    name="Point2" />
-          <Property function="Resolution"
-                    name="Resolution" />
-        </PropertyGroup>
         <ProxyList>
-          <Link name="DummyInput"
-                with_property="Input" />
+          <Link name="DummyInput" with_property="Input" />
         </ProxyList>
       </Hints>
       <!-- End LineSource -->
@@ -1871,22 +1968,17 @@
         <IntRangeDomain min="1"
                         name="range" />
       </IntVectorProperty>
-      <InputProperty is_internal="1"
-                     name="DummyInput">
+      <InputProperty is_internal="1" name="DummyInput">
         <!-- Used when this source is added to a proxy list domain. -->
       </InputProperty>
+      <PropertyGroup label="Line Parameters" panel_widget="InteractiveLine">
+          <Property function="Point1WorldPosition" name="Point1" />
+          <Property function="Point2WorldPosition" name="Point2" />
+          <Property function="Input" name="DummyInput" />
+      </PropertyGroup>
       <Hints>
-        <PropertyGroup type="LineSource">
-          <Property function="Point1WorldPosition"
-                    name="Point1" />
-          <Property function="Point2WorldPosition"
-                    name="Point2" />
-          <Property function="Resolution"
-                    name="Resolution" />
-        </PropertyGroup>
         <ProxyList>
-          <Link name="DummyInput"
-                with_property="Input" />
+          <Link name="DummyInput" with_property="Input" />
         </ProxyList>
       </Hints>
       <!-- End HighResLineSource -->
@@ -1934,18 +2026,14 @@
                      name="DummyInput">
         <!-- Used when this source is added to a proxy list domain. -->
       </InputProperty>
+      <PropertyGroup label="Sphere Parameters" panel_widget="InteractiveSphere">
+        <Property function="Center" name="Center" />
+        <Property function="Radius" name="Radius" />
+        <Property function="Input" name="DummyInput" />
+      </PropertyGroup>
       <Hints>
-        <PropertyGroup type="PointSource">
-          <Property function="WorldPosition"
-                    name="Center" />
-          <Property function="Radius"
-                    name="Radius" />
-          <Property function="NumberOfPoints"
-                    name="NumberOfPoints" />
-        </PropertyGroup>
         <ProxyList>
-          <Link name="DummyInput"
-                with_property="Input" />
+          <Link name="DummyInput" with_property="Input" />
         </ProxyList>
       </Hints>
       <!-- End PointSource -->
@@ -1987,18 +2075,14 @@
                      name="DummyInput">
         <!-- Used when this source is added to a proxy list domain. -->
       </InputProperty>
+      <PropertyGroup label="Sphere Parameters" panel_widget="InteractiveSphere">
+        <Property function="Center" name="Center" />
+        <Property function="Radius" name="Radius" />
+        <Property function="Input" name="DummyInput" />
+      </PropertyGroup>
       <Hints>
-        <PropertyGroup type="PointSource">
-          <Property function="WorldPosition"
-                    name="Center" />
-          <Property function="Radius"
-                    name="Radius" />
-          <Property function="NumberOfPoints"
-                    name="NumberOfPoints" />
-        </PropertyGroup>
         <ProxyList>
-          <Link name="DummyInput"
-                with_property="Input" />
+          <Link name="DummyInput" with_property="Input" />
         </ProxyList>
       </Hints>
       <!-- End PointSource -->
@@ -2092,20 +2176,17 @@
                             information_only="1"
                             name="ScaleInfo"
                             number_of_elements="3" />
+      <InputProperty is_internal="1" name="DummyInput" />
+      <PropertyGroup panel_widget="InteractiveBox">
+        <Property function="Position" name="Position" />
+        <Property function="Rotation" name="Rotation" />
+        <Property function="Scale" name="Scale" />
+        <Property function="Input" name="DummyInput" />
+      </PropertyGroup>
       <Hints>
-        <PropertyGroup type="Box">
-          <Property function="Position"
-                    name="Position" />
-          <Property function="Rotation"
-                    name="Rotation" />
-          <Property function="Scale"
-                    name="Scale" />
-        </PropertyGroup>
-        <!--
          <ProxyList>
            <Link name="DummyInput" with_property="Input" />
          </ProxyList>
-         -->
       </Hints>
     </Proxy>
   </ProxyGroup>
@@ -2336,6 +2417,16 @@
                            min="0 0 0"
                            name="range" />
         <Documentation>Color used for showing interactive selection.</Documentation>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty default_values="0.0 1.0 0.0"
+                            label="Interactive Widget"
+                            name="InteractiveWidgetColor"
+                            number_of_elements="3"
+                            panel_widget="color_selector">
+        <DoubleRangeDomain max="1 1 1"
+                           min="0 0 0"
+                           name="range" />
+        <Documentation>Color used for showing interactive widget.</Documentation>
       </DoubleVectorProperty>
       <IntVectorProperty name="UseGradientBackground"
                          label="Use Gradient Background"
@@ -2712,6 +2803,12 @@
                             number_of_elements="1">
         <Documentation>Name of the file to be written.</Documentation>
       </StringVectorProperty>
+      <IntVectorProperty command="SetFilterColumnsByVisibility"
+                         default_values="0"
+                         name="FilterColumnsByVisibility"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
       <!-- End of VRMLExporter -->
     </CSVExporterProxy>
     <RenderViewExporterProxy class="vtkPOVExporter"
@@ -2729,7 +2826,45 @@
       </StringVectorProperty>
       <!-- End of POVExporter -->
     </RenderViewExporterProxy>
+    <RenderViewExporterProxy class="vtkCinemaExporter"
+                             file_extension="cdb"
+                             name="CinemaExporter">
+      <Documentation long_help="Export view to a Cinema Database"
+                     short_help="Cinema Database">CinemaExporter is a render window
+                     exporter which writes out the renderered scene as a
+                     Cinema database.</Documentation>
+      <StringVectorProperty name="FileName"
+                            command="SetFileName"
+                            number_of_elements="1">
+        <Documentation>Name of the file to be written.</Documentation>
+      </StringVectorProperty>
 
+      <StringVectorProperty name="ViewSelection"
+                            command="SetViewSelection"
+                            number_of_elements="1">
+        <Documentation>Script string defining the view selection.</Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty name="TrackSelection"
+                            command="SetTrackSelection"
+                            number_of_elements="1">
+        <Documentation>Script string defining the track selection.</Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty name="ArraySelection"
+                            command="SetArraySelection"
+                            number_of_elements="1">
+        <Documentation>Script string defining the arrays selected in an item.</Documentation>
+      </StringVectorProperty>
+
+      <PropertyGroup label="Cinema Configuration"
+                     panel_widget="cinema_export_selector">
+        <Property name="ViewSelection"/>
+        <Property name="TrackSelection"/>
+        <Property name="ArraySelection"/>
+      </PropertyGroup>
+      <!-- End of Cinema Exporter -->
+    </RenderViewExporterProxy>
     <!-- GL2PS exporter, shared options between render and context views: -->
     <GL2PSExporterProxy class="not-used"
                         viewtype="none"
@@ -3682,5 +3817,24 @@
       </Hints>
     </Proxy>
   </ProxyGroup>
-
+  <ProxyGroup name="seed_sources">
+    <Proxy group="extended_sources"
+           name="PointSource"/>
+    <Proxy group="extended_sources"
+           name="HighResLineSource"/>
+  </ProxyGroup>
+  <ProxyGroup name="integrators">
+    <Proxy class="vtkRungeKutta2"
+           name="RungeKutta2"
+           label="Runge Kutta 2">
+    </Proxy>
+    <Proxy class="vtkRungeKutta4"
+           name="RungeKutta4"
+           label="Runge Kutta 4">
+    </Proxy>
+    <Proxy class="vtkRungeKutta45"
+           name="RungeKutta45"
+           label="Runge Kutta 4/5">
+    </Proxy>
+  </ProxyGroup>
 </ServerManagerConfiguration>

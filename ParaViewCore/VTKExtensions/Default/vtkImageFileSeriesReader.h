@@ -12,18 +12,21 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkImageFileSeriesReader - adds support for optionally reading image
-// stacks.
-// .SECTION Description
-// vtkImageFileSeriesReader is designed for vtkImageReader2 and subclasses. This
-// adds API to optionally treat the file series as an image stack rather than an
-// temporal dataset.
-// When ReadAsImageStack is true, we simply by-pass the superclass and instead
-// pass all filenames to the internal reader and then let it handle the pipeline
-// requests.
+/**
+ * @class   vtkImageFileSeriesReader
+ * @brief   adds support for optionally reading image
+ * stacks.
+ *
+ * vtkImageFileSeriesReader is designed for vtkImageReader2 and subclasses. This
+ * adds API to optionally treat the file series as an image stack rather than an
+ * temporal dataset.
+ * When ReadAsImageStack is true, we simply by-pass the superclass and instead
+ * pass all filenames to the internal reader and then let it handle the pipeline
+ * requests.
+*/
 
-#ifndef __vtkImageFileSeriesReader_h
-#define __vtkImageFileSeriesReader_h
+#ifndef vtkImageFileSeriesReader_h
+#define vtkImageFileSeriesReader_h
 
 #include "vtkFileSeriesReader.h"
 
@@ -38,13 +41,12 @@ public:
   vtkGetMacro(ReadAsImageStack, bool);
   vtkBooleanMacro(ReadAsImageStack, bool);
 
-  // Description:
-  // Overridden to directly call the internal reader after passing it the
-  // correct filenames when ReadAsImageStack is true.
+  /**
+   * Overridden to directly call the internal reader after passing it the
+   * correct filenames when ReadAsImageStack is true.
+   */
   virtual int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
-
-//BTX
 protected:
   vtkImageFileSeriesReader();
   ~vtkImageFileSeriesReader();
@@ -52,10 +54,10 @@ protected:
   void UpdateFileNames();
 
   bool ReadAsImageStack;
+
 private:
-  vtkImageFileSeriesReader(const vtkImageFileSeriesReader&); // Not implemented
-  void operator=(const vtkImageFileSeriesReader&); // Not implemented
-//ETX
+  vtkImageFileSeriesReader(const vtkImageFileSeriesReader&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkImageFileSeriesReader&) VTK_DELETE_FUNCTION;
 };
 
 #endif

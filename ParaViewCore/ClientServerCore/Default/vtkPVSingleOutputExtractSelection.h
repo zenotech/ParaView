@@ -12,33 +12,34 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVSingleOutputExtractSelection
-// .SECTION Description
-// vtkPVSingleOutputExtractSelection extends to vtkPVExtractSelection to simply
-// hide the second output-port. This is the filter used in ParaView GUI.
+/**
+ * @class   vtkPVSingleOutputExtractSelection
+ *
+ * vtkPVSingleOutputExtractSelection extends to vtkPVExtractSelection to simply
+ * hide the second output-port. This is the filter used in ParaView GUI.
+*/
 
-#ifndef __vtkPVSingleOutputExtractSelection_h
-#define __vtkPVSingleOutputExtractSelection_h
+#ifndef vtkPVSingleOutputExtractSelection_h
+#define vtkPVSingleOutputExtractSelection_h
 
 #include "vtkPVClientServerCoreDefaultModule.h" //needed for exports
 #include "vtkPVExtractSelection.h"
 
-class VTKPVCLIENTSERVERCOREDEFAULT_EXPORT vtkPVSingleOutputExtractSelection : public vtkPVExtractSelection
+class VTKPVCLIENTSERVERCOREDEFAULT_EXPORT vtkPVSingleOutputExtractSelection
+  : public vtkPVExtractSelection
 {
 public:
   static vtkPVSingleOutputExtractSelection* New();
   vtkTypeMacro(vtkPVSingleOutputExtractSelection, vtkPVExtractSelection);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-//BTX
 protected:
   vtkPVSingleOutputExtractSelection();
   ~vtkPVSingleOutputExtractSelection();
 
 private:
-  vtkPVSingleOutputExtractSelection(const vtkPVSingleOutputExtractSelection&); // Not implemented
-  void operator=(const vtkPVSingleOutputExtractSelection&); // Not implemented
-//ETX
+  vtkPVSingleOutputExtractSelection(const vtkPVSingleOutputExtractSelection&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVSingleOutputExtractSelection&) VTK_DELETE_FUNCTION;
 };
 
 #endif

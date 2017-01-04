@@ -31,21 +31,20 @@
 
 #include "vtkAlgorithm.h"
 #include "vtkClientServerStream.h"
+#include "vtkImageData.h"
 #include "vtkObjectFactory.h"
 #include "vtkProcessModule.h"
 #include "vtkSMSourceProxy.h"
-#include "vtkImageData.h"
 
-#include "vtkSMSession.h"
 #include "vtkSIObject.h"
 #include "vtkSIProxy.h"
+#include "vtkSMSession.h"
 
 vtkStandardNewMacro(vtkSMSpriteTextureProxy);
 //----------------------------------------------------------------------------
 vtkSMSpriteTextureProxy::vtkSMSpriteTextureProxy()
 {
-  this->SetLocation( vtkProcessModule::CLIENT |
-                     vtkProcessModule::RENDER_SERVER);
+  this->SetLocation(vtkProcessModule::CLIENT | vtkProcessModule::RENDER_SERVER);
 }
 
 //----------------------------------------------------------------------------
@@ -57,9 +56,9 @@ vtkSMSpriteTextureProxy::~vtkSMSpriteTextureProxy()
 vtkImageData* vtkSMSpriteTextureProxy::GetLoadedImage()
 {
   vtkSMSourceProxy::SafeDownCast(this->GetSubProxy("Source"))->UpdatePipeline();
-  vtkAlgorithm* source = vtkAlgorithm::SafeDownCast(
-    this->GetSubProxy("Source")->GetClientSideObject());
-  return source? vtkImageData::SafeDownCast(source->GetOutputDataObject(0)): 0;
+  vtkAlgorithm* source =
+    vtkAlgorithm::SafeDownCast(this->GetSubProxy("Source")->GetClientSideObject());
+  return source ? vtkImageData::SafeDownCast(source->GetOutputDataObject(0)) : 0;
 }
 
 //----------------------------------------------------------------------------
@@ -67,5 +66,3 @@ void vtkSMSpriteTextureProxy::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
-
-

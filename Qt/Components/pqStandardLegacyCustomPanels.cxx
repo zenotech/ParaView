@@ -33,7 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqGlyphPanel.h"
 #include "pqProxy.h"
-#include "pqYoungsMaterialInterfacePanel.h"
 #include "vtkSMProxy.h"
 
 #include <QDebug>
@@ -54,32 +53,26 @@ pqStandardLegacyCustomPanels::~pqStandardLegacyCustomPanels()
 pqObjectPanel* pqStandardLegacyCustomPanels::createPanel(pqProxy* proxy, QWidget* p)
 {
   if (QString("filters") == proxy->getProxy()->GetXMLGroup())
-    {
+  {
     if (QString("LegacyArbitrarySourceGlyph") == proxy->getProxy()->GetXMLName() ||
       QString("LegacyGlyph") == proxy->getProxy()->GetXMLName())
-      {
+    {
       return new pqGlyphPanel(proxy, p);
-      }
-    if (QString("YoungsMaterialInterface") == proxy->getProxy()->GetXMLName())
-      {
-      return new pqYoungsMaterialInterfacePanel(proxy, p);
-      }
     }
+  }
   return 0;
 }
 
 //-----------------------------------------------------------------------------
 bool pqStandardLegacyCustomPanels::canCreatePanel(pqProxy* proxy) const
 {
-  if(QString("filters") == proxy->getProxy()->GetXMLGroup())
+  if (QString("filters") == proxy->getProxy()->GetXMLGroup())
+  {
+    if (QString("LegacyArbitrarySourceGlyph") == proxy->getProxy()->GetXMLName() ||
+      QString("LegacyGlyph") == proxy->getProxy()->GetXMLName())
     {
-    if (
-      QString("LegacyArbitrarySourceGlyph") == proxy->getProxy()->GetXMLName() ||
-      QString("LegacyGlyph") == proxy->getProxy()->GetXMLName() ||
-      QString("YoungsMaterialInterface") == proxy->getProxy()->GetXMLName())
-      {
       return true;
-      }
     }
+  }
   return false;
 }

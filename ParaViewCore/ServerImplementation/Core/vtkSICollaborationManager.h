@@ -12,12 +12,14 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSICollaborationManager
-// .SECTION Description
-// Object that managed multi-client communication and provide the group awareness
+/**
+ * @class   vtkSICollaborationManager
+ *
+ * Object that managed multi-client communication and provide the group awareness
+*/
 
-#ifndef __vtkSICollaborationManager_h
-#define __vtkSICollaborationManager_h
+#ifndef vtkSICollaborationManager_h
+#define vtkSICollaborationManager_h
 
 #include "vtkPVServerImplementationCoreModule.h" //needed for exports
 #include "vtkSIObject.h"
@@ -30,17 +32,18 @@ public:
   vtkTypeMacro(vtkSICollaborationManager, vtkSIObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-//BTX
-  // Description:
-  // Push a new state to the underneath implementation
-  // The provided implementation just store the message
-  // and return it at the Pull one.
+  /**
+   * Push a new state to the underneath implementation
+   * The provided implementation just store the message
+   * and return it at the Pull one.
+   */
   virtual void Push(vtkSMMessage* msg);
 
-  // Description:
-  // Pull the current state of the underneath implementation
-  // The provided implementation update the given message with the one
-  // that has been previously pushed
+  /**
+   * Pull the current state of the underneath implementation
+   * The provided implementation update the given message with the one
+   * that has been previously pushed
+   */
   virtual void Pull(vtkSMMessage* msg);
 
 protected:
@@ -51,12 +54,11 @@ protected:
   void BroadcastToClients(vtkSMMessage* msg);
 
 private:
-  vtkSICollaborationManager(const vtkSICollaborationManager&);    // Not implemented
-  void operator=(const vtkSICollaborationManager&); // Not implemented
+  vtkSICollaborationManager(const vtkSICollaborationManager&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSICollaborationManager&) VTK_DELETE_FUNCTION;
 
   class vtkInternal;
   vtkInternal* Internal;
-//ETX
 };
 
-#endif // #ifndef __vtkSICollaborationManager_h
+#endif // #ifndef vtkSICollaborationManager_h

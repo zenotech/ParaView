@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,73 +29,114 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqPipelineBrowserWidget_h 
-#define __pqPipelineBrowserWidget_h
+#ifndef pqPipelineBrowserWidget_h
+#define pqPipelineBrowserWidget_h
 
-#include "pqFlatTreeView.h"
 #include "pqComponentsModule.h"
+#include "pqFlatTreeView.h"
 
 class pqPipelineModel;
 class pqPipelineAnnotationFilterModel;
 class pqPipelineSource;
+class pqOutputPort;
 class pqView;
 class vtkSession;
 
-/// pqPipelineBrowserWidget is the widget for the pipeline  browser. This is a
-/// replacement for pqPipelineBrowser.
+/**
+* pqPipelineBrowserWidget is the widget for the pipeline  browser. This is a
+* replacement for pqPipelineBrowser.
+*/
 class PQCOMPONENTS_EXPORT pqPipelineBrowserWidget : public pqFlatTreeView
 {
   Q_OBJECT
   typedef pqFlatTreeView Superclass;
+
 public:
-  pqPipelineBrowserWidget(QWidget* parent=0);
+  pqPipelineBrowserWidget(QWidget* parent = 0);
   virtual ~pqPipelineBrowserWidget();
 
-  /// Used to monitor the key press events in the tree view.
-  /// Returns True if the event should not be sent to the object.
-  virtual bool eventFilter(QObject *object, QEvent *e);
+  /**
+  * Used to monitor the key press events in the tree view.
+  * Returns True if the event should not be sent to the object.
+  */
+  virtual bool eventFilter(QObject* object, QEvent* e);
 
-  /// Set the visibility of selected items.
+  /**
+  * Set the visibility of selected items.
+  */
   void setSelectionVisibility(bool visible);
 
-  /// Set Annotation filter to use
+  /**
+  * Set Annotation filter to use
+  */
   void enableAnnotationFilter(const QString& annotationKey);
 
-  /// Disable any Annotation filter
+  /**
+  * Disable any Annotation filter
+  */
   void disableAnnotationFilter();
 
-  /// Set Session filter to use
+  /**
+  * Set Session filter to use
+  */
   void enableSessionFilter(vtkSession* session);
 
-  /// Disable any Session filter
+  /**
+  * Disable any Session filter
+  */
   void disableSessionFilter();
 
+  /**
+  * Overload of pqFlatTreeView::setModel
+  */
+  void setModel(pqPipelineModel* model);
+
+  /**
+  * TODO document
+  * @note Moved from proteced
+  */
+  const QModelIndex pipelineModelIndex(const QModelIndex& index) const;
+  const pqPipelineModel* getPipelineModel(const QModelIndex& index) const;
+
+  /**
+  * static method to sets the visibility of a pqOutputPort
+  */
+  static void setVisibility(bool visible, pqOutputPort* port);
+
 signals:
-  /// Fired when the delete key is pressed.
-  /// Typically implies that the selected items need to be deleted.
+  /**
+  * Fired when the delete key is pressed.
+  * Typically implies that the selected items need to be deleted.
+  */
   void deleteKey();
 
 public slots:
-  /// Set the active view. By default connected to
-  /// pqActiveObjects::viewChanged() so it keeps track of the active view.
+  /**
+  * Set the active view. By default connected to
+  * pqActiveObjects::viewChanged() so it keeps track of the active view.
+  */
   void setActiveView(pqView*);
 
 protected slots:
   void handleIndexClicked(const QModelIndex& index);
-  void expandWithModelIndexTranslation(const QModelIndex &);
+  void expandWithModelIndexTranslation(const QModelIndex&);
 
 protected:
-  /// sets the visibility for items in the indices list.
+  /**
+  * sets the visibility for items in the indices list.
+  */
   void setVisibility(bool visible, const QModelIndexList& indices);
+
   pqPipelineModel* PipelineModel;
   pqPipelineAnnotationFilterModel* FilteredPipelineModel;
-  const QModelIndex pipelineModelIndex(const QModelIndex& index) const;
-  const pqPipelineModel* getPipelineModel(const QModelIndex& index) const;
 
 private:
+  /**
+  * Set up the current pqPipelineModel.
+  */
+  void configureModel();
+
   Q_DISABLE_COPY(pqPipelineBrowserWidget)
 };
 
 #endif
-
-

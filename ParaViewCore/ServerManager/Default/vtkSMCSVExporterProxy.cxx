@@ -14,10 +14,11 @@
 =========================================================================*/
 #include "vtkSMCSVExporterProxy.h"
 
-#include "vtkObjectFactory.h"
-#include "vtkSpreadSheetView.h"
-#include "vtkSMViewProxy.h"
 #include "vtkCSVExporter.h"
+#include "vtkObjectFactory.h"
+#include "vtkPVXYChartView.h"
+#include "vtkSMViewProxy.h"
+#include "vtkSpreadSheetView.h"
 
 vtkStandardNewMacro(vtkSMCSVExporterProxy);
 //----------------------------------------------------------------------------
@@ -33,8 +34,15 @@ vtkSMCSVExporterProxy::~vtkSMCSVExporterProxy()
 //----------------------------------------------------------------------------
 bool vtkSMCSVExporterProxy::CanExport(vtkSMProxy* proxy)
 {
-  return (proxy && proxy->GetXMLName() &&
-    strcmp(proxy->GetXMLName(), "SpreadSheetView") == 0);
+  if (proxy)
+  {
+    vtkObjectBase* obj = proxy->GetClientSideObject();
+    if (vtkSpreadSheetView::SafeDownCast(obj) || vtkPVXYChartView::SafeDownCast(obj))
+    {
+      return true;
+    }
+  }
+  return false;
 }
 
 //----------------------------------------------------------------------------
@@ -42,22 +50,23 @@ void vtkSMCSVExporterProxy::Write()
 {
   this->CreateVTKObjects();
 
-
   vtkCSVExporter* exporter = vtkCSVExporter::SafeDownCast(this->GetClientSideObject());
   if (!exporter)
-    {
+  {
     vtkErrorMacro("No vtkCSVExporter.");
     return;
-    }
-
-  vtkSpreadSheetView* view = vtkSpreadSheetView::SafeDownCast(
-    this->View->GetClientSideObject());
-  if (!view)
-    {
-    vtkErrorMacro("Failed to locate vtkSpreadSheetView.");
-    return;
-    }
-  view->Export(exporter);
+  }
+  vtkObjectBase* obj = this->View->GetClientSideObject();
+  if (vtkSpreadSheetView* sview = vtkSpreadSheetView::SafeDownCast(obj))
+  {
+    sview->Export(exporter);
+  }
+  else if (vtkPVContextView* cview = vtkPVContextView::SafeDownCast(obj))
+  {
+    /// Note, in CanExport() for now, we're only supporting exporting for
+    /// XYChartViews.
+    cview->Export(exporter);
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -65,5 +74,3 @@ void vtkSMCSVExporterProxy::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
-
-

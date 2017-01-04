@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __vtkVRStyleGrabNUpdate_h_
-#define __vtkVRStyleGrabNUpdate_h_
+#ifndef vtkVRStyleGrabNUpdate_h_
+#define vtkVRStyleGrabNUpdate_h_
 
 #include "vtkVRStyleTracking.h"
 
@@ -44,6 +44,7 @@ class vtkVRStyleGrabNUpdate : public vtkVRStyleTracking
 {
   Q_OBJECT
   typedef vtkVRStyleTracking Superclass;
+
 public:
   vtkVRStyleGrabNUpdate(QObject* parent);
   ~vtkVRStyleGrabNUpdate();
@@ -51,20 +52,20 @@ public:
   virtual vtkPVXMLElement* saveConfiguration() const;
 
 protected:
-  virtual void HandleButton( const vtkVREventData& data );
-  virtual void HandleTracker( const vtkVREventData& data );
+  virtual void HandleButton(const vtkVREventData& data);
+  virtual void HandleTracker(const vtkVREventData& data);
   virtual bool GetProxyNProperty();
   virtual void GetProperty() {}
 protected:
-  vtkSMProxy *Proxy;
-  vtkSMDoubleVectorProperty *Property;
+  vtkSMProxy* Proxy;
+  vtkSMDoubleVectorProperty* Property;
   std::string ProxyName;
   std::string PropertyName;
   bool IsFoundProxyProperty;
   std::string Button;
   bool Enabled;
   bool IsInitialRecorded;
-  vtkTransform *InitialInvertedPose;
+  vtkTransform* InitialInvertedPose;
 };
 
-#endif //__vtkVRStyleGrabNUpdate.h_
+#endif // vtkVRStyleGrabNUpdate.h_

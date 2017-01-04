@@ -19,31 +19,15 @@ SET (CP_SOURCES
   pqCPPluginManager.cxx
   pqCPPluginManager.h
 )
+include(ParaViewQt)
+pv_find_package_qt(qt_targets REQUIRED QT4_COMPONENTS QtGui QT5_COMPONENTS Widgets)
 
-if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
-  set (Qt5_FIND_COMPONENTS Widgets)
-  include (ParaViewQt5)
-
-  QT5_WRAP_CPP(MOC_SRCS
+pv_qt_wrap_cpp(MOC_SRCS
     pqCPExportStateWizard.h
     pqCPActionsGroup.h
     pqCPPluginManager.h
   )
-
-  QT5_WRAP_UI(UI_SRCS
-    ${UI_RESOURCES})
-else ()
-  include (${QT_USE_FILE})
-
-  QT4_WRAP_CPP(MOC_SRCS
-    pqCPExportStateWizard.h
-    pqCPActionsGroup.h
-    pqCPPluginManager.h
-  )
-
-  QT4_WRAP_UI(UI_SRCS
-    ${UI_RESOURCES})
-endif ()
+pv_qt_wrap_ui(UI_SRCS ${UI_RESOURCES})
 
 #------------------------------------------------------------------------------
 SET (PARAVIEW_PLUGIN_IFACES)
@@ -84,27 +68,21 @@ ADD_PARAVIEW_PLUGIN(
     ${PARAVIEW_PLUGIN_SRCS}
     ${PARAVIEW_PLUGIN_SRCS2}
 )
+target_link_libraries(CatalystScriptGeneratorPlugin LINK_PRIVATE ${qt_targets})
 
 IF (BUILD_TESTING)
   include(ParaViewTestingMacros)
   # this test is redundant with the CatalystFullWorkflow test
   # in the coprocessing library but that may not be built so we
   # add it here as well. this test though is a subset of that test.
-  IF ( BUILD_SHARED_LIBS )
-    add_client_tests("pv"
-      LOAD_PLUGIN "CatalystScriptGeneratorPlugin"
-      TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/Testing/CatalystGUI.xml )
-    SET_TESTS_PROPERTIES(pv.CatalystGUI PROPERTIES RUN_SERIAL ON LABELS "PARAVIEW;CATALYST")
-    add_client_tests("pv"
-      LOAD_PLUGIN "CatalystScriptGeneratorPlugin"
-      TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/Testing/CatalystCinemaGUI.xml )
-    SET_TESTS_PROPERTIES(pv.CatalystCinemaGUI PROPERTIES RUN_SERIAL ON LABELS "PARAVIEW;CATALYST")
-  ELSE ()
-    add_client_tests("pv"
-      LOAD_PLUGIN "CatalystScriptGeneratorPlugin"
-      TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/Testing/CatalystGUI-static.xml )
-    SET_TESTS_PROPERTIES(pv.CatalystGUI-static PROPERTIES RUN_SERIAL ON LABELS "PARAVIEW;CATALYST")
-  ENDIF ()
+  add_client_tests("pv"
+    LOAD_PLUGIN "CatalystScriptGeneratorPlugin"
+    TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/Testing/CatalystGUI.xml )
+  SET_TESTS_PROPERTIES(pv.CatalystGUI PROPERTIES RUN_SERIAL ON LABELS "PARAVIEW;CATALYST")
+  add_client_tests("pv"
+    LOAD_PLUGIN "CatalystScriptGeneratorPlugin"
+    TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/Testing/CatalystCinemaGUI.xml )
+  SET_TESTS_PROPERTIES(pv.CatalystCinemaGUI PROPERTIES RUN_SERIAL ON LABELS "PARAVIEW;CATALYST")
 ENDIF ()
 
 if(PARAVIEW_USE_MPI)

@@ -1,5 +1,5 @@
-#ifndef __H5PARTERRORS_H
-#define __H5PARTERRORS_H
+#ifndef H5PartErrors_h
+#define H5PartErrors_h
 
 
 /***************** Error Handling ***************/
@@ -16,7 +16,7 @@
    "Attempting to write to read-only file" );
 
 #define CHECK_READONLY_MODE( f )  \
- if ( ! f->mode==H5PART_READ ) \
+ if ( ! (f->mode==H5PART_READ) ) \
   return (*_err_handler) ( \
    _H5Part_get_funcname(), \
    H5PART_ERR_INVAL, \

@@ -1,11 +1,11 @@
 
+#include <QComboBox>
 #include <QMainWindow>
 #include <QPointer>
-#include <QComboBox>
 #include <QStringList>
 
-#include "pqPipelineModel.h"
 #include "pqPipelineBrowserWidget.h"
+#include "pqPipelineModel.h"
 #include "vtkObject.h"
 
 class pqServer;
@@ -18,8 +18,8 @@ public:
   void createPipelineWithAnnotation(pqServer* server);
 
 protected:
-  QStringList                       FilterNames;
-  QPointer<QComboBox>               FilterSelector;
+  QStringList FilterNames;
+  QPointer<QComboBox> FilterSelector;
   QPointer<pqPipelineBrowserWidget> PipelineWidget;
 
 public slots:

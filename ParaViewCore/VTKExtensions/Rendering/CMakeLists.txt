@@ -40,16 +40,22 @@ set(Module_SRCS
   vtkImageCompressor.cxx
   vtkKdTreeGenerator.cxx
   vtkKdTreeManager.cxx
+  vtkLZ4Compressor.cxx
   vtkMarkSelectedRows.cxx
   vtkMultiSliceContextItem.cxx
   vtkOrderedCompositeDistributor.cxx
+  vtkPartitionOrdering.cxx
+  vtkPartitionOrderingInterface.cxx
   vtkPVArrowSource.cxx
   vtkPVAxesActor.cxx
   vtkPVAxesWidget.cxx
+  vtkPVCameraCollection.cxx
   vtkPVCenterAxesActor.cxx
   vtkPVDefaultPass.cxx
   vtkPVDiscretizableColorTransferFunction.cxx
   vtkPVGeometryFilter.cxx
+  vtkPVGL2PSExporter.cxx
+  vtkPVInteractiveViewLinkRepresentation.cxx
   vtkPVInteractorStyle.cxx
   vtkPVJoystickFly.cxx
   vtkPVJoystickFlyIn.cxx
@@ -67,6 +73,7 @@ set(Module_SRCS
   vtkPVTrackballRoll.cxx
   vtkPVTrackballRotate.cxx
   vtkPVTrackballZoom.cxx
+  vtkPVTrackballZoomToMouse.cxx
   vtkPVUpdateSuppressor.cxx
   vtkReductionFilter.cxx
   vtkResampledAMRImageSource.cxx
@@ -81,12 +88,12 @@ set(Module_SRCS
   vtkViewLayout.cxx
   vtkVolumeRepresentationPreprocessor.cxx
   vtkZlibImageCompressor.cxx
+  vtkCinemaExporter.cxx
 )
 
 # Disabled unless using the OpenGL backend.
 if ("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL")
   list(APPEND Module_SRCS
-    vtkPVGL2PSExporter.cxx
     vtkTexturePainter.cxx
     )
 endif()

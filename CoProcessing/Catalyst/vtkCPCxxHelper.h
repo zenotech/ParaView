@@ -17,7 +17,7 @@
 
 #include "vtkObject.h"
 #include "vtkPVCatalystModule.h" // For windows import/export of shared libraries
-#include "vtkWeakPointer.h" // needed for vtkWeakPointer.
+#include "vtkWeakPointer.h"      // needed for vtkWeakPointer.
 
 class vtkPVOptions;
 
@@ -33,7 +33,7 @@ class VTKPVCATALYST_EXPORT vtkCPCxxHelper : public vtkObject
 {
 public:
   static vtkCPCxxHelper* New();
-  vtkTypeMacro(vtkCPCxxHelper,vtkObject);
+  vtkTypeMacro(vtkCPCxxHelper, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
 protected:
@@ -41,8 +41,8 @@ protected:
   virtual ~vtkCPCxxHelper();
 
 private:
-  vtkCPCxxHelper(const vtkCPCxxHelper&); // Not implemented
-  void operator=(const vtkCPCxxHelper&); // Not implemented
+  vtkCPCxxHelper(const vtkCPCxxHelper&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkCPCxxHelper&) VTK_DELETE_FUNCTION;
 
   vtkPVOptions* Options;
 

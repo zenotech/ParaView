@@ -15,8 +15,8 @@
 
 #include "vtkMetaReader.h"
 
-#include "vtkClientServerInterpreterInitializer.h"
 #include "vtkClientServerInterpreter.h"
+#include "vtkClientServerInterpreterInitializer.h"
 #include "vtkClientServerStream.h"
 #include "vtkDataObject.h"
 #include "vtkInformation.h"
@@ -28,10 +28,15 @@
 vtkStandardNewMacro(vtkMetaReader);
 
 //----------------------------------------------------------------------------
-vtkMetaReader::vtkMetaReader() :
-  Reader (NULL), FileNameMTime(0), BeforeFileNameMTime(0),
-  FileNameMethod(NULL), _FileIndex(0), FileIndexMTime(0),
-  _MetaFileName(NULL), MetaFileNameMTime (0)
+vtkMetaReader::vtkMetaReader()
+  : Reader(NULL)
+  , FileNameMTime(0)
+  , BeforeFileNameMTime(0)
+  , FileNameMethod(NULL)
+  , _FileIndex(0)
+  , FileIndexMTime(0)
+  , _MetaFileName(NULL)
+  , MetaFileNameMTime(0)
 {
   this->FileIndexRange[0] = 0;
   this->FileIndexRange[1] = 0;
@@ -41,65 +46,59 @@ vtkMetaReader::vtkMetaReader() :
 vtkMetaReader::~vtkMetaReader()
 {
   this->SetMetaFileName(NULL);
-  if(this->Reader)
-    {
+  if (this->Reader)
+  {
     this->Reader->Delete();
-    }
+  }
   this->SetFileNameMethod(NULL);
 }
 //----------------------------------------------------------------------------
 void vtkMetaReader::ReaderSetFileName(const char* name)
 {
   if (this->Reader && this->FileNameMethod)
-    {
-    vtkClientServerInterpreter *interpreter =
-        vtkClientServerInterpreterInitializer::GetGlobalInterpreter();
-
-    // Build stream request
-    vtkClientServerStream stream;
-    stream << vtkClientServerStream::Invoke
-           << this->Reader
-           << this->FileNameMethod
-           << name
-           << vtkClientServerStream::End;
-
-    // Process stream and delete interpreter
-    interpreter->ProcessStream(stream);
-    }
-}
-
-//-----------------------------------------------------------------------------
-int vtkMetaReader::ReaderCanReadFile(const char *filename)
-{
-  if(this->Reader)
-    {
-    int canRead = 1;
-    vtkClientServerInterpreter *interpreter =
+  {
+    vtkClientServerInterpreter* interpreter =
       vtkClientServerInterpreterInitializer::GetGlobalInterpreter();
 
     // Build stream request
     vtkClientServerStream stream;
-    stream << vtkClientServerStream::Invoke
-           << this->Reader
-           << "CanReadFile"
-           << filename
+    stream << vtkClientServerStream::Invoke << this->Reader << this->FileNameMethod << name
+           << vtkClientServerStream::End;
+
+    // Process stream and delete interpreter
+    interpreter->ProcessStream(stream);
+  }
+}
+
+//-----------------------------------------------------------------------------
+int vtkMetaReader::ReaderCanReadFile(const char* filename)
+{
+  if (this->Reader)
+  {
+    int canRead = 1;
+    vtkClientServerInterpreter* interpreter =
+      vtkClientServerInterpreterInitializer::GetGlobalInterpreter();
+
+    // Build stream request
+    vtkClientServerStream stream;
+    stream << vtkClientServerStream::Invoke << this->Reader << "CanReadFile" << filename
            << vtkClientServerStream::End;
 
     // Process stream and get result
     interpreter->ProcessStream(stream);
     interpreter->GetLastResult().GetArgument(0, 0, &canRead);
     return canRead;
-    }
+  }
   return 0;
 }
 
 //----------------------------------------------------------------------------
-unsigned long vtkMetaReader::GetMTime()
+vtkMTimeType vtkMetaReader::GetMTime()
 {
-  unsigned long mTime=this->vtkObject::GetMTime();
+  vtkMTimeType mTime = this->vtkObject::GetMTime();
 
-  if ( this->Reader )
-    {
+  if (this->Reader)
+  {
     // In general, we want changes in Reader to be reflected in this object's
     // MTime.  However, we will also be making modifications to the Reader (such
     // as changing the filename) that we want to suppress from the reporting.
@@ -107,24 +106,23 @@ unsigned long vtkMetaReader::GetMTime()
     // this->BeforeFileNameMTime and capture the resulting MTime in
     // this->FileNameMTime.  If we run into that modification,
     // suppress it by reporting the saved modification.
-    unsigned long readerMTime;
+    vtkMTimeType readerMTime;
     if (this->Reader->GetMTime() == this->FileNameMTime)
-      {
+    {
       readerMTime = this->BeforeFileNameMTime;
-      }
-    else
-      {
-      readerMTime = this->Reader->GetMTime();
-      }
-    mTime = ( readerMTime > mTime ? readerMTime : mTime );
     }
+    else
+    {
+      readerMTime = this->Reader->GetMTime();
+    }
+    mTime = (readerMTime > mTime ? readerMTime : mTime);
+  }
 
   return mTime;
 }
 
 //-----------------------------------------------------------------------------
-int vtkMetaReader::FillOutputPortInformation(int port,
-                                             vtkInformation* info)
+int vtkMetaReader::FillOutputPortInformation(int port, vtkInformation* info)
 {
   vtkInformation* rinfo = this->Reader->GetOutputPortInformation(port);
   info->CopyEntry(rinfo, vtkDataObject::DATA_TYPE_NAME());
@@ -132,42 +130,40 @@ int vtkMetaReader::FillOutputPortInformation(int port,
 }
 
 //-----------------------------------------------------------------------------
-std::string vtkMetaReader::FromRelativeToMetaFile(const char* metaFileName,
-                                                  const char* filePath)
+std::string vtkMetaReader::FromRelativeToMetaFile(const char* metaFileName, const char* filePath)
 {
   std::string root;
-  vtksys::SystemTools::SplitPathRootComponent (filePath, &root);
+  vtksys::SystemTools::SplitPathRootComponent(filePath, &root);
   if (root.empty())
-    {
+  {
     // relative filePath, considered relative to the metafile.
-    std::string metaFileDir =
-      vtksys::SystemTools::GetFilenamePath (metaFileName);
-    if (! metaFileDir.empty())
-      {
-      metaFileDir += "/";
-      }
-    return metaFileDir + filePath;
-    }
-  else
+    std::string metaFileDir = vtksys::SystemTools::GetFilenamePath(metaFileName);
+    if (!metaFileDir.empty())
     {
-    return filePath;
+      metaFileDir += "/";
     }
+    return metaFileDir + filePath;
+  }
+  else
+  {
+    return filePath;
+  }
 }
 
 //-----------------------------------------------------------------------------
-void vtkMetaReader::PrintSelf(ostream& os,
-                              vtkIndent indent)
+void vtkMetaReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   if (this->Reader)
-    {
+  {
     os << indent << "Reader:" << endl;
     this->Reader->PrintSelf(os, indent.GetNextIndent());
-    }
+  }
   else
-    {
+  {
     os << indent << "Reader: (null)" << endl;
-    }
+  }
   os << indent << "FileIndexRange: " << this->FileIndexRange << endl;
-  os << indent << "FileNameMethod: " << (this->FileNameMethod ? this->FileNameMethod : "(null)") << endl;
+  os << indent << "FileNameMethod: " << (this->FileNameMethod ? this->FileNameMethod : "(null)")
+     << endl;
 }

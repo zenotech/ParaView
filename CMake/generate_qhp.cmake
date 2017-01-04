@@ -1,12 +1,16 @@
 # Used by build_help_project CMake function to generate the qhp file.
 # The WORKING_DIRECTORY for this script must be the same as the location for the
 # qhp file otherwise the toc won't be generated correctly.
-# Input environment:
-# output_file :-
-# file_patterns :-
-# namespace :-
-# folder :-
-# name :-
+
+# INPUT VARIABLES:
+# output_file       :-
+# file_patterns     :- coded-separator list of patterns
+# namespace         :-
+# folder            :-
+# name              :-
+#
+# see ParaViewMacros.cmake for information about coded-separator lists
+
 
 if (POLICY CMP0053)
   cmake_policy(SET CMP0053 NEW)
@@ -44,7 +48,9 @@ if (NOT output_file OR NOT file_patterns OR NOT namespace OR NOT folder OR NOT n
   message(FATAL_ERROR "Missing one of the required arguments!!")
 endif ()
 
-string (REPLACE "+" ";" file_patterns "${file_patterns}")
+# Recover original ';' separated list.
+string(REPLACE "_s" ";"  file_patterns "${file_patterns}")
+string(REPLACE "_u" "_"  file_patterns "${file_patterns}")
 
 get_filename_component(working_dir "${output_file}" PATH)
 
@@ -74,8 +80,21 @@ endif()
 set (toc
   "<toc> <section title=\"${name}\" ref=\"${index_page}\" >\n ${toc} </section> </toc>")
 
+if (given_toc)
+  set(toc "${given_toc}")
+endif ()
+
+set(matching_files)
+if (file_patterns)
+  set(patterns)
+  foreach (filepattern IN LISTS file_patterns)
+    list(APPEND patterns
+      "${CMAKE_CURRENT_BINARY_DIR}/${filepattern}")
+  endforeach ()
+  file (GLOB matching_files RELATIVE "${CMAKE_CURRENT_BINARY_DIR}" ${patterns} )
+endif ()
 set (files)
-foreach(filename ${file_patterns})
+foreach(filename IN LISTS matching_files)
   set (files "${files}<file>${filename}</file>\n")
 endforeach()
 

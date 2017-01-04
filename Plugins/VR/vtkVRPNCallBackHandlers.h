@@ -16,19 +16,19 @@
 // .SECTION Description
 // vtkVRPNCallBackHandlers
 
-#ifndef __vtkVRPNCallBackHandlers_h
-#define __vtkVRPNCallBackHandlers_h
+#ifndef vtkVRPNCallBackHandlers_h
+#define vtkVRPNCallBackHandlers_h
 
-#include <vector>
 #include <iostream>
-#include <vrpn_Tracker.h>
-#include <vrpn_Button.h>
+#include <vector>
 #include <vrpn_Analog.h>
+#include <vrpn_Button.h>
 #include <vrpn_Dial.h>
 #include <vrpn_Text.h>
+#include <vrpn_Tracker.h>
 
 void VRPN_CALLBACK handleAnalogChange(void* userdata, const vrpn_ANALOGCB b);
 void VRPN_CALLBACK handleButtonChange(void* userdata, vrpn_BUTTONCB b);
-void VRPN_CALLBACK handleTrackerChange(void *userdata, const vrpn_TRACKERCB t);
+void VRPN_CALLBACK handleTrackerChange(void* userdata, const vrpn_TRACKERCB t);
 
-#endif // __vtkVRPNCallBackHandlers_h
+#endif // vtkVRPNCallBackHandlers_h

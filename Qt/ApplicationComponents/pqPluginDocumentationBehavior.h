@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,22 +29,25 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqPluginDocumentationBehavior_h 
-#define __pqPluginDocumentationBehavior_h
+#ifndef pqPluginDocumentationBehavior_h
+#define pqPluginDocumentationBehavior_h
 
-#include <QObject>
 #include "pqApplicationComponentsModule.h"
+#include <QObject>
 
 class QHelpEngine;
 class vtkPVPlugin;
 
-/// @ingroup Behaviors
-/// pqPluginDocumentationBehavior is a helper class that ensures that
-/// documentation from plugins is registered with the QHelpEngine.
+/**
+* @ingroup Behaviors
+* pqPluginDocumentationBehavior is a helper class that ensures that
+* documentation from plugins is registered with the QHelpEngine.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqPluginDocumentationBehavior : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
   pqPluginDocumentationBehavior(QHelpEngine* engine);
   virtual ~pqPluginDocumentationBehavior();

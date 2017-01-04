@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -33,8 +33,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
-#include "pqLiveInsituManager.h"
 #include "pqCoreUtilities.h"
+#include "pqLiveInsituManager.h"
 #include "pqLiveInsituVisualizationManager.h"
 #include "pqServer.h"
 #include "pqServerManagerModel.h"
@@ -44,29 +44,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSession.h"
 
-
 #include <QInputDialog>
 #include <QMessageBox>
 
 class pqCatalystSetBreakpointReaction::sbrInternal
 {
 public:
-  sbrInternal(QWidget* parent) :
-    Dialog(parent)
+  sbrInternal(QWidget* parent)
+    : Dialog(parent)
   {
   }
   pqSetBreakpointDialog Dialog;
 };
 
-
 //-----------------------------------------------------------------------------
-pqCatalystSetBreakpointReaction::pqCatalystSetBreakpointReaction(
-  QAction* parentObject)
-  : Superclass(parentObject),
-    Internal(new sbrInternal(pqCoreUtilities::mainWidget()))
+pqCatalystSetBreakpointReaction::pqCatalystSetBreakpointReaction(QAction* parentObject)
+  : Superclass(parentObject)
+  , Internal(new sbrInternal(pqCoreUtilities::mainWidget()))
 {
-  QObject::connect(parentObject->parent(), SIGNAL(aboutToShow()),
-                   this, SLOT(updateEnableState()));
+  QObject::connect(parentObject->parent(), SIGNAL(aboutToShow()), this, SLOT(updateEnableState()));
 }
 
 //-----------------------------------------------------------------------------
@@ -79,6 +75,5 @@ void pqCatalystSetBreakpointReaction::onTriggered()
 //-----------------------------------------------------------------------------
 void pqCatalystSetBreakpointReaction::updateEnableState()
 {
-  this->parentAction()->setEnabled(
-    pqLiveInsituManager::instance()->linkProxy() ? true : false);
+  this->parentAction()->setEnabled(pqLiveInsituManager::instance()->linkProxy() ? true : false);
 }

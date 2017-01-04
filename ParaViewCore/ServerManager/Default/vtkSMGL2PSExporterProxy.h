@@ -12,52 +12,63 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMGL2PSExporterProxy - Proxy for vtkPVGL2PSExporter
-// .SECTION Description
-//  Proxy for vtkPVGL2PSExporter
+/**
+ * @class   vtkSMGL2PSExporterProxy
+ * @brief   Proxy for vtkPVGL2PSExporter
+ *
+ *  Proxy for vtkPVGL2PSExporter
+*/
 
-#ifndef __vtkSMGL2PSExporterProxy_h
-#define __vtkSMGL2PSExporterProxy_h
+#ifndef vtkSMGL2PSExporterProxy_h
+#define vtkSMGL2PSExporterProxy_h
 
-#include "vtkSMRenderViewExporterProxy.h"
 #include "vtkPVServerManagerDefaultModule.h" //needed for exports
+#include "vtkSMRenderViewExporterProxy.h"
 
-class VTKPVSERVERMANAGERDEFAULT_EXPORT vtkSMGL2PSExporterProxy :
-    public vtkSMRenderViewExporterProxy
+class VTKPVSERVERMANAGERDEFAULT_EXPORT vtkSMGL2PSExporterProxy : public vtkSMRenderViewExporterProxy
 {
 public:
   static vtkSMGL2PSExporterProxy* New();
   vtkTypeMacro(vtkSMGL2PSExporterProxy, vtkSMRenderViewExporterProxy);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Returns if the view can be exported. 
-  // Default implementation return true if the view is a render view or a
-  // context view.
+  /**
+   * Returns if the view can be exported.
+   * Default implementation return true if the view is a render view or a
+   * context view.
+   */
   bool CanExport(vtkSMProxy*);
 
-  // Description:
-  // Export the current view.
+  /**
+   * Export the current view.
+   */
   void Write();
 
-  // Description:
-  // See superclass documentation for description.
-  int ReadXMLAttributes(vtkSMSessionProxyManager *pm, vtkPVXMLElement *element);
+  /**
+   * See superclass documentation for description.
+   */
+  int ReadXMLAttributes(vtkSMSessionProxyManager* pm, vtkPVXMLElement* element);
 
-//BTX
 protected:
   vtkSMGL2PSExporterProxy();
   ~vtkSMGL2PSExporterProxy();
 
-  // Description:
-  // Type of view that this exporter is configured to export.
-  enum { None, ContextView, RenderView };
+  //@{
+  /**
+   * Type of view that this exporter is configured to export.
+   */
+  enum
+  {
+    None,
+    ContextView,
+    RenderView
+  };
   int ViewType;
+  //@}
 
 private:
-  vtkSMGL2PSExporterProxy(const vtkSMGL2PSExporterProxy&); // Not implemented
-  void operator=(const vtkSMGL2PSExporterProxy&); // Not implemented
-//ETX
+  vtkSMGL2PSExporterProxy(const vtkSMGL2PSExporterProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMGL2PSExporterProxy&) VTK_DELETE_FUNCTION;
 };
 
 #endif

@@ -17,14 +17,14 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkInitializationHelper.h"
 #include "vtkNew.h"
 #include "vtkProcessModule.h"
-#include "vtkSmartPointer.h"
 #include "vtkSMProxy.h"
 #include "vtkSMSession.h"
 #include "vtkSMSessionProxyManager.h"
+#include "vtkSmartPointer.h"
 
 int TestSessionProxyManager(int argc, char* argv[])
 {
-  (void) argc;
+  (void)argc;
 
   vtkInitializationHelper::Initialize(argv[0], vtkProcessModule::PROCESS_CLIENT);
 
@@ -40,10 +40,10 @@ int TestSessionProxyManager(int argc, char* argv[])
 
   pxm->GetProxies("sources", sourceProxies.GetPointer());
   if (sourceProxies->GetNumberOfItems() != 1)
-    {
+  {
     cerr << "Expected to get 1 source object, got " << sourceProxies->GetNumberOfItems() << "\n";
     return EXIT_FAILURE;
-    }
+  }
 
   return EXIT_SUCCESS;
 }

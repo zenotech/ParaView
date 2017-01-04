@@ -30,8 +30,8 @@
 // Combines vtkTexture and vtkImageSpriteSource. This makes it simple for
 // applications to create textures for point sprites.
 
-#ifndef __vtkSMSpriteTextureProxy_h
-#define __vtkSMSpriteTextureProxy_h
+#ifndef vtkSMSpriteTextureProxy_h
+#define vtkSMSpriteTextureProxy_h
 
 #include "vtkSMSourceProxy.h"
 
@@ -48,16 +48,13 @@ public:
   // Returns the client side image if one has been loaded successfully.
   vtkImageData* GetLoadedImage();
 
-//BTX
 protected:
   vtkSMSpriteTextureProxy();
   ~vtkSMSpriteTextureProxy();
 
 private:
-  vtkSMSpriteTextureProxy(const vtkSMSpriteTextureProxy&); // Not implemented
-  void operator=(const vtkSMSpriteTextureProxy&); // Not implemented
-//ETX
+  vtkSMSpriteTextureProxy(const vtkSMSpriteTextureProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMSpriteTextureProxy&) VTK_DELETE_FUNCTION;
 };
 
 #endif
-

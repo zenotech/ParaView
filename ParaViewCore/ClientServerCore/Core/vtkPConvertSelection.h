@@ -12,15 +12,18 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPConvertSelection - parallel aware vtkConvertSelection subclass.
-// .SECTION Description
-// vtkPConvertSelection is a parallel aware vtkConvertSelection subclass.
+/**
+ * @class   vtkPConvertSelection
+ * @brief   parallel aware vtkConvertSelection subclass.
+ *
+ * vtkPConvertSelection is a parallel aware vtkConvertSelection subclass.
+*/
 
-#ifndef __vtkPConvertSelection_h
-#define __vtkPConvertSelection_h
+#ifndef vtkPConvertSelection_h
+#define vtkPConvertSelection_h
 
-#include "vtkPVClientServerCoreCoreModule.h" //needed for exports
 #include "vtkConvertSelection.h"
+#include "vtkPVClientServerCoreCoreModule.h" //needed for exports
 
 class vtkMultiProcessController;
 
@@ -31,26 +34,25 @@ public:
   vtkTypeMacro(vtkPConvertSelection, vtkConvertSelection);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Get/Set the parallel controller.
+  //@{
+  /**
+   * Get/Set the parallel controller.
+   */
   void SetController(vtkMultiProcessController*);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
+  //@}
 
-//BTX
 protected:
   vtkPConvertSelection();
   ~vtkPConvertSelection();
 
-  virtual int RequestData(
-    vtkInformation *,
-    vtkInformationVector **,
-    vtkInformationVector *);
+  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
   vtkMultiProcessController* Controller;
+
 private:
-  vtkPConvertSelection(const vtkPConvertSelection&); // Not implemented
-  void operator=(const vtkPConvertSelection&); // Not implemented
-//ETX
+  vtkPConvertSelection(const vtkPConvertSelection&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPConvertSelection&) VTK_DELETE_FUNCTION;
 };
 
-#endif // __vtkPConvertSelection_h
+#endif // vtkPConvertSelection_h

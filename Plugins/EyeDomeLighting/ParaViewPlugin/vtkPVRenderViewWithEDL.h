@@ -41,8 +41,8 @@ Ph.D. thesis of Christian BOUCHENY.
 // that uses an image-processing render pass for processing the image
 // before rendering it on the screen.
 
-#ifndef __vtkPVRenderViewWithEDL_h
-#define __vtkPVRenderViewWithEDL_h
+#ifndef vtkPVRenderViewWithEDL_h
+#define vtkPVRenderViewWithEDL_h
 
 #include "vtkPVRenderView.h"
 
@@ -59,15 +59,13 @@ public:
   // @CallOnAllProcessess
   virtual void Initialize(unsigned int id);
 
-//BTX
 protected:
   vtkPVRenderViewWithEDL();
   ~vtkPVRenderViewWithEDL();
 
 private:
-  vtkPVRenderViewWithEDL(const vtkPVRenderViewWithEDL&); // Not implemented
-  void operator=(const vtkPVRenderViewWithEDL&); // Not implemented
-//ETX
+  vtkPVRenderViewWithEDL(const vtkPVRenderViewWithEDL&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVRenderViewWithEDL&) VTK_DELETE_FUNCTION;
 };
 
 #endif

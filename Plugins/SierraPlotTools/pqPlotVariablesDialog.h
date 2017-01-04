@@ -19,13 +19,13 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
-#ifndef __pqPlotVariablesDialog_h
-#define __pqPlotVariablesDialog_h
+#ifndef pqPlotVariablesDialog_h
+#define pqPlotVariablesDialog_h
 
 #include <QDialog>
+#include <QItemSelection>
 #include <QLabel>
 #include <QStringList>
-#include <QItemSelection>
 
 class QListWidgetItem;
 class QListWidget;
@@ -39,13 +39,14 @@ class vtkSMStringVectorProperty;
 class pqPlotVariablesDialog : public QDialog
 {
   Q_OBJECT;
+
 public:
   class pqUI;
 
-  pqPlotVariablesDialog(QWidget *p, Qt::WindowFlags f = 0);
+  pqPlotVariablesDialog(QWidget* p, Qt::WindowFlags f = 0);
   ~pqPlotVariablesDialog();
 
-  pqPlotVariablesDialog::pqUI * getUI() { return ui; }
+  pqPlotVariablesDialog::pqUI* getUI() { return ui; }
 
   virtual QSize sizeHint() const;
 
@@ -56,13 +57,13 @@ public:
   virtual void setHeading(QString heading);
   virtual void setTimeRange(double min, double max);
   virtual void addVariable(QString varName);
-  virtual void allocSetRange(QString varName, int numComp, int numElems, double ** ranges);
+  virtual void allocSetRange(QString varName, int numComp, int numElems, double** ranges);
   virtual bool addRangeToUI(QString itemText);
   virtual bool removeRangeFromUI(QString itemText);
   virtual bool areVariablesSelected();
-  virtual QList<QListWidgetItem *> getSelectedItems();
+  virtual QList<QListWidgetItem*> getSelectedItems();
   virtual QStringList getSelectedItemsStringList();
-  virtual QListWidget * getVariableList();
+  virtual QListWidget* getVariableList();
   virtual void setPlotType(int);
   virtual int getPlotType();
   virtual void activateSelectionByNumberFrame();
@@ -70,13 +71,13 @@ public:
   virtual bool getUseParaViewGUIToSelectNodesCheckBoxState();
   virtual void setEnableNumberItems(bool flag);
   virtual void setupActivationForOKButton(bool flag);
-  virtual QList<int> determineSelectedItemsList(bool & errFlag);
+  virtual QList<int> determineSelectedItemsList(bool& errFlag);
   virtual QString getNumberItemsLineEdit();
-  virtual QStringList getVarsWithComponentSuffixes(vtkSMStringVectorProperty *);
+  virtual QStringList getVarsWithComponentSuffixes(vtkSMStringVectorProperty*);
   virtual QString stripComponentSuffix(QString variableAsString);
 
-  virtual void setPlotter(pqPlotter * thePlotter);
-  virtual pqPlotter * getPlotter();
+  virtual void setPlotter(pqPlotter* thePlotter);
+  virtual pqPlotter* getPlotter();
 
 public slots:
   void slotItemSelectionChanged();
@@ -85,10 +86,10 @@ public slots:
   void slotCancel(void);
 
   void slotUseParaViewGUIToSelectNodesCheckBox(bool checked);
-  void slotTextChanged(const QString &);
+  void slotTextChanged(const QString&);
 
 signals:
-  void variableSelected(QListWidgetItem * item);
+  void variableSelected(QListWidgetItem* item);
   void variableDeselectionByName(QString varName);
   void variableSelectionByName(QString varName);
   void okDismissed();
@@ -96,16 +97,15 @@ signals:
   void useParaViewGUIToSelectNodesCheck();
 
 protected:
-  pqServer *Server;
+  pqServer* Server;
 
 private:
-  pqPlotVariablesDialog(const pqPlotVariablesDialog &); // Not implemented
-  void operator=(const pqPlotVariablesDialog &);        // Not implemented
+  Q_DISABLE_COPY(pqPlotVariablesDialog)
 
-  pqUI *ui;
+  pqUI* ui;
 
   class pqInternal;
-  pqInternal * Internal;
+  pqInternal* Internal;
 };
 
-#endif //__pqPlotVariablesDialog_h
+#endif // pqPlotVariablesDialog_h

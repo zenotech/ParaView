@@ -13,17 +13,17 @@
 
 =========================================================================*/
 
-#ifndef __vtkSMPropertyInternals_h
-#define __vtkSMPropertyInternals_h
+#ifndef vtkSMPropertyInternals_h
+#define vtkSMPropertyInternals_h
 
 #include "vtkSMDomain.h"
 #include "vtkSMProperty.h"
 #include "vtkSmartPointer.h"
 #include "vtkWeakPointer.h"
 
+#include "vtkStdString.h"
 #include <map>
 #include <vector>
-#include "vtkStdString.h"
 
 struct vtkSMPropertyInternals
 {

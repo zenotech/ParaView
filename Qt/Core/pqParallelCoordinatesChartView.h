@@ -29,17 +29,19 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqParallelCoordinatesChartView_h
-#define __pqParallelCoordinatesChartView_h
+#ifndef pqParallelCoordinatesChartView_h
+#define pqParallelCoordinatesChartView_h
 
 #include "pqContextView.h"
 
 class vtkSMSourceProxy;
 class pqDataRepresentation;
 
-/// pqView subclass of ParallelCoordinatesChartView chart view. Does not do
-/// anything specific besides passing the view type of pqView in the
-/// constructor.
+/**
+* pqView subclass of ParallelCoordinatesChartView chart view. Does not do
+* anything specific besides passing the view type of pqView in the
+* constructor.
+*/
 class PQCORE_EXPORT pqParallelCoordinatesChartView : public pqContextView
 {
   Q_OBJECT
@@ -48,15 +50,12 @@ class PQCORE_EXPORT pqParallelCoordinatesChartView : public pqContextView
 public:
   static QString chartViewType() { return "ParallelCoordinatesChartView"; }
 
-  pqParallelCoordinatesChartView(const QString& group,
-                 const QString& name,
-                 vtkSMContextViewProxy* viewModule,
-                 pqServer* server,
-                 QObject* parent=NULL);
+  pqParallelCoordinatesChartView(const QString& group, const QString& name,
+    vtkSMContextViewProxy* viewModule, pqServer* server, QObject* parent = NULL);
   virtual ~pqParallelCoordinatesChartView();
 
 private:
-  Q_DISABLE_COPY(pqParallelCoordinatesChartView);
+  Q_DISABLE_COPY(pqParallelCoordinatesChartView)
 };
 
 #endif

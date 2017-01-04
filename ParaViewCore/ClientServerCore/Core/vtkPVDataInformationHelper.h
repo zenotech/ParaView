@@ -12,19 +12,22 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVDataInformationHelper - allows extension of types that
-// PVDataInformation can handle
-//
-// .SECTION Description
-// Plugins can subclass this and call vtkPVDataInformation::RegisterHelper()
-// in order to allow vtkPVDataInformation (and thus ParaView) to handle new
-// data types.
+/**
+ * @class   vtkPVDataInformationHelper
+ * @brief   allows extension of types that
+ * PVDataInformation can handle
+ *
+ *
+ * Plugins can subclass this and call vtkPVDataInformation::RegisterHelper()
+ * in order to allow vtkPVDataInformation (and thus ParaView) to handle new
+ * data types.
+*/
 
-#ifndef __vtkPVDataInformationHelper_h
-#define __vtkPVDataInformationHelper_h
+#ifndef vtkPVDataInformationHelper_h
+#define vtkPVDataInformationHelper_h
 
-#include "vtkPVClientServerCoreCoreModule.h" //needed for exports
 #include "vtkObject.h"
+#include "vtkPVClientServerCoreCoreModule.h" //needed for exports
 
 class vtkPVDataInformation;
 class vtkDataObject;
@@ -35,11 +38,11 @@ public:
   vtkTypeMacro(vtkPVDataInformationHelper, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  //Description:
-  //This class is a friend of PVDI, so the work of copying
-  //into self happens here.
-  void CopyFromDataObject(vtkPVDataInformation *self,
-                          vtkDataObject* data);
+  /**
+   * This class is a friend of PVDI, so the work of copying
+   * into self happens here.
+   */
+  void CopyFromDataObject(vtkPVDataInformation* self, vtkDataObject* data);
 
   virtual const char* GetPrettyDataTypeString() = 0;
 
@@ -47,21 +50,21 @@ protected:
   vtkPVDataInformationHelper();
   ~vtkPVDataInformationHelper();
 
-  vtkDataObject *Data; //not reference counted
+  vtkDataObject* Data; // not reference counted
 
-  virtual bool ValidateType(vtkDataObject *data) = 0;
+  virtual bool ValidateType(vtkDataObject* data) = 0;
 
-  //API to access information from data that I fill the 
-  //PVDataInformation I am friend of with.
-  virtual double *GetBounds() = 0;
+  // API to access information from data that I fill the
+  // PVDataInformation I am friend of with.
+  virtual double* GetBounds() = 0;
   virtual int GetNumberOfDataSets() = 0;
   virtual vtkTypeInt64 GetNumberOfCells() = 0;
   virtual vtkTypeInt64 GetNumberOfPoints() = 0;
   virtual vtkTypeInt64 GetNumberOfRows() = 0;
 
 private:
-  vtkPVDataInformationHelper(const vtkPVDataInformationHelper&); // Not implemented
-  void operator=(const vtkPVDataInformationHelper&); // Not implemented
+  vtkPVDataInformationHelper(const vtkPVDataInformationHelper&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVDataInformationHelper&) VTK_DELETE_FUNCTION;
 };
 
 #endif

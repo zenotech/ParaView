@@ -17,46 +17,46 @@
  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
 ----------------------------------------------------------------------------*/
 
-// .NAME vtkAllToNRedistributePolyData - do balanced redistribution of cells on from all to n processors
+/**
+ * @class   vtkAllToNRedistributePolyData
+ * @brief   do balanced redistribution of cells on from all to n processors
+*/
 
-#ifndef __vtkAllToNRedistributePolyData_h
-#define __vtkAllToNRedistributePolyData_h
+#ifndef vtkAllToNRedistributePolyData_h
+#define vtkAllToNRedistributePolyData_h
 
-#include "vtkWeightedRedistributePolyData.h"
 #include "vtkPVVTKExtensionsRenderingModule.h" // needed for export macro
+#include "vtkWeightedRedistributePolyData.h"
 
 class vtkMultiProcessController;
 
 //*******************************************************************
 
-class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkAllToNRedistributePolyData : public vtkWeightedRedistributePolyData
+class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkAllToNRedistributePolyData
+  : public vtkWeightedRedistributePolyData
 {
 public:
   vtkTypeMacro(vtkAllToNRedistributePolyData, vtkWeightedRedistributePolyData);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  static vtkAllToNRedistributePolyData *New();
+  static vtkAllToNRedistributePolyData* New();
 
   vtkSetMacro(NumberOfProcesses, int);
   vtkGetMacro(NumberOfProcesses, int);
-
 
 protected:
   vtkAllToNRedistributePolyData();
   ~vtkAllToNRedistributePolyData();
 
-  void MakeSchedule (vtkPolyData*, vtkCommSched*);
+  void MakeSchedule(vtkPolyData*, vtkCommSched*);
 
   int NumberOfProcesses;
 
 private:
-  vtkAllToNRedistributePolyData(const vtkAllToNRedistributePolyData&); // Not implemented
-  void operator=(const vtkAllToNRedistributePolyData&); // Not implemented
+  vtkAllToNRedistributePolyData(const vtkAllToNRedistributePolyData&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkAllToNRedistributePolyData&) VTK_DELETE_FUNCTION;
 };
 
 //****************************************************************
 
 #endif
-
-

@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqCPExportStateWizard_h
-#define __pqCPExportStateWizard_h
+#ifndef pqCPExportStateWizard_h
+#define pqCPExportStateWizard_h
 
 #include "pqSGExportStateWizard.h"
 
@@ -38,9 +38,9 @@ class pqCPExportStateWizard : public pqSGExportStateWizard
 {
   Q_OBJECT
   typedef pqSGExportStateWizard Superclass;
+
 public:
-  pqCPExportStateWizard(
-    QWidget *parentObject=0, Qt::WindowFlags parentFlags=0);
+  pqCPExportStateWizard(QWidget* parentObject = 0, Qt::WindowFlags parentFlags = 0);
   virtual ~pqCPExportStateWizard();
 
   virtual void customize();

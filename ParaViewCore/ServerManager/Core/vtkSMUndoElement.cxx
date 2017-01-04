@@ -15,10 +15,10 @@
 #include "vtkSMUndoElement.h"
 
 #include "vtkObjectFactory.h"
-#include "vtkSMSession.h"
-#include "vtkWeakPointer.h"
-#include "vtkSMSessionProxyManager.h"
 #include "vtkSMProxyManager.h"
+#include "vtkSMSession.h"
+#include "vtkSMSessionProxyManager.h"
+#include "vtkWeakPointer.h"
 
 //-----------------------------------------------------------------------------
 vtkSMUndoElement::vtkSMUndoElement()
@@ -42,10 +42,10 @@ void vtkSMUndoElement::PrintSelf(ostream& os, vtkIndent indent)
 void vtkSMUndoElement::SetSession(vtkSMSession* session)
 {
   if (this->Session != session)
-    {
+  {
     this->Session = session;
     this->Modified();
-    }
+  }
 }
 //----------------------------------------------------------------------------
 vtkSMSession* vtkSMUndoElement::GetSession()
@@ -55,6 +55,5 @@ vtkSMSession* vtkSMUndoElement::GetSession()
 //----------------------------------------------------------------------------
 vtkSMSessionProxyManager* vtkSMUndoElement::GetSessionProxyManager()
 {
-  return
-      vtkSMProxyManager::GetProxyManager()->GetSessionProxyManager(this->Session);
+  return vtkSMProxyManager::GetProxyManager()->GetSessionProxyManager(this->Session);
 }

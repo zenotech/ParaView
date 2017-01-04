@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __ParticlesViewerStarter_h 
-#define __ParticlesViewerStarter_h
+#ifndef ParticlesViewerStarter_h
+#define ParticlesViewerStarter_h
 
 #include <QObject>
 
@@ -38,18 +38,18 @@ class ParticlesViewerStarter : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
-  ParticlesViewerStarter(QObject* parent=0);
+  ParticlesViewerStarter(QObject* parent = 0);
 
   // Callback for shutdown.
   void startApplication();
 
   // Callback for startup.
   void stopApplication();
+
 private:
   Q_DISABLE_COPY(ParticlesViewerStarter)
 };
 
 #endif
-
-

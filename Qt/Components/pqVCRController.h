@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -34,15 +34,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _pqVCRController_h
 
 #include "pqComponentsModule.h"
-#include <QPointer>
 #include <QObject>
+#include <QPointer>
 
 class pqPipelineSource;
 class pqAnimationScene;
 
 // pqVCRController is the QObject that encapsulates the
-// VCR control functionality. 
-// It provides a slot to set the scene that this object 
+// VCR control functionality.
+// It provides a slot to set the scene that this object
 // is using for animation. Typically, one would connect this
 // slot to a pqAnimationManager like object which keeps track
 // of the active animation scene.
@@ -57,7 +57,7 @@ signals:
   void timestepChanged();
 
   // emitted with playing(true) when play begins and
-  // playing(false) when play ends. 
+  // playing(false) when play ends.
   void playing(bool);
 
   // Fired when the enable state of the VCR control changes.
@@ -72,11 +72,15 @@ signals:
 
   void timeRanges(double, double);
 
-  /// emitted when the animation begins playing.
-  /// For now, playing of animation is non-undoable.
+  /**
+  * emitted when the animation begins playing.
+  * For now, playing of animation is non-undoable.
+  */
   void beginNonUndoableChanges();
 
-  /// emitted when the animation ends playing.
+  /**
+  * emitted when the animation ends playing.
+  */
   void endNonUndoableChanges();
 
 public slots:
@@ -103,11 +107,9 @@ protected slots:
   void onEndPlay();
 
 private:
-  pqVCRController(const pqVCRController&); // Not implemented.
-  void operator=(const pqVCRController&); // Not implemented.
+  Q_DISABLE_COPY(pqVCRController)
 
   QPointer<pqAnimationScene> Scene;
 };
 
 #endif
-

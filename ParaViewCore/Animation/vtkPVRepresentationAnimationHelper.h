@@ -12,16 +12,19 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVRepresentationAnimationHelper - helper proxy used to animate
-// properties on the representations for any source.
-// .SECTION Description
-// vtkPVRepresentationAnimationHelper is helper proxy used to animate
-// properties on the representations for any source. This makes is possible to
-// set up an animation cue that will affect properties on all representations
-// for a source without directly referring to the representation proxies.
+/**
+ * @class   vtkPVRepresentationAnimationHelper
+ * @brief   helper proxy used to animate
+ * properties on the representations for any source.
+ *
+ * vtkPVRepresentationAnimationHelper is helper proxy used to animate
+ * properties on the representations for any source. This makes is possible to
+ * set up an animation cue that will affect properties on all representations
+ * for a source without directly referring to the representation proxies.
+*/
 
-#ifndef __vtkPVRepresentationAnimationHelper_h
-#define __vtkPVRepresentationAnimationHelper_h
+#ifndef vtkPVRepresentationAnimationHelper_h
+#define vtkPVRepresentationAnimationHelper_h
 
 #include "vtkPVAnimationModule.h" //needed for exports
 #include "vtkSMProxy.h"
@@ -34,22 +37,24 @@ public:
   vtkTypeMacro(vtkPVRepresentationAnimationHelper, vtkSMProxy);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Don't use directly. Use the corresponding properties intstead.
+  //@{
+  /**
+   * Don't use directly. Use the corresponding properties intstead.
+   */
   void SetVisibility(int);
   void SetOpacity(double);
   void SetSourceProxy(vtkSMProxy* proxy);
+  //@}
 
-//BTX
 protected:
   vtkPVRepresentationAnimationHelper();
   ~vtkPVRepresentationAnimationHelper();
 
   vtkWeakPointer<vtkSMProxy> SourceProxy;
+
 private:
-  vtkPVRepresentationAnimationHelper(const vtkPVRepresentationAnimationHelper&); // Not implemented
-  void operator=(const vtkPVRepresentationAnimationHelper&); // Not implemented
-//ETX
+  vtkPVRepresentationAnimationHelper(const vtkPVRepresentationAnimationHelper&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVRepresentationAnimationHelper&) VTK_DELETE_FUNCTION;
 };
 
 #endif

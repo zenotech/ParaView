@@ -12,16 +12,18 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkTimeToTextConvertor
-// .SECTION Description
-// This filter can be attached to any filter/source/reader that supports time.
-// vtkTimeToTextConvertor will generate a 1x1 vtkTable with the string
-// for the data time using the format specified.
-// The input to this filter is optional. If no input is specified, it will show
-// produce request time in the output.
+/**
+ * @class   vtkTimeToTextConvertor
+ *
+ * This filter can be attached to any filter/source/reader that supports time.
+ * vtkTimeToTextConvertor will generate a 1x1 vtkTable with the string
+ * for the data time using the format specified.
+ * The input to this filter is optional. If no input is specified, it will show
+ * produce request time in the output.
+*/
 
-#ifndef __vtkTimeToTextConvertor_h
-#define __vtkTimeToTextConvertor_h
+#ifndef vtkTimeToTextConvertor_h
+#define vtkTimeToTextConvertor_h
 
 #include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkTableAlgorithm.h"
@@ -33,46 +35,50 @@ public:
   vtkTypeMacro(vtkTimeToTextConvertor, vtkTableAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Get/Set the format in which the to display the
-  // input update time. Use printf formatting.
-  // Default is "Time: %f".
+  //@{
+  /**
+   * Get/Set the format in which the to display the
+   * input update time. Use printf formatting.
+   * Default is "Time: %f".
+   */
   vtkSetStringMacro(Format);
   vtkGetStringMacro(Format);
+  //@}
 
-  // Description:
-  // Apply a translation to the time
+  //@{
+  /**
+   * Apply a translation to the time
+   */
   vtkSetMacro(Shift, double);
   vtkGetMacro(Shift, double);
+  //@}
 
-  // Description:
-  // Apply a scale to the time.
+  //@{
+  /**
+   * Apply a scale to the time.
+   */
   vtkSetMacro(Scale, double);
   vtkGetMacro(Scale, double);
+  //@}
 
-// BTX
 protected:
   vtkTimeToTextConvertor();
   ~vtkTimeToTextConvertor();
 
   virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int RequestData(vtkInformation* request,
-                          vtkInformationVector** inputVector,
-                          vtkInformationVector* outputVector);
+  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector);
 
-  virtual int RequestInformation(vtkInformation *request,
-                                 vtkInformationVector **inputVector,
-                                 vtkInformationVector *outputVector);
+  virtual int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector);
 
-  char  *Format;
+  char* Format;
   double Shift;
   double Scale;
 
 private:
-  vtkTimeToTextConvertor(const vtkTimeToTextConvertor&); // Not implemented
-  void operator=(const vtkTimeToTextConvertor&); // Not implemented
-//ETX
+  vtkTimeToTextConvertor(const vtkTimeToTextConvertor&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkTimeToTextConvertor&) VTK_DELETE_FUNCTION;
 };
 
 #endif
-

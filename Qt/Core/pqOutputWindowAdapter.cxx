@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -34,66 +34,76 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <vtkObjectFactory.h>
 
+//-----------------------------------------------------------------------------
 vtkStandardNewMacro(pqOutputWindowAdapter);
 
+//-----------------------------------------------------------------------------
 pqOutputWindowAdapter::pqOutputWindowAdapter()
 {
-  this->Active=true;
+  this->Active = true;
 }
 
+//-----------------------------------------------------------------------------
 pqOutputWindowAdapter::~pqOutputWindowAdapter()
 {
 }
 
+//-----------------------------------------------------------------------------
 void pqOutputWindowAdapter::setActive(bool active)
 {
-  this->Active=active;
+  this->Active = active;
 }
 
+//-----------------------------------------------------------------------------
 void pqOutputWindowAdapter::DisplayTextInWindow(const QString& text)
 {
   if (this->Active)
-    {
+  {
     emit displayTextInWindow(text);
-    }
+  }
 }
 
+//-----------------------------------------------------------------------------
 void pqOutputWindowAdapter::DisplayErrorTextInWindow(const QString& text)
 {
   if (this->Active)
-    {
+  {
     emit displayErrorTextInWindow(text);
-    }
+  }
 }
 
+//-----------------------------------------------------------------------------
 void pqOutputWindowAdapter::DisplayText(const char* text)
 {
-  if(this->Active)
-    {
+  if (this->Active)
+  {
     emit displayText(text);
-    }
+  }
 }
 
+//-----------------------------------------------------------------------------
 void pqOutputWindowAdapter::DisplayErrorText(const char* text)
 {
-  if(this->Active)
-    {
+  if (this->Active)
+  {
     emit displayErrorText(text);
-    }
+  }
 }
 
+//-----------------------------------------------------------------------------
 void pqOutputWindowAdapter::DisplayWarningText(const char* text)
 {
-  if(this->Active)
-    {
+  if (this->Active)
+  {
     emit displayWarningText(text);
-    }
+  }
 }
 
+//-----------------------------------------------------------------------------
 void pqOutputWindowAdapter::DisplayGenericWarningText(const char* text)
 {
-  if(this->Active)
-    {
+  if (this->Active)
+  {
     emit displayGenericWarningText(text);
-    }
+  }
 }

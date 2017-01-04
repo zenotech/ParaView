@@ -12,12 +12,14 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSIPVRepresentationProxy
-// .SECTION Description
-// vtkSIPVRepresentationProxy is the helper for vtkSMPVRepresentationProxy.
+/**
+ * @class   vtkSIPVRepresentationProxy
+ *
+ * vtkSIPVRepresentationProxy is the helper for vtkSMPVRepresentationProxy.
+*/
 
-#ifndef __vtkSIPVRepresentationProxy_h
-#define __vtkSIPVRepresentationProxy_h
+#ifndef vtkSIPVRepresentationProxy_h
+#define vtkSIPVRepresentationProxy_h
 
 #include "vtkPVServerImplementationRenderingModule.h" //needed for exports
 #include "vtkSIProxy.h"
@@ -31,25 +33,24 @@ public:
 
   virtual void AboutToDelete();
 
-//BTX
 protected:
   vtkSIPVRepresentationProxy();
   ~vtkSIPVRepresentationProxy();
 
-  // Description:
-  // Parses the XML to create property/subproxy helpers.
-  // Overridden to parse all the "RepresentationType" elements.
+  /**
+   * Parses the XML to create property/subproxy helpers.
+   * Overridden to parse all the "RepresentationType" elements.
+   */
   virtual bool ReadXMLAttributes(vtkPVXMLElement* element);
 
 private:
-  vtkSIPVRepresentationProxy(const vtkSIPVRepresentationProxy&); // Not implemented
-  void operator=(const vtkSIPVRepresentationProxy&); // Not implemented
+  vtkSIPVRepresentationProxy(const vtkSIPVRepresentationProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSIPVRepresentationProxy&) VTK_DELETE_FUNCTION;
 
   void OnVTKObjectModified();
 
   class vtkInternals;
   vtkInternals* Internals;
-//ETX
 };
 
 #endif

@@ -12,12 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSIArraySelectionProperty - InformationOnly property
-// .SECTION Description
-// SIProperty that deals with ArraySelection object
+/**
+ * @class   vtkSIArraySelectionProperty
+ * @brief   InformationOnly property
+ *
+ * SIProperty that deals with ArraySelection object
+*/
 
-#ifndef __vtkSIArraySelectionProperty_h
-#define __vtkSIArraySelectionProperty_h
+#ifndef vtkSIArraySelectionProperty_h
+#define vtkSIArraySelectionProperty_h
 
 #include "vtkPVServerImplementationCoreModule.h" //needed for exports
 #include "vtkSIProperty.h"
@@ -29,21 +32,20 @@ public:
   vtkTypeMacro(vtkSIArraySelectionProperty, vtkSIProperty);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-//BTX
 protected:
   vtkSIArraySelectionProperty();
   ~vtkSIArraySelectionProperty();
 
   friend class vtkSIProxy;
 
-  // Description:
-  // Pull the current state of the underneath implementation
+  /**
+   * Pull the current state of the underneath implementation
+   */
   virtual bool Pull(vtkSMMessage*);
 
 private:
-  vtkSIArraySelectionProperty(const vtkSIArraySelectionProperty&); // Not implemented
-  void operator=(const vtkSIArraySelectionProperty&); // Not implemented
-//ETX
+  vtkSIArraySelectionProperty(const vtkSIArraySelectionProperty&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSIArraySelectionProperty&) VTK_DELETE_FUNCTION;
 };
 
 #endif

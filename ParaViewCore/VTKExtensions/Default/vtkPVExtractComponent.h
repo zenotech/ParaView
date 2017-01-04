@@ -12,23 +12,26 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVExtractComponent - Extract a component of an attribute.
-// .SECTION Description
-// vtkPVExtractComponent Extract a component of an attribute.
+/**
+ * @class   vtkPVExtractComponent
+ * @brief   Extract a component of an attribute.
+ *
+ * vtkPVExtractComponent Extract a component of an attribute.
+*/
 
-#ifndef __vtkPVExtractComponent_h
-#define __vtkPVExtractComponent_h
+#ifndef vtkPVExtractComponent_h
+#define vtkPVExtractComponent_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkDataSetAlgorithm.h"
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 
 class vtkDataSet;
 
 class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVExtractComponent : public vtkDataSetAlgorithm
 {
 public:
-  static vtkPVExtractComponent *New();
-  vtkTypeMacro(vtkPVExtractComponent,vtkDataSetAlgorithm);
+  static vtkPVExtractComponent* New();
+  vtkTypeMacro(vtkPVExtractComponent, vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   vtkSetMacro(InputArrayComponent, int);
@@ -41,9 +44,7 @@ protected:
   vtkPVExtractComponent();
   ~vtkPVExtractComponent();
 
-  virtual int RequestData(vtkInformation*,
-                          vtkInformationVector**,
-                          vtkInformationVector*);
+  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
   virtual int FillInputPortInformation(int port, vtkInformation* info);
 
@@ -51,8 +52,8 @@ protected:
   char* OutputArrayName;
 
 private:
-  vtkPVExtractComponent(const vtkPVExtractComponent&);  // Not implemented.
-  void operator=(const vtkPVExtractComponent&);  // Not implemented.
+  vtkPVExtractComponent(const vtkPVExtractComponent&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVExtractComponent&) VTK_DELETE_FUNCTION;
 };
 
 #endif

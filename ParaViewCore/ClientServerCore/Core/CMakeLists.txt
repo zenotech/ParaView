@@ -80,6 +80,28 @@ set (Module_SRCS
   vtkEnvironmentAnnotationFilter.cxx
 )
 
+set(PARAVIEW_PLUGIN_LOADER_PATHS ""
+  CACHE STRING "Extra paths to search for plugins")
+mark_as_advanced(PARAVIEW_PLUGIN_LOADER_PATHS)
+if (PARAVIEW_PLUGIN_LOADER_PATHS)
+  set_source_files_properties(vtkPVPluginLoader.cxx
+    PROPERTIES
+      COMPILE_DEFINITIONS PARAVIEW_PLUGIN_LOADER_PATHS=\"${PARAVIEW_PLUGIN_LOADER_PATHS}\")
+endif ()
+
+if (PARAVIEW_WITH_SUPERBUILD_MESA)
+  set(pv_options_definitions
+    PARAVIEW_WITH_SUPERBUILD_MESA)
+
+  if (PARAVIEW_WITH_SUPERBUILD_MESA_SWR)
+    list(APPEND pv_options_definitions
+      PARAVIEW_WITH_SUPERBUILD_MESA_SWR)
+  endif ()
+
+  set_source_files_properties(vtkPVOptions.cxx
+    PROPERTIES
+      COMPILE_DEFINITIONS "${pv_options_definitions}")
+endif ()
 
 if (PARAVIEW_ENABLE_PYTHON)
   list(APPEND Module_SRCS
@@ -112,6 +134,13 @@ set_source_files_properties(
   vtkPVSession
   vtkSession
   ABSTRACT)
+
+if(VTK_USE_OFFSCREEN_EGL)
+  set_source_files_properties(
+    vtkPVOptions.cxx
+    PROPERTIES
+    COMPILE_DEFINITIONS VTK_USE_OFFSCREEN_EGL)
+endif()
 
 if(PARAVIEW_USE_MPI)
   include(vtkMPI)

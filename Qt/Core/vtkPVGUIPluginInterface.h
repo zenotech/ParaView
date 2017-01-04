@@ -13,16 +13,18 @@
 
 =========================================================================*/
 
-#ifndef __vtkPVGUIPluginInterface_h
-#define __vtkPVGUIPluginInterface_h
+#ifndef vtkPVGUIPluginInterface_h
+#define vtkPVGUIPluginInterface_h
 
-#include <QObjectList>
-#include "pqCoreModule.h"
+#include "pqCoreModule.h" // For export macro
+#include <QObjectList>    // For the list of interfaces
 
-/// vtkPVGUIPluginInterface defines the interface required by GUI plugins. This
-/// simply provides access to the GUI-component interfaces defined in this
-/// plugin.
-class PQCORE_EXPORT vtkPVGUIPluginInterface 
+/**
+* vtkPVGUIPluginInterface defines the interface required by GUI plugins. This
+* simply provides access to the GUI-component interfaces defined in this
+* plugin.
+*/
+class PQCORE_EXPORT vtkPVGUIPluginInterface
 {
 public:
   virtual ~vtkPVGUIPluginInterface();
@@ -30,4 +32,3 @@ public:
 };
 
 #endif
-

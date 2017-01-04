@@ -16,7 +16,7 @@
 #include "vtkSMRangeDomainTemplate.txx"
 VTK_SM_RANGE_DOMAIN_TEMPLATE_INSTANTIATE(int);
 
-#define __vtkSMIntRangeDomain_cxx
+#define vtkSMIntRangeDomain_cxx
 #include "vtkSMIntRangeDomain.h"
 
 #include "vtkObjectFactory.h"
@@ -33,7 +33,7 @@ vtkSMIntRangeDomain::~vtkSMIntRangeDomain()
 }
 
 ////---------------------------------------------------------------------------
-//int vtkSMIntRangeDomain::SetDefaultValues(vtkSMProperty* prop)
+// int vtkSMIntRangeDomain::SetDefaultValues(vtkSMProperty* prop)
 //{
 //  vtkSMIntVectorProperty* ivp = vtkSMIntVectorProperty::SafeDownCast(prop);
 //  if (!ivp || this->GetNumberOfRequiredProperties() == 0)

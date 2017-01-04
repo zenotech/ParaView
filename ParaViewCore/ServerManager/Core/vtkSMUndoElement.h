@@ -12,15 +12,18 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMUndoElement - abstract superclass for Server Manager undo 
-// elements.
-// .SECTION Description
-// Abstract superclass for Server Manager undo elements. 
-// This class keeps the session, so undoelement could work accross a set of
-// communication Sessions.
+/**
+ * @class   vtkSMUndoElement
+ * @brief   abstract superclass for Server Manager undo
+ * elements.
+ *
+ * Abstract superclass for Server Manager undo elements.
+ * This class keeps the session, so undoelement could work accross a set of
+ * communication Sessions.
+*/
 
-#ifndef __vtkSMUndoElement_h
-#define __vtkSMUndoElement_h
+#ifndef vtkSMUndoElement_h
+#define vtkSMUndoElement_h
 
 #include "vtkPVServerManagerCoreModule.h" //needed for exports
 #include "vtkUndoElement.h"
@@ -39,8 +42,9 @@ public:
   virtual vtkSMSession* GetSession();
   virtual void SetSession(vtkSMSession*);
 
-  // Description:
-  // Return the corresponding ProxyManager if any.
+  /**
+   * Return the corresponding ProxyManager if any.
+   */
   virtual vtkSMSessionProxyManager* GetSessionProxyManager();
 
 protected:
@@ -51,10 +55,8 @@ protected:
   vtkWeakPointer<vtkSMSession> Session;
 
 private:
-  vtkSMUndoElement(const vtkSMUndoElement&); // Not implemented.
-  void operator=(const vtkSMUndoElement&); // Not implemented.
+  vtkSMUndoElement(const vtkSMUndoElement&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMUndoElement&) VTK_DELETE_FUNCTION;
 };
 
-
 #endif
-

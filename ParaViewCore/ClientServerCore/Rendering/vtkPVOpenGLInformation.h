@@ -12,49 +12,56 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVOpenGLInformation - Gets OpenGL information.
-// .SECTION Description
-// Get details of OpenGL from the render server.
+/**
+ * @class   vtkPVOpenGLInformation
+ * @brief   Gets OpenGL information.
+ *
+ * Get details of OpenGL from the render server.
+*/
 
-
-#ifndef __vtkPVOpenGLInformation_h
-#define __vtkPVOpenGLInformation_h
+#ifndef vtkPVOpenGLInformation_h
+#define vtkPVOpenGLInformation_h
 
 #include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 #include "vtkPVInformation.h"
 
 #include <string> // for string type
 
-class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVOpenGLInformation
-    : public vtkPVInformation
+class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVOpenGLInformation : public vtkPVInformation
 {
 public:
   static vtkPVOpenGLInformation* New();
   vtkTypeMacro(vtkPVOpenGLInformation, vtkPVInformation);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Transfer information about a single object into this object.
+  /**
+   * Transfer information about a single object into this object.
+   */
   virtual void CopyFromObject(vtkObject*);
 
-  // Description:
-  // Merge another information object.
+  /**
+   * Merge another information object.
+   */
   virtual void AddInformation(vtkPVInformation*);
 
-  //BTX
-  // Description:
-  // Manage a serialized version of the information.
+  //@{
+  /**
+   * Manage a serialized version of the information.
+   */
   virtual void CopyToStream(vtkClientServerStream*);
   virtual void CopyFromStream(const vtkClientServerStream*);
+  //@}
 
-  // Description:
-  // Serialize/Deserialize the parameters that control how/what information is
-  // gathered. This are different from the ivars that constitute the gathered
-  // information itself. For example, PortNumber on vtkPVDataInformation
-  // controls what output port the data-information is gathered from.
-  virtual void CopyParametersToStream(vtkMultiProcessStream&) {};
-  virtual void CopyParametersFromStream(vtkMultiProcessStream&) {};
-  //ETX
+  //@{
+  /**
+   * Serialize/Deserialize the parameters that control how/what information is
+   * gathered. This are different from the ivars that constitute the gathered
+   * information itself. For example, PortNumber on vtkPVDataInformation
+   * controls what output port the data-information is gathered from.
+   */
+  virtual void CopyParametersToStream(vtkMultiProcessStream&){};
+  virtual void CopyParametersFromStream(vtkMultiProcessStream&){};
+  //@}
 
   const std::string& GetVendor();
   const std::string& GetVersion();
@@ -74,17 +81,15 @@ protected:
 
   void SetLocalDisplay(bool);
 
-
-
 private:
-  vtkPVOpenGLInformation(const vtkPVOpenGLInformation&); // Not implemented
-  void operator=(const vtkPVOpenGLInformation&); // Not implemented
+  vtkPVOpenGLInformation(const vtkPVOpenGLInformation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVOpenGLInformation&) VTK_DELETE_FUNCTION;
 
-bool LocalDisplay;
+  bool LocalDisplay;
 
-std::string Vendor;
-std::string Version;
-std::string Renderer;
+  std::string Vendor;
+  std::string Version;
+  std::string Renderer;
 };
 
 #endif

@@ -12,12 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMPythonViewProxy - Superclass for all view proxies
-// .SECTION Description
-// vtkSMPythonViewProxy is a view proxy for the vtkPythonView.
+/**
+ * @class   vtkSMPythonViewProxy
+ * @brief   Superclass for all view proxies
+ *
+ * vtkSMPythonViewProxy is a view proxy for the vtkPythonView.
+*/
 
-#ifndef __vtkSMPythonViewProxy_h
-#define __vtkSMPythonViewProxy_h
+#ifndef vtkSMPythonViewProxy_h
+#define vtkSMPythonViewProxy_h
 
 #include "vtkPVServerManagerRenderingModule.h" //needed for exports
 #include "vtkSMViewProxy.h"
@@ -33,32 +36,40 @@ public:
   vtkTypeMacro(vtkSMPythonViewProxy, vtkSMViewProxy);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Returns the client-side renderer.
+  /**
+   * Returns the client-side renderer.
+   */
   vtkRenderer* GetRenderer();
 
-  // Description:
-  // Returns the client-side render window.
+  /**
+   * Returns the client-side render window.
+   */
   vtkRenderWindow* GetRenderWindow();
 
-  // Description:
-  // Returns true if the most recent render indeed employed low-res rendering.
+  /**
+   * Returns true if the most recent render indeed employed low-res rendering.
+   */
   virtual bool LastRenderWasInteractive();
 
-//BTX
+  /**
+   * Overridden to disable creation on an interactor. PythonView does not
+   * support interactor.
+   */
+  bool MakeRenderWindowInteractor(bool) VTK_OVERRIDE
+  { return false; }
+
 protected:
   vtkSMPythonViewProxy();
   ~vtkSMPythonViewProxy();
 
-  // Description:
-  // Subclasses should override this method to do the actual image capture.
+  /**
+   * Subclasses should override this method to do the actual image capture.
+   */
   virtual vtkImageData* CaptureWindowInternal(int magnification);
 
 private:
-  vtkSMPythonViewProxy(const vtkSMPythonViewProxy&); // Not implemented
-  void operator=(const vtkSMPythonViewProxy&); // Not implemented
-//ETX
-
+  vtkSMPythonViewProxy(const vtkSMPythonViewProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMPythonViewProxy&) VTK_DELETE_FUNCTION;
 };
 
-#endif // __vtkSMPythonViewProxy_h
+#endif // vtkSMPythonViewProxy_h

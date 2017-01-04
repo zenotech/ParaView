@@ -12,19 +12,22 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVAMRDualClip - Generates contour given one or more cell array
-// and a volume fraction value.
-//
-// .SECTION Description
-//
-// .SEE vtkAMRDualClip
-//
+/**
+ * @class   vtkPVAMRDualClip
+ * @brief   Generates contour given one or more cell array
+ * and a volume fraction value.
+ *
+ *
+ *
+ * .SEE vtkAMRDualClip
+ *
+*/
 
-#ifndef __vtkPVAMRDualClip_h
-#define __vtkPVAMRDualClip_h
+#ifndef vtkPVAMRDualClip_h
+#define vtkPVAMRDualClip_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkAMRDualClip.h"
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 
 // Forware declaration.
 class vtkPVAMRDualClipInternal;
@@ -33,37 +36,38 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVAMRDualClip : public vtkAMRDualClip
 {
 public:
   static vtkPVAMRDualClip* New();
-  vtkTypeMacro(vtkPVAMRDualClip,vtkAMRDualClip);
+  vtkTypeMacro(vtkPVAMRDualClip, vtkAMRDualClip);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   vtkPVAMRDualClip();
   ~vtkPVAMRDualClip();
 
-  // Description:
-  // Add to list of cell arrays which are used for generating contours.
+  //@{
+  /**
+   * Add to list of cell arrays which are used for generating contours.
+   */
   void AddInputCellArrayToProcess(const char* name);
   void ClearInputCellArrayToProcess();
+  //@}
 
-  // Description:
-  // Get / Set volume fraction value.
+  //@{
+  /**
+   * Get / Set volume fraction value.
+   */
   vtkGetMacro(VolumeFractionSurfaceValue, double);
   vtkSetMacro(VolumeFractionSurfaceValue, double);
+  //@}
 
-  //BTX
-  virtual int RequestData(vtkInformation*, vtkInformationVector**,
-                          vtkInformationVector*);
+  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
 private:
-  vtkPVAMRDualClip(const vtkPVAMRDualClip&);  // Not implemented.
-  void operator=(const vtkPVAMRDualClip&);    // Not implemented.
-
-  //ETX
+  vtkPVAMRDualClip(const vtkPVAMRDualClip&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVAMRDualClip&) VTK_DELETE_FUNCTION;
 
 protected:
-
   double VolumeFractionSurfaceValue;
 
   vtkPVAMRDualClipInternal* Implementation;
 };
 
-#endif // __vtkPVAMRDualClip_h
+#endif // vtkPVAMRDualClip_h

@@ -26,8 +26,8 @@
 // except that it works in a data parallel manner.
 //
 
-#ifndef __vtkPTemporalRanges_h
-#define __vtkPTemporalRanges_h
+#ifndef vtkPTemporalRanges_h
+#define vtkPTemporalRanges_h
 
 #include "vtkTemporalRanges.h"
 
@@ -37,32 +37,28 @@ class vtkPTemporalRanges : public vtkTemporalRanges
 {
 public:
   vtkTypeMacro(vtkPTemporalRanges, vtkTemporalRanges);
-  static vtkPTemporalRanges *New();
-  virtual void PrintSelf(ostream &os, vtkIndent indent);
+  static vtkPTemporalRanges* New();
+  virtual void PrintSelf(ostream& os, vtkIndent indent);
 
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
-  virtual void SetController(vtkMultiProcessController *);
+  virtual void SetController(vtkMultiProcessController*);
 
 protected:
   vtkPTemporalRanges();
   ~vtkPTemporalRanges();
 
-  vtkMultiProcessController *Controller;
+  vtkMultiProcessController* Controller;
 
-  virtual int RequestData(vtkInformation *,
-                          vtkInformationVector **,
-                          vtkInformationVector *);
+  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
-  virtual void Reduce(vtkTable *table);
+  virtual void Reduce(vtkTable* table);
 
 private:
-  vtkPTemporalRanges(const vtkPTemporalRanges &);       // Not implemented
-  void operator=(const vtkPTemporalRanges &);           // Not implemented
+  vtkPTemporalRanges(const vtkPTemporalRanges&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPTemporalRanges&) VTK_DELETE_FUNCTION;
 
-//BTX
   class vtkRangeTableReduction;
   friend class vtkRangeTableReduction;
-//ETX
 };
 
-#endif //__vtkPTemporalRanges_h
+#endif // vtkPTemporalRanges_h

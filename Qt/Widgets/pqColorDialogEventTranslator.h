@@ -29,26 +29,31 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqColorDialogEventTranslator_h
-#define __pqColorDialogEventTranslator_h
+#ifndef pqColorDialogEventTranslator_h
+#define pqColorDialogEventTranslator_h
 
 #include "pqWidgetEventTranslator.h"
 #include "pqWidgetsModule.h" // needed for EXPORT macro.
 #include <QColor>
 
-/// pqColorDialogEventTranslator translates events on QColorDialog
-/// that they can be recorded in tests in a platform independent
-/// way.
-class PQWIDGETS_EXPORT pqColorDialogEventTranslator :
-  public pqWidgetEventTranslator
+/**
+* pqColorDialogEventTranslator translates events on QColorDialog
+* that they can be recorded in tests in a platform independent
+* way.
+*/
+class PQWIDGETS_EXPORT pqColorDialogEventTranslator : public pqWidgetEventTranslator
 {
   Q_OBJECT
   typedef pqWidgetEventTranslator Superclass;
+
 public:
-  pqColorDialogEventTranslator(QObject* parent=0);
+  pqColorDialogEventTranslator(QObject* parent = 0);
   ~pqColorDialogEventTranslator();
 
-  /// Overridden to handle events on QColorDialog.
+  /**
+  * Overridden to handle events on QColorDialog.
+  */
+  using Superclass::translateEvent;
   virtual bool translateEvent(QObject* Object, QEvent* Event, bool& Error);
 
 private slots:
@@ -56,8 +61,7 @@ private slots:
   void onFinished(int);
 
 private:
-  pqColorDialogEventTranslator(const pqColorDialogEventTranslator&); // Not implemented.
-  void operator=(const pqColorDialogEventTranslator&); // Not implemented.
+  Q_DISABLE_COPY(pqColorDialogEventTranslator)
 };
 
 #endif

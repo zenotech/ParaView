@@ -60,14 +60,17 @@
   </Category>
 
   <Category name="Temporal" menu_label="&amp;Temporal">
-    <Proxy group="filters" name="ParticleTracer" />
+    <Proxy group="filters" name="ExtractTimeSteps" />
+    <Proxy group="filters" name="GroupTimeSteps" />
     <Proxy group="filters" name="ParticlePath" />
+    <Proxy group="filters" name="ParticleTracer" />
     <Proxy group="filters" name="StreakLine" />
     <Proxy group="filters" name="TemporalCache" />
     <Proxy group="filters" name="TemporalInterpolator" />
-    <Proxy group="filters" name="TemporalSnapToTimeStep" />
     <Proxy group="filters" name="TemporalShiftScale" />
+    <Proxy group="filters" name="TemporalSnapToTimeStep" />
     <Proxy group="filters" name="TemporalStatistics" />
+    <Proxy group="filters" name="TimeStepProgressFilter" />
     <Proxy group="filters" name="TimeToTextConvertor" />
   </Category>
 
@@ -114,8 +117,18 @@
     <Proxy group="filters" name="AnnotateAttributeData" />
     <Proxy group="filters" name="PythonAnnotation" />
     <Proxy group="filters" name="TimeToTextConvertor" />
+    <Proxy group="filters" name="TimeStepProgressFilter" />
     <Proxy group="filters" name="DataSetRegionSurfaceFilter" />
     <Proxy group="filters" name="EnvironmentAnnotation" />
+  </Category>
+
+  <Category name="Point Interpolation" menu_label="Point Interpolation">
+    <Proxy group="filters" name="PointLineInterpolator" />
+    <Proxy group="filters" name="PointPlaneInterpolator" />
+    <Proxy group="filters" name="PointVolumeInterpolator" />
+    <Proxy group="filters" name="SPHLineInterpolator" />
+    <Proxy group="filters" name="SPHPlaneInterpolator" />
+    <Proxy group="filters" name="SPHVolumeInterpolator" />
   </Category>
 
   <Proxy group="filters" name="AddFieldArrays" />
@@ -139,6 +152,8 @@
   <Proxy group="filters" name="Clip" />
   <Proxy group="filters" name="ClipClosedSurface" />
   <Proxy group="filters" name="Contour" />
+  <Proxy group="filters" name="CountCellFaces" />
+  <Proxy group="filters" name="CountCellVertices" />
   <Proxy group="filters" name="Curvatures" />
   <Proxy group="filters" name="Cut" />
   <Proxy group="filters" name="CutEverything" />
@@ -162,6 +177,7 @@
   <Proxy group="filters" name="FFTSelectionOverTime" />
   <Proxy group="filters" name="GaussianSplatter"/>
   <Proxy group="filters" name="GenerateIdScalars"/>
+  <Proxy group="filters" name="GhostCellsGenerator" />
   <Proxy group="filters" name="Glyph" />
   <Proxy group="filters" name="GlyphWithCustomSource" />
   <Proxy group="filters" name="Gradient" />
@@ -171,7 +187,6 @@
   <Proxy group="filters" name="ImageDataToPointSet" />
   <Proxy group="filters" name="IntegrateAttributes" />
   <Proxy group="filters" name="IntegrateFlowThroughSurface" />
-  <Proxy group="filters" name="LegacyGlyph" />
   <!--  <Proxy group="filters" name="LevelIdScalars" /> -->
   <Proxy group="filters" name="LinearExtrusionFilter" />
   <Proxy group="filters" name="LoopSubdivisionFilter" />
@@ -191,8 +206,6 @@
   <Proxy group="filters" name="PlotOnSortedLines" />
   <Proxy group="filters" name="PointDataToCellData" />
   <Proxy group="filters" name="PolyDataNormals" />
-  <Proxy group="filters" name="Probe" />
-  <Proxy group="filters" name="ImageResampling" />
   <Proxy group="filters" name="ProbeLine" />
   <Proxy group="filters" name="ProbePoint" />
   <Proxy group="filters" name="ProcessIdScalars" />
@@ -205,6 +218,8 @@
   <Proxy group="filters" name="RectilinearGridConnectivity" />
   <Proxy group="filters" name="RectilinearGridToPointSet" />
   <Proxy group="filters" name="ReflectionFilter" />
+  <Proxy group="filters" name="ResampleToImage" />
+  <Proxy group="filters" name="ResampleWithDataset" />
   <Proxy group="filters" name="RibbonFilter" />
   <Proxy group="filters" name="RotationalExtrusionFilter" />
   <Proxy group="filters" name="ScatterPlot"/>
@@ -244,4 +259,5 @@
   <Proxy group="filters" name="GenericStreamTracer" />
   <Proxy group="filters" name="GenericGeometryFilter" />
   <Proxy group="filters" name="SliceAlongPolyLine" />
+  <Proxy group="filters" name="RulerFilter" />
 </ParaViewFilters>

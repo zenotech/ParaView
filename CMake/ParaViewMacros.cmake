@@ -11,11 +11,10 @@
 #------------------------------------------------------------------------------
 FUNCTION(GENERATE_QT_RESOURCE_FROM_FILES resource_file resource_prefix file_list)
   SET (pq_resource_file_contents "<RCC>\n  <qresource prefix=\"${resource_prefix}\">\n")
-  GET_FILENAME_COMPONENT(current_directory ${resource_file} PATH)
   FOREACH (resource ${file_list})
     GET_FILENAME_COMPONENT(alias ${resource} NAME)
     GET_FILENAME_COMPONENT(resource ${resource} ABSOLUTE)
-    FILE(RELATIVE_PATH resource "${current_directory}" "${resource}")
+    GET_FILENAME_COMPONENT(resource ${resource} REALPATH)
     FILE(TO_NATIVE_PATH "${resource}" resource)
     SET (pq_resource_file_contents
       "${pq_resource_file_contents}    <file alias=\"${alias}\">${resource}</file>\n")
@@ -205,6 +204,13 @@ function(generate_header name)
 endfunction()
 
 
+# NOTE: coded-separator lists
+#
+# Workaround for inability to pass ';'-separated lists via command-line.
+# From caller: replace '_'  -> '_u' and ';'  -> '_s'
+# On receiver: replace '_s' -> ';'  and '_u' -> '_'
+
+
 # GENERATE_HTMLS_FROM_XMLS can be used to generate HTML files for
 # from a given list of xml files that correspond to server manager xmls.
 # ARGUMENTS:
@@ -215,19 +221,25 @@ endfunction()
 function (generate_htmls_from_xmls output_files xmls gui_xmls output_dir)
   # create a string from the xmls list to pass
   # since this list needs to be passed as an argument, we cannot escape the ";".
-  # generate_proxydocumentation.cmake has code to convert these strings back to
-  # lists.
+  # generate_proxydocumentation.cmake and generate_qhp.cmake have code to convert
+  # these strings back to lists.
   set (xmls_string "")
   foreach (xml ${xmls})
     get_filename_component(xml "${xml}" ABSOLUTE)
-    set (xmls_string "${xmls_string}${xml}+")
+    set (xmls_string "${xmls_string}${xml};")
   endforeach()
   
   set (gui_xmls_string "")
   foreach (gui_xml ${gui_xmls})
     get_filename_component(gui_xml "${gui_xml}" ABSOLUTE)
-    set (gui_xmls_string "${gui_xmls_string}${gui_xml}+")
+    set (gui_xmls_string "${gui_xmls_string}${gui_xml};")
   endforeach()
+
+  # Escape ';' in lists
+  string(REPLACE "_" "_u"  xmls_string "${xmls_string}")
+  string(REPLACE ";" "_s"  xmls_string "${xmls_string}")
+  string(REPLACE "_" "_u"  gui_xmls_string "${gui_xmls_string}")
+  string(REPLACE ";" "_s"  gui_xmls_string "${gui_xmls_string}")
 
   set (all_xmls ${xmls} ${gui_xmls})
   list (GET all_xmls 0 first_xml)
@@ -239,44 +251,52 @@ function (generate_htmls_from_xmls output_files xmls gui_xmls output_dir)
   # file we use.
   get_filename_component(first_xml "${first_xml}" NAME)
 
+  if (PARAVIEW_QT_VERSION STREQUAL "4")
+    set(qt_binary_dir_hints "${QT_BINARY_DIR}")
+  else() # Qt5
+    # Qt5's CMake config doesn't support QT_BINARY_DIR
+    set(qt_binary_dir_hints "${Qt5_DIR}/../../../bin")
+  endif()
+
   find_program(QT_XMLPATTERNS_EXECUTABLE
     xmlpatterns
-    HINTS "${QT_BINARY_DIR}"
+    HINTS "${qt_binary_dir_hints}"
     DOC "xmlpatterns used to generate html from Proxy documentation.")
   mark_as_advanced(QT_XMLPATTERNS_EXECUTABLE)
 
   if (NOT EXISTS ${QT_XMLPATTERNS_EXECUTABLE})
     message(WARNING "Valid QT_XMLPATTERNS_EXECUTABLE not specified.")
-  endif()
+  else()
 
-  add_custom_command(
-    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${first_xml}.xml"
+    add_custom_command(
+      OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${first_xml}"
 
-    # process each html file to separate it out into files for each proxy.
-    COMMAND ${CMAKE_COMMAND}
-            -Dxmlpatterns:FILEPATH=${QT_XMLPATTERNS_EXECUTABLE}
-            -Dxml_to_xml_xsl:FILEPATH=${ParaView_CMAKE_DIR}/smxml_to_xml.xsl
-            -Dgenerate_category_rw_xsl:FILEPATH=${ParaView_CMAKE_DIR}/generate_category_rw.xsl
-            -Dxml_to_html_xsl:FILEPATH=${ParaView_CMAKE_DIR}/xml_to_html.xsl
-            -Dxml_to_wiki_xsl:FILEPATH=${ParaView_CMAKE_DIR}/xml_to_wiki.xsl.in
-            -Dinput_xmls:STRING=${xmls_string}
-            -Dinput_gui_xmls:STRING=${gui_xmls_string}
-            -Doutput_dir:PATH=${output_dir}
-            -Doutput_file:FILEPATH=${CMAKE_CURRENT_BINARY_DIR}/${first_xml}.xml
-            -P ${ParaView_CMAKE_DIR}/generate_proxydocumentation.cmake
+      # process each html file to separate it out into files for each proxy.
+      COMMAND ${CMAKE_COMMAND}
+              -Dxmlpatterns:FILEPATH=${QT_XMLPATTERNS_EXECUTABLE}
+              -Dxml_to_xml_xsl:FILEPATH=${ParaView_CMAKE_DIR}/smxml_to_xml.xsl
+              -Dgenerate_category_rw_xsl:FILEPATH=${ParaView_CMAKE_DIR}/generate_category_rw.xsl
+              -Dxml_to_html_xsl:FILEPATH=${ParaView_CMAKE_DIR}/xml_to_html.xsl
+              -Dxml_to_wiki_xsl:FILEPATH=${ParaView_CMAKE_DIR}/xml_to_wiki.xsl.in
+              -Dinput_xmls:STRING=${xmls_string}
+              -Dinput_gui_xmls:STRING=${gui_xmls_string}
+              -Doutput_dir:PATH=${output_dir}
+              -Doutput_file:FILEPATH=${CMAKE_CURRENT_BINARY_DIR}/${first_xml}
+              -P ${ParaView_CMAKE_DIR}/generate_proxydocumentation.cmake
 
-    DEPENDS ${xmls}
-            ${ParaView_CMAKE_DIR}/smxml_to_xml.xsl
-            ${ParaView_CMAKE_DIR}/xml_to_html.xsl
-            ${ParaView_CMAKE_DIR}/generate_proxydocumentation.cmake
+      DEPENDS ${xmls}
+              ${ParaView_CMAKE_DIR}/smxml_to_xml.xsl
+              ${ParaView_CMAKE_DIR}/xml_to_html.xsl
+              ${ParaView_CMAKE_DIR}/generate_proxydocumentation.cmake
 
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 
-    COMMENT "Generating Documentation HTMLs from xmls")
+      COMMENT "Generating Documentation HTMLs from xmls")
 
     set (dependencies ${dependencies}
-          "${CMAKE_CURRENT_BINARY_DIR}/${first_xml}.xml")
-  set (${output_files} ${dependencies} PARENT_SCOPE)
+         "${CMAKE_CURRENT_BINARY_DIR}/${first_xml}")
+    set (${output_files} ${dependencies} PARENT_SCOPE)
+  endif()
 endfunction()
 
 #------------------------------------------------------------------------------
@@ -318,13 +338,24 @@ function(build_help_project name)
     ${ARGN}
     )
 
+  if (NOT PARAVIEW_ENABLE_EMBEDDED_DOCUMENTATION)
+    return()
+  endif()
+
   if (NOT DEFINED arg_DESTINATION_DIRECTORY)
     message(FATAL_ERROR "No DESTINATION_DIRECTORY specified in build_help_project()")
   endif()
 
+  if (PARAVIEW_QT_VERSION STREQUAL "4")
+    set(qt_binary_dir_hints "${QT_BINARY_DIR}")
+  else() # Qt5
+    # Qt5's CMake config doesn't support QT_BINARY_DIR
+    set(qt_binary_dir_hints "${Qt5_DIR}/../../../bin")
+  endif()
+
   find_program(QT_HELP_GENERATOR
     qhelpgenerator
-    HINTS "${QT_BINARY_DIR}"
+    HINTS "${qt_binary_dir_hints}"
     DOC "qhelpgenerator used to compile Qt help project files")
   mark_as_advanced(QT_HELP_GENERATOR)
 
@@ -346,9 +377,9 @@ function(build_help_project name)
 
   set (qhp_filename ${arg_DESTINATION_DIRECTORY}/${name}.qhp)
 
-  set (extra_args)
+  set (copy_directory_command)
   if (arg_DOCUMENTATION_SOURCE_DIR)
-    set (extra_args
+    set (copy_directory_command
       # copy all htmls from source to destination directory (same location where the
       # qhp file is present.
       COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -357,44 +388,37 @@ function(build_help_project name)
       )
   endif()
 
-  if (NOT DEFINED arg_TABLE_OF_CONTENTS)
-    # sanitize arg_FILEPATTERNS since we pass it as a command line argument.
-    string (REPLACE ";" "+" arg_FILEPATTERNS "${arg_FILEPATTERNS}")
-    set (extra_args ${extra_args}
+  # sanitize arg_FILEPATTERNS since we pass it as a command line argument.
+  # Escape ';' in lists
+  string(REPLACE "_" "_u"  arg_FILEPATTERNS "${arg_FILEPATTERNS}")
+  string(REPLACE ";" "_s"  arg_FILEPATTERNS "${arg_FILEPATTERNS}")
 
-    # generate the toc at run-time.
-    COMMAND ${CMAKE_COMMAND}
-            -Doutput_file:FILEPATH=${qhp_filename}
-            -Dfile_patterns:STRING="${arg_FILEPATTERNS}"
-            -Dnamespace:STRING="${arg_NAMESPACE}"
-            -Dfolder:PATH=${arg_FOLDER}
-            -Dname:STRING="${name}"
-            -P "${ParaView_CMAKE_DIR}/generate_qhp.cmake"
-    )
-  else ()
-    # toc is provided, we'll just configure the file.
-    set (files)
-    foreach(filename ${arg_FILEPATTERNS})
-      set (files "${files}<file>${filename}</file>\n")
-    endforeach()
-
-    configure_file(${ParaView_CMAKE_DIR}/build_help_project.qhp.in
-      ${qhp_filename})
-    list (APPEND arg_DEPENDS ${qhp_filename})
-  endif()
+  # Remove newlines from the table of contents.
+  string(REPLACE "\n" " " arg_TABLE_OF_CONTENTS "${arg_TABLE_OF_CONTENTS}")
 
   ADD_CUSTOM_COMMAND(
     OUTPUT ${arg_DESTINATION_DIRECTORY}/${name}.qch
     DEPENDS ${arg_DEPENDS}
             ${ParaView_CMAKE_DIR}/generate_qhp.cmake
-  
-    ${extra_args}
+
+    ${copy_directory_command}
+
+    # generate the toc at run-time.
+    VERBATIM
+    COMMAND ${CMAKE_COMMAND}
+            -Doutput_file:FILEPATH=${qhp_filename}
+            "-Dfile_patterns:STRING=${arg_FILEPATTERNS}"
+            -Dnamespace:STRING=${arg_NAMESPACE}
+            -Dfolder:PATH=${arg_FOLDER}
+            -Dname:STRING=${name}
+            "-Dgiven_toc:STRING=${arg_TABLE_OF_CONTENTS}"
+            -P "${ParaView_CMAKE_DIR}/generate_qhp.cmake"
 
     # Now, compile the qhp file to generate the qch.
     COMMAND ${QT_HELP_GENERATOR}
             ${qhp_filename}
             -o ${arg_DESTINATION_DIRECTORY}/${name}.qch
-  
+
     COMMENT "Compiling Qt help project ${name}.qhp"
 
     WORKING_DIRECTORY "${arg_DESTINATION_DIRECTORY}"
@@ -413,12 +437,13 @@ endmacro()
 #------------------------------------------------------------------------------
 # replacement for vtk-add executable that also adds the install rules.
 #------------------------------------------------------------------------------
-include(vtkForwardingExecutable)
+include(pvForwardingExecutable)
 
 function(pv_add_executable name)
   set (VTK_EXE_SUFFIX)
   if(UNIX AND VTK_BUILD_FORWARDING_EXECUTABLES)
-    vtk_add_executable_with_forwarding(VTK_EXE_SUFFIX ${name} ${ARGN})
+    set(PV_INSTALL_LIBRARY_DIR ${VTK_INSTALL_LIBRARY_DIR})
+    pv_add_executable_with_forwarding(VTK_EXE_SUFFIX ${name} ${ARGN})
     set_property(GLOBAL APPEND PROPERTY VTK_TARGETS ${name})
   else()
     add_executable(${name} ${ARGN})
@@ -426,6 +451,10 @@ function(pv_add_executable name)
   endif()
   if (PV_EXE_JOB_LINK_POOL)
     set_property(TARGET "${name}" PROPERTY JOB_POOL_LINK ${PV_EXE_JOB_LINK_POOL})
+  endif ()
+  if (APPLE AND NOT PARAVIEW_DO_UNIX_STYLE_INSTALLS)
+    set_target_properties("${name}" PROPERTIES
+      INSTALL_RPATH "@executable_path/../Libraries;@executable_path/../Plugins")
   endif ()
   pv_executable_install(${name} "${VTK_EXE_SUFFIX}")
 endfunction()

@@ -12,15 +12,18 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMTesting - vtkTesting adaptor for Server Manager.
-// .DESCRIPTION
-// This provides helper methods to use view proxy for testing.
-// This is also required for python testing, since when SM is python wrapped,
-// VTK need not by python wrapped, hence we cannot use vtkTesting in python 
-// testing.
+/**
+ * @class   vtkSMTesting
+ * @brief   vtkTesting adaptor for Server Manager.
+ * .DESCRIPTION
+ * This provides helper methods to use view proxy for testing.
+ * This is also required for python testing, since when SM is python wrapped,
+ * VTK need not by python wrapped, hence we cannot use vtkTesting in python
+ * testing.
+*/
 
-#ifndef __vtkSMTesting_h
-#define __vtkSMTesting_h
+#ifndef vtkSMTesting_h
+#define vtkSMTesting_h
 
 #include "vtkPVServerManagerDefaultModule.h" //needed for exports
 #include "vtkSMObject.h"
@@ -35,21 +38,24 @@ public:
   vtkTypeMacro(vtkSMTesting, vtkSMObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Set/get the render module proxy.
+  /**
+   * Set/get the render module proxy.
+   */
   void SetViewProxy(vtkSMViewProxy* view);
 
-  // Description:
-  // API for backwards compatibility. Simply calls SetViewProxy(..).
-  void SetRenderViewProxy(vtkSMViewProxy* proxy)
-    { this->SetViewProxy(proxy); }
+  /**
+   * API for backwards compatibility. Simply calls SetViewProxy(..).
+   */
+  void SetRenderViewProxy(vtkSMViewProxy* proxy) { this->SetViewProxy(proxy); }
 
-  // Description:
-  // Add argument
+  /**
+   * Add argument
+   */
   virtual void AddArgument(const char* arg);
 
-  // Description:
-  // Perform the actual test.
+  /**
+   * Perform the actual test.
+   */
   virtual int RegressionTest(float thresh);
 
 protected:
@@ -60,7 +66,7 @@ protected:
   vtkTesting* Testing;
 
 private:
-  vtkSMTesting(const vtkSMTesting&); // Not implemented.
-  void operator=(const vtkSMTesting&); // Not implemented.
+  vtkSMTesting(const vtkSMTesting&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMTesting&) VTK_DELETE_FUNCTION;
 };
 #endif

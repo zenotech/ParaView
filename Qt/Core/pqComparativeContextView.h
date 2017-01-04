@@ -29,16 +29,18 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqComparativeContextView_h
-#define __pqComparativeContextView_h
+#ifndef pqComparativeContextView_h
+#define pqComparativeContextView_h
 
 #include "pqContextView.h"
 #include <QPointer>
 
 class vtkSMComparativeViewProxy;
 
-/// The abstract base class for comparative chart views. It handles the layout
-/// of the individual chart views in the comparative view.
+/**
+* The abstract base class for comparative chart views. It handles the layout
+* of the individual chart views in the comparative view.
+*/
 class PQCORE_EXPORT pqComparativeContextView : public pqContextView
 {
   Q_OBJECT
@@ -47,47 +49,56 @@ class PQCORE_EXPORT pqComparativeContextView : public pqContextView
 public:
   virtual ~pqComparativeContextView();
 
-  /// \returns the internal vtkContextView which provides the implementation for
-  /// the chart rendering.
+  /**
+  * \returns the internal vtkContextView which provides the implementation for
+  * the chart rendering.
+  */
   virtual vtkContextView* getVTKContextView() const;
 
-  /// Returns the context view proxy associated with this object.
+  /**
+  * Returns the context view proxy associated with this object.
+  */
   virtual vtkSMContextViewProxy* getContextViewProxy() const;
 
-  /// \returns the comparative view proxy.
+  /**
+  * \returns the comparative view proxy.
+  */
   vtkSMComparativeViewProxy* getComparativeViewProxy() const;
 
-  /// Returns the proxy of the root plot view in the comparative view.
+  /**
+  * Returns the proxy of the root plot view in the comparative view.
+  */
   virtual vtkSMViewProxy* getViewProxy() const;
 
 protected slots:
-  /// Called when the layout on the comparative vis changes.
+  /**
+  * Called when the layout on the comparative vis changes.
+  */
   void updateViewWidgets();
 
 protected:
-  /// Create the QWidget for this view.
+  /**
+  * Create the QWidget for this view.
+  */
   virtual QWidget* createWidget();
 
 protected:
-  /// Constructor:
-  /// \c type  :- view type.
-  /// \c group :- SManager registration group.
-  /// \c name  :- SManager registration name.
-  /// \c view  :- View proxy.
-  /// \c server:- server on which the proxy is created.
-  /// \c parent:- QObject parent.
-  pqComparativeContextView(const QString& type,
-    const QString& group,
-    const QString& name,
-    vtkSMComparativeViewProxy* view,
-    pqServer* server,
-    QObject* parent=NULL);
+  /**
+  * Constructor:
+  * \c type  :- view type.
+  * \c group :- SManager registration group.
+  * \c name  :- SManager registration name.
+  * \c view  :- View proxy.
+  * \c server:- server on which the proxy is created.
+  * \c parent:- QObject parent.
+  */
+  pqComparativeContextView(const QString& type, const QString& group, const QString& name,
+    vtkSMComparativeViewProxy* view, pqServer* server, QObject* parent = NULL);
 
   QPointer<QWidget> Widget;
 
 private:
-  pqComparativeContextView(const pqComparativeContextView&); // Not implemented.
-  void operator=(const pqComparativeContextView&); // Not implemented.
+  Q_DISABLE_COPY(pqComparativeContextView)
 
   class pqInternal;
   pqInternal* Internal;

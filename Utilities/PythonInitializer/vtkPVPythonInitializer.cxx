@@ -12,33 +12,36 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+// Include vtkPython.h first to avoid python??_d.lib not found linking error on
+// Windows debug builds.
 #include "vtkPython.h"
+
 #include "pvpythonmodules.h"
 #include "vtkUtilitiesPythonInitializerModule.h"
 
 #ifdef PARAVIEW_FREEZE_PYTHON
-# include "vtkFrozenParaViewPython.h"
-# include <vtksys/SystemTools.hxx>
+#include "vtkFrozenParaViewPython.h"
+#include <vtksys/SystemTools.hxx>
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-  void VTKUTILITIESPYTHONINITIALIZER_EXPORT vtkPVInitializePythonModules()
-    {
+void VTKUTILITIESPYTHONINITIALIZER_EXPORT vtkPVInitializePythonModules()
+{
 #ifdef PARAVIEW_FREEZE_PYTHON
-     // If PYTHONHOME is unset, python attempts to build a reasonable sys.path
-     // by inspecting paths relative to the executable among others locations.
-     // We set PYTHONHOME to avoid that from happening.
-    vtksys::SystemTools::PutEnv("PYTHONHOME=temp");
+  // If PYTHONHOME is unset, python attempts to build a reasonable sys.path
+  // by inspecting paths relative to the executable among others locations.
+  // We set PYTHONHOME to avoid that from happening.
+  vtksys::SystemTools::PutEnv("PYTHONHOME=temp");
 
-    // removes an access for locale
-    vtksys::SystemTools::PutEnv("LC_CTYPE=C");
+  // removes an access for locale
+  vtksys::SystemTools::PutEnv("LC_CTYPE=C");
 
-    vtkFrozenParaViewPython();
+  vtkFrozenParaViewPython();
 #endif
-    CMakeLoadAllPythonModules();
-    }
+  CMakeLoadAllPythonModules();
+}
 #ifdef __cplusplus
 }
 #endif

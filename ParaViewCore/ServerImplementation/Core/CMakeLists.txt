@@ -36,6 +36,7 @@ set (Module_SRCS
   vtkPVSessionCoreInterpreterHelper.cxx
   vtkPVSessionServer.cxx
   vtkSIArraySelectionProperty.cxx
+  vtkSIIndexSelectionProperty.cxx
   vtkSICollaborationManager.cxx
   vtkSICompoundSourceProxy.cxx
   vtkSIDataArrayProperty.cxx
@@ -105,6 +106,11 @@ add_custom_target(
 #------------------------------------------------------------------------------
 if (WIN32 AND BUILD_SHARED_LIBS)
   add_definitions(-DPROTOBUF_USE_DLLS)
+endif()
+
+# OpenGL2 specific definitions
+if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL2")
+  add_definitions(-DVTKGL2)
 endif()
 
 vtk_module_library(vtkPVServerImplementationCore

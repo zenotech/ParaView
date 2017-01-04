@@ -26,8 +26,8 @@
 // sphere. If you create partial spheres the number of latitude/longitude
 // lines may be off by one.
 
-#ifndef __vtkSQSphereSource_h
-#define __vtkSQSphereSource_h
+#ifndef vtkSQSphereSource_h
+#define vtkSQSphereSource_h
 
 #include "vtkSciberQuestModule.h" // for export macro
 #include "vtkPolyDataAlgorithm.h"
@@ -124,8 +124,8 @@ protected:
   char *DescriptiveName;
 
 private:
-  vtkSQSphereSource(const vtkSQSphereSource&);  // Not implemented.
-  void operator=(const vtkSQSphereSource&);  // Not implemented.
+  vtkSQSphereSource(const vtkSQSphereSource&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSQSphereSource&) VTK_DELETE_FUNCTION;
 };
 
 #endif

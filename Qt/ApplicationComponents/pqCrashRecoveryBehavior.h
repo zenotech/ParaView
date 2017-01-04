@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,26 +29,29 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqCrashRecoveryBehavior_h 
-#define __pqCrashRecoveryBehavior_h
+#ifndef pqCrashRecoveryBehavior_h
+#define pqCrashRecoveryBehavior_h
 
+#include "pqApplicationComponentsModule.h"
 #include <QObject>
 #include <QTimer>
-#include "pqApplicationComponentsModule.h"
 
 class pqServer;
 
-/// @ingroup Behaviors
-/// pqCrashRecoveryBehavior manages saving/loading of crash recovery state. If
-/// you want your application to be able to recover from crashes, simply
-/// instantiate this behavior and ensure that state saving/loading works
-/// correctly.
+/**
+* @ingroup Behaviors
+* pqCrashRecoveryBehavior manages saving/loading of crash recovery state. If
+* you want your application to be able to recover from crashes, simply
+* instantiate this behavior and ensure that state saving/loading works
+* correctly.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqCrashRecoveryBehavior : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
-  pqCrashRecoveryBehavior(QObject* parent=0);
+  pqCrashRecoveryBehavior(QObject* parent = 0);
   ~pqCrashRecoveryBehavior();
 
 protected slots:
@@ -64,5 +67,3 @@ private:
 };
 
 #endif
-
-

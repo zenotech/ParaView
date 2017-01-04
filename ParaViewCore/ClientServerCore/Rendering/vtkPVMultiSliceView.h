@@ -12,17 +12,19 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVMultiSliceView
-// .SECTION Description
-// vtkPVMultiSliceView extends vtkPVRenderView but add meta-data informations
-// used by SliceRepresentation as a data model.
+/**
+ * @class   vtkPVMultiSliceView
+ *
+ * vtkPVMultiSliceView extends vtkPVRenderView but add meta-data informations
+ * used by SliceRepresentation as a data model.
+*/
 
-#ifndef __vtkPVMultiSliceView_h
-#define __vtkPVMultiSliceView_h
+#ifndef vtkPVMultiSliceView_h
+#define vtkPVMultiSliceView_h
 
+#include "vtkNew.h"                               // needed for vtkNew
 #include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 #include "vtkPVRenderView.h"
-#include "vtkNew.h" // needed for vtkNew
 #include <vector> // needed for std::vector
 
 class vtkClientServerStream;
@@ -37,7 +39,6 @@ public:
 
   virtual void Update();
 
-  // Description:
   void SetNumberOfXSlices(unsigned int count) { this->SetNumberOfSlices(0, count); }
   void SetXSlices(const double* values) { this->SetSlices(0, values); }
   void SetNumberOfYSlices(unsigned int count) { this->SetNumberOfSlices(1, count); }
@@ -69,7 +70,6 @@ public:
 
   void SetModelTransformationMatrix(vtkMatrix4x4*);
 
-//BTX
 protected:
   vtkPVMultiSliceView();
   ~vtkPVMultiSliceView();
@@ -84,12 +84,11 @@ protected:
   vtkTimeStamp ModelTransformationMatrixUpdateTime;
 
 private:
-  vtkPVMultiSliceView(const vtkPVMultiSliceView&); // Not implemented
-  void operator=(const vtkPVMultiSliceView&); // Not implemented
+  vtkPVMultiSliceView(const vtkPVMultiSliceView&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVMultiSliceView&) VTK_DELETE_FUNCTION;
 
   class vtkSliceInternal;
   vtkSliceInternal* Internal;
-//ETX
 };
 
 #endif

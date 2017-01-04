@@ -20,11 +20,11 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
-#ifndef __pqNodePlotter_h
-#define __pqNodePlotter_h
+#ifndef pqNodePlotter_h
+#define pqNodePlotter_h
 
-#include <QString>
 #include "pqPlotter.h"
+#include <QString>
 class pqOutputPort;
 
 class pqNodePlotter : public pqPlotter
@@ -32,36 +32,31 @@ class pqNodePlotter : public pqPlotter
   Q_OBJECT;
 
 public:
+  pqNodePlotter() {}
 
-  pqNodePlotter()
-  {
-  }
+  virtual ~pqNodePlotter() {}
 
-  virtual ~pqNodePlotter()
-  {
-  }
+  virtual QStringList getTheVars(vtkSMProxy* meshReaderProxy);
 
-  virtual QStringList getTheVars(vtkSMProxy * meshReaderProxy);
+  virtual vtkSMProperty* getSMVariableProperty(vtkSMProxy* meshReaderProxy);
 
-  virtual vtkSMProperty * getSMVariableProperty(vtkSMProxy * meshReaderProxy);
+  virtual vtkPVDataSetAttributesInformation* getDataSetAttributesInformation(
+    vtkPVDataInformation* pvDataInfo);
 
-  virtual vtkPVDataSetAttributesInformation * getDataSetAttributesInformation(vtkPVDataInformation * pvDataInfo);
-
-  virtual vtkPVArrayInformation * getArrayInformation(vtkPVDataSetAttributesInformation *);
+  virtual vtkPVArrayInformation* getArrayInformation(vtkPVDataSetAttributesInformation*);
 
   virtual bool amIAbleToSelectByNumber();
 
-  virtual pqPipelineSource * getPlotFilter();
+  virtual pqPipelineSource* getPlotFilter();
 
-  virtual void setVarsStatus(vtkSMProxy * meshReaderProxy, bool flag);
+  virtual void setVarsStatus(vtkSMProxy* meshReaderProxy, bool flag);
 
-  virtual void setVarsActive(vtkSMProxy * meshReaderProxy, QString varName,
-    bool activeFlag);
+  virtual void setVarsActive(vtkSMProxy* meshReaderProxy, QString varName, bool activeFlag);
 
   virtual QString getFilterName();
 
   virtual QMap<QString, QList<pqOutputPort*> > buildNamedInputs(
-    pqPipelineSource * meshReader, QList<int> itemList, bool & success);
+    pqPipelineSource* meshReader, QList<int> itemList, bool& success);
 
   virtual QString getNumberItemsLabel();
 
@@ -69,6 +64,6 @@ public:
 };
 
 //=============================================================================
-//class pqSierraPlotToolsManager::pqInternal::NodePlotter
+// class pqSierraPlotToolsManager::pqInternal::NodePlotter
 
-#endif // __pqNodePlotter_h
+#endif // pqNodePlotter_h

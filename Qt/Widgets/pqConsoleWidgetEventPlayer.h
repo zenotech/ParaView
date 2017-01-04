@@ -29,25 +29,30 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqConsoleWidgetEventPlayer_h
-#define __pqConsoleWidgetEventPlayer_h
+#ifndef pqConsoleWidgetEventPlayer_h
+#define pqConsoleWidgetEventPlayer_h
 
 #include "pqWidgetEventPlayer.h"
 #include "pqWidgetsModule.h" // needed for EXPORT macro.
 
-/// pqConsoleWidgetEventPlayer is used to play back test commands recorded by
-/// pqConsoleWidgetEventTranslator for pqConsoleWidget.
+/**
+* pqConsoleWidgetEventPlayer is used to play back test commands recorded by
+* pqConsoleWidgetEventTranslator for pqConsoleWidget.
+*/
 class PQWIDGETS_EXPORT pqConsoleWidgetEventPlayer : public pqWidgetEventPlayer
 {
   Q_OBJECT
   typedef pqWidgetEventPlayer Superclass;
+
 public:
-  pqConsoleWidgetEventPlayer(QObject* parent=0);
+  pqConsoleWidgetEventPlayer(QObject* parent = 0);
   virtual ~pqConsoleWidgetEventPlayer();
 
-  /// Callback to play a command.
-  virtual bool playEvent(QObject* target,
-    const QString& cmd, const QString& args, bool& errorFlag);
+  /**
+  * Callback to play a command.
+  */
+  using Superclass::playEvent;
+  virtual bool playEvent(QObject* target, const QString& cmd, const QString& args, bool& errorFlag);
 
 private:
   Q_DISABLE_COPY(pqConsoleWidgetEventPlayer)

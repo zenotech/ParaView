@@ -27,8 +27,8 @@
 // the glyphs to look nice on electric field data.
 //
 
-#ifndef __vtkSLACPlaneGlyphs_h
-#define __vtkSLACPlaneGlyphs_h
+#ifndef vtkSLACPlaneGlyphs_h
+#define vtkSLACPlaneGlyphs_h
 
 #include "vtkPolyDataAlgorithm.h"
 
@@ -36,8 +36,8 @@ class vtkSLACPlaneGlyphs : public vtkPolyDataAlgorithm
 {
 public:
   vtkTypeMacro(vtkSLACPlaneGlyphs, vtkPolyDataAlgorithm);
-  static vtkSLACPlaneGlyphs *New();
-  virtual void PrintSelf(ostream &os, vtkIndent indent);
+  static vtkSLACPlaneGlyphs* New();
+  virtual void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
   // The location of the center of the plane.  A point is guaranteed to be here.
@@ -63,16 +63,14 @@ protected:
   double Normal[3];
   int Resolution;
 
-  virtual int FillInputPortInformation(int port, vtkInformation *info);
+  virtual int FillInputPortInformation(int port, vtkInformation* info);
 
-  virtual int RequestData(vtkInformation *request,
-                          vtkInformationVector **inputVector,
-                          vtkInformationVector *outputVector);
+  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector);
 
 private:
-  vtkSLACPlaneGlyphs(const vtkSLACPlaneGlyphs &);
-  void operator=(const vtkSLACPlaneGlyphs &);
+  vtkSLACPlaneGlyphs(const vtkSLACPlaneGlyphs&);
+  void operator=(const vtkSLACPlaneGlyphs&);
 };
 
-#endif //__vtkSLACPlaneGlyphs_h
-
+#endif // vtkSLACPlaneGlyphs_h

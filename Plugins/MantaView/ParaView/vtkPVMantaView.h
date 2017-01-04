@@ -16,8 +16,8 @@
 // .SECTION Description
 // A 3D view that uses the manta ray tracer instead of openGL for rendering
 
-#ifndef __vtkPVMantaView_h
-#define __vtkPVMantaView_h
+#ifndef vtkPVMantaView_h
+#define vtkPVMantaView_h
 
 #include "vtkPVRenderView.h"
 
@@ -38,7 +38,7 @@ public:
   virtual void Initialize(unsigned int id);
 
   // Description:
-  //Controls number of render threads.
+  // Controls number of render threads.
   virtual void SetThreads(int val);
   vtkGetMacro(Threads, int);
 
@@ -56,19 +56,18 @@ public:
   // renderer.
   virtual void SetActiveCamera(vtkCamera*);
 
-  //Description:
+  // Description:
   // World space environment map up vector
   void SetBackgroundUp(double x, double y, double z);
 
-  //Description:
+  // Description:
   // World space environment map right vector
   void SetBackgroundRight(double x, double y, double z);
 
-  //Description:
-  //Make a particular light the active one. Add it to the renderer if new.
+  // Description:
+  // Make a particular light the active one. Add it to the renderer if new.
   void SetCurrentLight(vtkMantaLight*);
 
-//BTX
 protected:
   vtkPVMantaView();
   ~vtkPVMantaView();
@@ -79,9 +78,8 @@ protected:
   int MaxDepth;
 
 private:
-  vtkPVMantaView(const vtkPVMantaView&); // Not implemented
-  void operator=(const vtkPVMantaView&); // Not implemented
-//ETX
+  vtkPVMantaView(const vtkPVMantaView&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVMantaView&) VTK_DELETE_FUNCTION;
 };
 
 #endif

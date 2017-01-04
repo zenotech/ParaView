@@ -12,27 +12,28 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkEnvironmentAnnotationFilter - filter used to generate text annotation
-// for the current project.
-// .SECTION Description
-// vtkEnvironmentAnnotationFilter is designed to help annotate the scene with 
-// frequently needed information. 
-//
-// The variables available in the expression evaluation scope are as follows:
-// \li FileName: the name of the file that the user is working on.
-// \li DisplayFileName: Boolean value representing whether the file name is visible.
-// \li DisplayDate: Boolean value representing whether thedate/time is visible.
-// \li DisplaySystemName: Boolean value representing whether the system type is visible.
-// \li DisplayUserName: Boolean value representing whether the username is visible.
+/**
+ * @class   vtkEnvironmentAnnotationFilter
+ * @brief   filter used to generate text annotation
+ * for the current project.
+ *
+ * vtkEnvironmentAnnotationFilter is designed to help annotate the scene with
+ * frequently needed information.
+ *
+ * The variables available in the expression evaluation scope are as follows:
+ * \li FileName: the name of the file that the user is working on.
+ * \li DisplayFileName: Boolean value representing whether the file name is visible.
+ * \li DisplayDate: Boolean value representing whether thedate/time is visible.
+ * \li DisplaySystemName: Boolean value representing whether the system type is visible.
+ * \li DisplayUserName: Boolean value representing whether the username is visible.
+*/
 
-
-#ifndef __vtkEnvironmentAnnotationFilter_h
-#define __vtkEnvironmentAnnotationFilter_h
+#ifndef vtkEnvironmentAnnotationFilter_h
+#define vtkEnvironmentAnnotationFilter_h
 
 #include "vtkPVClientServerCoreCoreModule.h" //needed for exports
 #include "vtkTableAlgorithm.h"
 #include <string> //needed for iVars
-
 
 class VTKPVCLIENTSERVERCORECORE_EXPORT vtkEnvironmentAnnotationFilter : public vtkTableAlgorithm
 {
@@ -53,34 +54,34 @@ public:
   vtkSetMacro(DisplayFileName, bool);
   vtkGetMacro(DisplayFileName, bool);
 
+  vtkSetMacro(DisplayFilePath, bool);
+  vtkGetMacro(DisplayFilePath, bool);
+
   vtkSetMacro(DisplayDate, bool);
   vtkGetMacro(DisplayDate, bool);
 
-//BTX
 protected:
   vtkEnvironmentAnnotationFilter();
   ~vtkEnvironmentAnnotationFilter();
 
   virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int RequestData(vtkInformation* request,
-                          vtkInformationVector** inputVector,
-                          vtkInformationVector* outputVector);
+  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector);
 
   std::string AnnotationValue;
   std::string FileName;
 
 private:
-  vtkEnvironmentAnnotationFilter(const vtkEnvironmentAnnotationFilter&); // Not implemented
-  void operator=(const vtkEnvironmentAnnotationFilter&); // Not implemented
+  vtkEnvironmentAnnotationFilter(const vtkEnvironmentAnnotationFilter&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkEnvironmentAnnotationFilter&) VTK_DELETE_FUNCTION;
 
   void UpdateAnnotationValue();
 
   bool DisplayUserName;
   bool DisplaySystemName;
   bool DisplayFileName;
+  bool DisplayFilePath;
   bool DisplayDate;
-
-//ETX
 };
 
 #endif

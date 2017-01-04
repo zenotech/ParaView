@@ -12,51 +12,56 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVClipClosedSurface - Clipper for generating closed surfaces
-//
-// .SECTION Description
-//  This is a subclass of vtkClipClosedSurface
+/**
+ * @class   vtkPVClipClosedSurface
+ * @brief   Clipper for generating closed surfaces
+ *
+ *
+ *  This is a subclass of vtkClipClosedSurface
+*/
 
-#ifndef __vtkPVClipClosedSurface_h
-#define __vtkPVClipClosedSurface_h
+#ifndef vtkPVClipClosedSurface_h
+#define vtkPVClipClosedSurface_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkClipClosedSurface.h"
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 
 class vtkPlane;
 
 class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVClipClosedSurface : public vtkClipClosedSurface
 {
 public:
-  vtkTypeMacro( vtkPVClipClosedSurface, vtkClipClosedSurface );
-  void PrintSelf( ostream & os, vtkIndent indent );
-  static vtkPVClipClosedSurface * New();
+  vtkTypeMacro(vtkPVClipClosedSurface, vtkClipClosedSurface);
+  void PrintSelf(ostream& os, vtkIndent indent);
+  static vtkPVClipClosedSurface* New();
 
-  // Description:
-  // Set/Get the InsideOut flag (off by default)
-  vtkSetMacro( InsideOut, int );
-  vtkGetMacro( InsideOut, int );
-  vtkBooleanMacro( InsideOut, int );
+  //@{
+  /**
+   * Set/Get the InsideOut flag (off by default)
+   */
+  vtkSetMacro(InsideOut, int);
+  vtkGetMacro(InsideOut, int);
+  vtkBooleanMacro(InsideOut, int);
+  //@}
 
-  // Description:
-  // Set the clipping plane.
-  void   SetClippingPlane( vtkPlane * plane );
+  /**
+   * Set the clipping plane.
+   */
+  void SetClippingPlane(vtkPlane* plane);
 
 protected:
   vtkPVClipClosedSurface();
   ~vtkPVClipClosedSurface();
 
-  virtual int RequestData( vtkInformation        * request,
-                           vtkInformationVector ** inputVector,
-                           vtkInformationVector  * outputVector );
+  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector);
 
-  int         InsideOut;
-  vtkPlane  * ClippingPlane;
+  int InsideOut;
+  vtkPlane* ClippingPlane;
 
 private:
-
-  vtkPVClipClosedSurface( const vtkPVClipClosedSurface & ); // Not implemented
-  void operator = ( const vtkPVClipClosedSurface & );       // Not implemented
+  vtkPVClipClosedSurface(const vtkPVClipClosedSurface&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVClipClosedSurface&) VTK_DELETE_FUNCTION;
 };
 
 #endif

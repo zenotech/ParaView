@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -30,8 +30,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
 
-#ifndef __pqListWidgetCheckHelper_h
-#define __pqListWidgetCheckHelper_h
+#ifndef pqListWidgetCheckHelper_h
+#define pqListWidgetCheckHelper_h
 
 #include "pqWidgetsModule.h"
 #include <QObject>
@@ -39,13 +39,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class QListWidget;
 class QListWidgetItem;
 
-/// If a QListWidget has checkable elements in any column, on needs
-/// to explicitly click on the checkbox to change the check state.
-/// However, sometimes we simply want the checkbox to be updated
-/// when the user clicks on the entire row. For that
-/// purpose, we use pqListWidgetCheckHelper. Simply create
-/// and instance of pqListWidgetCheckHelper, and 
-/// set a List to use.
+/**
+* If a QListWidget has checkable elements in any column, on needs
+* to explicitly click on the checkbox to change the check state.
+* However, sometimes we simply want the checkbox to be updated
+* when the user clicks on the entire row. For that
+* purpose, we use pqListWidgetCheckHelper. Simply create
+* and instance of pqListWidgetCheckHelper, and
+* set a List to use.
+*/
 class PQWIDGETS_EXPORT pqListWidgetCheckHelper : public QObject
 {
   Q_OBJECT
@@ -56,15 +58,14 @@ public:
   pqListWidgetCheckHelper(QListWidget* ListWidget, QObject* parent);
 
 protected slots:
-  void onItemClicked (QListWidgetItem *item);
-  void onItemPressed (QListWidgetItem *item); 
+  void onItemClicked(QListWidgetItem* item);
+  void onItemPressed(QListWidgetItem* item);
+
 private:
-  pqListWidgetCheckHelper(const pqListWidgetCheckHelper&); // Not implemented.
-  void operator=(const pqListWidgetCheckHelper&); // Not implemented.
+  Q_DISABLE_COPY(pqListWidgetCheckHelper)
 
   QListWidget* List;
   int PressState;
 };
 
 #endif
-

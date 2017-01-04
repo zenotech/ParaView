@@ -48,73 +48,71 @@ void vtkSMAnimationSceneWriter::SetAnimationScene(vtkSMProxy* proxy)
   // Store the corresponding session
   this->SetSession(proxy->GetSession());
 
-  this->SetAnimationScene(proxy?
-    vtkSMAnimationScene::SafeDownCast(
-      proxy->GetClientSideObject()) : NULL);
+  this->SetAnimationScene(
+    proxy ? vtkSMAnimationScene::SafeDownCast(proxy->GetClientSideObject()) : NULL);
 }
 
 //-----------------------------------------------------------------------------
 void vtkSMAnimationSceneWriter::SetAnimationScene(vtkSMAnimationScene* scene)
 {
   if (this->AnimationScene && this->ObserverID)
-    {
+  {
     this->AnimationScene->RemoveObserver(this->ObserverID);
-    }
+  }
 
   vtkSetObjectBodyMacro(AnimationScene, vtkSMAnimationScene, scene);
 
   if (this->AnimationScene)
-    {
+  {
     this->ObserverID = this->AnimationScene->AddObserver(
-      vtkCommand::AnimationCueTickEvent,
-      this, &vtkSMAnimationSceneWriter::ExecuteEvent);
-    }
+      vtkCommand::AnimationCueTickEvent, this, &vtkSMAnimationSceneWriter::ExecuteEvent);
+  }
 }
 
 //-----------------------------------------------------------------------------
-void vtkSMAnimationSceneWriter::ExecuteEvent(vtkObject* vtkNotUsed(caller),
-  unsigned long eventid, void* calldata)
+void vtkSMAnimationSceneWriter::ExecuteEvent(
+  vtkObject* vtkNotUsed(caller), unsigned long eventid, void* calldata)
 {
   if (!this->Saving)
-    {
+  {
     // ignore all events if we aren't currently saving the animation.
     return;
-    }
+  }
 
   if (eventid == vtkCommand::AnimationCueTickEvent)
-    {
-    vtkAnimationCue::AnimationCueInfo *cueInfo = reinterpret_cast<
-      vtkAnimationCue::AnimationCueInfo*>(calldata);
+  {
+    vtkAnimationCue::AnimationCueInfo* cueInfo =
+      reinterpret_cast<vtkAnimationCue::AnimationCueInfo*>(calldata);
     if (!this->SaveFrame(cueInfo->AnimationTime))
-      {
+    {
       // Save failed, abort.
       this->AnimationScene->Stop();
       this->SaveFailed = true;
-      }
     }
+  }
 }
 
 //-----------------------------------------------------------------------------
 bool vtkSMAnimationSceneWriter::Save()
 {
   if (this->Saving)
-    {
+  {
     vtkErrorMacro("Already saving an animation. "
       << "Wait till that is done before calling Save again.");
     return false;
-    }
-  
+  }
+
   if (!this->AnimationScene)
-    {
+  {
     vtkErrorMacro("Cannot save, no AnimationScene.");
     return false;
-    }
+  }
 
   if (!this->FileName)
-    {
+  {
     vtkErrorMacro("FileName not set.");
     return false;
-    }
+  }
 
   // Take the animation scene to the beginning.
   this->AnimationScene->GoToFirst();
@@ -136,19 +134,19 @@ bool vtkSMAnimationSceneWriter::Save()
   this->AnimationScene->SetLoop(0);
 
   bool status = this->SaveInitialize(this->StartFileCount);
-  bool caching = this->AnimationScene->GetCaching();
-  this->AnimationScene->SetCaching(false);
+  bool cachingFlag = this->AnimationScene->GetForceDisableCaching();
+  this->AnimationScene->SetForceDisableCaching(true);
 
   if (status)
-    {
+  {
     this->Saving = true;
     this->SaveFailed = false;
 
     this->AnimationScene->SetPlaybackTimeWindow(this->GetPlaybackTimeWindow());
     this->AnimationScene->Play();
-    this->AnimationScene->SetPlaybackTimeWindow(1.0, -1.0);// Reset to full range
+    this->AnimationScene->SetPlaybackTimeWindow(1.0, -1.0); // Reset to full range
     this->Saving = false;
-    }
+  }
 
   status = this->SaveFinalize() && status;
 
@@ -161,7 +159,7 @@ bool vtkSMAnimationSceneWriter::Save()
 
   // Restore scene parameters, if changed.
   this->AnimationScene->SetLoop(loop);
-  this->AnimationScene->SetCaching(caching);
+  this->AnimationScene->SetForceDisableCaching(cachingFlag);
 
   return status && (!this->SaveFailed);
 }
@@ -171,6 +169,5 @@ void vtkSMAnimationSceneWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "AnimationScene: " << this->AnimationScene << endl;
-  os << indent << "FileName: " << 
-    (this->FileName? this->FileName : "(null)") << endl;
+  os << indent << "FileName: " << (this->FileName ? this->FileName : "(null)") << endl;
 }

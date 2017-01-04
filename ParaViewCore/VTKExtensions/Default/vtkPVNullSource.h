@@ -12,17 +12,20 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVNullSource - source for NULL data.
-// .SECTION Description
-// This is a source for null data. Although this actually produces a
-// vtkPolyLine paraview blocks all data information from this source resulting
-// in it being treated as a null source.
+/**
+ * @class   vtkPVNullSource
+ * @brief   source for NULL data.
+ *
+ * This is a source for null data. Although this actually produces a
+ * vtkPolyLine paraview blocks all data information from this source resulting
+ * in it being treated as a null source.
+*/
 
-#ifndef __vtkPVNullSource_h
-#define __vtkPVNullSource_h
+#ifndef vtkPVNullSource_h
+#define vtkPVNullSource_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkLineSource.h"
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 
 class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVNullSource : public vtkLineSource
 {
@@ -31,16 +34,13 @@ public:
   vtkTypeMacro(vtkPVNullSource, vtkLineSource);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-//BTX
 protected:
   vtkPVNullSource();
   ~vtkPVNullSource();
 
 private:
-  vtkPVNullSource(const vtkPVNullSource&); // Not implemented
-  void operator=(const vtkPVNullSource&); // Not implemented
-//ETX
+  vtkPVNullSource(const vtkPVNullSource&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVNullSource&) VTK_DELETE_FUNCTION;
 };
 
 #endif
-

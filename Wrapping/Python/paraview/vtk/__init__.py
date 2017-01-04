@@ -1,38 +1,38 @@
 import paraview
 
 try:
-    from vtkCommonComputationalGeometryPython import *
+    from paraview.vtk.vtkCommonComputationalGeometry import *
 except ImportError:
-    paraview.print_error("Error: Could not import vtkCommonComputationalGeometryPython")
-from vtkCommonCorePython import *
-from vtkCommonDataModelPython import *
-from vtkCommonExecutionModelPython import *
+    paraview.print_error("Error: Could not import vtkCommonComputationalGeometry")
+from paraview.vtk.vtkCommonCore import *
+from paraview.vtk.vtkCommonDataModel import *
+from paraview.vtk.vtkCommonExecutionModel import *
 try:
-    from vtkCommonMathPython import *
+    from paraview.vtk.vtkCommonMath import *
 except ImportError:
-    paraview.print_error("Error: Could not import vtkCommonMathPython")
+    paraview.print_error("Error: Could not import vtkCommonMath")
 try:
-    from vtkCommonMiscPython import *
+    from paraview.vtk.vtkCommonMisc import *
 except ImportError:
-    paraview.print_error("Error: Could not import vtkCommonMiscPython")
+    paraview.print_error("Error: Could not import vtkCommonMisc")
 try:
-    from vtkCommonSystemPython import *
+    from paraview.vtk.vtkCommonSystem import *
 except ImportError:
-    paraview.print_error("Error: Could not import vtkCommonSystemPython")
+    paraview.print_error("Error: Could not import vtkCommonSystem")
 try:
-    from vtkCommonTransformsPython import *
+    from paraview.vtk.vtkCommonTransforms import *
 except ImportError:
-    paraview.print_error("Error: Could not import vtkCommonTransformsPython")
-from vtkFiltersProgrammablePython import *
-from vtkParallelCorePython import *
+    paraview.print_error("Error: Could not import vtkCommonTransforms")
+from paraview.vtk.vtkFiltersProgrammable import *
+from paraview.vtk.vtkParallelCore import *
 try:
-    from vtkRenderingCorePython import vtkCamera
+    from paraview.vtk.vtkRenderingCore import vtkCamera
 except ImportError:
-    paraview.print_error("Error: Could not import vtkRenderingCorePython")
+    paraview.print_error("Error: Could not import vtkRenderingCore")
 try:
-    from vtkFiltersCorePython import *
+    from paraview.vtk.vtkFiltersCore import *
 except ImportError:
-    paraview.print_error("Error: Could not import vtkFiltersCorePython")
+    paraview.print_error("Error: Could not import vtkFiltersCore")
 
 # --------------------------------------
 

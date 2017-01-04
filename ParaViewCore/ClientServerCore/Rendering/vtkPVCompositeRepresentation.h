@@ -12,111 +12,118 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVCompositeRepresentation - a data-representation used by ParaView.
-// .SECTION Description
-// vtkPVCompositeRepresentation is a data-representation used by ParaView for showing
-// a type of data-set in the render view. It is a composite-representation with
-// some fixed representations for showing things like selection and cube-axes.
-// This representation has 1 input port and it ensures that that input is passed
-// on to the internal representations (except SelectionRepresentation) properly.
-// For SelectionRepresentation, the client is expected to setup the input (look
-// at vtkSMPVRepresentationProxy).
+/**
+ * @class   vtkPVCompositeRepresentation
+ * @brief   a data-representation used by ParaView.
+ *
+ * vtkPVCompositeRepresentation is a data-representation used by ParaView for showing
+ * a type of data-set in the render view. It is a composite-representation with
+ * some fixed representations for showing things like selection and polar axes.
+ * This representation has 1 input port and it ensures that that input is passed
+ * on to the internal representations 
+ * (except SelectionRepresentation and PolarAxesRepresentation) properly.
+ * For SelectionRepresentation and PolarAxesRepresentation the client is expected 
+ * to setup the input (look at vtkSMPVRepresentationProxy).
+*/
 
-#ifndef __vtkPVCompositeRepresentation_h
-#define __vtkPVCompositeRepresentation_h
+#ifndef vtkPVCompositeRepresentation_h
+#define vtkPVCompositeRepresentation_h
 
-#include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 #include "vtkCompositeRepresentation.h"
+#include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 
+class vtkPolarAxesRepresentation;
 class vtkSelectionRepresentation;
-class vtkCubeAxesRepresentation;
 
-class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVCompositeRepresentation : public vtkCompositeRepresentation
+class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVCompositeRepresentation
+  : public vtkCompositeRepresentation
 {
 public:
   static vtkPVCompositeRepresentation* New();
   vtkTypeMacro(vtkPVCompositeRepresentation, vtkCompositeRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // These must only be set during initialization before adding the
-  // representation to any views or calling Update().
-  void SetCubeAxesRepresentation(vtkCubeAxesRepresentation*);
+  /**
+   * These must only be set during initialization before adding the
+   * representation to any views or calling Update().
+   */
   void SetSelectionRepresentation(vtkSelectionRepresentation*);
 
-  // Description:
-  // Overridden to simply pass the input to the internal representations. We
-  // won't need this if vtkDataRepresentation correctly respected in the
-  // arguments passed to it during ProcessRequest() etc.
-  virtual void SetInputConnection(int port, vtkAlgorithmOutput* input);
-  virtual void SetInputConnection(vtkAlgorithmOutput* input);
-  virtual void AddInputConnection(int port, vtkAlgorithmOutput* input);
-  virtual void AddInputConnection(vtkAlgorithmOutput* input);
-  virtual void RemoveInputConnection(int port, vtkAlgorithmOutput* input);
-  virtual void RemoveInputConnection(int port, int index);
+  /**
+   * This must only be set during initialization before adding the
+   * representation to any views or calling Update().
+   */
+  void SetPolarAxesRepresentation(vtkPolarAxesRepresentation*);
 
-  // Description:
-  // Propagate the modification to all internal representations.
+  /**
+   * Propagate the modification to all internal representations.
+   */
   virtual void MarkModified();
 
-  // Description:
-  // Set visibility of the representation.
-  // Overridden to update the cube-axes and selection visibilities.
+  /**
+   * Set visibility of the representation.
+   * Overridden to update the cube-axes and selection visibilities.
+   */
   virtual void SetVisibility(bool visible);
 
-  // Description:
-  // Set the visibility for the cube-axis.
-  virtual void SetCubeAxesVisibility(bool visible);
-
-  // Description:
-  // Set the selection visibility.
+  /**
+   * Set the selection visibility.
+   */
   virtual void SetSelectionVisibility(bool visible);
 
-  // Description:
-  // Passed on to internal representations as well.
+  /**
+   * Set the polar axes visibility.
+   */
+  virtual void SetPolarAxesVisibility(bool visible);
+
+  //@{
+  /**
+   * Passed on to internal representations as well.
+   */
   virtual void SetUpdateTime(double time);
-  virtual void SetUseCache(bool val);
-  virtual void SetCacheKey(double val);
   virtual void SetForceUseCache(bool val);
   virtual void SetForcedCacheKey(double val);
+  //@}
 
-  // Description:
-  // Forwarded to vtkSelectionRepresentation.
+  //@{
+  /**
+   * Forwarded to vtkSelectionRepresentation.
+   */
   virtual void SetPointFieldDataArrayName(const char*);
   virtual void SetCellFieldDataArrayName(const char*);
+  //@}
 
-  // Description:
-  // Override because of internal composite representations that need to be
-  // initilized as well.
+  /**
+   * Override because of internal composite representations that need to be
+   * initilized as well.
+   */
   virtual unsigned int Initialize(unsigned int minIdAvailable, unsigned int maxIdAvailable);
 
-//BTX
 protected:
   vtkPVCompositeRepresentation();
   ~vtkPVCompositeRepresentation();
 
-  // Description:
-  // Adds the representation to the view.  This is called from
-  // vtkView::AddRepresentation().  Subclasses should override this method.
-  // Returns true if the addition succeeds.
+  /**
+   * Adds the representation to the view.  This is called from
+   * vtkView::AddRepresentation().  Subclasses should override this method.
+   * Returns true if the addition succeeds.
+   */
   virtual bool AddToView(vtkView* view);
 
-  // Description:
-  // Removes the representation to the view.  This is called from
-  // vtkView::RemoveRepresentation().  Subclasses should override this method.
-  // Returns true if the removal succeeds.
+  /**
+   * Removes the representation to the view.  This is called from
+   * vtkView::RemoveRepresentation().  Subclasses should override this method.
+   * Returns true if the removal succeeds.
+   */
   virtual bool RemoveFromView(vtkView* view);
 
-  vtkCubeAxesRepresentation* CubeAxesRepresentation;
   vtkSelectionRepresentation* SelectionRepresentation;
-
-  bool CubeAxesVisibility;
   bool SelectionVisibility;
+  vtkPolarAxesRepresentation* PolarAxesRepresentation;
 
 private:
-  vtkPVCompositeRepresentation(const vtkPVCompositeRepresentation&); // Not implemented
-  void operator=(const vtkPVCompositeRepresentation&); // Not implemented
-//ETX
+  vtkPVCompositeRepresentation(const vtkPVCompositeRepresentation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVCompositeRepresentation&) VTK_DELETE_FUNCTION;
 };
 
 #endif

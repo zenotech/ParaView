@@ -13,9 +13,8 @@
 
 =========================================================================*/
 #include "vtkSIIdTypeVectorProperty.h"
-#include "vtkSIVectorPropertyTemplate.txx"
 #include "vtkObjectFactory.h"
-
+#include "vtkSIVectorPropertyTemplate.txx"
 
 vtkStandardNewMacro(vtkSIIdTypeVectorProperty);
 //----------------------------------------------------------------------------

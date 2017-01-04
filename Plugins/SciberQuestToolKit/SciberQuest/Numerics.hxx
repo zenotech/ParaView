@@ -6,8 +6,8 @@
 
 Copyright 2012 SciberQuest Inc.
 */
-#ifndef __Numerics_hxx
-#define __Numerics_hxx
+#ifndef Numerics_hxx
+#define Numerics_hxx
 
 #include<iostream>
 
@@ -3242,9 +3242,9 @@ void EigenvalueDiagnostic(
           {
           // three real
           int nAttracting=0;
-          for (int i=0; i<3; ++i)
+          for (int idx=0; idx<3; ++idx)
             {
-            if (real(e(i))<((T)0)) ++nAttracting;
+            if (real(e(idx))<((T)0)) ++nAttracting;
             }
           L[pi]=((T)nAttracting);
           }

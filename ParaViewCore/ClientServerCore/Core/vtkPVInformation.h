@@ -12,15 +12,18 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVInformation - Superclass for information objects.
-// .SECTION Description
-// Subclasses of this class are used to get information from the server.
+/**
+ * @class   vtkPVInformation
+ * @brief   Superclass for information objects.
+ *
+ * Subclasses of this class are used to get information from the server.
+*/
 
-#ifndef __vtkPVInformation_h
-#define __vtkPVInformation_h
+#ifndef vtkPVInformation_h
+#define vtkPVInformation_h
 
-#include "vtkPVClientServerCoreCoreModule.h" //needed for exports
 #include "vtkObject.h"
+#include "vtkPVClientServerCoreCoreModule.h" //needed for exports
 
 class vtkClientServerStream;
 class vtkMultiProcessStream;
@@ -31,32 +34,41 @@ public:
   vtkTypeMacro(vtkPVInformation, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Transfer information about a single object into this object.
+  /**
+   * Transfer information about a single object into this object.
+   */
   virtual void CopyFromObject(vtkObject*);
 
-  // Description:
-  // Merge another information object.
+  /**
+   * Merge another information object.
+   */
   virtual void AddInformation(vtkPVInformation*);
 
-  //BTX
-  // Description:
-  // Manage a serialized version of the information.
+  //@{
+  /**
+   * Manage a serialized version of the information.
+   */
   virtual void CopyToStream(vtkClientServerStream*) = 0;
   virtual void CopyFromStream(const vtkClientServerStream*);
+  //@}
 
-  // Description:
-  // Serialize/Deserialize the parameters that control how/what information is
-  // gathered. This are different from the ivars that constitute the gathered
-  // information itself. For example, PortNumber on vtkPVDataInformation
-  // controls what output port the data-information is gathered from.
-  virtual void CopyParametersToStream(vtkMultiProcessStream&) {};
-  virtual void CopyParametersFromStream(vtkMultiProcessStream&) {};
-  //ETX
+  //@{
+  /**
+   * Serialize/Deserialize the parameters that control how/what information is
+   * gathered. This are different from the ivars that constitute the gathered
+   * information itself. For example, PortNumber on vtkPVDataInformation
+   * controls what output port the data-information is gathered from.
+   */
+  virtual void CopyParametersToStream(vtkMultiProcessStream&){};
+  virtual void CopyParametersFromStream(vtkMultiProcessStream&){};
+  //@}
 
-  // Description:
-  // Set/get whether to gather information only from the root.
+  //@{
+  /**
+   * Set/get whether to gather information only from the root.
+   */
   vtkGetMacro(RootOnly, int);
+  //@}
 
 protected:
   vtkPVInformation();
@@ -65,8 +77,8 @@ protected:
   int RootOnly;
   vtkSetMacro(RootOnly, int);
 
-  vtkPVInformation(const vtkPVInformation&); // Not implemented
-  void operator=(const vtkPVInformation&); // Not implemented
+  vtkPVInformation(const vtkPVInformation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVInformation&) VTK_DELETE_FUNCTION;
 };
 
 #endif

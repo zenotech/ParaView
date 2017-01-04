@@ -29,23 +29,27 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqLineEditEventPlayer_h
-#define __pqLineEditEventPlayer_h
+#ifndef pqLineEditEventPlayer_h
+#define pqLineEditEventPlayer_h
 
 #include "pqAbstractStringEventPlayer.h"
 #include "pqWidgetsModule.h"
 
-/// pqLineEditEventPlayer extends pqAbstractStringEventPlayer to ensure that
-/// pqLineEdit fires textChangedAndEditingFinished() signals in
-/// playback when "set_string" is handled.
+/**
+* pqLineEditEventPlayer extends pqAbstractStringEventPlayer to ensure that
+* pqLineEdit fires textChangedAndEditingFinished() signals in
+* playback when "set_string" is handled.
+*/
 class PQWIDGETS_EXPORT pqLineEditEventPlayer : public pqAbstractStringEventPlayer
 {
   Q_OBJECT
   typedef pqAbstractStringEventPlayer Superclass;
+
 public:
-  pqLineEditEventPlayer(QObject* parent=0);
+  pqLineEditEventPlayer(QObject* parent = 0);
   virtual ~pqLineEditEventPlayer();
 
+  using Superclass::playEvent;
   bool playEvent(QObject* Object, const QString& Command, const QString& Arguments, bool& Error);
 
 private:

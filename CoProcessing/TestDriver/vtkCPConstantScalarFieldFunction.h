@@ -12,44 +12,55 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkCPConstantScalarFieldFunction - Class for specifying constant scalars at points.
-// .SECTION Description
-// Class for specifying a constant scalar field.
+/**
+ * @class   vtkCPConstantScalarFieldFunction
+ * @brief   Class for specifying constant scalars at points.
+ *
+ * Class for specifying a constant scalar field.
+*/
 
-#ifndef __vtkCPConstantScalarFieldFunction_h
-#define __vtkCPConstantScalarFieldFunction_h
+#ifndef vtkCPConstantScalarFieldFunction_h
+#define vtkCPConstantScalarFieldFunction_h
 
 #include "vtkCPScalarFieldFunction.h"
 #include "vtkPVCatalystTestDriverModule.h" // needed for export macros
 
-class VTKPVCATALYSTTESTDRIVER_EXPORT vtkCPConstantScalarFieldFunction : public vtkCPScalarFieldFunction
+class VTKPVCATALYSTTESTDRIVER_EXPORT vtkCPConstantScalarFieldFunction
+  : public vtkCPScalarFieldFunction
 {
 public:
-  static vtkCPConstantScalarFieldFunction * New();
+  static vtkCPConstantScalarFieldFunction* New();
   vtkTypeMacro(vtkCPConstantScalarFieldFunction, vtkCPScalarFieldFunction);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Compute the field value at Point which is an array of length 3.
-  virtual double ComputeComponenentAtPoint(unsigned int component, double* point,
-                                           unsigned long timeStep, double time);
+  /**
+   * Compute the field value at Point which is an array of length 3.
+   */
+  virtual double ComputeComponenentAtPoint(
+    unsigned int component, double* point, unsigned long timeStep, double time);
 
-  // Description:
-  // Set/get the constant value for the field.
+  //@{
+  /**
+   * Set/get the constant value for the field.
+   */
   vtkSetMacro(Constant, double);
   vtkGetMacro(Constant, double);
+  //@}
 
 protected:
   vtkCPConstantScalarFieldFunction();
   ~vtkCPConstantScalarFieldFunction();
 
 private:
-  vtkCPConstantScalarFieldFunction(const vtkCPConstantScalarFieldFunction&); // Not implemented
-  void operator=(const vtkCPConstantScalarFieldFunction&); // Not implemented
+  vtkCPConstantScalarFieldFunction(const vtkCPConstantScalarFieldFunction&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkCPConstantScalarFieldFunction&) VTK_DELETE_FUNCTION;
 
-  // Description:
-  // The constant value for the scalar field.
+  //@{
+  /**
+   * The constant value for the scalar field.
+   */
   double Constant;
 };
+//@}
 
 #endif

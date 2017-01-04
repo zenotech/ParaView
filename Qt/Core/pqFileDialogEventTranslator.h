@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -33,9 +33,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _pqFileDialogEventTranslator_h
 #define _pqFileDialogEventTranslator_h
 
-#include <pqWidgetEventTranslator.h>
 #include "pqCoreModule.h"
 #include <QPointer>
+#include <pqWidgetEventTranslator.h>
 
 class pqFileDialog;
 
@@ -45,14 +45,15 @@ Translates low-level Qt events into high-level ParaView events that can be recor
 \sa pqEventTranslator
 */
 
-class PQCORE_EXPORT pqFileDialogEventTranslator :
-  public pqWidgetEventTranslator
+class PQCORE_EXPORT pqFileDialogEventTranslator : public pqWidgetEventTranslator
 {
   Q_OBJECT
-  
+  typedef pqWidgetEventTranslator Superclass;
+
 public:
-  pqFileDialogEventTranslator(QObject* p=0);
-  
+  pqFileDialogEventTranslator(QObject* p = 0);
+
+  using Superclass::translateEvent;
   virtual bool translateEvent(QObject* Object, QEvent* Event, bool& Error);
 
 private:
@@ -67,4 +68,3 @@ private slots:
 };
 
 #endif // !_pqFileDialogEventTranslator_h
-

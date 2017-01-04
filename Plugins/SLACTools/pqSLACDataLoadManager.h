@@ -19,8 +19,8 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
-#ifndef __pqSLACDataLoadManager_h
-#define __pqSLACDataLoadManager_h
+#ifndef pqSLACDataLoadManager_h
+#define pqSLACDataLoadManager_h
 
 #include <QDialog>
 
@@ -31,8 +31,9 @@ class pqServer;
 class pqSLACDataLoadManager : public QDialog
 {
   Q_OBJECT;
+
 public:
-  pqSLACDataLoadManager(QWidget *p, Qt::WindowFlags f = 0);
+  pqSLACDataLoadManager(QWidget* p, Qt::WindowFlags f = 0);
   ~pqSLACDataLoadManager();
 
 public slots:
@@ -43,14 +44,13 @@ signals:
   void createdPipeline();
 
 protected:
-  pqServer *Server;
+  pqServer* Server;
 
 private:
-  pqSLACDataLoadManager(const pqSLACDataLoadManager &); // Not implemented
-  void operator=(const pqSLACDataLoadManager &);        // Not implemented
+  Q_DISABLE_COPY(pqSLACDataLoadManager)
 
   class pqUI;
-  pqUI *ui;
+  pqUI* ui;
 };
 
-#endif //__pqSLACDataLoadManager_h
+#endif // pqSLACDataLoadManager_h

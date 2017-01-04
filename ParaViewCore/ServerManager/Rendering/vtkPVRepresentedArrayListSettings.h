@@ -12,21 +12,24 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVRepresentedArrayListSettings - singleton used to filter out undesired array names from color array list.
-// 
-// .SECTION Description
-// vtkPVRepresentedArrayListSettings is a singleton used to keep track
-// of a list of regular expressions that filter out arrays in a
-// RepresentedArrayList domain. All class to
-// vtkPVRepresentedArrayListSettings::New() returns a reference to the
-// singleton instance.
+/**
+ * @class   vtkPVRepresentedArrayListSettings
+ * @brief   singleton used to filter out undesired array names from color array list.
+ *
+ *
+ * vtkPVRepresentedArrayListSettings is a singleton used to keep track
+ * of a list of regular expressions that filter out arrays in a
+ * RepresentedArrayList domain. All class to
+ * vtkPVRepresentedArrayListSettings::New() returns a reference to the
+ * singleton instance.
+*/
 
-#ifndef __vtkPVRepresentedArrayListSettings_h
-#define __vtkPVRepresentedArrayListSettings_h
+#ifndef vtkPVRepresentedArrayListSettings_h
+#define vtkPVRepresentedArrayListSettings_h
 
 #include "vtkObject.h"
 #include "vtkPVServerManagerRenderingModule.h" //needed for exports
-#include "vtkSmartPointer.h" // needed for vtkSmartPointer
+#include "vtkSmartPointer.h"                   // needed for vtkSmartPointer
 
 class VTKPVSERVERMANAGERRENDERING_EXPORT vtkPVRepresentedArrayListSettings : public vtkObject
 {
@@ -35,35 +38,40 @@ public:
   vtkTypeMacro(vtkPVRepresentedArrayListSettings, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Access the singleton.
+  /**
+   * Access the singleton.
+   */
   static vtkPVRepresentedArrayListSettings* GetInstance();
 
-  // Description:
-  // Set/get the number of filter expressions.
+  //@{
+  /**
+   * Set/get the number of filter expressions.
+   */
   virtual void SetNumberOfFilterExpressions(int n);
   virtual int GetNumberOfFilterExpressions();
+  //@}
 
-  // Description:
-  // Set/get the filter expression at index i. If the index is
-  // outside the valid range, this call is a noop.
+  //@{
+  /**
+   * Set/get the filter expression at index i. If the index is
+   * outside the valid range, this call is a noop.
+   */
   virtual void SetFilterExpression(int i, const char* expression);
   virtual const char* GetFilterExpression(int i);
+  //@}
 
-//BTX
 protected:
   vtkPVRepresentedArrayListSettings();
   ~vtkPVRepresentedArrayListSettings();
 
 private:
-  vtkPVRepresentedArrayListSettings(const vtkPVRepresentedArrayListSettings&); // Not implemented
-  void operator=(const vtkPVRepresentedArrayListSettings&); // Not implemented
+  vtkPVRepresentedArrayListSettings(const vtkPVRepresentedArrayListSettings&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVRepresentedArrayListSettings&) VTK_DELETE_FUNCTION;
 
   static vtkSmartPointer<vtkPVRepresentedArrayListSettings> Instance;
 
   class vtkInternals;
   vtkInternals* Internals;
-//ETX
 };
 
 #endif

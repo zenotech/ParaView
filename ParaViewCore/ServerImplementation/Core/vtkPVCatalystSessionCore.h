@@ -12,20 +12,22 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVCatalystSessionCore
-// .SECTION Description
-// vtkPVCatalystSessionCore is used by vtkSMSession.
-// vtkPVCatalystSessionCore handle catalyst based proxy which don't contains any
-// real data and therefore are not allowed to execute the VTK pipeline.
-// @ingroup LiveInsitu
+/**
+ * @class   vtkPVCatalystSessionCore
+ *
+ * vtkPVCatalystSessionCore is used by vtkSMSession.
+ * vtkPVCatalystSessionCore handle catalyst based proxy which don't contains any
+ * real data and therefore are not allowed to execute the VTK pipeline.
+ * @ingroup LiveInsitu
+*/
 
-#ifndef __vtkPVCatalystSessionCore_h
-#define __vtkPVCatalystSessionCore_h
+#ifndef vtkPVCatalystSessionCore_h
+#define vtkPVCatalystSessionCore_h
 
 #include "vtkPVServerImplementationCoreModule.h" //needed for exports
 #include "vtkPVSessionCore.h"
 #include "vtkSMMessageMinimal.h" // needed for vtkSMMessage.
-#include "vtkWeakPointer.h" // needed for vtkMultiProcessController
+#include "vtkWeakPointer.h"      // needed for vtkMultiProcessController
 
 class vtkPVInformation;
 
@@ -36,35 +38,34 @@ public:
   vtkTypeMacro(vtkPVCatalystSessionCore, vtkPVSessionCore);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Gather information about an object referred by the \c globalid.
-  // \c location identifies the processes to gather the information from.
-  virtual bool GatherInformation( vtkTypeUInt32 location,
-                                  vtkPVInformation* information,
-                                  vtkTypeUInt32 globalid );
+  /**
+   * Gather information about an object referred by the \c globalid.
+   * \c location identifies the processes to gather the information from.
+   */
+  virtual bool GatherInformation(
+    vtkTypeUInt32 location, vtkPVInformation* information, vtkTypeUInt32 globalid);
 
-  // Description:
-  // Update the data information for a given proxy with the given globalid.
-  // This will allow the GatherInformation to work with "fake" VTK pipeline.
-  // Return the real corresponding proxy id
-  vtkTypeUInt32 RegisterDataInformation(vtkTypeUInt32 globalid, unsigned int port,
-                                        vtkPVInformation* information);
+  /**
+   * Update the data information for a given proxy with the given globalid.
+   * This will allow the GatherInformation to work with "fake" VTK pipeline.
+   * Return the real corresponding proxy id
+   */
+  vtkTypeUInt32 RegisterDataInformation(
+    vtkTypeUInt32 globalid, unsigned int port, vtkPVInformation* information);
 
   void UpdateIdMap(vtkTypeUInt32* idMapArray, int size);
   void ResetIdMap();
-//BTX
+
 protected:
   vtkPVCatalystSessionCore();
   ~vtkPVCatalystSessionCore();
 
 private:
-  vtkPVCatalystSessionCore(const vtkPVCatalystSessionCore&); // Not implemented
-  void operator=(const vtkPVCatalystSessionCore&);   // Not implemented
+  vtkPVCatalystSessionCore(const vtkPVCatalystSessionCore&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVCatalystSessionCore&) VTK_DELETE_FUNCTION;
 
   class vtkInternal;
   vtkInternal* CatalystInternal;
-
-//ETX
 };
 
 #endif

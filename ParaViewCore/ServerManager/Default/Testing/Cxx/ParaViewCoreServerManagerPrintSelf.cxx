@@ -30,6 +30,7 @@
 #include "vtkSMBooleanDomain.h"
 #include "vtkSMBoundsDomain.h"
 #include "vtkSMBoxRepresentationProxy.h"
+#include "vtkSMCSVExporterProxy.h"
 #include "vtkSMCameraConfigurationReader.h"
 #include "vtkSMCameraConfigurationWriter.h"
 #include "vtkSMCameraLink.h"
@@ -42,7 +43,6 @@
 #include "vtkSMCompoundSourceProxy.h"
 #include "vtkSMCompoundSourceProxyDefinitionBuilder.h"
 #include "vtkSMContextViewProxy.h"
-#include "vtkSMCSVExporterProxy.h"
 #include "vtkSMDataTypeDomain.h"
 #include "vtkSMDeserializer.h"
 #include "vtkSMDimensionsDomain.h"
@@ -63,9 +63,9 @@
 #include "vtkSMImplicitPlaneRepresentationProxy.h"
 #include "vtkSMInputArrayDomain.h"
 #include "vtkSMInputProperty.h"
-#include "vtkSMInteractionUndoStackBuilder.h"
 #include "vtkSMIntRangeDomain.h"
 #include "vtkSMIntVectorProperty.h"
+#include "vtkSMInteractionUndoStackBuilder.h"
 #include "vtkSMLink.h"
 #include "vtkSMNamedPropertyIterator.h"
 #include "vtkSMNewWidgetRepresentationProxy.h"
@@ -74,6 +74,9 @@
 #include "vtkSMObject.h"
 #include "vtkSMOrderedPropertyIterator.h"
 #include "vtkSMOutputPort.h"
+#include "vtkSMPSWriterProxy.h"
+#include "vtkSMPVRepresentationProxy.h"
+#include "vtkSMPWriterProxy.h"
 #include "vtkSMPipelineState.h"
 #include "vtkSMPluginLoaderProxy.h"
 #include "vtkSMPluginManager.h"
@@ -93,21 +96,18 @@
 #include "vtkSMProxyManager.h"
 #include "vtkSMProxyProperty.h"
 #include "vtkSMProxySelectionModel.h"
-#include "vtkSMPSWriterProxy.h"
-#include "vtkSMPVRepresentationProxy.h"
-#include "vtkSMPWriterProxy.h"
 #include "vtkSMReaderFactory.h"
 #include "vtkSMRemoteObject.h"
 #include "vtkSMRemoteObjectUpdateUndoElement.h"
 #include "vtkSMRenderViewExporterProxy.h"
 #include "vtkSMRenderViewProxy.h"
 #include "vtkSMRepresentationProxy.h"
+#include "vtkSMSILDomain.h"
+#include "vtkSMSILModel.h"
 #include "vtkSMScalarBarWidgetRepresentationProxy.h"
 #include "vtkSMSelectionHelper.h"
 #include "vtkSMSession.h"
 #include "vtkSMSessionClient.h"
-#include "vtkSMSILDomain.h"
-#include "vtkSMSILModel.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMSpreadSheetRepresentationProxy.h"
 #include "vtkSMStateLoader.h"
@@ -129,16 +129,18 @@
 #include "vtkSMWriterFactory.h"
 #include "vtkSMWriterProxy.h"
 
-#define PRINT_SELF(classname)\
-  cout <<"------------------------------------" << endl;\
-  cout << "Class: " << #classname << endl;\
-  c = classname::New(); c->Print(cout); c->Delete();
+#define PRINT_SELF(classname)                                                                      \
+  cout << "------------------------------------" << endl;                                          \
+  cout << "Class: " << #classname << endl;                                                         \
+  c = classname::New();                                                                            \
+  c->Print(cout);                                                                                  \
+  c->Delete();
 
-int ParaViewCoreServerManagerPrintSelf(int , char *[])
+int ParaViewCoreServerManagerPrintSelf(int, char* [])
 {
-  vtkObject *c;
+  vtkObject* c;
 
-//  PRINT_SELF(vtkInitializationHelper);
+  //  PRINT_SELF(vtkInitializationHelper);
   PRINT_SELF(vtkPVComparativeAnimationCue);
   PRINT_SELF(vtkPVComparativeView);
   PRINT_SELF(vtkPVKeyFrameAnimationCueForProxies);
@@ -202,7 +204,7 @@ int ParaViewCoreServerManagerPrintSelf(int , char *[])
   PRINT_SELF(vtkSMPluginLoaderProxy);
   PRINT_SELF(vtkSMPluginManager);
   PRINT_SELF(vtkSMProperty);
-  //PRINT_SELF(vtkSMPropertyHelper);
+  // PRINT_SELF(vtkSMPropertyHelper);
   PRINT_SELF(vtkSMPropertyIterator);
   PRINT_SELF(vtkSMPropertyLink);
   PRINT_SELF(vtkSMPropertyModificationUndoElement);
@@ -214,7 +216,7 @@ int ParaViewCoreServerManagerPrintSelf(int , char *[])
   PRINT_SELF(vtkSMProxyLink);
   PRINT_SELF(vtkSMProxyListDomain);
   PRINT_SELF(vtkSMProxyLocator);
-  //PRINT_SELF(vtkSMProxyManager);
+  // PRINT_SELF(vtkSMProxyManager);
   PRINT_SELF(vtkSMProxyProperty);
   PRINT_SELF(vtkSMProxySelectionModel);
   PRINT_SELF(vtkSMPSWriterProxy);
@@ -228,7 +230,7 @@ int ParaViewCoreServerManagerPrintSelf(int , char *[])
   PRINT_SELF(vtkSMRepresentationProxy);
   PRINT_SELF(vtkSMScalarBarWidgetRepresentationProxy);
   PRINT_SELF(vtkSMSelectionHelper);
-  //PRINT_SELF(vtkSMSession);
+  // PRINT_SELF(vtkSMSession);
   PRINT_SELF(vtkSMSessionClient);
   PRINT_SELF(vtkSMSILDomain);
   PRINT_SELF(vtkSMSILModel);

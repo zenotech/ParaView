@@ -32,8 +32,8 @@
 // if not, the widget will be disabled automatically.
 // It also provides the user with an option to load new images as textures.
 
-#ifndef __pqPointSpriteTextureComboBox_h
-#define __pqPointSpriteTextureComboBox_h
+#ifndef pqPointSpriteTextureComboBox_h
+#define pqPointSpriteTextureComboBox_h
 
 #include "pqTextureComboBox.h"
 
@@ -41,15 +41,16 @@ class pqPointSpriteTextureComboBox : public pqTextureComboBox
 {
   Q_OBJECT
   typedef pqTextureComboBox Superclass;
+
 public:
-  pqPointSpriteTextureComboBox(QWidget* parent=0);
+  pqPointSpriteTextureComboBox(QWidget* parent = 0);
   virtual ~pqPointSpriteTextureComboBox();
 
-public slots :
+public slots:
   // Description:
   // Set the point sprite render mode (simple point, texture, exact sphere)
   // this in turns updates the enable state and active the texture
-  virtual void  setRenderMode(int);
+  virtual void setRenderMode(int);
 
 protected slots:
   /// Update the enable state of the widget.
@@ -58,15 +59,13 @@ protected slots:
   virtual void updateEnableState();
 
   virtual void updateTexture();
-protected :
+
+protected:
   int RenderMode;
   int CachedTextureIndex;
 
 private:
-  pqPointSpriteTextureComboBox(const pqPointSpriteTextureComboBox&); // Not implemented.
-  void operator=(const pqPointSpriteTextureComboBox&); // Not implemented.
+  Q_DISABLE_COPY(pqPointSpriteTextureComboBox)
 };
 
 #endif
-
-

@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqMyPropertyWidgetForProperty_h
-#define __pqMyPropertyWidgetForProperty_h
+#ifndef pqMyPropertyWidgetForProperty_h
+#define pqMyPropertyWidgetForProperty_h
 
 #include "pqPropertyWidget.h"
 
@@ -38,9 +38,10 @@ class pqMyPropertyWidgetForProperty : public pqPropertyWidget
 {
   Q_OBJECT
   typedef pqPropertyWidget Superclass;
+
 public:
   pqMyPropertyWidgetForProperty(
-    vtkSMProxy *smproxy, vtkSMProperty *smproperty, QWidget *parentObject=0);
+    vtkSMProxy* smproxy, vtkSMProperty* smproperty, QWidget* parentObject = 0);
   virtual ~pqMyPropertyWidgetForProperty();
 
 private:

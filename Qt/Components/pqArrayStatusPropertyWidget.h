@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqArrayStatusPropertyWidget_h
-#define __pqArrayStatusPropertyWidget_h
+#ifndef pqArrayStatusPropertyWidget_h
+#define pqArrayStatusPropertyWidget_h
 
 #include "pqPropertyWidget.h"
 
@@ -40,15 +40,13 @@ class PQCOMPONENTS_EXPORT pqArrayStatusPropertyWidget : public pqPropertyWidget
 {
   Q_OBJECT
   typedef pqPropertyWidget Superclass;
+
 public:
-  pqArrayStatusPropertyWidget(vtkSMProxy *proxy,
-    vtkSMPropertyGroup* group, QWidget *parent = 0);
-  pqArrayStatusPropertyWidget(vtkSMProxy *proxy,
-    vtkSMProperty* property, QWidget *parent = 0);
+  pqArrayStatusPropertyWidget(vtkSMProxy* proxy, vtkSMPropertyGroup* group, QWidget* parent = 0);
+  pqArrayStatusPropertyWidget(vtkSMProxy* proxy, vtkSMProperty* property, QWidget* parent = 0);
   virtual ~pqArrayStatusPropertyWidget();
 
-  virtual bool showLabel() const
-    { return false; }
+  virtual bool showLabel() const { return false; }
 
 private:
   Q_DISABLE_COPY(pqArrayStatusPropertyWidget)

@@ -29,16 +29,18 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqXYChartView_h
-#define __pqXYChartView_h
+#ifndef pqXYChartView_h
+#define pqXYChartView_h
 
 #include "pqContextView.h"
 
 class vtkSMSourceProxy;
 class pqDataRepresentation;
 
-/// pqContextView subclass for "Line Chart View". Doesn't do much expect adds
-/// the API to get the chartview type and name.
+/**
+* pqContextView subclass for "Line Chart View". Doesn't do much expect adds
+* the API to get the chartview type and name.
+*/
 class PQCORE_EXPORT pqXYChartView : public pqContextView
 {
   Q_OBJECT
@@ -48,17 +50,13 @@ public:
   static QString XYChartViewType() { return "XYChartView"; }
 
 public:
-  pqXYChartView(const QString& group,
-                 const QString& name,
-                 vtkSMContextViewProxy* viewModule,
-                 pqServer* server,
-                 QObject* parent=NULL);
+  pqXYChartView(const QString& group, const QString& name, vtkSMContextViewProxy* viewModule,
+    pqServer* server, QObject* parent = NULL);
 
   virtual ~pqXYChartView();
 
 private:
-  pqXYChartView(const pqXYChartView&); // Not implemented.
-  void operator=(const pqXYChartView&); // Not implemented.
+  Q_DISABLE_COPY(pqXYChartView)
 };
 
 #endif

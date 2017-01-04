@@ -16,18 +16,21 @@
  Copyright (c) Sandia Corporation
  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
 ----------------------------------------------------------------------------*/
-// .NAME vtkMergeCompositeDataSet - Make a vtkPolyData with a vertex on each
-// point.
-//
-// .SECTION Description
-//
-// This filter throws away all of the cells in the input and replaces them with
-// a vertex on each point. This filter may take a graph, a point set or a 
-// CompositeDataSet as input.
-//
+/**
+ * @class   vtkMergeCompositeDataSet
+ * @brief   Make a vtkPolyData with a vertex on each
+ * point.
+ *
+ *
+ *
+ * This filter throws away all of the cells in the input and replaces them with
+ * a vertex on each point. This filter may take a graph, a point set or a
+ * CompositeDataSet as input.
+ *
+*/
 
-#ifndef __vtkMergeCompositeDataSet_h
-#define __vtkMergeCompositeDataSet_h
+#ifndef vtkMergeCompositeDataSet_h
+#define vtkMergeCompositeDataSet_h
 
 #include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkVertexGlyphFilter.h"
@@ -36,20 +39,19 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkMergeCompositeDataSet : public vtkVert
 {
 public:
   vtkTypeMacro(vtkMergeCompositeDataSet, vtkVertexGlyphFilter);
-  virtual void PrintSelf(ostream &os, vtkIndent indent);
-  static vtkMergeCompositeDataSet *New();
+  virtual void PrintSelf(ostream& os, vtkIndent indent);
+  static vtkMergeCompositeDataSet* New();
 
 protected:
   vtkMergeCompositeDataSet();
   virtual ~vtkMergeCompositeDataSet();
 
-  virtual int RequestData(vtkInformation *,
-                          vtkInformationVector **, vtkInformationVector *);
-  virtual int FillInputPortInformation(int, vtkInformation *);
+  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  virtual int FillInputPortInformation(int, vtkInformation*);
 
 private:
-  vtkMergeCompositeDataSet(const vtkMergeCompositeDataSet &); // Not implemented
-  void operator=(const vtkMergeCompositeDataSet &);    // Not implemented
+  vtkMergeCompositeDataSet(const vtkMergeCompositeDataSet&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkMergeCompositeDataSet&) VTK_DELETE_FUNCTION;
 };
 
-#endif //__vtkMergeCompositeDataSet_h
+#endif // vtkMergeCompositeDataSet_h

@@ -29,15 +29,15 @@
 // .SECTION Description:
 // vtk1DTransferFunction subclasses map an array to a 1D array.
 
-#ifndef __vtk1DTransferFunction_h
-#define __vtk1DTransferFunction_h
+#ifndef vtk1DTransferFunction_h
+#define vtk1DTransferFunction_h
 
-#include "vtkPointSpriteGraphicsModule.h" //needed for exports
 #include "vtkObject.h"
+#include "vtkPointSpriteGraphicsModule.h" //needed for exports
 
 class vtkDataArray;
 
-class VTKPOINTSPRITEGRAPHICS_EXPORT vtk1DTransferFunction: public vtkObject
+class VTKPOINTSPRITEGRAPHICS_EXPORT vtk1DTransferFunction : public vtkObject
 {
 public:
   vtkTypeMacro(vtk1DTransferFunction, vtkObject);
@@ -46,7 +46,7 @@ public:
   // Description:
   // map the input array to the output array using the Table.
   // the output will have 1 component and as many tuples as the input.
-  virtual void  MapArray(vtkDataArray* input, vtkDataArray* output);
+  virtual void MapArray(vtkDataArray* input, vtkDataArray* output);
 
   // Set/Get the range of the input values
   vtkSetVector2Macro(InputRange, double);
@@ -61,7 +61,7 @@ public:
 
   // map a value and store it in the output at the given index
   // using the Lookup Table
-  virtual double  MapValue(double value, double* range) = 0;
+  virtual double MapValue(double value, double* range) = 0;
 
 protected:
   vtk1DTransferFunction();
@@ -72,9 +72,8 @@ protected:
   int UseScalarRange;
 
 private:
-  vtk1DTransferFunction(const vtk1DTransferFunction&); // Not implemented.
-  void operator=(const vtk1DTransferFunction&); // Not implemented.
+  vtk1DTransferFunction(const vtk1DTransferFunction&) VTK_DELETE_FUNCTION;
+  void operator=(const vtk1DTransferFunction&) VTK_DELETE_FUNCTION;
 };
 
 #endif
-

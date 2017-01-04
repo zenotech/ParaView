@@ -4,14 +4,14 @@ Introduction
 ============
 [ParaView][] is an open-source, multi-platform data analysis and
 visualization application based on
-[Visualization Toolkit (VTK)](VTK).
+[Visualization Toolkit (VTK)][VTK].
 
 The first public release was announced in October 2002. Since then, the project
-has grown through collaborative efforts between [Kitware Inc.](Kitware),
-[Sandia National Laboratories](Sandia),
-[Los Alamos National Laboratory](LANL),
-[Army Research Laboratory](ARL), and various other
-government and commercial institutions, and acedemic partners.
+has grown through collaborative efforts between [Kitware Inc.][Kitware],
+[Sandia National Laboratories][Sandia],
+[Los Alamos National Laboratory][LANL],
+[Army Research Laboratory][ARL], and various other
+government and commercial institutions, and academic partners.
 
 [ParaView]: http://www.paraview.org
 [VTK]: http://www.vtk.org
@@ -25,15 +25,15 @@ Learning Resources
 
 * General information is available at the [ParaView Homepage][].
 
-* **The ParaView Guide** can be downloaded (as PDF) or purchased (in print) [online][Guide].
+* [The ParaView Guide][Guide] can be downloaded (as PDF) or purchased (in print).
 
 * Community discussion takes place on the [ParaView Mailing Lists][].
 
 * Commercial [support][Kitware Support] and [training][Kitware Training]
   are available from [Kitware][].
 
-* Additional documentation including Doxygen-generated nightly
-  reference documentation is available [online][Documentation].
+* Additional documentation, including Doxygen-generated nightly
+  reference documentation, is available [online][Documentation].
 
 [ParaView Homepage]: http://www.paraview.org
 [Documentation]: http://www.paraview.org/documentation/
@@ -43,12 +43,25 @@ Learning Resources
 [Kitware Training]: http://www.kitware.com/products/protraining.php
 [Guide]: http://www.paraview.org/paraview-guide/
 
+
+Building
+========
+
+The easiest method for beginners to build ParaView from source is using the
+[ParaView Superbuild][sbrepo].  It is possible to build ParaView without using the
+superbuild as well. A little dated version of those instructions are
+available [here][buildinstall].  These will be updated in near future
+(contributions are welcome).
+
+[sbrepo]: https://gitlab.kitware.com/paraview/paraview-superbuild
+[buildinstall]: http://www.paraview.org/Wiki/ParaView:Build_And_Install
+
 Reporting Bugs
 ==============
 
 If you have found a bug:
 
-1. If you have a patch, please read the [CONTRIBUTING.md][] document.
+1. If you have a source-code fix, please read the [CONTRIBUTING.md][] document.
 
 2. Otherwise, please join the one of the [ParaView Mailing Lists][] and ask
    about the expected and observed behaviors to determine if it is
@@ -57,13 +70,22 @@ If you have found a bug:
 3. Finally, if the issue is not resolved by the above steps, open
    an entry in the [ParaView Issue Tracker][].
 
-[ParaView Issue Tracker]: http://www.paraview.org/Bug
+[ParaView Issue Tracker]: https://gitlab.kitware.com/paraview/paraview/issues
 
 Contributing
 ============
 
 See [CONTRIBUTING.md][] for instructions to contribute.
 
+For Github users
+----------------
+
+[Github][] is a mirror of the [official repository][repo]. We do not actively monitor issues or
+pull requests on Github. Please use the [official repository][repo] to report issues or contribute
+fixes.
+
+[Github]: https://github.com/Kitware/ParaView
+[repo]: https://gitlab.kitware.com/paraview/paraview
 [CONTRIBUTING.md]: CONTRIBUTING.md
 
 License

@@ -18,8 +18,8 @@
 // A normal is conputed for a point by averaging normals of surrounding
 // 2D cells.  The vector is then constrained to be perpendicular to the normal.
 
-#ifndef __vtkSQSurfaceVectors_h
-#define __vtkSQSurfaceVectors_h
+#ifndef vtkSQSurfaceVectors_h
+#define vtkSQSurfaceVectors_h
 
 #include "vtkSciberQuestModule.h" // for export macro
 #include "vtkDataSetAlgorithm.h"
@@ -43,8 +43,8 @@ protected:
   //virtual int RequestUpdateExtent(vtkInformation*,vtkInformationVector**,vtkInformationVector*);
 
 private:
-  vtkSQSurfaceVectors(const vtkSQSurfaceVectors&);  // Not implemented.
-  void operator=(const vtkSQSurfaceVectors&);  // Not implemented.
+  vtkSQSurfaceVectors(const vtkSQSurfaceVectors&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSQSurfaceVectors&) VTK_DELETE_FUNCTION;
 };
 
 #endif

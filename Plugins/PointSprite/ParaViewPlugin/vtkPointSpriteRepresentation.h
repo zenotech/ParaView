@@ -17,8 +17,8 @@
 // vtkPointSpriteRepresentation is an extension for vtkGeometryRepresentation
 // that renders point-sprites at all point locations.
 
-#ifndef __vtkPointSpriteRepresentation_h
-#define __vtkPointSpriteRepresentation_h
+#ifndef vtkPointSpriteRepresentation_h
+#define vtkPointSpriteRepresentation_h
 
 #include "vtkGeometryRepresentation.h"
 
@@ -44,7 +44,6 @@ public:
 
   // Overridden to preserve the texture.
   virtual void SetTexture(vtkTexture*);
-
 
   //***************************************************************************
   // Forwarded to ArrayToRadiusFilter and LODArrayToRadiusFilter
@@ -96,23 +95,23 @@ public:
 
   //***************************************************************************
   // Forwarded to RadiusGaussianTransferFunction
-  void SetRadiusGaussianControlPoints(int index, double, double, double, double,
-    double);
+  void SetRadiusGaussianControlPoints(int index, double, double, double, double, double);
   void SetNumberOfRadiusGaussianControlPoints(int val);
   void RemoveAllRadiusGaussianControlPoints();
 
   //***************************************************************************
   // Forwarded to OpacityGaussianTransferFunction
-  void SetOpacityGaussianControlPoints(int index, double, double, double,
-    double, double);
+  void SetOpacityGaussianControlPoints(int index, double, double, double, double, double);
   void SetNumberOfOpacityGaussianControlPoints(int val);
   void RemoveAllOpacityGaussianControlPoints();
 
   // Description:
   // InterpolateScalarsBeforeMapping is not supported by this representation.
   virtual void SetInterpolateScalarsBeforeMapping(int)
-    {this->Superclass::SetInterpolateScalarsBeforeMapping(0); }
-//BTX
+  {
+    this->Superclass::SetInterpolateScalarsBeforeMapping(0);
+  }
+
 protected:
   vtkPointSpriteRepresentation();
   ~vtkPointSpriteRepresentation();
@@ -148,14 +147,12 @@ protected:
   vtk1DGaussianTransferFunction* OpacityGaussianTransferFunction;
 
 private:
-  vtkPointSpriteRepresentation(const vtkPointSpriteRepresentation&); // Not implemented
-  void operator=(const vtkPointSpriteRepresentation&); // Not implemented
+  vtkPointSpriteRepresentation(const vtkPointSpriteRepresentation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPointSpriteRepresentation&) VTK_DELETE_FUNCTION;
 
   vtkTexture* TextureInternal;
   void SetTextureInternal(vtkTexture*);
   int RenderMode;
-
-//ETX
 };
 
 #endif

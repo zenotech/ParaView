@@ -12,15 +12,18 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMViewExportHelper - helper class to export views.
-// .SECTION Description
-// vtkSMViewExportHelper is a helper class to aid in exporting views. You can
-// create instances of this helper on-demand to query available exporters and
-// create and exporter proxy (in same spirit as vtkSMWriterFactory, except that
-// there's no globally existing instance).
+/**
+ * @class   vtkSMViewExportHelper
+ * @brief   helper class to export views.
+ *
+ * vtkSMViewExportHelper is a helper class to aid in exporting views. You can
+ * create instances of this helper on-demand to query available exporters and
+ * create and exporter proxy (in same spirit as vtkSMWriterFactory, except that
+ * there's no globally existing instance).
+*/
 
-#ifndef __vtkSMViewExportHelper_h
-#define __vtkSMViewExportHelper_h
+#ifndef vtkSMViewExportHelper_h
+#define vtkSMViewExportHelper_h
 
 #include "vtkPVServerManagerDefaultModule.h" //needed for exports
 #include "vtkSMObject.h"
@@ -36,29 +39,29 @@ public:
   vtkTypeMacro(vtkSMViewExportHelper, vtkSMObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  // Description:
-  // Returns a formatted string with all supported file types for the given
-  // view.
-  // An example returned string would look like:
-  // \verbatim
-  // "PVD Files (*.pvd);;VTK Files (*.vtk)"
-  // \endverbatim
+  /**
+   * Returns a formatted string with all supported file types for the given
+   * view.
+   * An example returned string would look like:
+   * \verbatim
+   * "PVD Files (*.pvd);;VTK Files (*.vtk)"
+   * \endverbatim
+   */
   virtual vtkStdString GetSupportedFileTypes(vtkSMViewProxy* view);
 
-  // Description:
-  // Exports the view to the given output file. Returns a new exporter instance
-  // (or NULL). Caller must release the returned object explicitly.
+  /**
+   * Exports the view to the given output file. Returns a new exporter instance
+   * (or NULL). Caller must release the returned object explicitly.
+   */
   virtual vtkSMExporterProxy* CreateExporter(const char* filename, vtkSMViewProxy*);
 
-//BTX
 protected:
   vtkSMViewExportHelper();
   ~vtkSMViewExportHelper();
 
 private:
-  vtkSMViewExportHelper(const vtkSMViewExportHelper&); // Not implemented
-  void operator=(const vtkSMViewExportHelper&); // Not implemented
-//ETX
+  vtkSMViewExportHelper(const vtkSMViewExportHelper&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMViewExportHelper&) VTK_DELETE_FUNCTION;
 };
 
 #endif

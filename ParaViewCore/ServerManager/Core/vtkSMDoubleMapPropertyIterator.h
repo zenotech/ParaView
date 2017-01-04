@@ -13,8 +13,8 @@
 
 =========================================================================*/
 
-#ifndef __vtkSMDoubleMapPropertyIterator_h
-#define __vtkSMDoubleMapPropertyIterator_h
+#ifndef vtkSMDoubleMapPropertyIterator_h
+#define vtkSMDoubleMapPropertyIterator_h
 
 #include "vtkPVServerManagerCoreModule.h" //needed for exports
 #include "vtkSMObject.h"
@@ -31,7 +31,7 @@ public:
 
   // Description:
   // Set/get the property to iterate over.
-  virtual void SetProperty(vtkSMDoubleMapProperty *property);
+  virtual void SetProperty(vtkSMDoubleMapProperty* property);
   vtkGetObjectMacro(Property, vtkSMDoubleMapProperty);
 
   // Description:
@@ -59,11 +59,11 @@ protected:
   ~vtkSMDoubleMapPropertyIterator();
 
 private:
-  vtkSMDoubleMapPropertyIterator(const vtkSMDoubleMapPropertyIterator&); // Not implemented
-  void operator=(const vtkSMDoubleMapPropertyIterator&); // Not implemented
+  vtkSMDoubleMapPropertyIterator(const vtkSMDoubleMapPropertyIterator&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMDoubleMapPropertyIterator&) VTK_DELETE_FUNCTION;
 
-  vtkSMDoubleMapProperty *Property;
-  vtkSMDoubleMapPropertyIteratorInternals *Internals;
+  vtkSMDoubleMapProperty* Property;
+  vtkSMDoubleMapPropertyIteratorInternals* Internals;
 };
 
 #endif

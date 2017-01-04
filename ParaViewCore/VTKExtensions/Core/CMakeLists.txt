@@ -43,12 +43,14 @@ set(Module_SRCS
   vtkUndoElement.cxx
   vtkUndoSet.cxx
   vtkUndoStack.cxx
+  vtkMemberFunctionCommand.h
 )
 
 set_source_files_properties(
   vtkCommunicationErrorCatcher
   vtkMultiProcessControllerHelper
   vtkPVInformationKeys
+  vtkMemberFunctionCommand
   WRAP_EXCLUDE
   )
 

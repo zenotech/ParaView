@@ -34,11 +34,11 @@
 // The output array will have the same association as the input array : point data
 // will be mapped to point data, cell data to cell data...
 
-#ifndef vtk1DTransferFunctionFilter_H_
-#define vtk1DTransferFunctionFilter_H_
+#ifndef vtk1DTransferFunctionFilter_h
+#define vtk1DTransferFunctionFilter_h
 
-#include "vtkPointSpriteGraphicsModule.h" //needed for exports
 #include "vtkPassInputTypeAlgorithm.h"
+#include "vtkPointSpriteGraphicsModule.h" //needed for exports
 
 class vtk1DTransferFunction;
 
@@ -46,8 +46,8 @@ class VTKPOINTSPRITEGRAPHICS_EXPORT vtk1DTransferFunctionFilter : public vtkPass
 {
 public:
   vtkTypeMacro(vtk1DTransferFunctionFilter, vtkPassInputTypeAlgorithm);
-  virtual void PrintSelf(ostream &os, vtkIndent indent);
-  static vtk1DTransferFunctionFilter *New();
+  virtual void PrintSelf(ostream& os, vtkIndent indent);
+  static vtk1DTransferFunctionFilter* New();
 
   // Description:
   // Set/Get the transfer function that will be used by this filter
@@ -56,7 +56,7 @@ public:
   // The output array will have 1 component and as many tuples as the input array.
   // It will have the same fieldAssociation than the input (ie point data will be
   // mapped to point data, cell data to cell data...)
-  virtual void  SetTransferFunction(vtk1DTransferFunction*);
+  virtual void SetTransferFunction(vtk1DTransferFunction*);
   vtkGetObjectMacro(TransferFunction, vtk1DTransferFunction);
 
   // Description:
@@ -95,7 +95,7 @@ public:
   // Description:
   // Return this object's modified time.
   // overloaded to reflect the TransferFunction MTime too.
-  virtual unsigned long GetMTime();
+  virtual vtkMTimeType GetMTime();
 
 protected:
   vtk1DTransferFunctionFilter();
@@ -106,26 +106,25 @@ protected:
   // Description:
   // This is called by the superclass.
   // This is the method you should override.
-  virtual int RequestData(vtkInformation* request,
-                          vtkInformationVector** inputVector,
-                          vtkInformationVector* outputVector);
+  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector);
 
   // Description:
   // Set the array to the output, with the same
   // association that the one used as input.
   // return 1 if the array was added to output, 0 if on error.
-  virtual int  SetOutputArray(vtkDataObject*, vtkDataArray*);
+  virtual int SetOutputArray(vtkDataObject*, vtkDataArray*);
 
   vtk1DTransferFunction* TransferFunction;
-  int   Enabled;
+  int Enabled;
   char* OutputArrayName;
-  int   OutputArrayType;
-  int   ForceSameTypeAsInputArray;
-  int   ConcatenateOutputNameWithInput;
+  int OutputArrayType;
+  int ForceSameTypeAsInputArray;
+  int ConcatenateOutputNameWithInput;
 
 private:
-  vtk1DTransferFunctionFilter(const vtk1DTransferFunctionFilter&); // Not implemented.
-  void operator=(const vtk1DTransferFunctionFilter&); // Not implemented.
+  vtk1DTransferFunctionFilter(const vtk1DTransferFunctionFilter&) VTK_DELETE_FUNCTION;
+  void operator=(const vtk1DTransferFunctionFilter&) VTK_DELETE_FUNCTION;
 };
 
-#endif /* vtk1DTransferFunctionFilter_H_ */
+#endif /* vtk1DTransferFunctionFilter_h */

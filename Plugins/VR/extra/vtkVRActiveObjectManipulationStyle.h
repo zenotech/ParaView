@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __vtkVRActiveObjectManipulationStyle_h_
-#define __vtkVRActiveObjectManipulationStyle_h_
+#ifndef vtkVRActiveObjectManipulationStyle_h_
+#define vtkVRActiveObjectManipulationStyle_h_
 
 #include "vtkVRInteractorStyle.h"
 
@@ -42,6 +42,7 @@ class vtkVRActiveObjectManipulationStyle : public vtkVRInteractorStyle
 {
   Q_OBJECT
   typedef vtkVRInteractorStyle Superclass;
+
 public:
   vtkVRActiveObjectManipulationStyle(QObject* parent);
   ~vtkVRActiveObjectManipulationStyle();
@@ -51,10 +52,11 @@ public:
   virtual bool update();
 
 protected:
-  void HandleAnalog ( const vtkVREventData& data );
-  void HandleSpaceNavigatorAnalog( const vtkVREventData& data );
+  void HandleAnalog(const vtkVREventData& data);
+  void HandleSpaceNavigatorAnalog(const vtkVREventData& data);
   std::string Analog;
+
 protected:
 };
 
-#endif //__vtkVRActiveObjectManipulationStyle.h_
+#endif // vtkVRActiveObjectManipulationStyle.h_

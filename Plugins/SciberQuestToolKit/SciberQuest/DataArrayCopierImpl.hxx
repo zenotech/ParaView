@@ -8,8 +8,8 @@ Copyright 2012 SciberQuest Inc.
 
 */
 
-#ifndef __DataArrayCopierImpl_h
-#define __DataArrayCopierImpl_h
+#ifndef DataArrayCopierImpl_h
+#define DataArrayCopierImpl_h
 
 #include "DataArrayCopier.h"
 #include "DataArrayTraits.hxx"
@@ -165,8 +165,8 @@ void DataArrayCopierImpl<T>::Copy(vtkIdType id)
   // expecting scalars, vectors, and tensors
   typename DataArrayTraits<T>::InternalType val[9];
 
-  this->Input->GetTupleValue(id,val);
-  this->Output->InsertNextTupleValue(val);
+  this->Input->GetTypedTuple(id,val);
+  this->Output->InsertNextTypedTuple(val);
 }
 
 //-----------------------------------------------------------------------------

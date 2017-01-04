@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,22 +29,25 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqQtMessageHandlerBehavior_h 
-#define __pqQtMessageHandlerBehavior_h
+#ifndef pqQtMessageHandlerBehavior_h
+#define pqQtMessageHandlerBehavior_h
 
-#include <QObject>
 #include "pqApplicationComponentsModule.h"
+#include <QObject>
 
-/// @ingroup Behaviors
-/// pqQtMessageHandlerBehavior install a message handler to capture Qt
-/// error/debug messages i.e. install a event handler using qInstallMsgHandler
-/// and post them as VTK messages.
+/**
+* @ingroup Behaviors
+* pqQtMessageHandlerBehavior install a message handler to capture Qt
+* error/debug messages i.e. install a event handler using qInstallMsgHandler
+* and post them as VTK messages.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqQtMessageHandlerBehavior : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
-  pqQtMessageHandlerBehavior(QObject* parent=0);
+  pqQtMessageHandlerBehavior(QObject* parent = 0);
   ~pqQtMessageHandlerBehavior();
 
 private:
@@ -52,5 +55,3 @@ private:
 };
 
 #endif
-
-

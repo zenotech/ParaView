@@ -12,32 +12,35 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVLinearExtrusionFilter - change a default value
-// .SECTION Description
-// vtkPVLinearExtrusionFilter is a subclass of vtkPLinearExtrusionFilter.
-// The only difference is changing the default extrusion type to vector
-// extrusion
+/**
+ * @class   vtkPVLinearExtrusionFilter
+ * @brief   change a default value
+ *
+ * vtkPVLinearExtrusionFilter is a subclass of vtkPLinearExtrusionFilter.
+ * The only difference is changing the default extrusion type to vector
+ * extrusion
+*/
 
-#ifndef __vtkPVLinearExtrusionFilter_h
-#define __vtkPVLinearExtrusionFilter_h
+#ifndef vtkPVLinearExtrusionFilter_h
+#define vtkPVLinearExtrusionFilter_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkPLinearExtrusionFilter.h"
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 
 class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVLinearExtrusionFilter : public vtkPLinearExtrusionFilter
 {
 public:
-  static vtkPVLinearExtrusionFilter *New();
+  static vtkPVLinearExtrusionFilter* New();
   vtkTypeMacro(vtkPVLinearExtrusionFilter, vtkPLinearExtrusionFilter);
-  void PrintSelf(ostream &os, vtkIndent indent);
-  
+  void PrintSelf(ostream& os, vtkIndent indent);
+
 protected:
   vtkPVLinearExtrusionFilter();
-  ~vtkPVLinearExtrusionFilter() {};
-  
+  ~vtkPVLinearExtrusionFilter(){};
+
 private:
-  vtkPVLinearExtrusionFilter(const vtkPVLinearExtrusionFilter&); // Not implemented.
-  void operator=(const vtkPVLinearExtrusionFilter&); // Not implemented.
+  vtkPVLinearExtrusionFilter(const vtkPVLinearExtrusionFilter&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVLinearExtrusionFilter&) VTK_DELETE_FUNCTION;
 };
 
 #endif

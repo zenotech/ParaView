@@ -12,12 +12,14 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVExponentialKeyFrame
-// .SECTION Description
-// Interplates lineraly between consequtive key frames.
+/**
+ * @class   vtkPVExponentialKeyFrame
+ *
+ * Interplates lineraly between consequtive key frames.
+*/
 
-#ifndef __vtkPVExponentialKeyFrame_h
-#define __vtkPVExponentialKeyFrame_h
+#ifndef vtkPVExponentialKeyFrame_h
+#define vtkPVExponentialKeyFrame_h
 
 #include "vtkPVKeyFrame.h"
 
@@ -28,17 +30,20 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkPVExponentialKeyFrame* New();
 
-  // Description:
-  // This method will do the actual interpolation.
-  // currenttime is normalized to the time range between
-  // this key frame and the next key frame.
-  virtual void UpdateValue( double currenttime, vtkPVAnimationCue* cue,
-                            vtkPVKeyFrame* next);
+  /**
+   * This method will do the actual interpolation.
+   * currenttime is normalized to the time range between
+   * this key frame and the next key frame.
+   */
+  virtual void UpdateValue(double currenttime, vtkPVAnimationCue* cue, vtkPVKeyFrame* next);
 
-  // Description:
-  // Base to be used for exponential function.
+  //@{
+  /**
+   * Base to be used for exponential function.
+   */
   vtkSetMacro(Base, double);
   vtkGetMacro(Base, double);
+  //@}
 
   vtkSetMacro(StartPower, double);
   vtkGetMacro(StartPower, double);
@@ -55,9 +60,8 @@ protected:
   double EndPower;
 
 private:
-  vtkPVExponentialKeyFrame(const vtkPVExponentialKeyFrame&); // Not implemented.
-  void operator=(const vtkPVExponentialKeyFrame&); // Not implemented.
-
+  vtkPVExponentialKeyFrame(const vtkPVExponentialKeyFrame&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVExponentialKeyFrame&) VTK_DELETE_FUNCTION;
 };
 
 #endif

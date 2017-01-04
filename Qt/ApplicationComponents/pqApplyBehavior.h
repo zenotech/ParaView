@@ -29,12 +29,12 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqApplyBehavior_h
-#define __pqApplyBehavior_h
+#ifndef pqApplyBehavior_h
+#define pqApplyBehavior_h
 
+#include "pqApplicationComponentsModule.h"
 #include <QObject>
 #include <QScopedPointer>
-#include "pqApplicationComponentsModule.h"
 
 class pqPipelineFilter;
 class pqPipelineSource;
@@ -42,24 +42,29 @@ class pqPropertiesPanel;
 class pqProxy;
 class pqView;
 
-/// @ingroup Behaviors
-/// pqApplyBehavior collects the logic that needs to happen after the user hits
-/// "Apply" on the pqPropertiesPanel. Since "Apply" is an important concept in
-/// ParaView application, it gets its own behavior so applications can customize
-/// it, if needed.
-///
-/// For pqApplyBehavior to work, one needs to manually register
-/// pqPropertiesPanel instance(s). pqParaViewBehaviors does that automatically
-/// for pqPropertiesPanel instances available during the startup.
+/**
+* @ingroup Behaviors
+* pqApplyBehavior collects the logic that needs to happen after the user hits
+* "Apply" on the pqPropertiesPanel. Since "Apply" is an important concept in
+* ParaView application, it gets its own behavior so applications can customize
+* it, if needed.
+*
+* For pqApplyBehavior to work, one needs to manually register
+* pqPropertiesPanel instance(s). pqParaViewBehaviors does that automatically
+* for pqPropertiesPanel instances available during the startup.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqApplyBehavior : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
-  pqApplyBehavior(QObject* parent=0);
+  pqApplyBehavior(QObject* parent = 0);
   virtual ~pqApplyBehavior();
 
-  /// Register/unregister pqPropertiesPanel instances to monitor.
+  /**
+  * Register/unregister pqPropertiesPanel instances to monitor.
+  */
   void registerPanel(pqPropertiesPanel* panel);
   void unregisterPanel(pqPropertiesPanel* panel);
 protected slots:
@@ -75,7 +80,7 @@ protected:
   void hideInputIfRequired(pqPipelineFilter* filter, pqView* view);
 
 private:
-  Q_DISABLE_COPY(pqApplyBehavior);
+  Q_DISABLE_COPY(pqApplyBehavior)
   class pqInternals;
   const QScopedPointer<pqInternals> Internals;
 };

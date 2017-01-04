@@ -2,6 +2,7 @@ set (__dependencies)
 if (PARAVIEW_USE_MPI)
   set (__dependencies
     vtkFiltersParallelMPI
+    vtkParallelMPI
     )
   if (PARAVIEW_USE_ICE_T)
     list(APPEND __dependencies vtkicet)
@@ -23,6 +24,10 @@ if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL")
   endif()
 else()
     set(opengl2_private_depends vtkglew)
+endif()
+
+if(PARAVIEW_USE_OSPRAY)
+  list(APPEND __dependencies vtkRenderingOSPRay)
 endif()
 
 vtk_module(vtkPVVTKExtensionsRendering
@@ -47,10 +52,15 @@ vtk_module(vtkPVVTKExtensionsRendering
     vtkRendering${VTK_RENDERING_BACKEND}
     vtkRenderingParallel
     vtkIOExport
+    vtkIOExport${VTK_RENDERING_BACKEND}
     ${__dependencies}
     vtkRenderingVolumeAMR
+    vtkCommonComputationalGeometry
+    vtkCommonSystem
+    vtkIOImage
   PRIVATE_DEPENDS
     vtkzlib
+    vtklz4
   COMPILE_DEPENDS
     vtkUtilitiesEncodeString
 

@@ -33,11 +33,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _pqPluginTreeWidgetEventPlayer_h
 #define _pqPluginTreeWidgetEventPlayer_h
 
-#include "pqWidgetEventPlayer.h"
 #include "pqComponentsModule.h"
+#include "pqWidgetEventPlayer.h"
 
 /**
-Concrete implementation of pqWidgetEventPlayer that translates high-level ParaView events into low-level Qt events.
+Concrete implementation of pqWidgetEventPlayer that translates high-level ParaView events into
+low-level Qt events.
 
 \sa pqEventPlayer
 */
@@ -46,16 +47,16 @@ class PQCOMPONENTS_EXPORT pqPluginTreeWidgetEventPlayer : public pqWidgetEventPl
 {
   Q_OBJECT
   typedef pqWidgetEventPlayer Superclass;
+
 public:
-  pqPluginTreeWidgetEventPlayer(QObject* parent=0);
+  pqPluginTreeWidgetEventPlayer(QObject* parent = 0);
   ~pqPluginTreeWidgetEventPlayer();
 
-  bool playEvent(QObject* object, const QString& command, const QString&
-    arguments, bool& error);
+  using Superclass::playEvent;
+  bool playEvent(QObject* object, const QString& command, const QString& arguments, bool& error);
 
 private:
-  pqPluginTreeWidgetEventPlayer(const pqPluginTreeWidgetEventPlayer&); // Not implemented.
-  void operator=(const pqPluginTreeWidgetEventPlayer&); // Not implemented.
+  Q_DISABLE_COPY(pqPluginTreeWidgetEventPlayer)
 };
 
 #endif // !_pqPluginTreeWidgetEventPlayer_h
