@@ -49,7 +49,7 @@ class VTKPVSERVERMANAGERDEFAULT_EXPORT vtkSMProxyConfigurationReader : public vt
 public:
   static vtkSMProxyConfigurationReader* New();
   vtkTypeMacro(vtkSMProxyConfigurationReader, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -120,7 +120,7 @@ public:
 
 protected:
   vtkSMProxyConfigurationReader();
-  virtual ~vtkSMProxyConfigurationReader();
+  ~vtkSMProxyConfigurationReader() override;
 
 private:
   char* FileName;
@@ -133,8 +133,8 @@ private:
   char* FileExtension;
 
 private:
-  vtkSMProxyConfigurationReader(const vtkSMProxyConfigurationReader&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMProxyConfigurationReader&) VTK_DELETE_FUNCTION;
+  vtkSMProxyConfigurationReader(const vtkSMProxyConfigurationReader&) = delete;
+  void operator=(const vtkSMProxyConfigurationReader&) = delete;
 };
 
 #endif

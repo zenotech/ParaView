@@ -39,7 +39,7 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkCompositeDataToUnstructuredGridFilte
 public:
   static vtkCompositeDataToUnstructuredGridFilter* New();
   vtkTypeMacro(vtkCompositeDataToUnstructuredGridFilter, vtkUnstructuredGridAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -62,16 +62,16 @@ public:
 
 protected:
   vtkCompositeDataToUnstructuredGridFilter();
-  ~vtkCompositeDataToUnstructuredGridFilter();
+  ~vtkCompositeDataToUnstructuredGridFilter() override;
 
   /**
    * This is called by the superclass.
    * This is the method you should override.
    */
-  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   /**
    * Remove point/cell arrays not present on all processes.
@@ -86,8 +86,8 @@ protected:
 
 private:
   vtkCompositeDataToUnstructuredGridFilter(
-    const vtkCompositeDataToUnstructuredGridFilter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCompositeDataToUnstructuredGridFilter&) VTK_DELETE_FUNCTION;
+    const vtkCompositeDataToUnstructuredGridFilter&) = delete;
+  void operator=(const vtkCompositeDataToUnstructuredGridFilter&) = delete;
 };
 
 #endif

@@ -36,26 +36,31 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqEventDispatcher.h"
 #include "pqInterfaceTracker.h"
 #include "pqObjectBuilder.h"
+#include "pqPropertyLinks.h"
 #include "pqServerManagerModel.h"
 #include "pqUndoStack.h"
 #include "pqView.h"
 #include "pqViewFrame.h"
 #include "pqViewFrameActionsInterface.h"
 #include "vtkCommand.h"
+#include "vtkErrorCode.h"
+#include "vtkImageData.h"
 #include "vtkNew.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
 #include "vtkSMProperty.h"
+#include "vtkSMPropertyHelper.h"
+#include "vtkSMSaveScreenshotProxy.h"
 #include "vtkSMSessionProxyManager.h"
+#include "vtkSMUtilities.h"
 #include "vtkSMViewLayoutProxy.h"
 #include "vtkSMViewProxy.h"
 #include "vtkWeakPointer.h"
 
+#include "pqSplitter.h"
 #include <QApplication>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QMap>
-#include <QPointer>
-#include <QSplitter>
 #include <QVBoxLayout>
 #include <QVariant>
 #include <QVector>
@@ -69,31 +74,33 @@ public:
   // frame, we preserve that frame as long as possible.
   QMap<vtkSMViewProxy*, QPointer<pqViewFrame> > ViewFrames;
 
-  unsigned long ObserverId;
+  std::vector<unsigned long> ObserverIds;
   vtkWeakPointer<vtkSMViewLayoutProxy> LayoutManager;
   QPointer<pqViewFrame> ActiveFrame;
 
   // Set to true to place views in a separate popout widget.
   bool Popout;
   QWidget PopoutFrame;
-  bool DecorationsVisibleBeforeCapture;
+
+  pqPropertyLinks Links;
 
   pqInternals(QWidget* self)
-    : ObserverId(0)
-    , Popout(false)
+    : Popout(false)
     , PopoutFrame(self)
     , SavedButtons(pqViewFrame::NoButton)
   {
     this->PopoutFrame.setWindowFlags(Qt::Window | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
       Qt::WindowMaximizeButtonHint | Qt::WindowCloseButtonHint);
-    this->DecorationsVisibleBeforeCapture = false;
   }
 
   ~pqInternals()
   {
-    if (this->LayoutManager && this->ObserverId)
+    if (this->LayoutManager)
     {
-      this->LayoutManager->RemoveObserver(this->ObserverId);
+      for (auto id : this->ObserverIds)
+      {
+        this->LayoutManager->RemoveObserver(id);
+      }
     }
   }
 
@@ -161,11 +168,11 @@ public:
     this->setSpacing(0);
   };
 
-  virtual ~pqSplitterLayout() {}
+  ~pqSplitterLayout() override {}
 
   void setSplitFraction(double val) { this->SplitFraction = val; }
 
-  virtual void setGeometry(const QRect& rect)
+  void setGeometry(const QRect& rect) override
   {
     this->QLayout::setGeometry(rect);
 
@@ -198,6 +205,7 @@ pqMultiViewWidget::pqMultiViewWidget(QWidget* parentObject, Qt::WindowFlags f)
   : Superclass(parentObject, f)
   , Internals(new pqInternals(this))
   , DecorationsVisible(true)
+  , ForceSplitter(false)
 {
   qApp->installEventFilter(this);
 
@@ -247,21 +255,38 @@ void pqMultiViewWidget::viewAdded(pqView* view)
 //-----------------------------------------------------------------------------
 void pqMultiViewWidget::setLayoutManager(vtkSMViewLayoutProxy* vlayout)
 {
-  if (this->Internals->LayoutManager != vlayout)
+  pqInternals& internals = (*this->Internals);
+  if (internals.LayoutManager != vlayout)
   {
-    if (this->Internals->LayoutManager)
+    if (internals.LayoutManager)
     {
-      this->Internals->LayoutManager->RemoveObserver(this->Internals->ObserverId);
+      for (auto id : this->Internals->ObserverIds)
+      {
+        internals.LayoutManager->RemoveObserver(id);
+      }
     }
-    this->Internals->ObserverId = 0;
-    this->Internals->LayoutManager = vlayout;
+    internals.Links.clear();
+    internals.ObserverIds.clear();
     if (vlayout)
     {
-      this->Internals->ObserverId =
-        vlayout->AddObserver(vtkCommand::ConfigureEvent, this, &pqMultiViewWidget::reload);
+      internals.ObserverIds.push_back(
+        vlayout->AddObserver(vtkCommand::ConfigureEvent, this, &pqMultiViewWidget::reload));
+      internals.ObserverIds.push_back(
+        vlayout->GetProperty("SeparatorWidth")
+          ->AddObserver(vtkCommand::ModifiedEvent, this, &pqMultiViewWidget::updateSplitter));
+      internals.ObserverIds.push_back(
+        vlayout->GetProperty("SeparatorColor")
+          ->AddObserver(vtkCommand::ModifiedEvent, this, &pqMultiViewWidget::updateSplitter));
+      internals.Links.addPropertyLink(this, "decorationsVisibility",
+        SIGNAL(decorationsVisibilityChanged(bool)), vlayout,
+        vlayout->GetProperty("ShowWindowDecorations"));
     }
-    this->reload();
   }
+  // we delay the setting of the LayoutManager to avoid the duplicate `reload`
+  // call when `addPropertyLink` is called if the window decorations
+  // visibility changed.
+  internals.LayoutManager = vlayout;
+  this->reload();
 }
 
 //-----------------------------------------------------------------------------
@@ -281,9 +306,9 @@ bool pqMultiViewWidget::eventFilter(QObject* caller, QEvent* evt)
     {
       // If the new widget that is getting the focus is a child widget of any of the
       // frames, then the frame should be made active.
-      foreach (QWidget* frame_or_splitter, this->Internals->Widgets)
+      foreach (QPointer<QWidget> frame_or_splitter, this->Internals->Widgets)
       {
-        pqViewFrame* frame = qobject_cast<pqViewFrame*>(frame_or_splitter);
+        pqViewFrame* frame = qobject_cast<pqViewFrame*>(frame_or_splitter.data());
         if (frame && frame->isAncestorOf(wdg))
         {
           this->makeActive(frame);
@@ -467,13 +492,17 @@ QWidget* pqMultiViewWidget::createWidget(
       frame->setObjectName(QString("Frame.%1").arg(index));
       frame->setProperty("FRAME_INDEX", QVariant(index));
       frame->setDecorationsVisibility(this->DecorationsVisible);
-      if (this->LockViewSize.isEmpty())
+      QWidget* centralWidget = frame->centralWidget();
+      if (centralWidget)
       {
-        frame->centralWidget()->setMaximumSize(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
-      }
-      else
-      {
-        frame->centralWidget()->setMaximumSize(this->LockViewSize);
+        if (this->LockViewSize.isEmpty())
+        {
+          centralWidget->setMaximumSize(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
+        }
+        else
+        {
+          centralWidget->setMaximumSize(this->LockViewSize);
+        }
       }
       if (max_index < index)
       {
@@ -484,26 +513,36 @@ QWidget* pqMultiViewWidget::createWidget(
 
     case vtkSMViewLayoutProxy::VERTICAL:
     case vtkSMViewLayoutProxy::HORIZONTAL:
-      if (this->DecorationsVisible)
+      if (this->DecorationsVisible || this->ForceSplitter)
       {
-        QSplitter* splitter = qobject_cast<QSplitter*>(this->Internals->Widgets[index]);
+        pqSplitter* splitter = qobject_cast<pqSplitter*>(this->Internals->Widgets[index]);
         if (!splitter)
         {
-          splitter = new QSplitter(parentWdg);
+          splitter = new pqSplitter(parentWdg);
         }
         Q_ASSERT(splitter);
-        splitter->setParent(parentWdg);
-        splitter->setHandleWidth(this->DecorationsVisible ? 3 : 1);
+
         this->Internals->Widgets[index] = splitter;
+        splitter->setParent(parentWdg);
+        if (this->DecorationsVisible)
+        {
+          splitter->setHandleWidth(3);
+          splitter->setSplitterHandlePaint(false);
+        }
+        else
+        {
+          splitter->setHandleWidth(0);
+          splitter->setSplitterHandlePaint(true);
+        }
         splitter->setObjectName(QString("Splitter.%1").arg(index));
         splitter->setProperty("FRAME_INDEX", QVariant(index));
         splitter->setOpaqueResize(false);
         splitter->setOrientation(
           direction == vtkSMViewLayoutProxy::VERTICAL ? Qt::Vertical : Qt::Horizontal);
-        splitter->addWidget(
-          this->createWidget(vlayout->GetFirstChild(index), vlayout, splitter, max_index));
-        splitter->addWidget(
-          this->createWidget(vlayout->GetSecondChild(index), vlayout, splitter, max_index));
+        splitter->insertWidget(
+          0, this->createWidget(vlayout->GetFirstChild(index), vlayout, splitter, max_index));
+        splitter->insertWidget(
+          1, this->createWidget(vlayout->GetSecondChild(index), vlayout, splitter, max_index));
 
         // set the sizes are percentage. QSplitter uses the initially specified
         // sizes as reference.
@@ -525,14 +564,27 @@ QWidget* pqMultiViewWidget::createWidget(
       }
       else
       {
-        QWidget* container = new QWidget(parentWdg);
-        pqSplitterLayout* slayout = new pqSplitterLayout(direction == vtkSMViewLayoutProxy::VERTICAL
-            ? pqSplitterLayout::TopToBottom
-            : pqSplitterLayout::LeftToRight,
-          container);
-        slayout->setSplitFraction(vlayout->GetSplitFraction(index));
-        container->setLayout(slayout);
+        QWidget* container = this->Internals->Widgets[index];
+        // since old widget may be a splitter, which is a QWidget too, we
+        // compare with className rather than using a `qobject_cast`.
+        if (strcmp(container->metaObject()->className(), "QWidget") != 0)
+        {
+          container = new QWidget(parentWdg);
+          new pqSplitterLayout(direction == vtkSMViewLayoutProxy::VERTICAL
+              ? pqSplitterLayout::TopToBottom
+              : pqSplitterLayout::LeftToRight,
+            container);
+        }
+        Q_ASSERT(container);
         container->setObjectName(QString("Container.%1").arg(index));
+        this->Internals->Widgets[index] = container;
+
+        pqSplitterLayout* slayout = dynamic_cast<pqSplitterLayout*>(container->layout());
+        Q_ASSERT(slayout);
+        slayout->setDirection(direction == vtkSMViewLayoutProxy::VERTICAL
+            ? pqSplitterLayout::TopToBottom
+            : pqSplitterLayout::LeftToRight);
+        slayout->setSplitFraction(vlayout->GetSplitFraction(index));
         slayout->addWidget(
           this->createWidget(vlayout->GetFirstChild(index), vlayout, container, max_index));
         slayout->addWidget(
@@ -549,6 +601,27 @@ QWidget* pqMultiViewWidget::createWidget(
 }
 
 //-----------------------------------------------------------------------------
+void pqMultiViewWidget::updateSplitter()
+{
+  vtkSMViewLayoutProxy* vlayout = this->layoutManager();
+  if (vlayout)
+  {
+    int width = vtkSMPropertyHelper(vlayout, "SeparatorWidth").GetAsInt();
+    double color[3];
+    vtkSMPropertyHelper(vlayout, "SeparatorColor").Get(color, 3);
+    foreach (QWidget* widget, this->Internals->Widgets)
+    {
+      pqSplitter* splitter = qobject_cast<pqSplitter*>(widget);
+      if (splitter)
+      {
+        splitter->setSplitterHandleWidth(width);
+        splitter->setSplitterHandleColor(color);
+      }
+    }
+  }
+}
+
+//-----------------------------------------------------------------------------
 void pqMultiViewWidget::reload()
 {
   vtkSMViewLayoutProxy* vlayout = this->layoutManager();
@@ -557,12 +630,14 @@ void pqMultiViewWidget::reload()
     return;
   }
 
-  QWidget* cleaner = new QWidget();
+  this->setUpdatesEnabled(false);
+
+  QList<QPointer<QWidget> > oldWidgets;
   foreach (QWidget* widget, this->Internals->Widgets)
   {
     if (widget)
     {
-      widget->setParent(cleaner);
+      oldWidgets.push_back(widget);
     }
   }
 
@@ -572,12 +647,30 @@ void pqMultiViewWidget::reload()
 
   int max_index = 0;
   QWidget* child = this->createWidget(0, vlayout, parentWdg, max_index);
-  delete cleaner;
-  cleaner = NULL;
 
   // resize Widgets to remove any obsolete indices. These indices weren't
   // touched at all during the last call to createWidget().
   this->Internals->Widgets.resize(max_index + 1);
+
+  // now destroy any old widgets no longer being used.
+  QSet<QWidget*> newWidgets;
+  foreach (QWidget* widget, this->Internals->Widgets)
+  {
+    if (widget)
+    {
+      newWidgets.insert(widget);
+    }
+  }
+  foreach (QWidget* aWidget, oldWidgets)
+  {
+    if (aWidget && !newWidgets.contains(aWidget))
+    {
+      aWidget->setParent(NULL);
+      delete aWidget;
+    }
+  }
+  oldWidgets.clear();
+  newWidgets.clear();
 
   delete parentWdg->layout();
   QVBoxLayout* vbox = new QVBoxLayout(parentWdg);
@@ -650,6 +743,8 @@ void pqMultiViewWidget::reload()
     }
   }
 
+  this->setUpdatesEnabled(true);
+
   // we let the GUI updated immediately. This is needed since when a new view is
   // created (for example), it may depend on the size of the view during its
   // initialization to ensure camera is reset correctly.
@@ -708,7 +803,16 @@ void pqMultiViewWidget::standardButtonPressed(int button)
         int location = index.toInt();
         int parent_idx = vtkSMViewLayoutProxy::GetParent(location);
         this->layoutManager()->Collapse(location);
-        this->makeActive(qobject_cast<pqViewFrame*>(this->Internals->Widgets[parent_idx]));
+        QWidget* widgetToActivate = this->Internals->Widgets[parent_idx];
+        pqViewFrame* frameToActivate = qobject_cast<pqViewFrame*>(widgetToActivate);
+        if (!frameToActivate)
+        {
+          pqSplitter* splitter = qobject_cast<pqSplitter*>(widgetToActivate);
+          frameToActivate = splitter && splitter->count() > 0
+            ? qobject_cast<pqViewFrame*>(splitter->widget(0))
+            : NULL;
+        }
+        this->makeActive(frameToActivate);
       }
       END_UNDO_SET();
     }
@@ -735,7 +839,7 @@ void pqMultiViewWidget::destroyAllViews()
 //-----------------------------------------------------------------------------
 void pqMultiViewWidget::splitterMoved()
 {
-  QSplitter* splitter = qobject_cast<QSplitter*>(this->sender());
+  pqSplitter* splitter = qobject_cast<pqSplitter*>(this->sender());
   QVariant index = splitter ? splitter->property("FRAME_INDEX") : QVariant();
   if (index.isValid() && this->layoutManager())
   {
@@ -760,48 +864,7 @@ void pqMultiViewWidget::setDecorationsVisible(bool val)
 
   this->DecorationsVisible = val;
   this->reload();
-}
-
-//-----------------------------------------------------------------------------
-int pqMultiViewWidget::prepareForCapture(int dx, int dy)
-{
-  QSize requestedSize(dx, dy);
-  QSize mySize = this->size();
-
-  int magnification = pqView::computeMagnification(requestedSize, mySize);
-  this->setMaximumSize(mySize);
-  this->resize(mySize);
-  this->Internals->DecorationsVisibleBeforeCapture = this->isDecorationsVisible();
-  this->setDecorationsVisible(false);
-  pqEventDispatcher::processEventsAndWait(1);
-  return magnification;
-}
-
-//-----------------------------------------------------------------------------
-void pqMultiViewWidget::cleanupAfterCapture()
-{
-  this->setMaximumSize(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
-  this->setDecorationsVisible(this->Internals->DecorationsVisibleBeforeCapture);
-}
-
-//-----------------------------------------------------------------------------
-vtkImageData* pqMultiViewWidget::captureImage(int dx, int dy)
-{
-  int magnification = this->prepareForCapture(dx, dy);
-  vtkImageData* image = this->layoutManager()->CaptureWindow(magnification);
-  this->cleanupAfterCapture();
-  return image;
-}
-
-//-----------------------------------------------------------------------------
-bool pqMultiViewWidget::writeImage(const QString& filename, int dx, int dy, int quality)
-{
-  int magnification = this->prepareForCapture(dx, dy);
-  vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  bool status = controller->WriteImage(
-    this->layoutManager(), filename.toLatin1().data(), magnification, quality);
-  this->cleanupAfterCapture();
-  return status;
+  emit this->decorationsVisibilityChanged(val);
 }
 
 //-----------------------------------------------------------------------------

@@ -27,6 +27,8 @@ file(REMOVE
   "${COPROCESSING_TEST_DIR}/image_1_0.png"
   "${COPROCESSING_TEST_DIR}/filename_0.pvtp"
   "${COPROCESSING_TEST_DIR}/filename_0_0.vtp"
+  "${COPROCESSING_TEST_DIR}/file_00.pvtp"
+  "${COPROCESSING_TEST_DIR}/file_00_0.vtp"
   "${COPROCESSING_TEST_DIR}/cinema")
 
 if (NOT EXISTS "${PARAVIEW_EXECUTABLE}")
@@ -72,9 +74,9 @@ endif()
 
 if("${TEST_NAME}" STREQUAL "CoProcessingFullWorkflowCinemaComposite")
   if(NOT EXISTS "${COPROCESSING_TEST_DIR}/cinema/composite_image/info.json" OR
-     NOT EXISTS "${COPROCESSING_TEST_DIR}/cinema/composite_image/phi=0/theta=0/time=0/vis=0/Slice1=0/colorSlice1=0.npz" OR
+     NOT EXISTS "${COPROCESSING_TEST_DIR}/cinema/composite_image/phi=0/theta=0/time=0/vis=0/Slice1=0/colorSlice1=0.Z" OR
      NOT EXISTS "${COPROCESSING_TEST_DIR}/cinema/composite_image/phi=0/theta=0/time=0/vis=0/Slice1=0/colorSlice1=1.png" OR
-     NOT EXISTS "${COPROCESSING_TEST_DIR}/cinema/composite_image/phi=0/theta=0/time=0/vis=0/Slice1=0/colorSlice1=2.npz")
+     NOT EXISTS "${COPROCESSING_TEST_DIR}/cinema/composite_image/phi=0/theta=0/time=0/vis=0/Slice1=0/colorSlice1=2.Z")
     message(FATAL_ERROR "Catalyst did not generate a composite cinema store!")
   endif()
   return()
@@ -82,9 +84,9 @@ endif()
 
 if("${TEST_NAME}" STREQUAL "CoProcessingFullWorkflowCinemaCompositeFloat")
   if(NOT EXISTS "${COPROCESSING_TEST_DIR}/cinema/composite_fl_image/info.json" OR
-     NOT EXISTS "${COPROCESSING_TEST_DIR}/cinema/composite_fl_image/phi=0/theta=0/time=0/vis=0/Slice1=0/colorSlice1=0.npz" OR
+     NOT EXISTS "${COPROCESSING_TEST_DIR}/cinema/composite_fl_image/phi=0/theta=0/time=0/vis=0/Slice1=0/colorSlice1=0.Z" OR
      NOT EXISTS "${COPROCESSING_TEST_DIR}/cinema/composite_fl_image/phi=0/theta=0/time=0/vis=0/Slice1=0/colorSlice1=1.png" OR
-     NOT EXISTS "${COPROCESSING_TEST_DIR}/cinema/composite_fl_image/phi=0/theta=0/time=0/vis=0/Slice1=0/colorSlice1=2.npz")
+     NOT EXISTS "${COPROCESSING_TEST_DIR}/cinema/composite_fl_image/phi=0/theta=0/time=0/vis=0/Slice1=0/colorSlice1=2.Z")
     message(FATAL_ERROR "Catalyst did not generate a composite cinema store (float value images)!")
   endif()
   return()
@@ -113,7 +115,18 @@ if("${TEST_NAME}" STREQUAL "CoProcessingFullWorkflow")
   if(rv)
     message(FATAL_ERROR "vtkpython return value was = '${rv}' ")
   endif()
-endif("${TEST_NAME}" STREQUAL "CoProcessingFullWorkflow")
+endif()
+
+if("${TEST_NAME}" STREQUAL "CoProcessingFullWorkflowWithOnlyExtracts")
+  execute_process_with_echo(COMMAND
+    ${PVBATCH_EXECUTABLE} -dr
+    ${COPROCESSING_OUTPUTCHECK_SCRIPT}
+    ${COPROCESSING_TEST_DIR}/file_00.pvtp
+    RESULT_VARIABLE rv)
+  if(rv)
+    message(FATAL_ERROR "vtkpython return value was = '${rv}' ")
+  endif()
+endif()
 
 if("${TEST_NAME}" STREQUAL "CoProcessingFullWorkflowWithPlots")
   message("${COPROCESSING_IMAGE_TESTER} ${COPROCESSING_TEST_DIR}/image_0_0.png -V
@@ -135,7 +148,7 @@ if("${TEST_NAME}" STREQUAL "CoProcessingFullWorkflowWithPlots")
   if(rv)
     message(FATAL_ERROR "CoProcessingCompareImageTester second image return value was = '${rv}' ")
   endif()
-endif("${TEST_NAME}" STREQUAL "CoProcessingFullWorkflowWithPlots")
+endif()
 
 if("${TEST_NAME}" STREQUAL "CoProcessingFullWorkflowWithOnlyPlots")
   message("${COPROCESSING_IMAGE_TESTER} ${COPROCESSING_TEST_DIR}/image_0.png -V
@@ -147,4 +160,4 @@ if("${TEST_NAME}" STREQUAL "CoProcessingFullWorkflowWithOnlyPlots")
   if(rv)
     message(FATAL_ERROR "CoProcessingCompareImageTester second image return value was = '${rv}' ")
   endif()
-endif("${TEST_NAME}" STREQUAL "CoProcessingFullWorkflowWithPlots")
+endif()

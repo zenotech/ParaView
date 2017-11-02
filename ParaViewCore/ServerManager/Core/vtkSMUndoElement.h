@@ -36,7 +36,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMUndoElement : public vtkUndoElement
 {
 public:
   vtkTypeMacro(vtkSMUndoElement, vtkUndoElement);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Get/Set the Session that has been used to generate that undoElement.
   virtual vtkSMSession* GetSession();
@@ -49,14 +49,14 @@ public:
 
 protected:
   vtkSMUndoElement();
-  ~vtkSMUndoElement();
+  ~vtkSMUndoElement() override;
 
   // Identifies the session to which this object is related.
   vtkWeakPointer<vtkSMSession> Session;
 
 private:
-  vtkSMUndoElement(const vtkSMUndoElement&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMUndoElement&) VTK_DELETE_FUNCTION;
+  vtkSMUndoElement(const vtkSMUndoElement&) = delete;
+  void operator=(const vtkSMUndoElement&) = delete;
 };
 
 #endif

@@ -45,7 +45,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMUndoStackBuilder : public vtkSMObject
 public:
   static vtkSMUndoStackBuilder* New();
   vtkTypeMacro(vtkSMUndoStackBuilder, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Begins monitoring of the vtkSMProxyManager for undoable operations.
@@ -132,7 +132,7 @@ public:
 
 protected:
   vtkSMUndoStackBuilder();
-  ~vtkSMUndoStackBuilder();
+  ~vtkSMUndoStackBuilder() override;
 
   vtkSMUndoStack* UndoStack;
   vtkUndoSet* UndoSet;
@@ -153,8 +153,8 @@ protected:
   bool IgnoreAllChanges;
 
 private:
-  vtkSMUndoStackBuilder(const vtkSMUndoStackBuilder&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMUndoStackBuilder&) VTK_DELETE_FUNCTION;
+  vtkSMUndoStackBuilder(const vtkSMUndoStackBuilder&) = delete;
+  void operator=(const vtkSMUndoStackBuilder&) = delete;
 };
 
 #endif

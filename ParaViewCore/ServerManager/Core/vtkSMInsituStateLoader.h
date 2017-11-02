@@ -29,20 +29,20 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMInsituStateLoader : public vtkSMStateLo
 public:
   static vtkSMInsituStateLoader* New();
   vtkTypeMacro(vtkSMInsituStateLoader, vtkSMStateLoader);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkSMInsituStateLoader();
-  ~vtkSMInsituStateLoader();
+  ~vtkSMInsituStateLoader() override;
 
   /**
    * Overridden to try to reuse existing proxies as much as possible.
    */
-  virtual vtkSMProxy* NewProxy(vtkTypeUInt32 id, vtkSMProxyLocator* locator);
+  vtkSMProxy* NewProxy(vtkTypeUInt32 id, vtkSMProxyLocator* locator) VTK_OVERRIDE;
 
 private:
-  vtkSMInsituStateLoader(const vtkSMInsituStateLoader&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMInsituStateLoader&) VTK_DELETE_FUNCTION;
+  vtkSMInsituStateLoader(const vtkSMInsituStateLoader&) = delete;
+  void operator=(const vtkSMInsituStateLoader&) = delete;
 };
 
 #endif

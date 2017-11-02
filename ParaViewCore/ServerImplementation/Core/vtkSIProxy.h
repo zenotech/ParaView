@@ -36,7 +36,7 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSIProxy : public vtkSIObject
 public:
   static vtkSIProxy* New();
   vtkTypeMacro(vtkSIProxy, vtkSIObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * This method is called before the deletion of the SIObject.
@@ -44,17 +44,17 @@ public:
    * a first pass on all SIObject with a AboutToDelete() we can simply delete the
    * remaining SIObjects.
    */
-  virtual void AboutToDelete();
+  void AboutToDelete() VTK_OVERRIDE;
 
   /**
    * Push a new state to the underneath implementation
    */
-  virtual void Push(vtkSMMessage* msg);
+  void Push(vtkSMMessage* msg) VTK_OVERRIDE;
 
   /**
    * Pull the current state of the underneath implementation
    */
-  virtual void Pull(vtkSMMessage* msg);
+  void Pull(vtkSMMessage* msg) VTK_OVERRIDE;
 
   //@{
   /**
@@ -132,7 +132,7 @@ public:
 
 protected:
   vtkSIProxy();
-  ~vtkSIProxy();
+  ~vtkSIProxy() override;
 
   /**
    * Returns the subproxy helper for the subproxy with the given name, if any.
@@ -213,8 +213,8 @@ protected:
   bool ObjectsCreated;
 
 private:
-  vtkSIProxy(const vtkSIProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSIProxy&) VTK_DELETE_FUNCTION;
+  vtkSIProxy(const vtkSIProxy&) = delete;
+  void operator=(const vtkSIProxy&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

@@ -32,7 +32,7 @@ class VTKPVCOMMON_EXPORT vtkPVXMLParser : public vtkXMLParser
 {
 public:
   vtkTypeMacro(vtkPVXMLParser, vtkXMLParser);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
   static vtkPVXMLParser* New();
 
   /**
@@ -44,14 +44,6 @@ public:
    * Get the root element from the XML document.
    */
   vtkPVXMLElement* GetRootElement();
-
-  //@{
-  /**
-   * Get/Set the file from which to read the configuration.
-   */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
 
   //@{
   /**
@@ -74,13 +66,13 @@ public:
 
 protected:
   vtkPVXMLParser();
-  ~vtkPVXMLParser();
+  ~vtkPVXMLParser() override;
 
   int SuppressErrorMessages;
 
-  void StartElement(const char* name, const char** atts);
-  void EndElement(const char* name);
-  void CharacterDataHandler(const char* data, int length);
+  void StartElement(const char* name, const char** atts) VTK_OVERRIDE;
+  void EndElement(const char* name) VTK_OVERRIDE;
+  void CharacterDataHandler(const char* data, int length) VTK_OVERRIDE;
 
   void AddElement(vtkPVXMLElement* element);
   void PushOpenElement(vtkPVXMLElement* element);
@@ -99,14 +91,14 @@ protected:
 
   // Called by Parse() to read the stream and call ParseBuffer.  Can
   // be replaced by subclasses to change how input is read.
-  virtual int ParseXML();
+  int ParseXML() VTK_OVERRIDE;
 
   // Overridden to implement the SuppressErrorMessages feature.
-  virtual void ReportXmlParseError();
+  void ReportXmlParseError() VTK_OVERRIDE;
 
 private:
-  vtkPVXMLParser(const vtkPVXMLParser&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVXMLParser&) VTK_DELETE_FUNCTION;
+  vtkPVXMLParser(const vtkPVXMLParser&) = delete;
+  void operator=(const vtkPVXMLParser&) = delete;
 };
 
 #endif

@@ -48,12 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QToolButton>
 #include <QVBoxLayout>
 
-#if _WIN32
-#include "process.h"
-#define getpid _getpid
-#else
-#include "unistd.h"
-#endif
+#include "vtksys/SystemInformation.hxx"
 
 const int ICON_SIZE = 12;
 
@@ -120,6 +115,7 @@ pqViewFrame::pqViewFrame(QWidget* parentObject)
   this->ContextMenu->addAction(this->StandardToolButtons[Close]->defaultAction());
 
   this->setBorderColor(QColor("blue"));
+  this->Internals->Ui.TitleLabel->installEventFilter(this);
 }
 
 //-----------------------------------------------------------------------------
@@ -353,10 +349,11 @@ bool pqViewFrame::eventFilter(QObject* caller, QEvent* evt)
 //-----------------------------------------------------------------------------
 void pqViewFrame::drag()
 {
+  vtksys::SystemInformation sysInfo;
   QPixmap pixmap(":/pqWidgets/Icons/pqWindow16.png");
 
   QMimeData* mimeData = new QMimeData;
-  mimeData->setText(QString("application/paraview3/%1").arg(getpid()));
+  mimeData->setText(QString("application/paraview3/%1").arg(sysInfo.GetProcessId()));
 
   QPointer<QDrag> dragObj = new QDrag(this);
   dragObj->setMimeData(mimeData);
@@ -376,7 +373,8 @@ void pqViewFrame::drag()
 //-----------------------------------------------------------------------------
 void pqViewFrame::dragEnter(QDragEnterEvent* evt)
 {
-  QString mimeType = QString("application/paraview3/%1").arg(getpid());
+  vtksys::SystemInformation sysInfo;
+  QString mimeType = QString("application/paraview3/%1").arg(sysInfo.GetProcessId());
   if (evt->source() != this && evt->mimeData()->hasText() && evt->mimeData()->text() == mimeType)
   {
     evt->acceptProposedAction();
@@ -386,8 +384,9 @@ void pqViewFrame::dragEnter(QDragEnterEvent* evt)
 //-----------------------------------------------------------------------------
 void pqViewFrame::drop(QDropEvent* evt)
 {
+  vtksys::SystemInformation sysInfo;
   pqViewFrame* source = qobject_cast<pqViewFrame*>(evt->source());
-  QString mimeType = QString("application/paraview3/%1").arg(getpid());
+  QString mimeType = QString("application/paraview3/%1").arg(sysInfo.GetProcessId());
   if (source && source != this && evt->mimeData()->hasText() && evt->mimeData()->text() == mimeType)
   {
     this->connect(source, SIGNAL(finishDrag(pqViewFrame*)), SLOT(finishedDrag(pqViewFrame*)));

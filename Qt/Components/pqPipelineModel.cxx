@@ -72,7 +72,7 @@ public:
     , PipelineModel(pipelineModel)
   {
   }
-  virtual void Execute(vtkObject* vtkNotUsed(caller), unsigned long, void* vtkNotUsed(data))
+  void Execute(vtkObject* vtkNotUsed(caller), unsigned long, void* vtkNotUsed(data)) override
   {
     this->PipelineModel->updateData(this->InsituServer);
   }
@@ -153,7 +153,7 @@ public:
     }
     this->InConstructor = false;
   }
-  ~pqPipelineModelDataItem()
+  ~pqPipelineModelDataItem() override
   {
     if (this->Type == pqPipelineModel::Link && this->Model->Internal)
     {
@@ -478,9 +478,9 @@ void pqPipelineModel::constructor()
   this->PixmapList[pqPipelineModelDataItem::LINECHART].load(":/pqWidgets/Icons/pqLineChart16.png");
   this->PixmapList[pqPipelineModelDataItem::TABLE].load(":/pqWidgets/Icons/pqSpreadsheet16.png");
   this->PixmapList[pqPipelineModelDataItem::INDETERMINATE].load(":/pqWidgets/Icons/pq3DView16.png");
-  this->PixmapList[pqPipelineModelDataItem::EYEBALL].load(":/pqWidgets/Icons/pqEyeball16.png");
+  this->PixmapList[pqPipelineModelDataItem::EYEBALL].load(":/pqWidgets/Icons/pqEyeball.png");
   this->PixmapList[pqPipelineModelDataItem::EYEBALL_GRAY].load(
-    ":/pqWidgets/Icons/pqEyeballd16.png");
+    ":/pqWidgets/Icons/pqEyeballClosed.png");
   this->PixmapList[pqPipelineModelDataItem::INSITU_EXTRACT].load(
     ":/pqWidgets/Icons/pqLinkIn16.png");
   this->PixmapList[pqPipelineModelDataItem::INSITU_EXTRACT_GRAY].load(
@@ -794,7 +794,10 @@ QVariant pqPipelineModel::data(const QModelIndex& idx, int role) const
           if (!resource.configuration().isNameDefault())
           {
             QString name = resource.configuration().name();
-            return QString("%1 (%2)").arg(name).arg(resource.toURI());
+            int time = server->getRemainingLifeTime();
+            QString timeLeft =
+              time > -1 ? QString(" (%1min left)").arg(QString::number(time)) : QString();
+            return QString("%1 (%2)%3").arg(name).arg(resource.toURI()).arg(timeLeft);
           }
           else
           {
@@ -815,6 +818,16 @@ QVariant pqPipelineModel::data(const QModelIndex& idx, int role) const
         }
       }
       break;
+
+    case Qt::TextColorRole:
+    {
+      if (idx.column() == 0 && server && server->getRemainingLifeTime() > -1 &&
+        server->getRemainingLifeTime() <= 5)
+      {
+        return qVariantFromValue<QColor>(QColor(Qt::red));
+      }
+      break;
+    }
 
     case Qt::DecorationRole:
       if (idx.column() == 0 && this->PixmapList)
@@ -839,7 +852,7 @@ QVariant pqPipelineModel::data(const QModelIndex& idx, int role) const
       if (!this->FilterRoleAnnotationKey.isEmpty() && source)
       {
         return QVariant(
-          source->getProxy()->HasAnnotation(this->FilterRoleAnnotationKey.toLatin1().data()));
+          source->getProxy()->HasAnnotation(this->FilterRoleAnnotationKey.toLocal8Bit().data()));
       }
       return QVariant(true);
     }

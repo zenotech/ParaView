@@ -34,7 +34,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqSMProxy.h" //needed for pqSMProxy.
 #include "pqView.h"
-#include "vtkSetGet.h" // needed for VTK_LEGACY.
 class pqTimer;
 
 /**
@@ -60,7 +59,7 @@ protected:
 
 public:
   // Destructor.
-  virtual ~pqRenderViewBase();
+  ~pqRenderViewBase() override;
 
   /**
   * Resets the camera to include all visible data.
@@ -72,19 +71,7 @@ public:
   /**
   * Called to reset the view's display.  This method calls resetCamera().
   */
-  virtual void resetDisplay();
-
-  /**
-  * Convenience method to enable stereo rendering on all views that support
-  * stereo rendering. If mode==0, stereo rendering is disabled. mode is same
-  * that used for vtkRenderWindow::SetStereoType.
-  * This does not request a render, the caller must explicitly call render on
-  * the views.
-  * @deprecated Use pqStereoModeHelper instead, which provides a more
-  * convenient mechanism for application code to temporarily change stereo
-  * mode on all render views.
-  */
-  VTK_LEGACY(static void setStereo(int mode));
+  void resetDisplay() override;
 
 protected slots:
   virtual void initializeAfterObjectsCreated();
@@ -105,26 +92,20 @@ protected:
   * Overridden to popup the context menu, if some actions have been added
   * using addMenuAction.
   */
-  virtual bool eventFilter(QObject* caller, QEvent* e);
+  bool eventFilter(QObject* caller, QEvent* e) override;
 
   /**
   * Creates a new instance of the QWidget subclass to be used to show this
-  * view. Default implementation creates a QVTKWidget.
+  * view. Default implementation creates a pqQVTKWidget.
   */
-  virtual QWidget* createWidget();
+  QWidget* createWidget() override;
 
   /**
   * Use this method to initialize the pqObject state using the
   * underlying vtkSMProxy. This needs to be done only once,
   * after the object has been created.
   */
-  virtual void initialize();
-
-  /**
-  * On Mac, we usually try to cache the front buffer to avoid unecessary
-  */
-  //  updates.
-  bool AllowCaching;
+  void initialize() override;
 
 private:
   Q_DISABLE_COPY(pqRenderViewBase)

@@ -42,7 +42,7 @@ class vtkStreamingParticlesPriorityQueue : public vtkObject
 public:
   static vtkStreamingParticlesPriorityQueue* New();
   vtkTypeMacro(vtkStreamingParticlesPriorityQueue, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Description:
   // If the controller is specified, the queue can be used in parallel. So long
@@ -128,8 +128,8 @@ public:
   double DetailLevelToLoad;
 
 private:
-  vtkStreamingParticlesPriorityQueue(const vtkStreamingParticlesPriorityQueue&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkStreamingParticlesPriorityQueue&) VTK_DELETE_FUNCTION;
+  vtkStreamingParticlesPriorityQueue(const vtkStreamingParticlesPriorityQueue&) = delete;
+  void operator=(const vtkStreamingParticlesPriorityQueue&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

@@ -13,16 +13,14 @@
 
 =========================================================================*/
 /**
- * @class vtkPVContextInteractorStyle - extends vtkContextInteractorStyle to
- * fire start/end interaction events.
- * @brief
+ * @class vtkPVContextInteractorStyle
+ * @brief extends vtkContextInteractorStyle to fire start/end interaction events.
+ *
  * vtkPVContextInteractorStyle simply extends vtkContextInteractorStyle to fire
  * vtkCommand::StartInteractionEvent and vtkCommand::EndInteractionEvent to mark
  * the beginning and end of the interaction consistent with
  * vtkPVInteractorStyle (used for render views).
- *
  */
-
 #ifndef vtkPVContextInteractorStyle_h
 #define vtkPVContextInteractorStyle_h
 
@@ -35,7 +33,7 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVContextInteractorStyle
 public:
   static vtkPVContextInteractorStyle* New();
   vtkTypeMacro(vtkPVContextInteractorStyle, vtkContextInteractorStyle);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   void OnLeftButtonDown() VTK_OVERRIDE;
   void OnLeftButtonUp() VTK_OVERRIDE;
@@ -48,11 +46,11 @@ public:
 
 protected:
   vtkPVContextInteractorStyle();
-  ~vtkPVContextInteractorStyle();
+  ~vtkPVContextInteractorStyle() override;
 
 private:
-  vtkPVContextInteractorStyle(const vtkPVContextInteractorStyle&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVContextInteractorStyle&) VTK_DELETE_FUNCTION;
+  vtkPVContextInteractorStyle(const vtkPVContextInteractorStyle&) = delete;
+  void operator=(const vtkPVContextInteractorStyle&) = delete;
 };
 
 #endif

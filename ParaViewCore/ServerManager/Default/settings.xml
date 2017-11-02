@@ -8,12 +8,12 @@
         Collection of general setting for ParaView.
       </Documentation>
 
-      <IntVectorProperty name="ShowSplashScreen"
+      <IntVectorProperty name="ShowWelcomeDialog"
         number_of_elements="1"
         default_values="1"
         panel_visibility="advanced">
         <Documentation>
-          Show splash screen at startup.
+          Show welcome screen at startup.
         </Documentation>
         <BooleanDomain name="bool" />
         <Hints>
@@ -21,12 +21,12 @@
         </Hints>
       </IntVectorProperty>
 
-      <IntVectorProperty name="ShowWelcomeDialog"
+      <IntVectorProperty name="ShowSaveStateOnExit"
         number_of_elements="1"
-        default_values="1"
+        default_values="0"
         panel_visibility="advanced">
         <Documentation>
-          Show welcome screen at startup.
+          Prompt to save state when exiting ParaView.
         </Documentation>
         <BooleanDomain name="bool" />
         <Hints>
@@ -48,6 +48,48 @@
         </Hints>
       </IntVectorProperty>
 
+      <IntVectorProperty name="ForceSingleColumnMenus"
+        number_of_elements="1"
+        default_values="0"
+        panel_visibility="advanced">
+        <Documentation>
+          Force the sources/filters menus to be presented as a single
+          scrollable column to ensure that all the filters are selectable
+          on low resolution screens.
+        </Documentation>
+        <BooleanDomain name="bool" />
+        <Hints>
+          <SaveInQSettings />
+        </Hints>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="GUIOverrideFont"
+        label="Override Font"
+        command="SetGUIOverrideFont"
+        default_values="0"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Override the GUI font size. Uncheck to use system default.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="GUIFontSize"
+        label="Font Size"
+        command="SetGUIFontSize"
+        number_of_elements="1"
+        default_values="8">
+        <Documentation>
+          Specify the font size in points.
+        </Documentation>
+        <IntRangeDomain name="range" min="8" max="32" />
+        <Hints>
+          <PropertyWidgetDecorator type="ShowWidgetDecorator">
+            <Property name="GUIOverrideFont" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </IntVectorProperty>
+
       <StringVectorProperty name="DefaultViewType"
         number_of_elements="1"
         default_values="RenderView"
@@ -58,6 +100,17 @@
           Set the view to create when ParaView starts up.
         </Documentation>
       </StringVectorProperty>
+
+      <IntVectorProperty name="ScreenPixelsPerInch"
+        number_of_elements="1"
+        default_values="96"
+        panel_visibility="advanced">
+        <IntRangeDomain name="range" min="80" />
+        <Documentation>
+          Set pixels per inch on the current screen/monitor. This is used for determining
+          pixel sizes for fonts and other 2D annotations.
+        </Documentation>
+      </IntVectorProperty>
 
       <IntVectorProperty name="AutoApply"
         number_of_elements="1"
@@ -174,9 +227,12 @@
         default_values="0"
         command="SetTransferFunctionResetMode">
         <Documentation>
-          Color transfer functions (or color maps) are used map data values to colors
-          for pseudo coloring. Set when and how should ParaView update the data
-          range used for this mapping.
+          Color transfer functions (or color maps) are used to map data values to colors
+          for pseudo coloring. Set the default way ParaView decides to update the data
+          range used for this mapping. Newly created transfer functions will update
+          the range according to this setting, but it can later be changed per
+          transfer function via the transfer function's 'Automatic Rescale Range Mode'
+          setting.
         </Documentation>
         <EnumerationDomain name="enum">
           <Entry text="Grow and update on 'Apply'" value="0" />
@@ -196,21 +252,6 @@
           <Entry text="Automatically show and/or hide color bars" value="0" />
           <Entry text="Automatically hide unused color bars" value="1" />
           <Entry text="Manual (not recommended)" value="2" />
-        </EnumerationDomain>
-      </IntVectorProperty>
-
-      <IntVectorProperty name="DefaultTimeStep"
-        number_of_elements="1"
-        default_values="1">
-        <Documentation>
-          Any time a new dataset with timesteps is opened,
-          set the timestep the application should go to
-          by default.
-        </Documentation>
-        <EnumerationDomain name="enum">
-          <Entry text="Leave current time unchanged, if possible" value="0" />
-          <Entry text="Go to first timestep" value="1" />
-          <Entry text="Go to last timestep" value="2" />
         </EnumerationDomain>
       </IntVectorProperty>
 
@@ -280,7 +321,7 @@
 
       <IntVectorProperty name="AnimationTimePrecision"
         number_of_elements="1"
-        default_values="17"
+        default_values="6"
         command="SetAnimationTimePrecision"
         panel_visibility="advanced">
         <Documentation>
@@ -290,43 +331,17 @@
         <IntRangeDomain min="1" max="17" />
       </IntVectorProperty>
 
-      <DoubleVectorProperty name="MultiViewImageBorderColor"
-        command="SetMultiViewImageBorderColor"
-        number_of_elements="3"
-        default_values="0 0 0"
-        panel_visibility="advanced"
-        panel_widget="color_selector_with_palette">
-        <DoubleRangeDomain name="range" min="0 0 0" max="1 1 1" />
-        <Documentation>
-          Select the color to use for the separator between views when saving screenshots
-          and animation images with multiple views.
-        </Documentation>
-      </DoubleVectorProperty>
-
-      <IntVectorProperty name="MultiViewImageBorderWidth"
-        command="SetMultiViewImageBorderWidth"
+      <IntVectorProperty name="ShowAnimationShortcuts"
         number_of_elements="1"
         default_values="0"
+        command="SetShowAnimationShortcuts"
         panel_visibility="advanced">
-        <IntRangeDomain name="range" min="0" max="10" />
         <Documentation>
-          Specify the width of border (in pixels) to use around views when saving screenshots
-          and animation images with multiple views.
+          Set whether to show or not an animation shortcut button
+          on ranged scalar property.
         </Documentation>
-      </IntVectorProperty>
-
-      <IntVectorProperty name="TransparentBackground"
-        command="SetTransparentBackground"
-        number_of_elements="1"
-        default_values="0"
-        panel_visibility="advanced">
         <BooleanDomain name="bool" />
-        <Documentation>
-           Set whether screenshots use an alpha channel to make the background
-           transparent.
-        </Documentation>
       </IntVectorProperty>
-
 
       <IntVectorProperty name="InheritRepresentationProperties"
         command="SetInheritRepresentationProperties"
@@ -342,15 +357,49 @@
         </Documentation>
       </IntVectorProperty>
 
+      <IntVectorProperty name="DefaultTimeStep"
+        number_of_elements="1"
+        default_values="1">
+        <Documentation>
+          Any time a new dataset with timesteps is opened,
+          set the timestep the application should go to
+          by default.
+        </Documentation>
+        <EnumerationDomain name="enum">
+          <Entry text="Leave current time unchanged, if possible" value="0" />
+          <Entry text="Go to first timestep" value="1" />
+          <Entry text="Go to last timestep" value="2" />
+        </EnumerationDomain>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="MaximumNumberOfDataRepresentationLabels"
+        number_of_elements="1"
+        default_values="100"
+        panel_visibility="advanced">
+        <IntRangeDomain min="1"
+                        name="range" />
+        <Documentation>
+          Set how many points should be labeled when labeling points with data.  If there
+          are more point than this then only a subset will be labeled.  This helps when many
+          points are selected and the number of labels would make then unreadable.
+        </Documentation>
+      </IntVectorProperty>
 
       <PropertyGroup label="General Options">
-        <Property name="ShowSplashScreen" />
         <Property name="ShowWelcomeDialog" />
+        <Property name="ShowSaveStateOnExit" />
         <Property name="CrashRecovery" />
+        <Property name="ForceSingleColumnMenus" />
       </PropertyGroup>
 
-      <PropertyGroup label="Default View">
+      <PropertyGroup label="GUI Font">
+        <Property name="GUIOverrideFont"/>
+        <Property name="GUIFontSize" />
+      </PropertyGroup>
+
+      <PropertyGroup label="View Options">
         <Property name="DefaultViewType" />
+        <Property name="ScreenPixelsPerInch" />
       </PropertyGroup>
 
       <PropertyGroup label="Properties Panel Options">
@@ -383,15 +432,13 @@
         <Property name="CacheGeometryForAnimation" />
         <Property name="AnimationGeometryCacheLimit" />
         <Property name="AnimationTimePrecision" />
-      </PropertyGroup>
-
-      <PropertyGroup label="Screenshot Options">
-        <Property name="MultiViewImageBorderColor" />
-        <Property name="MultiViewImageBorderWidth" />
+        <Property name="ShowAnimationShortcuts" />
       </PropertyGroup>
 
       <PropertyGroup label="Miscellaneous">
         <Property name="InheritRepresentationProperties" />
+        <Property name="DefaultTimeStep" />
+        <Property name="MaximumNumberOfDataRepresentationLabels" />
       </PropertyGroup>
       <Hints>
         <UseDocumentationForLabels />
@@ -405,20 +452,6 @@
       <Documentation>
         Application settings for render views.
       </Documentation>
-
-      <IntVectorProperty name="UseDisplayLists"
-        command="SetUseDisplayLists"
-        number_of_elements="1"
-        default_values="1">
-        <BooleanDomain name="bool" />
-        <Documentation>
-          Enable use of display lists when rendering surface meshes
-          (only applicable for builds with legacy rendering backend).
-        </Documentation>
-        <Hints>
-          <RestartRequired />
-        </Hints>
-      </IntVectorProperty>
 
       <IntVectorProperty name="ResolveCoincidentTopology"
         command="SetResolveCoincidentTopology"
@@ -497,7 +530,7 @@
       </IntVectorProperty>
 
       <IntVectorProperty name="UseFXAA"
-                         default_values="0"
+                         default_values="1"
                          number_of_elements="1"
                          panel_visibility="default">
         <BooleanDomain name="bool" />
@@ -721,17 +754,6 @@
         </Documentation>
       </IntVectorProperty>
 
-      <IntVectorProperty name="UseOffscreenRenderingForScreenshots"
-        default_values="0"
-        number_of_elements="1"
-        panel_visibility="advanced">
-        <BooleanDomain name="bool" />
-        <Documentation>
-          Set whether offscreen rendering should be used
-          when saving screenshots or animations.
-        </Documentation>
-      </IntVectorProperty>
-
       <IntVectorProperty name="ShowAnnotation"
                          default_values="0"
                          number_of_elements="1"
@@ -772,7 +794,6 @@
       </IntVectorProperty>
 
       <PropertyGroup label="Geometry Mapper Options">
-        <Property name="UseDisplayLists" />
         <Property name="ResolveCoincidentTopology" />
         <Property name="PolygonOffsetParameters" />
         <Property name="ZShift" />
@@ -812,8 +833,8 @@
 
       <PropertyGroup label="Miscellaneous">
         <Property name="OutlineThreshold" />
-        <Property name="UseOffscreenRenderingForScreenshots" />
         <Property name="ShowAnnotation" />
+        <Property name="PointPickingRadius" />
         <Property name="DisableIceT" />
       </PropertyGroup>
       <Hints>
@@ -825,6 +846,7 @@
     <SettingsProxy name="RenderViewInteractionSettings" label="Camera"
       processes="client|dataserver|renderserver">
       <IntVectorProperty name="Camera3DManipulators"
+        label="Camera 3D Manipulators"
         number_of_elements="9"
         default_values="4 1 2 3 4 1 2 4 6"
         panel_widget="camera_manipulator">
@@ -843,7 +865,19 @@
           <Entry text="ZoomToMouse" value="6" />
         </EnumerationDomain>
       </IntVectorProperty>
+      <DoubleVectorProperty command="SetCamera3DMouseWheelMotionFactor"
+                            default_values="1"
+                            name="Camera3DMouseWheelMotionFactor"
+                            label="3D Mouse Wheel Factor"
+                            number_of_elements="1">
+        <DoubleRangeDomain max="10"
+                           min="0"
+                           name="range"
+                           resolution="0.01" />
+        <Documentation>Set the wheel motion factor for 3D interaction.</Documentation>
+      </DoubleVectorProperty>
       <IntVectorProperty name="Camera2DManipulators"
+        label="Camera 2D Manipulators"
         number_of_elements="9"
         default_values="1 3 2 2 2 6 3 1 4"
         panel_widget="camera_manipulator">
@@ -861,11 +895,24 @@
           <Entry text="ZoomToMouse" value="6" />
         </EnumerationDomain>
       </IntVectorProperty>
+      <DoubleVectorProperty command="SetCamera2DMouseWheelMotionFactor"
+                            default_values="1"
+                            name="Camera2DMouseWheelMotionFactor"
+                            label="2D Mouse Wheel Factor"
+                            number_of_elements="1">
+        <DoubleRangeDomain max="10"
+                           min="0"
+                           name="range"
+                           resolution="0.01" />
+        <Documentation>Set the wheel motion factor for 2D interaction.</Documentation>
+      </DoubleVectorProperty>
       <PropertyGroup label="2D Interaction Options">
         <Property name="Camera2DManipulators" />
+        <Property name="Camera2DMouseWheelMotionFactor" />
       </PropertyGroup>
       <PropertyGroup label="3D Interaction Options">
         <Property name="Camera3DManipulators" />
+        <Property name="Camera3DMouseWheelMotionFactor" />
       </PropertyGroup>
       <Hints>
         <UseDocumentationForLabels />

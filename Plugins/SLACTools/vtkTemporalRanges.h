@@ -47,7 +47,7 @@ class vtkTemporalRanges : public vtkTableAlgorithm
 public:
   vtkTypeMacro(vtkTemporalRanges, vtkTableAlgorithm);
   static vtkTemporalRanges* New();
-  virtual void PrintSelf(ostream& os, vtkIndent indent);
+  virtual void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   enum
   {
@@ -64,13 +64,16 @@ protected:
 
   int CurrentTimeIndex;
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
+  virtual int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
-  virtual int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  virtual int RequestInformation(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
-  virtual int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  virtual int RequestUpdateExtent(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  virtual int RequestData(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   virtual void InitializeTable(vtkTable* output);
 
@@ -85,8 +88,8 @@ protected:
   virtual vtkDoubleArray* GetColumn(vtkTable* table, const char* name);
 
 private:
-  vtkTemporalRanges(const vtkTemporalRanges&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkTemporalRanges&) VTK_DELETE_FUNCTION;
+  vtkTemporalRanges(const vtkTemporalRanges&) = delete;
+  void operator=(const vtkTemporalRanges&) = delete;
 };
 
 #endif // vtkTemporalRanges_h

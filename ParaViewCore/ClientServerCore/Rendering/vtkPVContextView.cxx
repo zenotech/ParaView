@@ -43,15 +43,8 @@
 vtkPVContextView::vtkPVContextView()
   : InteractorStyle()
 {
-  vtkPVOptions* options = vtkProcessModule::GetProcessModule()
-    ? vtkProcessModule::GetProcessModule()->GetOptions()
-    : NULL;
-
-  this->UseOffscreenRenderingForScreenshots = false;
-  this->UseOffscreenRendering = (options ? options->GetUseOffscreenRendering() != 0 : false);
-
   this->RenderWindow = this->SynchronizedWindows->NewRenderWindow();
-  this->RenderWindow->SetOffScreenRendering(this->UseOffscreenRendering ? 1 : 0);
+
   this->ContextView = vtkContextView::New();
 
   // Let the application setup the interactor.
@@ -112,21 +105,6 @@ void vtkPVContextView::SetupInteractor(vtkRenderWindowInteractor* iren)
 vtkRenderWindowInteractor* vtkPVContextView::GetInteractor()
 {
   return this->ContextView->GetInteractor();
-}
-
-//----------------------------------------------------------------------------
-void vtkPVContextView::SetUseOffscreenRendering(bool use_offscreen)
-{
-  if (this->UseOffscreenRendering == use_offscreen)
-  {
-    return;
-  }
-
-  vtkPVOptions* options = vtkProcessModule::GetProcessModule()->GetOptions();
-  bool process_use_offscreen = options->GetUseOffscreenRendering() != 0;
-
-  this->UseOffscreenRendering = use_offscreen || process_use_offscreen;
-  this->GetRenderWindow()->SetOffScreenRendering(this->UseOffscreenRendering);
 }
 
 //----------------------------------------------------------------------------
@@ -226,7 +204,14 @@ void vtkPVContextView::Render(bool vtkNotUsed(interactive))
 
   // Call Render() on local render window only on the client (or root node in
   // batch mode).
-  if (this->SynchronizedWindows->GetLocalProcessIsDriver() || this->InTileDisplayMode())
+  //
+  // In symmetric mode, we call render on all ranks for one reason only:
+  // when the vtkWindowToImageFilter tries to grab frame buffers on the
+  // satellites, it doesn't die. In reality, we shouldn't grab the frame buffers
+  // at all on satellites at all, but that needs some refactoring in
+  // vtkWindowToImageFilter.
+  if (this->SynchronizedWindows->GetLocalProcessIsDriver() || this->InTileDisplayMode() ||
+    vtkProcessModule::GetProcessModule()->GetSymmetricMPIMode())
   {
     vtkTimerLog::MarkStartEvent("vtkPVContextView::PrepareForRender");
     // on rendering-nodes call Render-pass so that representations can update the

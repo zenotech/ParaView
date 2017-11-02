@@ -56,7 +56,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkLiveInsituLink : public vtkSMObject
 public:
   static vtkLiveInsituLink* New();
   vtkTypeMacro(vtkLiveInsituLink, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -187,7 +187,7 @@ public:
 
   // ***************************************************************
   // Internal methods, public for callbacks.
-  void InsituConnect(vtkMultiProcessController* controller);
+  void InsituConnect(vtkMultiProcessController* proc0NodesController);
 
   /**
    * Called to drop the connection between Insitu and ParaView Live.
@@ -196,7 +196,7 @@ public:
 
 protected:
   vtkLiveInsituLink();
-  ~vtkLiveInsituLink();
+  ~vtkLiveInsituLink() override;
 
   enum RMITags
   {
@@ -244,12 +244,16 @@ protected:
 
   char* InsituXMLState;
   vtkWeakPointer<vtkPVSessionBase> LiveSession;
-  vtkSmartPointer<vtkMultiProcessController> Controller;
+  /**
+   * The controller that communicates between the INSITU and the
+   * LIVE process 0 nodes.
+   */
+  vtkSmartPointer<vtkMultiProcessController> Proc0NodesController;
   vtkSmartPointer<vtkExtractsDeliveryHelper> ExtractsDeliveryHelper;
 
 private:
-  vtkLiveInsituLink(const vtkLiveInsituLink&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkLiveInsituLink&) VTK_DELETE_FUNCTION;
+  vtkLiveInsituLink(const vtkLiveInsituLink&) = delete;
+  void operator=(const vtkLiveInsituLink&) = delete;
 
   vtkWeakPointer<vtkSMSessionProxyManager> InsituProxyManager;
 

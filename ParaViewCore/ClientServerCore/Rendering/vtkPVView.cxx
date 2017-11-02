@@ -26,6 +26,7 @@
 #include "vtkPVStreamingMacros.h"
 #include "vtkPVSynchronizedRenderWindows.h"
 #include "vtkProcessModule.h"
+#include "vtkRenderWindow.h"
 #include "vtkTimerLog.h"
 
 #include <assert.h>
@@ -111,6 +112,7 @@ vtkPVView::vtkPVView()
 
   this->Size[1] = this->Size[0] = 300;
   this->Position[0] = this->Position[1] = 0;
+  this->PPI = 96;
 }
 
 //----------------------------------------------------------------------------
@@ -148,6 +150,18 @@ void vtkPVView::Initialize(unsigned int id)
 }
 
 //----------------------------------------------------------------------------
+vtkRenderWindow* vtkPVView::GetRenderWindow()
+{
+  if (this->Identifier == 0)
+  {
+    vtkWarningMacro("`GetRenderWindow` has been called before the view was initialized.");
+    return nullptr;
+  }
+
+  return this->SynchronizedWindows->GetRenderWindow(this->Identifier);
+}
+
+//----------------------------------------------------------------------------
 void vtkPVView::SetPosition(int x, int y)
 {
   if (this->Identifier != 0)
@@ -167,6 +181,20 @@ void vtkPVView::SetSize(int x, int y)
   }
   this->Size[0] = x;
   this->Size[1] = y;
+}
+
+//----------------------------------------------------------------------------
+void vtkPVView::SetPPI(int ppi)
+{
+  this->PPI = ppi;
+  if (this->Identifier)
+  {
+    if (vtkRenderWindow* win = this->SynchronizedWindows->GetRenderWindow(this->Identifier))
+    {
+      win->SetDPI(ppi);
+    }
+  }
+  this->Modified();
 }
 
 //----------------------------------------------------------------------------

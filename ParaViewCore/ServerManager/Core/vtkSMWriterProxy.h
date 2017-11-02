@@ -34,21 +34,21 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMWriterProxy : public vtkSMSourceProxy
 public:
   static vtkSMWriterProxy* New();
   vtkTypeMacro(vtkSMWriterProxy, vtkSMSourceProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Updates the pipeline and writes the file(s).
    * Must call UpdateVTKObjects() before calling UpdatePipeline()
    * to ensure that the filename etc. are set correctly.
    */
-  virtual void UpdatePipeline();
+  void UpdatePipeline() VTK_OVERRIDE;
 
   /**
    * Updates the pipeline and writes the file(s).
    * Must call UpdateVTKObjects() before calling UpdatePipeline()
    * to ensure that the filename etc. are set correctly.
    */
-  virtual void UpdatePipeline(double time);
+  void UpdatePipeline(double time) VTK_OVERRIDE;
 
   //@{
   /**
@@ -70,12 +70,12 @@ public:
 
 protected:
   vtkSMWriterProxy();
-  ~vtkSMWriterProxy();
+  ~vtkSMWriterProxy() override;
 
   /**
    * Read attributes from an XML element.
    */
-  virtual int ReadXMLAttributes(vtkSMSessionProxyManager* pm, vtkPVXMLElement* element);
+  int ReadXMLAttributes(vtkSMSessionProxyManager* pm, vtkPVXMLElement* element) VTK_OVERRIDE;
 
   int SupportsParallel;
   int ParallelOnly;
@@ -88,8 +88,8 @@ protected:
   char* FileNameMethod;
 
 private:
-  vtkSMWriterProxy(const vtkSMWriterProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMWriterProxy&) VTK_DELETE_FUNCTION;
+  vtkSMWriterProxy(const vtkSMWriterProxy&) = delete;
+  void operator=(const vtkSMWriterProxy&) = delete;
 };
 
 #endif

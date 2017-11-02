@@ -40,7 +40,7 @@
       },
       { "name":"VTK_RENDERING_BACKEND",
         "type":"STRING",
-        "value":"OpenGL"
+        "value":"OpenGL2"
       }
     ]
   },
@@ -211,8 +211,36 @@
     { "name":"vtkjsoncpp",
       "path":"VTK/ThirdParty/jsoncpp"
     },
+    { "name":"vtkPVVTKExtensionsSIL",
+      "path":"ParaViewCore/VTKExtensions/SIL"
+    },
     { "name":"vtkPVVTKExtensionsCore",
       "path":"ParaViewCore/VTKExtensions/Core",
+      "include": [
+        { "class":"vtkCommunicationErrorCatcher" },
+        { "class":"vtkCompositeMultiProcessController" },
+        { "class":"vtkDistributedTrivialProducer" },
+        { "class":"vtkMultiProcessControllerHelper" },
+        { "class":"vtkPVCompositeDataPipeline" },
+        { "class":"vtkPVInformationKeys" },
+        { "class":"vtkPVPostFilterExecutive" },
+        { "class":"vtkPVPostFilter" },
+        { "class":"vtkPVTrivialProducer" },
+        { "class":"vtkUndoElement" },
+        { "class":"vtkUndoSet" },
+        { "class":"vtkUndoStack" },
+        { "path":"vtkMemberFunctionCommand.h" },
+        { "path":"vtkPVChangeOfBasisHelper.h" },
+        { "path":"vtkUndoStackInternal.h" }
+      ],
+      "replace": [
+        { "path":"ParaViewCore/VTKExtensions/Core/module.cmake" },
+        { "path":"ParaViewCore/VTKExtensions/Core/CMakeLists.txt" },
+        { "path":"ParaViewCore/VTKExtensions/Core/Base-wrap-exclude-classes.catalyst.cmake" }
+      ],
+      "exclude": [
+        { "path": "Testing" }
+      ],
       "cswrap":true,
       "pythonwrap":true
     },

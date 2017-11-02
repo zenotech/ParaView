@@ -95,6 +95,9 @@ class vtkPVLUTReader:
   number of ParaView's "ColorMap" elements define LUT entries.
 
   Usage:
+
+  ::
+
      # at the top of your script
      # create the reader and load LUT's
      lr = lookuptable.vtkPVLUTReader()
@@ -118,6 +121,9 @@ class vtkPVLUTReader:
      Render()
 
   File Format:
+
+  ::
+
       <ColorMaps>
           ...
         <ColorMap name="LUTName" space="Lab,RGB,HSV" indexedLookup="true,false">
@@ -127,7 +133,7 @@ class vtkPVLUTReader:
           <NaN r="val" g="val" b="val"/>
         </ColorMap>
           ...
-        <ColorMaps>
+        <ColorMap>
           ...
         </ColorMap>
           ...
@@ -207,7 +213,7 @@ class vtkPVLUTReader:
       print ('ERROR: No ColorMaps were found in %s'%(aFileName))
     else:
       if self.DefaultLUT is None:
-        names=self.LUTS.keys()
+        names=list(self.LUTS)
         if len(names)>0:
           self.DefaultLUT=names[0]
 
@@ -240,7 +246,7 @@ class vtkPVLUTReader:
     """
     Return a list of the currently available LUT's names.
     """
-    return sorted(self.LUTS.iterkeys(),cmp=lambda x,y: cmp(x.lower(), y.lower()))
+    return sorted(iter(self.LUTS),cmp=lambda x,y: cmp(x.lower(), y.lower()))
 
   def Print(self):
     """
@@ -248,7 +254,7 @@ class vtkPVLUTReader:
     """
     names=""
     i=0
-    for k in sorted(self.LUTS.iterkeys(),cmp=lambda x,y: cmp(x.lower(), y.lower())):
+    for k in sorted(iter(self.LUTS),cmp=lambda x,y: cmp(x.lower(), y.lower())):
       lut=self.LUTS[k]
       names+=lut.GetName()
       names+=", "

@@ -14,6 +14,9 @@ from paraview import vtk
 import vtk.numpy_interface.dataset_adapter as dsa
 from vtk.numpy_interface.algorithms import *
     # -- this will import vtkMultiProcessController and vtkMPI4PyCommunicator
+import sys
+if sys.version_info >= (3,):
+    xrange = range
 
 def get_arrays(attribs, controller=None):
     """Returns a 'dict' referring to arrays in dsa.DataSetAttributes or
@@ -46,22 +49,94 @@ def get_arrays(attribs, controller=None):
 
         # reduce the array names across processes to ensure arrays missing on
         # certain ranks are handled correctly.
-        arraynames = arrays.keys()
+        arraynames = list(arrays)  # get keys from the arrays as a list.
         # gather to root and then broadcast
         # I couldn't get Allgather/Allreduce to work properly with strings.
         gathered_names = comm.gather(arraynames, root=0)
           # gathered_names is a list of lists.
         if rank == 0:
             result = set()
-            for list in gathered_names:
-                for val in list: result.add(val)
+            for alist in gathered_names:
+                for val in alist: result.add(val)
             gathered_names = [x for x in result]
         arraynames = comm.bcast(gathered_names, root=0)
         for name in arraynames:
-            if not arrays.has_key(name):
+            if name not in arrays:
                 arrays[name] = dsa.NoneArray
     return arrays
 
+def pointIsNear(locations, distance, inputs):
+    array = vtk.vtkDoubleArray()
+    array.SetNumberOfComponents(3)
+    array.SetNumberOfTuples(len(locations))
+    for i in range(len(locations)):
+        array.SetTuple(i, locations[i])
+    node = vtk.vtkSelectionNode()
+    node.SetFieldType(vtk.vtkSelectionNode.POINT)
+    node.SetContentType(vtk.vtkSelectionNode.LOCATIONS)
+    node.GetProperties().Set(vtk.vtkSelectionNode.EPSILON(), distance)
+    node.SetSelectionList(array)
+
+    selection = vtk.vtkSelection()
+    selection.AddNode(node)
+    from vtk.vtkFiltersExtraction import vtkExtractSelectedLocations
+    pointsNear = vtkExtractSelectedLocations()
+    pointsNear.SetInputData(0, inputs[0].VTKObject)
+    pointsNear.SetInputData(1, selection)
+    pointsNear.Update()
+
+    extractedPoints = pointsNear.GetOutput()
+    numPoints = inputs[0].GetNumberOfPoints()
+    result = np.zeros((numPoints,), dtype = np.int8)
+
+    extracted = dsa.WrapDataObject(extractedPoints)
+    pointIds = extracted.PointData.GetArray('vtkOriginalPointIds')
+
+    if isinstance(pointIds, dsa.VTKCompositeDataArray):
+        for a in pointIds.GetArrays():
+            result[a] = 1
+    else:
+         result[pointIds] = 1
+
+    import vtk.util.numpy_support as np_s
+    vtkarray = np_s.numpy_to_vtk(result, deep=True)
+    return dsa.vtkDataArrayToVTKArray(vtkarray)
+
+def cellContainsPoint(inputs, locations):
+    array = vtk.vtkDoubleArray()
+    array.SetNumberOfComponents(3)
+    array.SetNumberOfTuples(len(locations))
+    for i in range(len(locations)):
+        array.SetTuple(i, locations[i])
+    node = vtk.vtkSelectionNode()
+    node.SetFieldType(vtk.vtkSelectionNode.CELL)
+    node.SetContentType(vtk.vtkSelectionNode.LOCATIONS)
+    node.SetSelectionList(array)
+
+    selection = vtk.vtkSelection()
+    selection.AddNode(node)
+    from vtk.vtkFiltersExtraction import vtkExtractSelectedLocations
+    cellsNear = vtkExtractSelectedLocations()
+    cellsNear.SetInputData(0, inputs[0].VTKObject)
+    cellsNear.SetInputData(1, selection)
+    cellsNear.Update()
+
+    extractedCells = cellsNear.GetOutput()
+    numCells = inputs[0].GetNumberOfCells()
+    result = np.zeros((numCells,), dtype = np.int8)
+
+    extracted = dsa.WrapDataObject(extractedCells)
+    cellIds = extracted.CellData.GetArray('vtkOriginalCellIds')
+
+    if isinstance(cellIds, dsa.VTKCompositeDataArray):
+        for a in cellIds.GetArrays():
+            result[a] = 1
+    else:
+         result[cellIds] = 1
+
+    import vtk.util.numpy_support as np_s
+    vtkarray = np_s.numpy_to_vtk(result, deep=True)
+    return dsa.vtkDataArrayToVTKArray(vtkarray)
 
 def compute(inputs, expression, ns=None):
     #  build the locals environment used to eval the expression.
@@ -84,7 +159,7 @@ def get_data_time(self, do, ininfo):
     key = vtk.vtkStreamingDemandDrivenPipeline.TIME_STEPS()
     t_index = None
     if ininfo.Has(key):
-        tsteps = [ininfo.Get(key, x) for x in xrange(ininfo.Length(key))]
+        tsteps = [ininfo.Get(key, x) for x in range(ininfo.Length(key))]
         try:
             t_index = tsteps.index(t)
         except ValueError:
@@ -126,5 +201,11 @@ def execute(self, expression):
                        "t_index": inputs[0].t_index })
     retVal = compute(inputs, expression, ns=variables)
     if retVal is not None:
-        output.GetAttributes(self.GetArrayAssociation()).append(\
-            retVal, self.GetArrayName())
+        if hasattr(retVal, "Association"):
+            output.GetAttributes(retVal.Association).append(\
+              retVal, self.GetArrayName())
+        else:
+            # if somehow the association was removed we
+            # fall back to the input array association
+            output.GetAttributes(self.GetArrayAssociation()).append(\
+              retVal, self.GetArrayName())

@@ -8,6 +8,7 @@ from paraview import smtesting
 from paraview.simple import *
 
 smtesting.ProcessCommandLineArguments()
+view = CreateRenderView()
 
 # add a text source #1
 Text(Text="Hello World")
@@ -34,7 +35,7 @@ for j in range(4):
 
 
 display.UserTransform = flattened_transform
-view = Render()
+Render()
 view.OrientationAxesVisibility = 0
 if not smtesting.DoRegressionTesting(view.SMProxy):
     raise smtesting.TestError('Test failed.')

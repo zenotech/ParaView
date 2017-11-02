@@ -24,6 +24,7 @@
 
 #include "vtkPVServerManagerRenderingModule.h" //needed for exports
 #include "vtkSMNewWidgetRepresentationProxy.h"
+#include "vtkSMTrace.h" // needed for vtkSMTrace::TraceItem
 
 class vtkSMViewProxy;
 class vtkPVArrayInformation;
@@ -34,7 +35,7 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMScalarBarWidgetRepresentationProxy
 public:
   static vtkSMScalarBarWidgetRepresentationProxy* New();
   vtkTypeMacro(vtkSMScalarBarWidgetRepresentationProxy, vtkSMNewWidgetRepresentationProxy);
-  virtual void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -66,25 +67,45 @@ public:
 
 protected:
   vtkSMScalarBarWidgetRepresentationProxy();
-  ~vtkSMScalarBarWidgetRepresentationProxy();
+  ~vtkSMScalarBarWidgetRepresentationProxy() override;
 
   /**
    * Overridden from vtkSMProxy to call BeginCreateVTKObjects() and
    * EndCreateVTKObjects().
    */
-  virtual void CreateVTKObjects();
+  void CreateVTKObjects() VTK_OVERRIDE;
 
   /**
    * Called every time the user interacts with the widget.
    */
-  virtual void ExecuteEvent(unsigned long event);
+  void ExecuteEvent(unsigned long event) VTK_OVERRIDE;
 
   vtkSMProxy* ActorProxy;
 
 private:
-  vtkSMScalarBarWidgetRepresentationProxy(
-    const vtkSMScalarBarWidgetRepresentationProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMScalarBarWidgetRepresentationProxy&) VTK_DELETE_FUNCTION;
+  //@{
+  /**
+   * Called when user starts/stops interacting with the scalar bar to move it.
+   * We handle tracking of the property so that we can trace the changes to its
+   * properties in Python.
+   */
+  void BeginTrackingPropertiesForTrace();
+  void EndTrackingPropertiesForTrace();
+  //@}
+
+  /**
+   * Synchronizes Position2 length definition of the scalar bar widget with the
+   * ScalarBarLength property.
+   */
+  void ScalarBarWidgetPosition2ToScalarBarLength();
+  void ScalarBarLengthToScalarBarWidgetPosition2();
+
+  // Used in StartTrackingPropertiesForTrace/EndTrackingPropertiesForTrace.
+  vtkSMTrace::TraceItem* TraceItem;
+
+private:
+  vtkSMScalarBarWidgetRepresentationProxy(const vtkSMScalarBarWidgetRepresentationProxy&) = delete;
+  void operator=(const vtkSMScalarBarWidgetRepresentationProxy&) = delete;
 };
 
 #endif

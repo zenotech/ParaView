@@ -39,7 +39,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class pqMultiView;
 class pqServerManagerObserverInternal;
-class QVTKWidget;
 class vtkCommand;
 class vtkObject;
 class vtkPVXMLElement;
@@ -58,7 +57,7 @@ class PQCORE_EXPORT pqServerManagerObserver : public QObject
 
 public:
   pqServerManagerObserver(QObject* parent = 0);
-  virtual ~pqServerManagerObserver();
+  ~pqServerManagerObserver() override;
 
 signals:
   /**

@@ -54,7 +54,7 @@ public:
   vtkSetObjectMacro(PrimaryRenderer, vtkRenderer);
   vtkSetMacro(View, vtkPVOrthographicSliceView*);
 
-  virtual void OnLeftButtonDown()
+  void OnLeftButtonDown() VTK_OVERRIDE
   {
     this->Superclass::OnLeftButtonDown();
 
@@ -72,7 +72,7 @@ public:
       this->ClickCounter = 0;
     }
   }
-  virtual void OnLeftButtonUp()
+  void OnLeftButtonUp() VTK_OVERRIDE
   {
     this->Superclass::OnLeftButtonUp();
 
@@ -103,8 +103,8 @@ public:
   }
 
   // Disable wheel-to-zoom in this view.
-  virtual void OnMouseWheelForward() {}
-  virtual void OnMouseWheelBackward() {}
+  void OnMouseWheelForward() VTK_OVERRIDE {}
+  void OnMouseWheelBackward() VTK_OVERRIDE {}
 
 protected:
   vtkPVOrthographicSliceViewInteractorStyle()
@@ -114,14 +114,14 @@ protected:
     , ClickCounter(0)
   {
   }
-  ~vtkPVOrthographicSliceViewInteractorStyle()
+  ~vtkPVOrthographicSliceViewInteractorStyle() override
   {
     this->SetPrimaryInteractorStyle(NULL);
     this->SetOrthographicInteractorStyle(NULL);
     this->SetPrimaryRenderer(NULL);
   }
 
-  virtual vtkCameraManipulator* FindManipulator(int button, int shift, int control)
+  vtkCameraManipulator* FindManipulator(int button, int shift, int control) VTK_OVERRIDE
   {
     if (this->CurrentRenderer == this->PrimaryRenderer)
     {
@@ -471,7 +471,6 @@ void vtkPVOrthographicSliceView::AboutToRenderOnLocalProcess(bool interactive)
       {
         assert(this->GridAxes3DActors[cc]);
         this->GridAxes3DActors[cc]->ShallowCopy(this->GridAxes3DActor);
-        this->GridAxes3DActors[cc]->SetEnableLayerSupport(false);
         this->GridAxes3DActors[cc]->SetLabelMask(0xff);
       }
       this->GridAxes3DActors[YZ_PLANE]->SetFaceMask(
@@ -654,7 +653,6 @@ void vtkPVOrthographicSliceView::SetGridAxes3DActor(vtkPVGridAxes3DActor* gridAc
     if (this->GridAxes3DActors[cc] && !in_tile_display_mode)
     {
       this->GridAxes3DActors[cc]->ShallowCopy(gridActor);
-      this->GridAxes3DActors[cc]->SetEnableLayerSupport(false);
       this->Renderers[cc]->AddViewProp(this->GridAxes3DActors[cc]);
     }
   }

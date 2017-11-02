@@ -34,7 +34,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVCompositeDataInformationIterator : p
 public:
   static vtkPVCompositeDataInformationIterator* New();
   vtkTypeMacro(vtkPVCompositeDataInformationIterator, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -82,15 +82,14 @@ public:
 
 protected:
   vtkPVCompositeDataInformationIterator();
-  ~vtkPVCompositeDataInformationIterator();
+  ~vtkPVCompositeDataInformationIterator() override;
 
   unsigned int CurrentFlatIndex;
   vtkPVDataInformation* DataInformation;
 
 private:
-  vtkPVCompositeDataInformationIterator(
-    const vtkPVCompositeDataInformationIterator&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVCompositeDataInformationIterator&) VTK_DELETE_FUNCTION;
+  vtkPVCompositeDataInformationIterator(const vtkPVCompositeDataInformationIterator&) = delete;
+  void operator=(const vtkPVCompositeDataInformationIterator&) = delete;
 
   class vtkInternal;
   vtkInternal* Internal;

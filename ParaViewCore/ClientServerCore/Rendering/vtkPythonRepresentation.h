@@ -34,7 +34,7 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPythonRepresentation : public vtk
 public:
   static vtkPythonRepresentation* New();
   vtkTypeMacro(vtkPythonRepresentation, vtkPVDataRepresentation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * vtkAlgorithm::ProcessRequest() equivalent for rendering passes. This is
@@ -43,8 +43,8 @@ public:
    * PrepareForRendering.
    * Overridden to skip processing when visibility if off.
    */
-  virtual int ProcessViewRequest(
-    vtkInformationRequestKey* request_type, vtkInformation* inInfo, vtkInformation* outInfo);
+  int ProcessViewRequest(vtkInformationRequestKey* request_type, vtkInformation* inInfo,
+    vtkInformation* outInfo) VTK_OVERRIDE;
 
   //@{
   /**
@@ -101,21 +101,21 @@ public:
 
 protected:
   vtkPythonRepresentation();
-  ~vtkPythonRepresentation();
+  ~vtkPythonRepresentation() override;
 
   /**
    * Overridden to make input optional.
    */
-  int FillInputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   /**
    * Overridden to copy data from the server to the client
    */
-  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
 private:
-  vtkPythonRepresentation(const vtkPythonRepresentation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPythonRepresentation&) VTK_DELETE_FUNCTION;
+  vtkPythonRepresentation(const vtkPythonRepresentation&) = delete;
+  void operator=(const vtkPythonRepresentation&) = delete;
 
   /**
    * Local input for each processor.

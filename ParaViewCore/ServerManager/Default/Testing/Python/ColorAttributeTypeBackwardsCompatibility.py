@@ -5,15 +5,15 @@ import paraview
 # properties.
 
 assert (paraview.compatibility.GetVersion().GetVersion() == None),\
-    "ParaView modules should never force backwords compatibility to any version"
+    "ParaView modules should never force backwards compatibility to any version"
 assert ((paraview.compatibility.GetVersion() < 4.1) == False),\
     "less-than test should always fail when version is not specified."
 assert ((paraview.compatibility.GetVersion() <= 4.1) == False),\
     "less-equal test should always fail when version is not specified."
 assert ((paraview.compatibility.GetVersion() > 4.1) == True),\
-    "greater-than test should always fail when version is not specified."
+    "greater-than test should always pass when version is not specified."
 assert ((paraview.compatibility.GetVersion() >= 4.1) == True),\
-    "greater-equal test should always fail when version is not specified."
+    "greater-equal test should always pass when version is not specified."
 
 Sphere()
 r = Show()
@@ -24,14 +24,14 @@ assert (len(r.ColorArrayName) == 2),\
 
 try:
     a = r.ColorAttributeType
-except AttributeError:
+except paraview.NotSupportedException:
     pass
 else:
     raise RuntimeError("Accessing 'ColorAttributeType' must have raised an exception.")
 
 try:
     v = v.CameraClippingRange
-except AttributeError:
+except paraview.NotSupportedException:
     pass
 else:
     raise RuntimeError("Accessing 'CameraClippingRange' must have raised an exception.")
@@ -63,5 +63,5 @@ paraview.compatibility.minor = 0
 try:
     a = v.CameraClippingRange
     v.CameraClippingRange = [0, 0, 0]
-except AttributeError:
+except paraview.NotSupportedException:
     raise RuntimeError("Accessing 'CameraClippingRange' must *not* have raised an exception.")

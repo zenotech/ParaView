@@ -35,7 +35,7 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSIObject : public vtkObject
 public:
   static vtkSIObject* New();
   vtkTypeMacro(vtkSIObject, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * This method is called before the deletion of the SIObject.
@@ -92,7 +92,7 @@ public:
 
 protected:
   vtkSIObject();
-  virtual ~vtkSIObject();
+  ~vtkSIObject() override;
 
   vtkWeakPointer<vtkClientServerInterpreter> Interpreter;
   vtkWeakPointer<vtkPVSessionCore> SessionCore;
@@ -102,8 +102,8 @@ protected:
   vtkTypeUInt32 GlobalID;
 
 private:
-  vtkSIObject(const vtkSIObject&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSIObject&) VTK_DELETE_FUNCTION;
+  vtkSIObject(const vtkSIObject&) = delete;
+  void operator=(const vtkSIObject&) = delete;
 };
 
 #endif // #ifndef vtkSIObject_h

@@ -65,7 +65,7 @@ public:
   /**
   * destroy this dialog
   */
-  ~pqLinksEditor();
+  ~pqLinksEditor() override;
 
   /**
   * get the name of the link
@@ -100,6 +100,10 @@ public:
   */
   bool interactiveViewLinkChecked();
 
+  /**
+  * Get the check state of convert to indices check box
+  */
+  bool convertToIndicesChecked();
 private slots:
   void currentProxy1Changed(const QModelIndex& cur, const QModelIndex&);
   void currentProxy2Changed(const QModelIndex& cur, const QModelIndex&);

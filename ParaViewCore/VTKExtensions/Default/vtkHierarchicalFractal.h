@@ -45,7 +45,7 @@ public:
   static vtkHierarchicalFractal* New();
 
   vtkTypeMacro(vtkHierarchicalFractal, vtkCompositeDataSetAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -132,7 +132,7 @@ public:
 
 protected:
   vtkHierarchicalFractal();
-  ~vtkHierarchicalFractal();
+  ~vtkHierarchicalFractal() override;
 
   int StartBlock;
   int EndBlock;
@@ -142,22 +142,22 @@ protected:
 
   // Create either vtkHierarchicalBoxDataSet or vtkMultiBlockDataSet based on
   // the GenerateRectilinearGrids flag.
-  virtual int RequestDataObject(
-    vtkInformation* req, vtkInformationVector** inV, vtkInformationVector* outV);
+  int RequestDataObject(
+    vtkInformation* req, vtkInformationVector** inV, vtkInformationVector* outV) VTK_OVERRIDE;
 
   /**
    * This is called by the superclass.
    * This is the method you should override.
    */
-  virtual int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   /**
    * This is called by the superclass.
    * This is the method you should override.
    */
-  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   void Traverse(int& blockId, int level, vtkCompositeDataSet* output, int x0, int x1, int y0,
     int y1, int z0, int z1, int onFace[6]);
@@ -215,8 +215,8 @@ protected:
     OutputUtil; // convenient class to create composite output
 
 private:
-  vtkHierarchicalFractal(const vtkHierarchicalFractal&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkHierarchicalFractal&) VTK_DELETE_FUNCTION;
+  vtkHierarchicalFractal(const vtkHierarchicalFractal&) = delete;
+  void operator=(const vtkHierarchicalFractal&) = delete;
 };
 
 #endif

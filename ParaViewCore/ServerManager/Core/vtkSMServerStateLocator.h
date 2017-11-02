@@ -35,7 +35,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMServerStateLocator : public vtkSMStateL
 public:
   static vtkSMServerStateLocator* New();
   vtkTypeMacro(vtkSMServerStateLocator, vtkSMStateLocator);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -52,17 +52,17 @@ public:
    * successfully filled.
    * In that case useParent is not used and is set to false.
    */
-  virtual bool FindState(vtkTypeUInt32 globalID, vtkSMMessage* stateToFill, bool useParent);
+  bool FindState(vtkTypeUInt32 globalID, vtkSMMessage* stateToFill, bool useParent) VTK_OVERRIDE;
 
 protected:
   vtkSMServerStateLocator();
-  ~vtkSMServerStateLocator();
+  ~vtkSMServerStateLocator() override;
 
   vtkWeakPointer<vtkSMSession> Session;
 
 private:
-  vtkSMServerStateLocator(const vtkSMServerStateLocator&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMServerStateLocator&) VTK_DELETE_FUNCTION;
+  vtkSMServerStateLocator(const vtkSMServerStateLocator&) = delete;
+  void operator=(const vtkSMServerStateLocator&) = delete;
 };
 
 #endif

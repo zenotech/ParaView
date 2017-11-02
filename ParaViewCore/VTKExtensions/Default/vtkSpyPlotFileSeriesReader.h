@@ -36,15 +36,15 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkSpyPlotFileSeriesReader : public vtkFi
 public:
   static vtkSpyPlotFileSeriesReader* New();
   vtkTypeMacro(vtkSpyPlotFileSeriesReader, vtkFileSeriesReader);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkSpyPlotFileSeriesReader();
-  ~vtkSpyPlotFileSeriesReader();
+  ~vtkSpyPlotFileSeriesReader() override;
 
 private:
-  vtkSpyPlotFileSeriesReader(const vtkSpyPlotFileSeriesReader&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSpyPlotFileSeriesReader&) VTK_DELETE_FUNCTION;
+  vtkSpyPlotFileSeriesReader(const vtkSpyPlotFileSeriesReader&) = delete;
+  void operator=(const vtkSpyPlotFileSeriesReader&) = delete;
 };
 
 #endif /* vtkSpyPlotFileSeriesReader_h */

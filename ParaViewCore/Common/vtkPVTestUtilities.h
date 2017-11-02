@@ -33,7 +33,7 @@ class VTKPVCOMMON_EXPORT vtkPVTestUtilities : public vtkObject
 public:
   // the usual vtk stuff
   vtkTypeMacro(vtkPVTestUtilities, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
   static vtkPVTestUtilities* New();
 
   /**
@@ -61,11 +61,11 @@ public:
 
 protected:
   vtkPVTestUtilities() { this->Initialize(0, 0); }
-  ~vtkPVTestUtilities() { this->Initialize(0, 0); }
+  ~vtkPVTestUtilities() override { this->Initialize(0, 0); }
 
 private:
-  vtkPVTestUtilities(const vtkPVTestUtilities&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVTestUtilities&) VTK_DELETE_FUNCTION;
+  vtkPVTestUtilities(const vtkPVTestUtilities&) = delete;
+  void operator=(const vtkPVTestUtilities&) = delete;
   ///
   char GetPathSep();
   char* GetDataRoot();

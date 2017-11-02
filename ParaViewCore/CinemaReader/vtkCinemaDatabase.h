@@ -14,11 +14,13 @@
 =========================================================================*/
 /**
  * @class vtkCinemaDatabase
- * @brief class that provides access to `cinema_python.FileStore` API.
+ * @brief class that provides access to `cinema_python.database.file_store`
+ * API.
  *
  * vtkCinemaDatabase is an abstraction that provides access to a
- * `cinema_python.FileStore` instance. The API is limited to the functionality
- * needed for the rendering Cinema layers in ParaView.
+ * `cinema_python.database.file_store.FileStore` instance. The API is
+ * limited to the functionality needed for the rendering Cinema layers in
+ *  ParaView.
  */
 
 #ifndef vtkCinemaDatabase_h
@@ -39,7 +41,14 @@ class VTKPVCINEMAREADER_EXPORT vtkCinemaDatabase : public vtkObject
 public:
   static vtkCinemaDatabase* New();
   vtkTypeMacro(vtkCinemaDatabase, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
+
+  enum Spec
+  {
+    UNKNOWN = -1,
+    CINEMA_SPEC_A,
+    CINEMA_SPEC_C
+  };
 
   /**
    * Loads the cinema database.
@@ -109,13 +118,28 @@ public:
   std::vector<vtkSmartPointer<vtkCamera> > Cameras(
     const std::string& timestep = std::string()) const;
 
+  /**
+   * Gets the spec used by the database.
+   * @return value from Spec enum.
+   */
+  int GetSpec() const;
+
+  /**
+   * Gets the nearest value in parameter list as a string.
+   * Values should be double and in ascending order.
+   * @param param parameter name
+   * @param value input data
+   * @return the nearest value as string
+   */
+  std::string GetNearestParameterValue(const std::string& param, double value) const;
+
 protected:
   vtkCinemaDatabase();
-  ~vtkCinemaDatabase();
+  ~vtkCinemaDatabase() override;
 
 private:
-  vtkCinemaDatabase(const vtkCinemaDatabase&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCinemaDatabase&) VTK_DELETE_FUNCTION;
+  vtkCinemaDatabase(const vtkCinemaDatabase&) = delete;
+  void operator=(const vtkCinemaDatabase&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

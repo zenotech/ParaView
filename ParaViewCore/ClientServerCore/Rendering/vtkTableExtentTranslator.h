@@ -33,7 +33,7 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkTableExtentTranslator : public vt
 {
 public:
   vtkTypeMacro(vtkTableExtentTranslator, vtkExtentTranslator);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   static vtkTableExtentTranslator* New();
 
@@ -43,7 +43,7 @@ public:
   // extra pieces will be empty data.  If this is more than one but
   // less than the number of pieces in the table then only this many
   // pieces will be returned (FIXME).
-  void SetNumberOfPieces(int pieces);
+  void SetNumberOfPieces(int pieces) VTK_OVERRIDE;
 
   //@{
   /**
@@ -57,18 +57,18 @@ public:
    * Called to translate the current piece into an extent.  This is
    * not thread safe.
    */
-  int PieceToExtent();
+  int PieceToExtent() VTK_OVERRIDE;
 
   /**
    * Not supported by this subclass of vtkExtentTranslator.
    */
-  int PieceToExtentByPoints();
+  int PieceToExtentByPoints() VTK_OVERRIDE;
 
   /**
    * Not supported by this subclass of vtkExtentTranslator.
    */
   int PieceToExtentThreadSafe(int piece, int numPieces, int ghostLevel, int* wholeExtent,
-    int* resultExtent, int splitMode, int byPoints);
+    int* resultExtent, int splitMode, int byPoints) VTK_OVERRIDE;
 
   /**
    * Set the extent to be used for a piece.  This sets the extent table
@@ -107,7 +107,7 @@ public:
 
 protected:
   vtkTableExtentTranslator();
-  ~vtkTableExtentTranslator();
+  ~vtkTableExtentTranslator() override;
 
   // Store the extent table in a single array.  Every 6 values form an extent.
   int* ExtentTable;
@@ -118,8 +118,8 @@ protected:
   int* PieceAvailable;
 
 private:
-  vtkTableExtentTranslator(const vtkTableExtentTranslator&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkTableExtentTranslator&) VTK_DELETE_FUNCTION;
+  vtkTableExtentTranslator(const vtkTableExtentTranslator&) = delete;
+  void operator=(const vtkTableExtentTranslator&) = delete;
 };
 
 #endif

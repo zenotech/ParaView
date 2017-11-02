@@ -37,17 +37,17 @@
  * Basic XML Proxy definition documentation:
  *
  * @sa
- * <pre>
  * ------------- Proxy definition -------------
+ * \code{.xml}
  *  <SourceProxy                   => Will create vtkSM + SourceProxy class.
  *         name="SphereSource"     => Key used to create the proxy.
  *         class="vtkSphereSource" => Concrete VTK class that does the real job.
  *         label="Sphere">         => Nice name used in menu and python shell.
- * </pre>
+ * \endcode
  *
  * @sa
- * <pre>
  * ----------- Property definition -----------
+ * \code{.xml}
  *    <DoubleVectorProperty        => Will create vtkSM + DoubleVectorProperty
  *                                    and vtkSI + DoubleVectorProperty class by
  *                                    default.
@@ -61,25 +61,24 @@
  *         default_values="0 0 0"> => The value that will be set at the
  *    </DoubleVectorProperty>         construction to the VTK object.
  *  </SourceProxy>
- * </pre>
+ * \endcode
  *
  * @sa
  * For custom behaviour the user can add some extra attributes:
  *
- * @sa
  *  - We can specify a custom SIProperty class to handle in a custom way the
  *    data on the server:
- * <pre>
+ * \code{.xml}
  *      <StringVectorProperty          => vtkSMStringVectorProperty class.
  *         name="ElementBlocksInfo"    => Property name.
  *         information_only="1"        => Can only be used to fetch data.
  *         si_class="vtkSISILProperty" => Class name to instantiate on the other side.
  *         subtree="Blocks"/>          => Extra attribute used by vtkSISILProperty.
- * </pre>
+ * \endcode
  *
  * @sa
  *  - We can trigger after any update a command to be executed:
- * <pre>
+ * \code{.xml}
  *      <Proxy name="LookupTable"
  *             class="vtkLookupTable"
  *             post_push="Build"       => The method Build() will be called each
@@ -90,17 +89,17 @@
  *
  * @sa
  *  - We can force any property to push its value as soon as it is changed:
- * <pre>
+ * \code{.xml}
  *          <Property name="ResetFieldCriteria"
  *             command="ResetFieldCriteria"
  *             immediate_update="1">     => Modifying the property will result
  *                                          in an immediate push of it and the
  *                                          execution of the command on the vtkObject.
- * </pre>
+ * \endcode
  *
  * @sa
  *  - To show a source proxy or a filter inside the menu of ParaView we use a hint:
- * <pre>
+ * \code{.xml}
  *       <SourceProxy ...>
  *           <Hints>
  *              <ShowInMenu                  => The category attribute enables
@@ -108,7 +107,7 @@
  *                                              this proxy should be listed. (optional)
  *           </Hints>
  *       </SourceProxy>
- * </pre>
+ * \endcode
 */
 
 #ifndef vtkSMSessionProxyManager_h
@@ -151,7 +150,7 @@ public:
    */
   static vtkSMSessionProxyManager* New(vtkSMSession* session);
   vtkTypeMacro(vtkSMSessionProxyManager, vtkSMSessionObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
   //@}
 
   /**
@@ -232,6 +231,10 @@ public:
   /**
    * Returns the prototype proxy for the given type. This method may create
    * a new prototype proxy, if one does not already exist.
+   *
+   * @note After loading a plugin, all existing prototypes are discarded. This
+   * is done because plugins can potentially alter definitions for existing
+   * proxies.
    */
   vtkSMProxy* GetPrototypeProxy(const char* groupname, const char* name);
 
@@ -404,11 +407,19 @@ public:
   /**
    * Loads the state of the server manager from XML.
    * If loader is not specified, a vtkSMStateLoader instance is used.
+   * When loading XML state, `vtkSMSessionProxyManager::GetInLoadXMLState` will
+   * return true.
    */
   void LoadXMLState(const char* filename, vtkSMStateLoader* loader = NULL);
   void LoadXMLState(
     vtkPVXMLElement* rootElement, vtkSMStateLoader* loader = NULL, bool keepOriginalIds = false);
   //@}
+
+  /**
+   * Indicates if an XML state is currently being loaded. This may be used by
+   * the application to limit updates to the GUI while state is being loaded.
+   */
+  vtkGetMacro(InLoadXMLState, bool);
 
   /**
    * Save the state of the server manager in XML format in a file.
@@ -425,6 +436,11 @@ public:
   vtkPVXMLElement* SaveXMLState();
 
   /**
+   * Save/Load registered link states.
+   */
+  void SaveRegisteredLinks(vtkPVXMLElement* root);
+
+  /**
    * Given a group name, create prototypes and store them
    * in a instance group called groupName_prototypes.
    * Prototypes have their ConnectionID set to the SelfConnection.
@@ -435,6 +451,11 @@ public:
    * Creates protytpes for all known proxy types.
    */
   void InstantiatePrototypes();
+
+  /**
+   * Converse on `InstantiatePrototypes`, clear all prototypes.
+   */
+  void ClearPrototypes();
 
   /**
    * Return true if the XML Definition was found by vtkSMProxyDefinitionManager
@@ -449,7 +470,7 @@ public:
 
   //@{
   /**
-   * The server manager configuration XML may define <Hints /> element for
+   * The server manager configuration XML may define \c \<Hints/\> element for
    * a proxy/property. Hints are metadata associated with the
    * proxy/property. The Server Manager does not (and should not) interpret
    * the hints. Hints provide a mechanism to add GUI-pertinent information
@@ -554,7 +575,7 @@ public:
 
 protected:
   vtkSMSessionProxyManager(vtkSMSession*);
-  ~vtkSMSessionProxyManager();
+  ~vtkSMSessionProxyManager() override;
 
   friend class vtkSMProxy;
   friend class vtkPVProxyDefinitionIterator;
@@ -594,11 +615,6 @@ protected:
   //@}
 
   /**
-   * Save/Load registered link states.
-   */
-  void SaveRegisteredLinks(vtkPVXMLElement* root);
-
-  /**
    * Internal method to save server manager state in an XML
    * and return the created vtkPVXMLElement for it. The caller has
    * the responsibility of freeing the vtkPVXMLElement returned IF the
@@ -620,14 +636,15 @@ protected:
 private:
   vtkSMSessionProxyManagerInternals* Internals;
   vtkSMProxyManagerObserver* Observer;
+  bool InLoadXMLState;
 
 #ifndef __WRAP__
   static vtkSMSessionProxyManager* New() { return NULL; }
 #endif
 
 private:
-  vtkSMSessionProxyManager(const vtkSMSessionProxyManager&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMSessionProxyManager&) VTK_DELETE_FUNCTION;
+  vtkSMSessionProxyManager(const vtkSMSessionProxyManager&) = delete;
+  void operator=(const vtkSMSessionProxyManager&) = delete;
 };
 
 #endif

@@ -32,23 +32,22 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMSpreadSheetRepresentationProxy
 public:
   static vtkSMSpreadSheetRepresentationProxy* New();
   vtkTypeMacro(vtkSMSpreadSheetRepresentationProxy, vtkSMRepresentationProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkSMSpreadSheetRepresentationProxy();
-  ~vtkSMSpreadSheetRepresentationProxy();
+  ~vtkSMSpreadSheetRepresentationProxy() override;
 
   /**
    * Overridden to ensure that whenever "Input" property changes, we update the
    * "Input" properties for all internal representations (including setting up
    * of the link to the extract-selection representation).
    */
-  virtual void SetPropertyModifiedFlag(const char* name, int flag);
+  void SetPropertyModifiedFlag(const char* name, int flag) VTK_OVERRIDE;
 
 private:
-  vtkSMSpreadSheetRepresentationProxy(
-    const vtkSMSpreadSheetRepresentationProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMSpreadSheetRepresentationProxy&) VTK_DELETE_FUNCTION;
+  vtkSMSpreadSheetRepresentationProxy(const vtkSMSpreadSheetRepresentationProxy&) = delete;
+  void operator=(const vtkSMSpreadSheetRepresentationProxy&) = delete;
 };
 
 #endif

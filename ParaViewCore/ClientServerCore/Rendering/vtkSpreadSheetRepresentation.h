@@ -41,12 +41,12 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkSpreadSheetRepresentation
 public:
   static vtkSpreadSheetRepresentation* New();
   vtkTypeMacro(vtkSpreadSheetRepresentation, vtkPVDataRepresentation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Since this has no delivery, just mark ourselves modified.
    */
-  virtual void MarkModified() { this->Superclass::MarkModified(); }
+  void MarkModified() VTK_OVERRIDE { this->Superclass::MarkModified(); }
 
   vtkAlgorithmOutput* GetDataProducer();
   vtkAlgorithmOutput* GetExtractedDataProducer();
@@ -80,17 +80,17 @@ public:
 
 protected:
   vtkSpreadSheetRepresentation();
-  ~vtkSpreadSheetRepresentation();
+  ~vtkSpreadSheetRepresentation() override;
 
   /**
    * Fill input port information.
    */
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   /**
    * Overridden to invoke vtkCommand::UpdateDataEvent.
    */
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   vtkNew<vtkCleanArrays> CleanArrays;
   vtkNew<vtkBlockDeliveryPreprocessor> DataConditioner;
@@ -99,8 +99,8 @@ protected:
   vtkNew<vtkBlockDeliveryPreprocessor> ExtractedDataConditioner;
 
 private:
-  vtkSpreadSheetRepresentation(const vtkSpreadSheetRepresentation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSpreadSheetRepresentation&) VTK_DELETE_FUNCTION;
+  vtkSpreadSheetRepresentation(const vtkSpreadSheetRepresentation&) = delete;
+  void operator=(const vtkSpreadSheetRepresentation&) = delete;
 };
 
 #endif

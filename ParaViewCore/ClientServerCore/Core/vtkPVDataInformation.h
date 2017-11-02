@@ -52,7 +52,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVDataInformation : public vtkPVInform
 public:
   static vtkPVDataInformation* New();
   vtkTypeMacro(vtkPVDataInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Method to find and return attribute array information for a particular
@@ -78,12 +78,12 @@ public:
   /**
    * Transfer information about a single object into this object.
    */
-  virtual void CopyFromObject(vtkObject*);
+  void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
   /**
    * Merge another information object. Calls AddInformation(info, 0).
    */
-  virtual void AddInformation(vtkPVInformation* info);
+  void AddInformation(vtkPVInformation* info) VTK_OVERRIDE;
 
   /**
    * Merge another information object. If adding information of
@@ -96,8 +96,8 @@ public:
   /**
    * Manage a serialized version of the information.
    */
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
+  void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
   //@}
 
   //@{
@@ -107,8 +107,8 @@ public:
    * information itself. For example, PortNumber on vtkPVDataInformation
    * controls what output port the data-information is gathered from.
    */
-  virtual void CopyParametersToStream(vtkMultiProcessStream&);
-  virtual void CopyParametersFromStream(vtkMultiProcessStream&);
+  void CopyParametersToStream(vtkMultiProcessStream&) VTK_OVERRIDE;
+  void CopyParametersFromStream(vtkMultiProcessStream&) VTK_OVERRIDE;
   //@}
 
   /**
@@ -280,7 +280,7 @@ public:
 
 protected:
   vtkPVDataInformation();
-  ~vtkPVDataInformation();
+  ~vtkPVDataInformation() override;
 
   void DeepCopy(vtkPVDataInformation* dataInfo, bool copyCompositeInformation = true);
 
@@ -340,8 +340,8 @@ protected:
   friend class vtkPVCompositeDataInformation;
 
 private:
-  vtkPVDataInformation(const vtkPVDataInformation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVDataInformation&) VTK_DELETE_FUNCTION;
+  vtkPVDataInformation(const vtkPVDataInformation&) = delete;
+  void operator=(const vtkPVDataInformation&) = delete;
 
   int PortNumber;
 };

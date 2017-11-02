@@ -34,7 +34,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkSurfaceVectors : public vtkDataSetAlgo
 {
 public:
   vtkTypeMacro(vtkSurfaceVectors, vtkDataSetAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
   static vtkSurfaceVectors* New();
 
   enum ConstraintMode
@@ -65,17 +65,18 @@ public:
 
 protected:
   vtkSurfaceVectors();
-  ~vtkSurfaceVectors();
+  ~vtkSurfaceVectors() override;
 
   // Usual data generation method
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
-  virtual int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
+  int RequestUpdateExtent(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   int ConstraintMode;
 
 private:
-  vtkSurfaceVectors(const vtkSurfaceVectors&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSurfaceVectors&) VTK_DELETE_FUNCTION;
+  vtkSurfaceVectors(const vtkSurfaceVectors&) = delete;
+  void operator=(const vtkSurfaceVectors&) = delete;
 };
 
 #endif

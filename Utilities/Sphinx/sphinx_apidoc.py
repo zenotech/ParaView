@@ -36,7 +36,7 @@ def is_exclude_module(module):
     m = str(module)
     for exclude in excludeList:
         if m.__contains__(exclude):
-            print "Exclude:", m
+            print("Exclude: %s" % m)
             return True
     return False
 
@@ -70,18 +70,17 @@ def write_file(name, text, opts):
     """Write the output file for module/package <name>."""
     fname = path.join(opts.destdir, '%s.%s' % (name, opts.suffix))
     if opts.dryrun:
-        print 'Would create file %s.' % fname
+        print('Would create file %s.' % fname)
         return
     if not opts.force and path.isfile(fname):
-        print 'File %s already exists, skipping.' % fname
+        print('File %s already exists, skipping.' % fname)
     else:
-        print 'Creating file %s.' % fname
-        f = open(fname, 'w')
-        try:
-            f.write(text)
-        finally:
-            f.close()
-
+        print('Creating file %s.' % fname)
+        with open(fname, 'wb') as f:
+            if sys.version_info >= (3,):
+                f.write(text.encode('UTF-8'))
+            else:
+                f.write(text)
 
 def format_heading(level, text):
     """Create a heading of <level> [1, 2 or 3 supported]."""
@@ -399,14 +398,14 @@ Note: By default this script will not overwrite already created files.""")
     if opts.suffix.startswith('.'):
         opts.suffix = opts.suffix[1:]
     if not path.isdir(rootpath):
-        print >>sys.stderr, '%s is not a directory.' % rootpath
+        print(sys.stderr, '%s is not a directory.' % rootpath)
         sys.exit(1)
     if not path.isdir(opts.destdir):
         if not opts.dryrun:
             os.makedirs(opts.destdir)
     excludes = normalize_excludes(rootpath, excludes)
     modules = recurse_tree(rootpath, excludes, opts)
-    print "Detected Packages:\n\t", "\n\t".join(modules)
+    print("Detected Packages:\n\t", "\n\t".join(modules))
     if opts.full:
         from sphinx import quickstart as qs
         modules.sort()

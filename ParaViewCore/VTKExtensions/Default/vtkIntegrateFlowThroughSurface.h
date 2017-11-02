@@ -36,28 +36,29 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkIntegrateFlowThroughSurface
 {
 public:
   vtkTypeMacro(vtkIntegrateFlowThroughSurface, vtkUnstructuredGridAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
   static vtkIntegrateFlowThroughSurface* New();
 
 protected:
   vtkIntegrateFlowThroughSurface();
-  ~vtkIntegrateFlowThroughSurface();
+  ~vtkIntegrateFlowThroughSurface() override;
 
   // Usual data generation method
   // Usual data generation method
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
-  virtual int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
+  int RequestUpdateExtent(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   // Create a default executive.
-  virtual vtkExecutive* CreateDefaultExecutive();
+  vtkExecutive* CreateDefaultExecutive() VTK_OVERRIDE;
 
   vtkDataSet* GenerateSurfaceVectors(vtkDataSet* input);
 
 private:
-  vtkIntegrateFlowThroughSurface(const vtkIntegrateFlowThroughSurface&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkIntegrateFlowThroughSurface&) VTK_DELETE_FUNCTION;
+  vtkIntegrateFlowThroughSurface(const vtkIntegrateFlowThroughSurface&) = delete;
+  void operator=(const vtkIntegrateFlowThroughSurface&) = delete;
 };
 
 #endif

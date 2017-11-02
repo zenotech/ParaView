@@ -41,6 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqUndoStack.h"
 #include "vtkRenderWindow.h"
+#include "vtkSMProperty.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMProxy.h"
 #include "vtkSMSession.h"
@@ -52,8 +53,6 @@ pqQVTKWidget::pqQVTKWidget(QWidget* parentObject, Qt::WindowFlags f)
   : Superclass(parentObject, f)
   , SizePropertyName("ViewSize")
 {
-  this->setAutomaticImageCacheEnabled(getenv("DASHBOARD_TEST_FROM_CTEST") == NULL);
-
   // Tmp objects
   QPixmap mousePixmap(":/pqCore/Icons/pqMousePick15.png");
   int w = mousePixmap.width();
@@ -66,18 +65,16 @@ pqQVTKWidget::pqQVTKWidget(QWidget* parentObject, Qt::WindowFlags f)
 
   // Save the loaded image
   this->MousePointerToDraw = image.mirrored();
+
+  this->connect(this, SIGNAL(resized()), SLOT(updateSizeProperties()));
+
+  // disable HiDPI if we are running tests
+  this->setEnableHiDPI(getenv("DASHBOARD_TEST_FROM_CTEST") ? false : true);
 }
 
 //----------------------------------------------------------------------------
 pqQVTKWidget::~pqQVTKWidget()
 {
-}
-
-//----------------------------------------------------------------------------
-void pqQVTKWidget::resizeEvent(QResizeEvent* e)
-{
-  this->Superclass::resizeEvent(e);
-  this->updateSizeProperties();
 }
 
 //----------------------------------------------------------------------------
@@ -87,26 +84,13 @@ void pqQVTKWidget::updateSizeProperties()
   {
     BEGIN_UNDO_EXCLUDE();
     int view_size[2];
-    view_size[0] = this->size().width();
-    view_size[1] = this->size().height();
-    vtkSMPropertyHelper(this->ViewProxy, this->SizePropertyName.toLatin1().data())
+    view_size[0] = this->size().width() * this->InteractorAdaptor->GetDevicePixelRatio();
+    view_size[1] = this->size().height() * this->InteractorAdaptor->GetDevicePixelRatio();
+    vtkSMPropertyHelper(this->ViewProxy, this->SizePropertyName.toLocal8Bit().data())
       .Set(view_size, 2);
-    this->ViewProxy->UpdateProperty(this->SizePropertyName.toLatin1().data());
+    this->ViewProxy->UpdateProperty(this->SizePropertyName.toLocal8Bit().data());
     END_UNDO_EXCLUDE();
   }
-
-  this->markCachedImageAsDirty();
-
-  // need to request a render after the "resizing" is done.
-  this->update();
-}
-
-//----------------------------------------------------------------------------
-// moveEvent doesn't help us, since this is fired when the pqQVTKWidget is moved
-// inside its parent, which rarely happens.
-void pqQVTKWidget::moveEvent(QMoveEvent* e)
-{
-  this->Superclass::moveEvent(e);
 }
 
 //----------------------------------------------------------------------------
@@ -122,17 +106,14 @@ void pqQVTKWidget::setSession(vtkSMSession* session)
 }
 
 //----------------------------------------------------------------------------
-bool pqQVTKWidget::paintCachedImage()
+bool pqQVTKWidget::renderVTK()
 {
-  // In future we can update this code to ensure that view->Render() is never
-  // called from the pqQVTKWidget. For now, we are letting the default path
-  // execute when not resizing.
+  return this->canRender() ? this->Superclass::renderVTK() : false;
+}
 
-  if (this->Superclass::paintCachedImage())
-  {
-    return true;
-  }
-
+//----------------------------------------------------------------------------
+bool pqQVTKWidget::canRender()
+{
   // despite our best efforts, it's possible that the paint event happens while
   // the server manager is busy processing some other request that yields
   // progress (e.g. pvcrs.UndoRedo2 test).
@@ -140,15 +121,17 @@ bool pqQVTKWidget::paintCachedImage()
   // rendering in those cases.
   if (this->ViewProxy && this->ViewProxy->GetSession()->GetPendingProgress())
   {
-    return true;
+    return false;
   }
 
   if (this->Session && this->Session->GetPendingProgress())
   {
-    return true;
+    return false;
   }
-  return false;
+
+  return true;
 }
+
 //----------------------------------------------------------------------------
 vtkTypeUInt32 pqQVTKWidget::getProxyId()
 {
@@ -162,14 +145,7 @@ vtkTypeUInt32 pqQVTKWidget::getProxyId()
 //----------------------------------------------------------------------------
 void pqQVTKWidget::paintMousePointer(int xLocation, int yLocation)
 {
-  // Local repaint
-  QVTKWidget::paintEvent(NULL);
-
-  // Paint mouse pointer image on top of it
-  int imagePointingDelta = 10;
-  this->mRenWin->SetRGBACharPixelData(xLocation - imagePointingDelta,
-    this->height() - yLocation + imagePointingDelta,
-    this->MousePointerToDraw.width() + xLocation - 1 - imagePointingDelta,
-    this->height() - (this->MousePointerToDraw.height() + yLocation + 1) + imagePointingDelta,
-    this->MousePointerToDraw.bits(), 1, 1);
+  Q_UNUSED(xLocation);
+  Q_UNUSED(yLocation);
+  // TODO: need to add support to paint collaboration mouse pointer in Qt 5.
 }

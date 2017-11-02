@@ -34,6 +34,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqReaction.h"
 
+class pqServer;
+
 /**
 * @ingroup Reactions
 * Reaction to save animation.
@@ -54,20 +56,26 @@ public:
   * Note that this method is static. Applications can simply use this without
   * having to create a reaction instance.
   */
-  void saveAnimation();
+  static void saveAnimation();
 
 public slots:
   /**
   * Updates the enabled state. Applications need not explicitly call
   * this.
   */
-  void updateEnableState();
+  void updateEnableState() override;
 
 protected:
   /**
   * Called when the action is triggered.
   */
-  virtual void onTriggered() { pqSaveAnimationReaction::saveAnimation(); }
+  void onTriggered() override { pqSaveAnimationReaction::saveAnimation(); }
+
+  /**
+   * Prompt for a filename. Will return empty string if user
+   * cancelled the operation.
+   */
+  static QString promptFileName(pqServer* server, bool remote);
 
 private:
   Q_DISABLE_COPY(pqSaveAnimationReaction)

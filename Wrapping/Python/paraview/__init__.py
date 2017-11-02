@@ -126,6 +126,15 @@ class options:
     True to have any effect."""
     symmetric = False
 
+    """When True, `paraview.print_debug_info()` will result in printing the
+    debug messages to stdout. Default is False, hence all debug messages will be
+    suppressed."""
+    print_debug_messages = False
+
+    """When True, This mean the current process is a satelite and should not try to
+    connect or do anything else."""
+    satelite = False
+
 def print_warning(text):
    """Print text"""
    print(text)
@@ -136,7 +145,18 @@ def print_error(text):
 
 def print_debug_info(text):
    """Print text"""
-   print(text)
+   if options.print_debug_messages:
+       print(text)
+
+class NotSupportedException(Exception):
+    """Exception that is fired when obsolete API is used in a script."""
+    def __init__(self, msg):
+        self.msg = msg
+        print_debug_info("\nDEBUG: %s\n" % msg)
+
+    def __str__(self):
+        return "%s" % (self.msg)
+
 
 """This variable is set whenever Python is initialized within a ParaView
 Qt-based application. Modules within the 'paraview' package often use this to

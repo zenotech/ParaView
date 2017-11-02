@@ -31,8 +31,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ========================================================================*/
 #include "pqTransferFunctionWidget.h"
 
-#include "QVTKWidget.h"
 #include "pqCoreUtilities.h"
+#include "pqQVTKWidgetBase.h"
 #include "pqTimer.h"
 #include "vtkAxis.h"
 #include "vtkBoundingBox.h"
@@ -47,12 +47,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkContextScene.h"
 #include "vtkContextView.h"
 #include "vtkEventQtSlotConnect.h"
+#include "vtkGenericOpenGLRenderWindow.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPiecewiseControlPointsItem.h"
 #include "vtkPiecewiseFunction.h"
 #include "vtkPiecewiseFunctionItem.h"
-#include "vtkRenderWindow.h"
 #include "vtkSMCoreUtilities.h"
 #include "vtkSmartPointer.h"
 
@@ -60,6 +60,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QPointer>
 #include <QVBoxLayout>
 #include <algorithm>
+
+#if QT_VERSION >= 0x050000
+#include <QSurfaceFormat>
+#endif
 
 //-----------------------------------------------------------------------------
 // We extend vtkChartXY to add logic to reset view bounds automatically. This
@@ -86,7 +90,7 @@ public:
   // Perform any updates to the item that may be necessary before rendering.
   // The scene should take care of calling this on all items before their
   // Paint function is invoked.
-  virtual void Update()
+  void Update() VTK_OVERRIDE
   {
     if (this->ControlPointsItem)
     {
@@ -105,7 +109,7 @@ public:
     this->Superclass::Update();
   }
 
-  virtual bool PaintChildren(vtkContext2D* painter)
+  bool PaintChildren(vtkContext2D* painter) VTK_OVERRIDE
   {
     if (this->DataValid)
     {
@@ -115,31 +119,31 @@ public:
     return true;
   }
 
-  virtual bool MouseEnterEvent(const vtkContextMouseEvent& mouse)
+  bool MouseEnterEvent(const vtkContextMouseEvent& mouse) VTK_OVERRIDE
   {
     return (this->DataValid ? this->Superclass::MouseEnterEvent(mouse) : false);
   }
-  virtual bool MouseMoveEvent(const vtkContextMouseEvent& mouse)
+  bool MouseMoveEvent(const vtkContextMouseEvent& mouse) VTK_OVERRIDE
   {
     return (this->DataValid ? this->Superclass::MouseMoveEvent(mouse) : false);
   }
-  virtual bool MouseLeaveEvent(const vtkContextMouseEvent& mouse)
+  bool MouseLeaveEvent(const vtkContextMouseEvent& mouse) VTK_OVERRIDE
   {
     return (this->DataValid ? this->Superclass::MouseLeaveEvent(mouse) : false);
   }
-  virtual bool MouseButtonPressEvent(const vtkContextMouseEvent& mouse)
+  bool MouseButtonPressEvent(const vtkContextMouseEvent& mouse) VTK_OVERRIDE
   {
     return (this->DataValid ? this->Superclass::MouseButtonPressEvent(mouse) : false);
   }
-  virtual bool MouseButtonReleaseEvent(const vtkContextMouseEvent& mouse)
+  bool MouseButtonReleaseEvent(const vtkContextMouseEvent& mouse) VTK_OVERRIDE
   {
     return (this->DataValid ? this->Superclass::MouseButtonReleaseEvent(mouse) : false);
   }
-  virtual bool MouseWheelEvent(const vtkContextMouseEvent& mouse, int delta)
+  bool MouseWheelEvent(const vtkContextMouseEvent& mouse, int delta) VTK_OVERRIDE
   {
     return (this->DataValid ? this->Superclass::MouseWheelEvent(mouse, delta) : false);
   }
-  virtual bool KeyPressEvent(const vtkContextKeyEvent& key)
+  bool KeyPressEvent(const vtkContextKeyEvent& key) VTK_OVERRIDE
   {
     return (this->DataValid ? this->Superclass::KeyPressEvent(key) : false);
   }
@@ -151,7 +155,7 @@ protected:
     this->DataValid = false;
     this->ZoomWithMouseWheelOff();
   }
-  virtual ~vtkTransferFunctionChartXY() {}
+  ~vtkTransferFunctionChartXY() override {}
 
 private:
   vtkTransferFunctionChartXY(const vtkTransferFunctionChartXY&);
@@ -164,8 +168,10 @@ vtkStandardNewMacro(vtkTransferFunctionChartXY);
 
 class pqTransferFunctionWidget::pqInternals
 {
+  vtkNew<pqQVTKWidgetBaseRenderWindowType> Window;
+
 public:
-  QPointer<QVTKWidget> Widget;
+  QPointer<pqQVTKWidgetBase> Widget;
   vtkNew<vtkTransferFunctionChartXY> ChartXY;
   vtkNew<vtkContextView> ContextView;
   vtkNew<vtkEventQtSlotConnect> VTKConnect;
@@ -177,18 +183,28 @@ public:
   unsigned long CurrentPointEditEventId;
 
   pqInternals(pqTransferFunctionWidget* editor)
-    : Widget(new QVTKWidget(editor))
+    : Widget(new pqQVTKWidgetBase(editor))
     , CurrentPointEditEventId(0)
   {
     this->Timer.setSingleShot(true);
     this->Timer.setInterval(0);
+
+#if QT_VERSION >= 0x050000
+    QSurfaceFormat fmt = QSurfaceFormat::defaultFormat();
+    fmt.setSamples(8);
+    this->Widget->setFormat(fmt);
+    this->Widget->setEnableHiDPI(true);
+#endif
+
+    this->Widget->setObjectName("1QVTKWidget0");
+    this->Widget->SetRenderWindow(this->Window.Get());
+    this->ContextView->SetRenderWindow(this->Window.Get());
 
     this->ChartXY->SetAutoSize(true);
     this->ChartXY->SetShowLegend(false);
     this->ChartXY->SetForceAxesToBounds(true);
     this->ContextView->GetScene()->AddItem(this->ChartXY.GetPointer());
     this->ContextView->SetInteractor(this->Widget->GetInteractor());
-    this->Widget->SetRenderWindow(this->ContextView->GetRenderWindow());
     this->ContextView->GetRenderWindow()->SetLineSmoothing(true);
 
     this->ChartXY->SetActionToButton(vtkChart::PAN, -1);

@@ -29,7 +29,7 @@ class VTKPVCATALYST_EXPORT vtkCPDataDescription : public vtkObject
 public:
   static vtkCPDataDescription* New();
   vtkTypeMacro(vtkCPDataDescription, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /// Set the time step and current simulation time.
   void SetTimeData(double time, vtkIdType timeStep);
@@ -101,8 +101,8 @@ protected:
   virtual ~vtkCPDataDescription();
 
 private:
-  vtkCPDataDescription(const vtkCPDataDescription&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCPDataDescription&) VTK_DELETE_FUNCTION;
+  vtkCPDataDescription(const vtkCPDataDescription&) = delete;
+  void operator=(const vtkCPDataDescription&) = delete;
 
   /// The current simulation time.  This should be set in the adaptor.
   double Time;

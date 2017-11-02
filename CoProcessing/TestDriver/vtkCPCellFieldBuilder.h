@@ -30,12 +30,12 @@ class VTKPVCATALYSTTESTDRIVER_EXPORT vtkCPCellFieldBuilder : public vtkCPFieldBu
 public:
   static vtkCPCellFieldBuilder* New();
   vtkTypeMacro(vtkCPCellFieldBuilder, vtkCPFieldBuilder);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Return a field on Grid.
    */
-  virtual void BuildField(unsigned long TimeStep, double Time, vtkDataSet* Grid);
+  virtual void BuildField(unsigned long TimeStep, double Time, vtkDataSet* Grid) VTK_OVERRIDE;
 
   /**
    * Return the highest order of discretization of the field.
@@ -47,8 +47,8 @@ protected:
   ~vtkCPCellFieldBuilder();
 
 private:
-  vtkCPCellFieldBuilder(const vtkCPCellFieldBuilder&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCPCellFieldBuilder&) VTK_DELETE_FUNCTION;
+  vtkCPCellFieldBuilder(const vtkCPCellFieldBuilder&) = delete;
+  void operator=(const vtkCPCellFieldBuilder&) = delete;
 };
 
 #endif

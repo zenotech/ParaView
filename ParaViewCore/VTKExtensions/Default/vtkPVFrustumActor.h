@@ -33,7 +33,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVFrustumActor : public vtkOpenGLActor
 public:
   static vtkPVFrustumActor* New();
   vtkTypeMacro(vtkPVFrustumActor, vtkOpenGLActor);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Get/Set the frustum.
@@ -50,14 +50,14 @@ public:
 
 protected:
   vtkPVFrustumActor();
-  ~vtkPVFrustumActor();
+  ~vtkPVFrustumActor() override;
 
   vtkOutlineSource* Outline;
   vtkPolyDataMapper* Mapper;
 
 private:
-  vtkPVFrustumActor(const vtkPVFrustumActor&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVFrustumActor&) VTK_DELETE_FUNCTION;
+  vtkPVFrustumActor(const vtkPVFrustumActor&) = delete;
+  void operator=(const vtkPVFrustumActor&) = delete;
 };
 
 #endif

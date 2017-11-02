@@ -35,7 +35,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMDataSourceProxy : public vtkSMSourcePro
 public:
   static vtkSMDataSourceProxy* New();
   vtkTypeMacro(vtkSMDataSourceProxy, vtkSMSourceProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Copies data from source proxy object to object represented by this
@@ -45,11 +45,11 @@ public:
 
 protected:
   vtkSMDataSourceProxy();
-  ~vtkSMDataSourceProxy();
+  ~vtkSMDataSourceProxy() override;
 
 private:
-  vtkSMDataSourceProxy(const vtkSMDataSourceProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMDataSourceProxy&) VTK_DELETE_FUNCTION;
+  vtkSMDataSourceProxy(const vtkSMDataSourceProxy&) = delete;
+  void operator=(const vtkSMDataSourceProxy&) = delete;
 };
 
 #endif

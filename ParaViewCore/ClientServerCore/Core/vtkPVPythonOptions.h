@@ -32,7 +32,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVPythonOptions : public vtkPVOptions
 public:
   static vtkPVPythonOptions* New();
   vtkTypeMacro(vtkPVPythonOptions, vtkPVOptions);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -50,7 +50,7 @@ protected:
   /**
    * Destructor.
    */
-  virtual ~vtkPVPythonOptions();
+  ~vtkPVPythonOptions() override;
 
   /**
    * Synchronizes the options among root and satellites.
@@ -60,21 +60,21 @@ protected:
   /**
    * After parsing, process extra option dependencies.
    */
-  virtual int PostProcess(int argc, const char* const* argv);
+  int PostProcess(int argc, const char* const* argv) VTK_OVERRIDE;
 
   /**
    * This method is called when wrong argument is found. If it returns 0, then
    * the parsing will fail.
    */
-  virtual int WrongArgument(const char* argument);
+  int WrongArgument(const char* argument) VTK_OVERRIDE;
 
   // Options:
   vtkSetStringMacro(PythonScriptName);
   char* PythonScriptName;
 
 private:
-  vtkPVPythonOptions(const vtkPVPythonOptions&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVPythonOptions&) VTK_DELETE_FUNCTION;
+  vtkPVPythonOptions(const vtkPVPythonOptions&) = delete;
+  void operator=(const vtkPVPythonOptions&) = delete;
 };
 
 #endif // #ifndef vtkPVPythonOptions_h

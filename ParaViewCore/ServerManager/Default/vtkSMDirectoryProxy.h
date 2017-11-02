@@ -29,35 +29,38 @@ class VTKPVSERVERMANAGERDEFAULT_EXPORT vtkSMDirectoryProxy : public vtkSMProxy
 public:
   static vtkSMDirectoryProxy* New();
   vtkTypeMacro(vtkSMDirectoryProxy, vtkSMProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Create directory.
    */
-  bool MakeDirectory(const char* dir, vtkTypeUInt32 processes);
+  bool MakeDirectory(const char* dir);
 
   /**
    * Remove a directory.
    */
-  bool DeleteDirectory(const char* dir, vtkTypeUInt32 processes);
+  bool DeleteDirectory(const char* dir);
 
   /**
    * Rename a file or directory.
    */
-  bool Rename(const char* oldname, const char* newname, vtkTypeUInt32 processes);
+  bool Rename(const char* oldname, const char* newname);
 
   /**
    * List server side directory
+   * NEVER USED IN PARAVIEW, TODO ?
    */
-  void List(const char* dir);
+  bool List(const char* dir);
 
 protected:
   vtkSMDirectoryProxy();
-  ~vtkSMDirectoryProxy();
+  ~vtkSMDirectoryProxy() override;
+
+  bool CallDirectoryMethod(const char* method, const char* path, const char* secondaryPath = NULL);
 
 private:
-  vtkSMDirectoryProxy(const vtkSMDirectoryProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMDirectoryProxy&) VTK_DELETE_FUNCTION;
+  vtkSMDirectoryProxy(const vtkSMDirectoryProxy&) = delete;
+  void operator=(const vtkSMDirectoryProxy&) = delete;
 };
 
 #endif

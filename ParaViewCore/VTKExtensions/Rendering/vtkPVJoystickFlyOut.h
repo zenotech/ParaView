@@ -31,15 +31,15 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkPVJoystickFlyOut : public vtkPVJoyst
 public:
   static vtkPVJoystickFlyOut* New();
   vtkTypeMacro(vtkPVJoystickFlyOut, vtkPVJoystickFly);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkPVJoystickFlyOut();
-  ~vtkPVJoystickFlyOut();
+  ~vtkPVJoystickFlyOut() override;
 
 private:
-  vtkPVJoystickFlyOut(const vtkPVJoystickFlyOut&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVJoystickFlyOut&) VTK_DELETE_FUNCTION;
+  vtkPVJoystickFlyOut(const vtkPVJoystickFlyOut&) = delete;
+  void operator=(const vtkPVJoystickFlyOut&) = delete;
 };
 
 #endif

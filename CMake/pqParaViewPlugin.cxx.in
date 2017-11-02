@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -174,26 +174,15 @@ void @PLUGIN_NAME@_Plugin::GetPythonSourceList(std::vector<std::string>& modules
 //-----------------------------------------------------------------------------
 @PLUGIN_NAME@_Plugin::@PLUGIN_NAME@_Plugin()
 {
-#ifndef BUILD_SHARED_LIBS
-# ifdef plugin_type_gui
+#if !defined(BUILD_SHARED_LIBS) && defined(plugin_type_gui)
   // For static builds, initialize the Qt resources as well as the Qt plugin.
   @QRC_RESOURCES_INIT@
-  Q_IMPORT_PLUGIN(@PLUGIN_NAME@)
-# endif
+  // Qt 5
+  Q_IMPORT_PLUGIN(@PLUGIN_NAME@_Plugin)
+
 #endif
 }
 
 //-----------------------------------------------------------------------------
 // Mark this as a ParaView-ServerManager plugin.
 PV_PLUGIN_EXPORT(@PLUGIN_NAME@, @PLUGIN_NAME@_Plugin)
-
-//-----------------------------------------------------------------------------
-#ifdef plugin_type_gui
-// Required to mark this as a Qt plugin.
-#if QT_VERSION >= 0x050000
-Q_DECLARE_INTERFACE(@PLUGIN_NAME@_Plugin, "com.kitware/paraview/@PLUGIN_NAME@")
-Q_PLUGIN_METADATA(IID "com.kitware/paraview/@PLUGIN_NAME@")
-#else
-Q_EXPORT_PLUGIN2(@PLUGIN_NAME@,  @PLUGIN_NAME@_Plugin)
-#endif
-#endif

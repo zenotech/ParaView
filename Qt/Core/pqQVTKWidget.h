@@ -32,33 +32,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef pqQVTKWidget_h
 #define pqQVTKWidget_h
 
-#include "QVTKWidget.h"
 #include "pqCoreModule.h"
+#include "pqQVTKWidgetBase.h"
+#include "vtkEventQtSlotConnect.h"
+#include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkWeakPointer.h"
-
 #include <QPointer>
 
 class vtkSMProxy;
 class vtkSMSession;
 
 /**
-* pqQVTKWidget extends QVTKWidget to add awareness for view proxies. The
+* pqQVTKWidget extends pqQVTKWidgetBase to add awareness for view proxies. The
 * advantage of doing that is that pqQVTKWidget can automatically update the
-* "ViewSize" propertu on the view proxy whenever the
+* "ViewSize" property on the view proxy whenever the
 * widget's size/position changes.
 *
 * This class also enables image-caching by default (image caching support is
 * provided by the superclass).
 */
-class PQCORE_EXPORT pqQVTKWidget : public QVTKWidget
+class PQCORE_EXPORT pqQVTKWidget : public pqQVTKWidgetBase
 {
   Q_OBJECT
-  typedef QVTKWidget Superclass;
+  typedef pqQVTKWidgetBase Superclass;
 
 public:
   pqQVTKWidget(QWidget* parent = NULL, Qt::WindowFlags f = 0);
-  virtual ~pqQVTKWidget();
+  ~pqQVTKWidget() override;
 
   /**
   * Set the view proxy.
@@ -87,20 +88,8 @@ public slots:
   void paintMousePointer(int x, int y);
 
 protected:
-  /**
-  * overloaded resize handler
-  */
-  virtual void resizeEvent(QResizeEvent* event);
-
-  /**
-  * overloaded move handler
-  */
-  virtual void moveEvent(QMoveEvent* event);
-
-  // method called in paintEvent() to render the image cache on to the device.
-  // return false, if cache couldn;t be used for painting. In that case, the
-  // paintEvent() method will continue with the default painting code.
-  virtual bool paintCachedImage();
+  bool renderVTK() override;
+  bool canRender();
 
 private slots:
   void updateSizeProperties();
@@ -111,6 +100,7 @@ private:
   vtkWeakPointer<vtkSMSession> Session;
   QImage MousePointerToDraw;
   QString SizePropertyName;
+  vtkNew<vtkEventQtSlotConnect> VTKConnect;
 };
 
 #endif

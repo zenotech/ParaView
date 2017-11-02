@@ -44,7 +44,7 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkPVSessionCore : public vtkObject
 public:
   static vtkPVSessionCore* New();
   vtkTypeMacro(vtkPVSessionCore, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -190,7 +190,7 @@ public:
 
 protected:
   vtkPVSessionCore();
-  ~vtkPVSessionCore();
+  ~vtkPVSessionCore() override;
 
   /**
    * This will create a vtkSIObject and/or execute some update on the
@@ -244,8 +244,8 @@ protected:
   vtkMPIMToNSocketConnection* MPIMToNSocketConnection;
 
 private:
-  vtkPVSessionCore(const vtkPVSessionCore&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVSessionCore&) VTK_DELETE_FUNCTION;
+  vtkPVSessionCore(const vtkPVSessionCore&) = delete;
+  void operator=(const vtkPVSessionCore&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

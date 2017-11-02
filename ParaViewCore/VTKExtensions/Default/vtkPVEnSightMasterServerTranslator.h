@@ -29,7 +29,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVEnSightMasterServerTranslator
 public:
   static vtkPVEnSightMasterServerTranslator* New();
   vtkTypeMacro(vtkPVEnSightMasterServerTranslator, vtkExtentTranslator);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -46,19 +46,19 @@ public:
    * all other pieces to empty.
    */
   int PieceToExtentThreadSafe(int piece, int numPieces, int ghostLevel, int* wholeExtent,
-    int* resultExtent, int splitMode, int byPoints);
+    int* resultExtent, int splitMode, int byPoints) VTK_OVERRIDE;
 
 protected:
   vtkPVEnSightMasterServerTranslator();
-  ~vtkPVEnSightMasterServerTranslator();
+  ~vtkPVEnSightMasterServerTranslator() override;
   //@}
 
   // The process id on which this translator is running.
   int ProcessId;
 
 private:
-  vtkPVEnSightMasterServerTranslator(const vtkPVEnSightMasterServerTranslator&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVEnSightMasterServerTranslator&) VTK_DELETE_FUNCTION;
+  vtkPVEnSightMasterServerTranslator(const vtkPVEnSightMasterServerTranslator&) = delete;
+  void operator=(const vtkPVEnSightMasterServerTranslator&) = delete;
 };
 
 #endif

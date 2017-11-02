@@ -39,7 +39,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMLiveInsituLinkProxy : public vtkSMProxy
 public:
   static vtkSMLiveInsituLinkProxy* New();
   vtkTypeMacro(vtkSMLiveInsituLinkProxy, vtkSMProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -68,7 +68,7 @@ public:
   /**
    * Overridden to handle server-notification messages.
    */
-  virtual void LoadState(const vtkSMMessage* msg, vtkSMProxyLocator* locator);
+  void LoadState(const vtkSMMessage* msg, vtkSMProxyLocator* locator) VTK_OVERRIDE;
 
   /**
    * Push updated states from the client to the server in aggregate (originally,
@@ -79,11 +79,11 @@ public:
 
 protected:
   vtkSMLiveInsituLinkProxy();
-  ~vtkSMLiveInsituLinkProxy();
+  ~vtkSMLiveInsituLinkProxy() override;
 
   // overridden to ensure that we communicate the globalid for this proxy so
   // that the server-side can send messages to this proxy.
-  virtual void CreateVTKObjects();
+  void CreateVTKObjects() VTK_OVERRIDE;
 
   void MarkStateDirty();
 
@@ -102,8 +102,8 @@ protected:
   vtkIdType TimeStep;
 
 private:
-  vtkSMLiveInsituLinkProxy(const vtkSMLiveInsituLinkProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMLiveInsituLinkProxy&) VTK_DELETE_FUNCTION;
+  vtkSMLiveInsituLinkProxy(const vtkSMLiveInsituLinkProxy&) = delete;
+  void operator=(const vtkSMLiveInsituLinkProxy&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

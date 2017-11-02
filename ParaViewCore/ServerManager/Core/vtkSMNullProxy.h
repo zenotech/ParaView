@@ -30,17 +30,17 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMNullProxy : public vtkSMProxy
 public:
   static vtkSMNullProxy* New();
   vtkTypeMacro(vtkSMNullProxy, vtkSMProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkSMNullProxy();
-  ~vtkSMNullProxy();
+  ~vtkSMNullProxy() override;
 
-  virtual void CreateVTKObjects();
+  void CreateVTKObjects() VTK_OVERRIDE;
 
 private:
-  vtkSMNullProxy(const vtkSMNullProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMNullProxy&) VTK_DELETE_FUNCTION;
+  vtkSMNullProxy(const vtkSMNullProxy&) = delete;
+  void operator=(const vtkSMNullProxy&) = delete;
 };
 
 #endif

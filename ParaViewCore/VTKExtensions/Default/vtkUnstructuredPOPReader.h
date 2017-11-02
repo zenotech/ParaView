@@ -52,7 +52,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkUnstructuredPOPReader
 public:
   vtkTypeMacro(vtkUnstructuredPOPReader, vtkUnstructuredGridAlgorithm);
   static vtkUnstructuredPOPReader* New();
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -122,9 +122,9 @@ public:
 
 protected:
   vtkUnstructuredPOPReader();
-  ~vtkUnstructuredPOPReader();
+  ~vtkUnstructuredPOPReader() override;
 
-  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   static void SelectionModifiedCallback(
     vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);
@@ -212,7 +212,7 @@ protected:
   bool ReadMetaData(int wholeExtent[6]);
 
   int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   /**
    * Adds a point data field given by varidp in the NetCDF file
@@ -275,8 +275,8 @@ protected:
     int* subExtent, int wrapped, int piece, int numberOfPieces);
 
 private:
-  vtkUnstructuredPOPReader(const vtkUnstructuredPOPReader&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkUnstructuredPOPReader&) VTK_DELETE_FUNCTION;
+  vtkUnstructuredPOPReader(const vtkUnstructuredPOPReader&) = delete;
+  void operator=(const vtkUnstructuredPOPReader&) = delete;
 
   vtkUnstructuredPOPReaderInternal* Internals;
 };

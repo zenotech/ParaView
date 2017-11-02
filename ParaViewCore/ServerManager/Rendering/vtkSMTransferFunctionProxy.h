@@ -26,11 +26,7 @@
 
 #include "vtkPVServerManagerRenderingModule.h" // needed for export macro
 #include "vtkSMProxy.h"
-
-namespace Json
-{
-class Value;
-}
+#include <vtk_jsoncpp_fwd.h> // for forward declarations
 
 class vtkPVArrayInformation;
 class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMTransferFunctionProxy : public vtkSMProxy
@@ -38,7 +34,7 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMTransferFunctionProxy : public vtk
 public:
   static vtkSMTransferFunctionProxy* New();
   vtkTypeMacro(vtkSMTransferFunctionProxy, vtkSMProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Rescale the "RGBPoints" for the transfer function to match the new range.
@@ -300,6 +296,12 @@ public:
   using Superclass::ResetPropertiesToXMLDefaults;
   //@}
 
+  /**
+   * Reset the transfer function's AutomaticRescaleResetMode to the global
+   * TransferFunctionRresetMode setting.
+   */
+  void ResetRescaleModeToGlobalSetting();
+
   //@{
   /**
    * Method to convert legacy color map preset XML to JSON. Use this to convert
@@ -339,11 +341,17 @@ public:
 
 protected:
   vtkSMTransferFunctionProxy();
-  ~vtkSMTransferFunctionProxy();
+  ~vtkSMTransferFunctionProxy() override;
+
+  /**
+   * Attempt to reset transfer function to site settings. If site settings are not
+   * available, then the application XML defaults are used.
+   */
+  void RestoreFromSiteSettingsOrXML(const char* arrayName);
 
 private:
-  vtkSMTransferFunctionProxy(const vtkSMTransferFunctionProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMTransferFunctionProxy&) VTK_DELETE_FUNCTION;
+  vtkSMTransferFunctionProxy(const vtkSMTransferFunctionProxy&) = delete;
+  void operator=(const vtkSMTransferFunctionProxy&) = delete;
 };
 
 #endif

@@ -1,4 +1,8 @@
 #### import the simple module from the paraview
+import paraview
+paraview.compatibility.major = 5
+paraview.compatibility.minor = 2
+
 from paraview.simple import *
 from paraview import smtesting
 import os.path
@@ -57,11 +61,11 @@ fooply = PLYReader(FileName=plyfilename)
 
 # show data in view
 fooplyDisplay = Show(fooply, renderView1)
-fooplyDisplay.ColorArrayName = ['POINTS', 'RGB']
 fooplyDisplay.MapScalars = 0
 
 # reset view to fit data
-renderView1.ResetCamera()
+Render()
+ResetCamera()
 
 if not smtesting.DoRegressionTesting(renderView1.SMProxy):
     raise smtesting.TestError ('Test failed.')

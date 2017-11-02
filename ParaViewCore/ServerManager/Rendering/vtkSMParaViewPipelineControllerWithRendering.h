@@ -47,7 +47,7 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMParaViewPipelineControllerWithRend
 public:
   static vtkSMParaViewPipelineControllerWithRendering* New();
   vtkTypeMacro(vtkSMParaViewPipelineControllerWithRendering, vtkSMParaViewPipelineController);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Show the output data in the view. If data cannot be shown in the view,
@@ -87,17 +87,53 @@ public:
   virtual bool GetVisibility(vtkSMSourceProxy* producer, int outputPort, vtkSMViewProxy* view);
 
   /**
-   * Same as Show() except that if the \c view is NULL or not the "preferred"
+   * Same as Show() except that if the \c view is NULL or not the preferred
    * view for the producer's output, this method will create a new view and show
-   * the data in that new view. Returns the view in which the data ends up being
-   * shown, if any. It may return NULL if the \c view is not the "preferred"
-   * view and "preferred" view could not be determined or created.
+   * the data in that new view.
+   *
+   * There are several different strategies employed to determine the preferred
+   * view for the producer's output. See
+   * vtkSMParaViewPipelineControllerWithRendering::GetPreferredViewType() for
+   * details.
+   *
+   * @note if the source's hint indicates so, the data may also be
+   *       shown in the \c view passed in, in addition to the preferred view.
+   *       This is done by using the `also_show_in_current_view` attribute to
+   *       the `<View />` hint.
+   *
+   * @returns the view in which the data ends up being shown, if any.
+   *          It may return nullptr if the \c view is not the preferred type
+   *          or the preferred cannot be determined or created.
    */
   virtual vtkSMViewProxy* ShowInPreferredView(
     vtkSMSourceProxy* producer, int outputPort, vtkSMViewProxy* view);
 
   /**
-   * Returns the name for the preferred view type, if there is any.
+   * Returns the name for the preferred view type, if there is any. There are
+   * several strategies employed by the default implementation to determine the
+   * preferred view type.
+   *
+   * -# Using XML hints.\n
+   *    A producer proxy can provide XML hints to define the preferred view type
+   *    of each (or all) of its output ports. This is done as follows:
+   *
+   *    @code{xml}
+   *      <SourceProxy>
+   *        <Hints>
+   *          <View type="<view name>" port="<output port number" />
+   *        </Hints>
+   *      </SourceProxy>
+   *    @endcode
+   *
+   *    Attribute `port` is optional and only needed to explicitly specify
+   *    different view types for different output ports.
+   *
+   * -# Using data type.\n
+   *    If the data type for the generated data is `vtkTable`, then the
+   *    preferred view (if none provided) is assumed to be `SpreadSheetView`.
+   *
+   * @returns XML name for the preferred view proxy. It is assumed to be defined
+   *          in the "views" group.
    */
   virtual const char* GetPreferredViewType(vtkSMSourceProxy* producer, int outputPort);
 
@@ -107,7 +143,7 @@ public:
    * overrides, we must keep such overrides to a minimal and opting for domains
    * that set appropriate defaults where as much as possible.
    */
-  virtual bool RegisterRepresentationProxy(vtkSMProxy* proxy);
+  bool RegisterRepresentationProxy(vtkSMProxy* proxy) VTK_OVERRIDE;
 
   /**
    * Control how scalar bar visibility is updated by the Hide call.
@@ -125,26 +161,16 @@ public:
   static bool GetInheritRepresentationProperties();
   //@}
 
-  //@{
-  /**
-   * Methods to save/capture images from views.
-   */
-  virtual bool WriteImage(
-    vtkSMViewProxy* view, const char* filename, int magnification, int quality);
-  virtual bool WriteImage(
-    vtkSMViewLayoutProxy* layout, const char* filename, int magnification, int quality);
-  //@}
-
   /**
    * Overridden to handle default ColorArrayName for representations correctly.
    */
-  virtual bool PostInitializeProxy(vtkSMProxy* proxy);
+  bool PostInitializeProxy(vtkSMProxy* proxy) VTK_OVERRIDE;
 
   //@{
   /**
    * Overridden to place the view in a layout on creation.
    */
-  virtual bool RegisterViewProxy(vtkSMProxy* proxy, const char* proxyname);
+  bool RegisterViewProxy(vtkSMProxy* proxy, const char* proxyname) VTK_OVERRIDE;
   using Superclass::RegisterViewProxy;
   //@}
 
@@ -155,15 +181,27 @@ public:
 
 protected:
   vtkSMParaViewPipelineControllerWithRendering();
-  ~vtkSMParaViewPipelineControllerWithRendering();
+  ~vtkSMParaViewPipelineControllerWithRendering() override;
 
   virtual void UpdatePipelineBeforeDisplay(
     vtkSMSourceProxy* producer, int outputPort, vtkSMViewProxy* view);
 
+  /**
+   * Checks if the output from producer needs to be shown in the current view
+   * also.
+   */
+  virtual bool AlsoShowInCurrentView(
+    vtkSMSourceProxy* producer, int outputPort, vtkSMViewProxy* currentView);
+
+  /**
+   * Overridden here where the library has link access to rendering classes.
+   */
+  virtual void DoMaterialSetup(vtkSMProxy* proxy) override;
+
 private:
   vtkSMParaViewPipelineControllerWithRendering(
-    const vtkSMParaViewPipelineControllerWithRendering&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMParaViewPipelineControllerWithRendering&) VTK_DELETE_FUNCTION;
+    const vtkSMParaViewPipelineControllerWithRendering&) = delete;
+  void operator=(const vtkSMParaViewPipelineControllerWithRendering&) = delete;
   static bool HideScalarBarOnHide;
   static bool InheritRepresentationProperties;
 };

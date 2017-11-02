@@ -33,7 +33,7 @@ class VTKPVCOMMON_EXPORT vtkPVInstantiator : public vtkObject
 public:
   static vtkPVInstantiator* New();
   vtkTypeMacro(vtkPVInstantiator, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Create an instance of the class whose name is given.  If creation
@@ -45,11 +45,11 @@ public:
 
 protected:
   vtkPVInstantiator();
-  ~vtkPVInstantiator();
+  ~vtkPVInstantiator() override;
 
 private:
-  vtkPVInstantiator(const vtkPVInstantiator&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVInstantiator&) VTK_DELETE_FUNCTION;
+  vtkPVInstantiator(const vtkPVInstantiator&) = delete;
+  void operator=(const vtkPVInstantiator&) = delete;
 };
 
 #endif

@@ -34,24 +34,24 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkPVTrackballPan : public vtkCameraMan
 public:
   static vtkPVTrackballPan* New();
   vtkTypeMacro(vtkPVTrackballPan, vtkCameraManipulator);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
    * Event bindings controlling the effects of pressing mouse buttons
    * or moving the mouse.
    */
-  virtual void OnMouseMove(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* iren);
-  virtual void OnButtonDown(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* iren);
-  virtual void OnButtonUp(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* iren);
+  void OnMouseMove(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* iren) VTK_OVERRIDE;
+  void OnButtonDown(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* iren) VTK_OVERRIDE;
+  void OnButtonUp(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* iren) VTK_OVERRIDE;
   //@}
 
 protected:
   vtkPVTrackballPan();
-  ~vtkPVTrackballPan();
+  ~vtkPVTrackballPan() override;
 
-  vtkPVTrackballPan(const vtkPVTrackballPan&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVTrackballPan&) VTK_DELETE_FUNCTION;
+  vtkPVTrackballPan(const vtkPVTrackballPan&) = delete;
+  void operator=(const vtkPVTrackballPan&) = delete;
 };
 
 #endif

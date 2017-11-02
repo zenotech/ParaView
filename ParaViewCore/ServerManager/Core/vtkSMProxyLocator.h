@@ -38,7 +38,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMProxyLocator : public vtkSMObject
 public:
   static vtkSMProxyLocator* New();
   vtkTypeMacro(vtkSMProxyLocator, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Locate a proxy with the given "name". If none can be found returns NULL.
@@ -92,7 +92,7 @@ public:
 
 protected:
   vtkSMProxyLocator();
-  ~vtkSMProxyLocator();
+  ~vtkSMProxyLocator() override;
 
   /**
    * Create new proxy with the given id. Default implementation asks the
@@ -105,8 +105,8 @@ protected:
   bool LocateProxyWithSessionToo;
 
 private:
-  vtkSMProxyLocator(const vtkSMProxyLocator&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMProxyLocator&) VTK_DELETE_FUNCTION;
+  vtkSMProxyLocator(const vtkSMProxyLocator&) = delete;
+  void operator=(const vtkSMProxyLocator&) = delete;
 
   class vtkInternal;
   vtkInternal* Internal;

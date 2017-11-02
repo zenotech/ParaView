@@ -47,7 +47,7 @@ class PQCORE_EXPORT pqOptions : public vtkPVOptions
 public:
   static pqOptions* New();
   vtkTypeMacro(pqOptions, vtkPVOptions);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   vtkGetStringMacro(TileImagePath);
   vtkGetStringMacro(BaselineDirectory);
@@ -101,10 +101,10 @@ public:
 
 protected:
   pqOptions();
-  virtual ~pqOptions();
+  ~pqOptions() override;
 
-  virtual void Initialize();
-  virtual int PostProcess(int argc, const char* const* argv);
+  void Initialize() VTK_OVERRIDE;
+  int PostProcess(int argc, const char* const* argv) VTK_OVERRIDE;
 
   char* BaselineDirectory;
   char* TestDirectory;
@@ -138,7 +138,7 @@ protected:
   // Description:
   // This method is called when wrong argument is found. If it returns 0, then
   // the parsing will fail.
-  virtual int WrongArgument(const char* argument);
+  int WrongArgument(const char* argument) VTK_OVERRIDE;
 
 private:
   pqOptions(const pqOptions&);

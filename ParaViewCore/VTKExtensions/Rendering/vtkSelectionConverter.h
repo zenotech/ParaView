@@ -46,7 +46,7 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkSelectionConverter : public vtkObjec
 public:
   static vtkSelectionConverter* New();
   vtkTypeMacro(vtkSelectionConverter, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Convert input selection and store it in output. Currently, the
@@ -59,15 +59,15 @@ public:
 
 protected:
   vtkSelectionConverter();
-  ~vtkSelectionConverter();
+  ~vtkSelectionConverter() override;
 
   void Convert(vtkSelectionNode* input, vtkSelection* output, int global_ids);
 
   vtkDataSet* LocateDataSet(vtkCompositeDataIterator* iter, unsigned int index);
 
 private:
-  vtkSelectionConverter(const vtkSelectionConverter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSelectionConverter&) VTK_DELETE_FUNCTION;
+  vtkSelectionConverter(const vtkSelectionConverter&) = delete;
+  void operator=(const vtkSelectionConverter&) = delete;
 
   class vtkKeyType;
 };

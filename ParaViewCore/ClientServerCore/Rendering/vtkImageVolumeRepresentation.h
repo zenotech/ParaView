@@ -50,7 +50,7 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkImageVolumeRepresentation
 public:
   static vtkImageVolumeRepresentation* New();
   vtkTypeMacro(vtkImageVolumeRepresentation, vtkPVDataRepresentation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * vtkAlgorithm::ProcessRequest() equivalent for rendering passes. This is
@@ -58,8 +58,8 @@ public:
    * representations or ask them to perform certain tasks e.g.
    * PrepareForRendering.
    */
-  virtual int ProcessViewRequest(
-    vtkInformationRequestKey* request_type, vtkInformation* inInfo, vtkInformation* outInfo);
+  int ProcessViewRequest(vtkInformationRequestKey* request_type, vtkInformation* inInfo,
+    vtkInformation* outInfo) VTK_OVERRIDE;
 
   /**
    * This needs to be called on all instances of vtkGeometryRepresentation when
@@ -67,13 +67,13 @@ public:
    * have any real-input on the client side which messes with the Update
    * requests.
    */
-  virtual void MarkModified();
+  void MarkModified() VTK_OVERRIDE;
 
   /**
    * Get/Set the visibility for this representation. When the visibility of
    * representation of false, all view passes are ignored.
    */
-  virtual void SetVisibility(bool val);
+  void SetVisibility(bool val) VTK_OVERRIDE;
 
   //***************************************************************************
   // Forwarded to Actor.
@@ -105,42 +105,35 @@ public:
    */
   vtkPVLODVolume* GetActor() { return this->Actor; }
 
-  /**
-   * Helper method to pass input image extent information to the view to use in
-   * determining the cuts for ordered compositing.
-   */
-  VTK_LEGACY(static void PassOrderedCompositingInformation(
-    vtkPVDataRepresentation* self, vtkInformation* inInfo));
-
 protected:
   vtkImageVolumeRepresentation();
-  ~vtkImageVolumeRepresentation();
+  ~vtkImageVolumeRepresentation() override;
 
   /**
    * Fill input port information.
    */
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   /**
    * Adds the representation to the view.  This is called from
    * vtkView::AddRepresentation().  Subclasses should override this method.
    * Returns true if the addition succeeds.
    */
-  virtual bool AddToView(vtkView* view);
+  bool AddToView(vtkView* view) VTK_OVERRIDE;
 
   /**
    * Removes the representation to the view.  This is called from
    * vtkView::RemoveRepresentation().  Subclasses should override this method.
    * Returns true if the removal succeeds.
    */
-  virtual bool RemoveFromView(vtkView* view);
+  bool RemoveFromView(vtkView* view) VTK_OVERRIDE;
 
   /**
    * Overridden to check with the vtkPVCacheKeeper to see if the key is cached.
    */
-  virtual bool IsCached(double cache_key);
+  bool IsCached(double cache_key) VTK_OVERRIDE;
 
   /**
    * Passes on parameters to the active volume mapper
@@ -173,8 +166,8 @@ protected:
   int WholeExtent[6];
 
 private:
-  vtkImageVolumeRepresentation(const vtkImageVolumeRepresentation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkImageVolumeRepresentation&) VTK_DELETE_FUNCTION;
+  vtkImageVolumeRepresentation(const vtkImageVolumeRepresentation&) = delete;
+  void operator=(const vtkImageVolumeRepresentation&) = delete;
 };
 
 #endif

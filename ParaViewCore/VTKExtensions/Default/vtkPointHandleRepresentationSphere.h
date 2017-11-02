@@ -52,7 +52,7 @@ public:
    * Standard methods for instances of this class.
    */
   vtkTypeMacro(vtkPointHandleRepresentationSphere, vtkHandleRepresentation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
   //@}
 
   //@{
@@ -70,7 +70,7 @@ public:
    * the superclasses SetDisplayPosition in order to set the focal point
    * of the cursor.
    */
-  virtual void SetDisplayPosition(double xyz[3]);
+  void SetDisplayPosition(double xyz[3]) VTK_OVERRIDE;
 
   //@{
   /**
@@ -88,21 +88,21 @@ public:
    * methods. These are the methods that the widget and its representation
    * use to communicate with each other.
    */
-  virtual double* GetBounds();
-  virtual void BuildRepresentation();
-  virtual void StartWidgetInteraction(double eventPos[2]);
-  virtual void WidgetInteraction(double eventPos[2]);
-  virtual int ComputeInteractionState(int X, int Y, int modify = 0);
+  double* GetBounds() VTK_OVERRIDE;
+  void BuildRepresentation() VTK_OVERRIDE;
+  void StartWidgetInteraction(double eventPos[2]) VTK_OVERRIDE;
+  void WidgetInteraction(double eventPos[2]) VTK_OVERRIDE;
+  int ComputeInteractionState(int X, int Y, int modify = 0) VTK_OVERRIDE;
   //@}
 
   //@{
   /**
    * Methods to make this class behave as a vtkProp.
    */
-  virtual void ShallowCopy(vtkProp* prop);
-  virtual void GetActors(vtkPropCollection*);
-  virtual void ReleaseGraphicsResources(vtkWindow*);
-  virtual int RenderOpaqueGeometry(vtkViewport* viewport);
+  void ShallowCopy(vtkProp* prop) VTK_OVERRIDE;
+  void GetActors(vtkPropCollection*) VTK_OVERRIDE;
+  void ReleaseGraphicsResources(vtkWindow*) VTK_OVERRIDE;
+  int RenderOpaqueGeometry(vtkViewport* viewport) VTK_OVERRIDE;
   //@}
 
   //@{
@@ -125,11 +125,11 @@ public:
   /**
    * Toggle whether this handle should be highlighted.
    */
-  void Highlight(int highlight);
+  void Highlight(int highlight) VTK_OVERRIDE;
 
 protected:
   vtkPointHandleRepresentationSphere();
-  ~vtkPointHandleRepresentationSphere();
+  ~vtkPointHandleRepresentationSphere() override;
 
   // Render the cursor
   vtkActor* Actor;
@@ -169,8 +169,8 @@ protected:
   double Scalar;
 
 private:
-  vtkPointHandleRepresentationSphere(const vtkPointHandleRepresentationSphere&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPointHandleRepresentationSphere&) VTK_DELETE_FUNCTION;
+  vtkPointHandleRepresentationSphere(const vtkPointHandleRepresentationSphere&) = delete;
+  void operator=(const vtkPointHandleRepresentationSphere&) = delete;
 };
 
 #endif

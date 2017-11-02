@@ -68,7 +68,7 @@ vtkSMTestDriver::vtkSMTestDriver()
 {
   this->AllowErrorInOutput = 0;
   this->ScriptIgnoreOutputErrors = 0;
-  this->TimeOut = 300;
+  this->TimeOut = -1; // no timeout
   this->ServerExitTimeOut = 60;
   this->ScriptExitTimeOut = 0;
   this->TestRenderServer = 0;
@@ -118,12 +118,7 @@ void vtkSMTestDriver::SeparateArguments(const char* str, std::vector<std::string
 
 void vtkSMTestDriver::CollectConfiguredOptions()
 {
-  // try to make sure that this timesout before dart so it can kill all the processes
-  this->TimeOut = 0;
-  if (this->TimeOut < 0)
-  {
-    this->TimeOut = 1500;
-  }
+// try to make sure that this timesout before dart so it can kill all the processes
 
 // now find all the mpi information if mpi run is set
 #ifdef PARAVIEW_USE_MPI
@@ -293,11 +288,6 @@ int vtkSMTestDriver::ProcessCommandLine(int argc, char* argv[])
     {
       this->ReverseConnection = 1;
       fprintf(stderr, "Test reverse connection.\n");
-    }
-    if (strcmp(argv[i], "--timeout") == 0)
-    {
-      this->TimeOut = atoi(argv[i + 1]);
-      fprintf(stderr, "The timeout was set to %f.\n", this->TimeOut);
     }
     if (strncmp(argv[i], "--server-exit-timeout", strlen("--server-exit-timeout")) == 0)
     {
@@ -565,10 +555,17 @@ int vtkSMTestDriver::OutputStringHasError(const char* pname, std::string& output
     "mpirun can *only* be used with MPI programs", "due to signal", "failure",
     "bnormal termination", "failed", "FAILED", "Failed", 0 };
 
-  const char* nonErrors[] = { "Memcheck, a memory error detector", // valgrind
-    "error in locking authority file",                             // IceT
-    "WARNING: Far depth failed sanity check, resetting.",          // IceT
-    0 };
+  const char* nonErrors[] = {
+    "Memcheck, a memory error detector",                  // valgrind
+    "error in locking authority file",                    // IceT
+    "WARNING: Far depth failed sanity check, resetting.", // IceT
+
+#if defined(__APPLE__)
+    // reported as https://bugreports.qt.io/browse/QTBUG-58699
+    "Layout still needs update after calling -[QNSPanelContentsWrapper layout]",
+#endif
+    0
+  };
 
   if (this->AllowErrorInOutput)
   {

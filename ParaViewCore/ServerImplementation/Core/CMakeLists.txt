@@ -30,6 +30,7 @@
 #==========================================================================
 set (Module_SRCS
   vtkPVCatalystSessionCore.cxx
+  vtkPVFilePathEncodingHelper.cxx
   vtkPVProxyDefinitionIterator.cxx
   vtkPVSessionBase.cxx
   vtkPVSessionCore.cxx
@@ -87,7 +88,7 @@ set (${vtk-module}_HDRS
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/vtkPVMessage.pb.h
            ${CMAKE_CURRENT_BINARY_DIR}/vtkPVMessage.pb.cc
-    
+
     COMMAND protoc_compiler
            "--cpp_out=dllexport_decl=VTKPVSERVERIMPLEMENTATIONCORE_EXPORT:${CMAKE_CURRENT_BINARY_DIR}"
            --proto_path "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -98,23 +99,25 @@ add_custom_command(
 
 add_custom_target(
   protobuf_code_generation
-  DEPENDS 
+  DEPENDS
     ${CMAKE_CURRENT_BINARY_DIR}/vtkPVMessage.pb.h
     ${CMAKE_CURRENT_BINARY_DIR}/vtkPVMessage.pb.cc
 )
 
 #------------------------------------------------------------------------------
-if (WIN32 AND BUILD_SHARED_LIBS)
-  add_definitions(-DPROTOBUF_USE_DLLS)
-endif()
-
-# OpenGL2 specific definitions
-if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL2")
-  add_definitions(-DVTKGL2)
-endif()
-
 vtk_module_library(vtkPVServerImplementationCore
   ${Module_SRCS})
+
+if (VTK_USE_SYSTEM_PROTOBUF)
+  # Protobuf 3.1 doesn't decorate some of its symbols with the _EXPORT macro,
+  # so they are not visible when using `-fvisibility=hidden`. Explicitly set
+  # the visibility to `default` to work around this. It is fixed as of
+  # protobuf-3.2.0-rc1 by this commit:
+  # <https://github.com/google/protobuf/commit/b1295eeffbf2ae7da8a5c7d8601c3ace0663fa09>.
+  set_target_properties(vtkPVServerImplementationCore
+    PROPERTIES
+      CXX_VISIBILITY_PRESET default)
+endif ()
 
 add_dependencies(vtkPVServerImplementationCore
   protobuf_code_generation)

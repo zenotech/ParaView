@@ -88,7 +88,7 @@ public:
 
   void SetTarget(vtkSMSessionProxyManager* t) { this->Target = t; }
 
-  virtual void Execute(vtkObject* obj, unsigned long event, void* data)
+  void Execute(vtkObject* obj, unsigned long event, void* data) override
   {
     if (this->Target)
     {
@@ -106,7 +106,7 @@ class vtkSMProxyManagerForwarder : public vtkCommand
 public:
   static vtkSMProxyManagerForwarder* New() { return new vtkSMProxyManagerForwarder(); }
 
-  virtual void Execute(vtkObject*, unsigned long event, void* data)
+  void Execute(vtkObject*, unsigned long event, void* data) override
   {
     if (vtkSMProxyManager::IsInitialized())
     {
@@ -133,6 +133,8 @@ vtkSMSessionProxyManager::vtkSMSessionProxyManager(vtkSMSession* session)
 
   this->StateUpdateNotification = true;
   this->UpdateInputProxies = 0;
+  this->InLoadXMLState = false;
+
   this->Internals = new vtkSMSessionProxyManagerInternals;
   this->Internals->ProxyManager = this;
 
@@ -235,6 +237,42 @@ void vtkSMSessionProxyManager::InstantiatePrototypes()
   for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextGroup())
   {
     this->InstantiateGroupPrototypes(iter->GetGroupName());
+  }
+}
+
+//----------------------------------------------------------------------------
+void vtkSMSessionProxyManager::ClearPrototypes()
+{
+  vtksys::RegularExpression prototypesRe("_prototypes$");
+
+  // clear items from RegisteredProxyMap.
+  for (auto group_iter = this->Internals->RegisteredProxyMap.begin();
+       group_iter != this->Internals->RegisteredProxyMap.end();)
+  {
+    const bool isPrototypeGroup = prototypesRe.find(group_iter->first);
+    if (isPrototypeGroup)
+    {
+      group_iter = this->Internals->RegisteredProxyMap.erase(group_iter);
+    }
+    else
+    {
+      ++group_iter;
+    }
+  }
+
+  // now, also clear item from RegisteredProxyTuple.
+  for (auto tuple_iter = this->Internals->RegisteredProxyTuple.begin();
+       tuple_iter != this->Internals->RegisteredProxyTuple.end();)
+  {
+    const bool isPrototypeGroup = prototypesRe.find(tuple_iter->Group);
+    if (isPrototypeGroup)
+    {
+      tuple_iter = this->Internals->RegisteredProxyTuple.erase(tuple_iter);
+    }
+    else
+    {
+      ++tuple_iter;
+    }
   }
 }
 
@@ -530,7 +568,7 @@ vtkStdString vtkSMSessionProxyManager::RegisterProxy(const char* groupname, vtkS
   vtkStdString label = vtkSMCoreUtilities::SanitizeName(proxy->GetXMLLabel());
   vtkStdString name = this->GetUniqueProxyName(groupname, label.c_str());
   this->RegisterProxy(groupname, name.c_str(), proxy);
-  return groupname;
+  return name;
 }
 
 //---------------------------------------------------------------------------
@@ -571,7 +609,6 @@ vtkStdString vtkSMSessionProxyManager::GetUniqueProxyName(const char* groupname,
 
   vtkErrorMacro("Failed to come up with a unique name!");
   abort();
-  return vtkStdString(prefix);
 }
 
 //---------------------------------------------------------------------------
@@ -1074,6 +1111,12 @@ void vtkSMSessionProxyManager::ExecuteEvent(vtkObject* obj, unsigned long event,
         this->RemovePrototype(defInfo->GroupName, defInfo->ProxyName);
         break;
 
+      case vtkSIProxyDefinitionManager::ProxyDefinitionsUpdated:
+        // if any definitions updated, we clear all prototypes.
+        this->ClearPrototypes();
+        this->InvokeEvent(event, data);
+        break;
+
       default:
         this->InvokeEvent(event, data);
         break;
@@ -1169,8 +1212,10 @@ void vtkSMSessionProxyManager::LoadXMLState(
   {
     return;
   }
-  vtkSmartPointer<vtkSMStateLoader> spLoader;
 
+  bool prev = this->InLoadXMLState;
+  this->InLoadXMLState = true;
+  vtkSmartPointer<vtkSMStateLoader> spLoader;
   if (!loader)
   {
     spLoader = vtkSmartPointer<vtkSMStateLoader>::New();
@@ -1187,6 +1232,7 @@ void vtkSMSessionProxyManager::LoadXMLState(
     info.ProxyLocator = spLoader->GetProxyLocator();
     this->InvokeEvent(vtkCommand::LoadStateEvent, &info);
   }
+  this->InLoadXMLState = prev;
 }
 
 //---------------------------------------------------------------------------

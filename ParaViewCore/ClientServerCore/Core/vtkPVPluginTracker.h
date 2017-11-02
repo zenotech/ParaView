@@ -42,7 +42,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVPluginTracker : public vtkObject
 public:
   static vtkPVPluginTracker* New();
   vtkTypeMacro(vtkPVPluginTracker, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Provides access to the singleton. This will create the vtkPVPluginTracker
@@ -120,11 +120,11 @@ public:
 
 protected:
   vtkPVPluginTracker();
-  ~vtkPVPluginTracker();
+  ~vtkPVPluginTracker() override;
 
 private:
-  vtkPVPluginTracker(const vtkPVPluginTracker&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVPluginTracker&) VTK_DELETE_FUNCTION;
+  vtkPVPluginTracker(const vtkPVPluginTracker&) = delete;
+  void operator=(const vtkPVPluginTracker&) = delete;
 
   class vtkPluginsList;
   vtkPluginsList* PluginsList;

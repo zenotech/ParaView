@@ -35,7 +35,6 @@
 #include "vtkPVDataRepresentationPipeline.h"
 #include "vtkPVDataSetAttributesInformation.h"
 #include "vtkPVDataSizeInformation.h"
-#include "vtkPVDisplayInformation.h"
 #include "vtkPVEnvironmentInformation.h"
 #include "vtkPVEnvironmentInformationHelper.h"
 #include "vtkPVExtractSelection.h"
@@ -45,7 +44,6 @@
 #include "vtkPVImplicitPlaneRepresentation.h"
 #include "vtkPVInformation.h"
 #include "vtkPVLastSelectionInformation.h"
-#include "vtkPVOpenGLExtensionsInformation.h"
 #include "vtkPVOptions.h"
 #include "vtkPVOptionsXMLParser.h"
 #include "vtkPVParallelCoordinatesRepresentation.h"
@@ -57,6 +55,7 @@
 #include "vtkPVPythonModule.h"
 #include "vtkPVPythonPluginInterface.h"
 #include "vtkPVRenderView.h"
+#include "vtkPVRenderingCapabilitiesInformation.h"
 #include "vtkPVRepresentedDataInformation.h"
 #include "vtkPVSILInformation.h"
 #include "vtkPVSelectionInformation.h"
@@ -138,7 +137,7 @@ int ParaViewCoreClientServerCorePrintSelf(int, char* [])
   PRINT_SELF(vtkPVDataRepresentationPipeline);
   PRINT_SELF(vtkPVDataSetAttributesInformation);
   PRINT_SELF(vtkPVDataSizeInformation);
-  PRINT_SELF(vtkPVDisplayInformation);
+  PRINT_SELF(vtkPVRenderingCapabilitiesInformation);
   PRINT_SELF(vtkPVEnvironmentInformation);
   PRINT_SELF(vtkPVEnvironmentInformationHelper);
   PRINT_SELF(vtkPVExtractSelection);
@@ -148,7 +147,6 @@ int ParaViewCoreClientServerCorePrintSelf(int, char* [])
   PRINT_SELF(vtkPVImplicitPlaneRepresentation);
   PRINT_SELF(vtkPVInformation);
   PRINT_SELF(vtkPVLastSelectionInformation);
-  PRINT_SELF(vtkPVOpenGLExtensionsInformation);
   PRINT_SELF(vtkPVOptions);
   PRINT_SELF(vtkPVOptionsXMLParser);
   PRINT_SELF(vtkPVParallelCoordinatesRepresentation);

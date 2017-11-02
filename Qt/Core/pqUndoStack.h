@@ -62,7 +62,7 @@ public:
   * will be created.
   */
   pqUndoStack(vtkSMUndoStackBuilder* builder = 0, QObject* parent = NULL);
-  virtual ~pqUndoStack();
+  ~pqUndoStack() override;
 
   /**
   * returns if it's possible to undo.
@@ -234,4 +234,17 @@ inline void END_UNDO_EXCLUDE()
     usStack->endNonUndoableChanges();
   }
 }
+
+class PQCORE_EXPORT pqScopedUndoExclude
+{
+public:
+  pqScopedUndoExclude() { BEGIN_UNDO_EXCLUDE(); }
+  ~pqScopedUndoExclude() { END_UNDO_EXCLUDE(); }
+private:
+  Q_DISABLE_COPY(pqScopedUndoExclude);
+};
+
+#define SCOPED_UNDO_EXCLUDE() SCOPED_UNDO_EXCLUDE__0(__LINE__)
+#define SCOPED_UNDO_EXCLUDE__0(line) pqScopedUndoExclude val##line
+
 #endif

@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqRenderView.h"
 
 // ParaView Server Manager includes.
-#include "QVTKWidget.h"
+#include "pqQVTKWidgetBase.h"
 #include "vtkCollection.h"
 #include "vtkEventQtSlotConnect.h"
 #include "vtkIntArray.h"
@@ -180,7 +180,7 @@ void pqRenderView::initialize()
 QWidget* pqRenderView::createWidget()
 {
   QWidget* vtkwidget = this->Superclass::createWidget();
-  if (QVTKWidget* qvtkwidget = qobject_cast<QVTKWidget*>(vtkwidget))
+  if (pqQVTKWidgetBase* qvtkwidget = qobject_cast<pqQVTKWidgetBase*>(vtkwidget))
   {
     vtkSMRenderViewProxy* renModule = this->getRenderViewProxy();
     qvtkwidget->SetRenderWindow(renModule->GetRenderWindow());
@@ -196,6 +196,7 @@ void pqRenderView::onResetCameraEvent()
 {
   if (this->ResetCenterWithCamera)
   {
+    this->resetParallelScale();
     this->resetCenterOfRotation();
   }
 }
@@ -218,6 +219,17 @@ void pqRenderView::resetCenterOfRotation()
   QList<QVariant> values =
     pqSMAdaptor::getMultipleElementProperty(viewproxy->GetProperty("CameraFocalPointInfo"));
   this->setCenterOfRotation(values[0].toDouble(), values[1].toDouble(), values[2].toDouble());
+}
+
+//-----------------------------------------------------------------------------
+void pqRenderView::resetParallelScale()
+{
+  // Update parallel scale.
+  vtkSMProxy* viewproxy = this->getProxy();
+  viewproxy->UpdatePropertyInformation();
+  QVariant parallelScaleInfo =
+    pqSMAdaptor::getElementProperty(viewproxy->GetProperty("CameraParallelScaleInfo"));
+  this->setParallelScale(parallelScaleInfo.toDouble());
 }
 
 //-----------------------------------------------------------------------------
@@ -300,6 +312,14 @@ void pqRenderView::setCenterOfRotation(double x, double y, double z)
   vtkSMProxy* viewproxy = this->getProxy();
   pqSMAdaptor::setMultipleElementProperty(
     viewproxy->GetProperty("CenterOfRotation"), positionValues);
+  viewproxy->UpdateVTKObjects();
+}
+
+//-----------------------------------------------------------------------------
+void pqRenderView::setParallelScale(double scale)
+{
+  vtkSMProxy* viewproxy = this->getProxy();
+  pqSMAdaptor::setElementProperty(viewproxy->GetProperty("CameraParallelScale"), scale);
   viewproxy->UpdateVTKObjects();
 }
 

@@ -92,8 +92,8 @@ public:
 private:
   vtkStdString EventString;
   vtkSmartPointer<vtkMultiProcessController> Controller;
-  vtkTimerLogSmartMarkEvent(const vtkTimerLogSmartMarkEvent&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkTimerLogSmartMarkEvent&) VTK_DELETE_FUNCTION;
+  vtkTimerLogSmartMarkEvent(const vtkTimerLogSmartMarkEvent&) = delete;
+  void operator=(const vtkTimerLogSmartMarkEvent&) = delete;
 };
 };
 #endif
@@ -2638,8 +2638,8 @@ namespace
 
 class vtkReduceMeta : public vtkCommunicator::Operation
 {
-  virtual void Function(
-    const void* A, void* B, vtkIdType vtkNotUsed(length), int vtkNotUsed(datatype))
+  void Function(
+    const void* A, void* B, vtkIdType vtkNotUsed(length), int vtkNotUsed(datatype)) override
 
   {
     const double* dmsgA = reinterpret_cast<const double*>(A);
@@ -2687,7 +2687,7 @@ class vtkReduceMeta : public vtkCommunicator::Operation
     } // globalBounds 4
     // if (dmsgB[26] < dmsgA[26]) { dmsgB[26] = dmsgA[26]; } // globalBounds 5
   }
-  virtual int Commutative() { return 1; }
+  int Commutative() override { return 1; }
 };
 };
 

@@ -54,20 +54,20 @@ vtkPVOptions::vtkPVOptions()
   this->ClientMode = 0;
   this->ServerMode = 0;
   this->MultiClientMode = 0;
+  this->DisableFurtherConnections = 0;
   this->MultiClientModeWithErrorMacro = 0;
   this->MultiServerMode = 0;
   this->RenderServerMode = 0;
   this->SymmetricMPIMode = 0;
   this->TellVersion = 0;
   this->EnableStreaming = 0;
-  this->UseCudaInterop = 0;
   this->SatelliteMessageIds = 0;
   this->PrintMonitors = 0;
   this->ServerURL = 0;
   this->ReverseConnection = 0;
   this->UseStereoRendering = 0;
   this->UseOffscreenRendering = 0;
-  this->EGLDeviceIndex = 0;
+  this->EGLDeviceIndex = -1;
   this->ConnectID = 0;
   this->LogFileName = 0;
   this->StereoType = 0;
@@ -78,6 +78,8 @@ vtkPVOptions::vtkPVOptions()
   this->ForceMPIInitOnClient = 0;
   this->ForceNoMPIInitOnClient = 0;
   this->DisableXDisplayTests = 0;
+  this->ForceOffscreenRendering = 0;
+  this->ForceOnscreenRendering = 0;
 
   if (this->XMLParser)
   {
@@ -143,14 +145,19 @@ void vtkPVOptions::Initialize()
     "--cslog", 0, &this->LogFileName, "ClientServerStream log file.", vtkPVOptions::ALLPROCESS);
 
   this->AddBooleanArgument("--multi-clients", 0, &this->MultiClientMode,
-    "Allow server to keep listening for serveral client to"
+    "Allow server to keep listening for several clients to"
     "connect to it and share the same visualization session.",
     vtkPVOptions::PVDATA_SERVER | vtkPVOptions::PVSERVER);
 
   this->AddBooleanArgument("--multi-clients-debug", 0, &this->MultiClientModeWithErrorMacro,
-    "Allow server to keep listening for serveral client to"
+    "Allow server to keep listening for several clients to"
     "connect to it and share the same visualization session."
     "While keeping the error macro on the server session for debug.",
+    vtkPVOptions::PVDATA_SERVER | vtkPVOptions::PVSERVER);
+
+  this->AddBooleanArgument("--disable-further-connections", 0, &this->DisableFurtherConnections,
+    "Disable further connections after the first client connects."
+    "Does nothing without --multi-clients enabled.",
     vtkPVOptions::PVDATA_SERVER | vtkPVOptions::PVSERVER);
 
   this->AddBooleanArgument("--multi-servers", 0, &this->MultiServerMode,
@@ -163,8 +170,8 @@ void vtkPVOptions::Initialize()
     vtkPVOptions::PVCLIENT | vtkPVOptions::PARAVIEW);
 
   this->AddArgument("--server-url", "-url", &this->ServerURL,
-    "Set the server-url to connect with when the client starts. "
-    "--server (-s) option supersedes this option, hence one should only use "
+    "Set the server-url to connect to when the client starts. "
+    "The --server (-s) option supersedes this option, hence use only "
     "one of the two options.",
     vtkPVOptions::PVCLIENT | vtkPVOptions::PARAVIEW);
 
@@ -175,12 +182,12 @@ void vtkPVOptions::Initialize()
       vtkPVOptions::PVDATA_SERVER);
   this->AddBooleanArgument("--use-offscreen-rendering", 0, &this->UseOffscreenRendering,
     "Render offscreen on the satellite processes."
-    " This option only works with software rendering or mangled mesa on Unix.",
+    " This option only works with software rendering or mangled Mesa on Unix.",
     vtkPVOptions::PVRENDER_SERVER | vtkPVOptions::PVSERVER | vtkPVOptions::PVBATCH);
-#ifdef VTK_USE_OFFSCREEN_EGL
+#ifdef VTK_OPENGL_HAS_EGL
   this->AddArgument("--egl-device-index", NULL, &this->EGLDeviceIndex,
     "Render offscreen through the Native Platform Interface (EGL) on the graphics card "
-    "specificed by the device index.",
+    "specified by the device index.",
     vtkPVOptions::PVRENDER_SERVER | vtkPVOptions::PVSERVER | vtkPVOptions::PVBATCH);
 #endif
   this->AddBooleanArgument("--stereo", 0, &this->UseStereoRendering,
@@ -204,10 +211,10 @@ void vtkPVOptions::Initialize()
     "Size of tile display in the number of displays in each column of the display.",
     vtkPVOptions::PVRENDER_SERVER | vtkPVOptions::PVSERVER);
   this->AddArgument("--tile-mullion-x", "-tmx", this->TileMullions,
-    "Size of the gap between columns in the tile display, in Pixels.",
+    "Size of the gap between columns in the tile display, in pixels.",
     vtkPVOptions::PVRENDER_SERVER | vtkPVOptions::PVSERVER);
   this->AddArgument("--tile-mullion-y", "-tmy", this->TileMullions + 1,
-    "Size of the gap between rows in the tile display, in Pixels.",
+    "Size of the gap between rows in the tile display, in pixels.",
     vtkPVOptions::PVRENDER_SERVER | vtkPVOptions::PVSERVER);
 
   this->AddArgument("--timeout", 0, &this->Timeout,
@@ -220,8 +227,8 @@ void vtkPVOptions::Initialize()
     "--version", "-V", &this->TellVersion, "Give the version number and exit.");
 
   this->AddArgument("--servers-file", 0, &this->ServersFileName,
-    "Load the specified configuration servers file (.pvsc). This option replace "
-    "the default user's configuration servers file",
+    "Load the specified configuration servers file (.pvsc). This option replaces "
+    "the default user's configuration servers file.",
     vtkPVOptions::PVCLIENT | vtkPVOptions::PARAVIEW);
 
   // add new Command Option for loading StateFile (Bug #5711)
@@ -236,10 +243,6 @@ void vtkPVOptions::Initialize()
     "EXPERIMENTAL: When specified, view-based streaming is enabled for certain "
     "views and representation types.",
     vtkPVOptions::ALLPROCESS);
-
-  this->AddBooleanArgument("--use-cuda-interop", "-cudaiop", &this->UseCudaInterop,
-    "When specified, piston classes will use cuda interop for direct rendering",
-    vtkPVOptions::PVCLIENT | vtkPVOptions::PVSERVER);
 
   this->AddBooleanArgument("--enable-satellite-message-ids", "-satellite",
     &this->SatelliteMessageIds,
@@ -266,7 +269,7 @@ void vtkPVOptions::Initialize()
   this->AddBooleanArgument("--disable-xdisplay-test", 0, &this->DisableXDisplayTests,
     "When specified, all X-display tests and OpenGL version checks are skipped. Use this option if "
     "you are getting remote-rendering disabled errors and you are positive that "
-    "the X environment is setup properly and your OpenGL support is adequate (experimental).",
+    "the X environment is set up properly and your OpenGL support is adequate (experimental).",
     vtkPVOptions::PVSERVER | vtkPVOptions::PVRENDER_SERVER | vtkPVOptions::PVBATCH);
 
 #if defined(PARAVIEW_USE_MPI)
@@ -282,13 +285,25 @@ void vtkPVOptions::Initialize()
     "Cannot be used with --mpi.");
 #endif
 
+  this->AddBooleanArgument("--force-offscreen-rendering", nullptr, &this->ForceOffscreenRendering,
+    "If supported by the build and platform, create headless (offscreen) render windows "
+    "for rendering results.",
+    vtkPVOptions::PVSERVER | vtkPVOptions::PVBATCH | vtkPVOptions::PVCLIENT |
+      vtkPVOptions::PVRENDER_SERVER);
+
+  this->AddBooleanArgument("--force-onscreen-rendering", nullptr, &this->ForceOnscreenRendering,
+    "If supported by the build and platform, create on-screen render windows "
+    "for rendering results.",
+    vtkPVOptions::PVSERVER | vtkPVOptions::PVBATCH | vtkPVOptions::PVCLIENT |
+      vtkPVOptions::PVRENDER_SERVER);
+
 #if defined(PARAVIEW_WITH_SUPERBUILD_MESA)
   // We add these here so that "--help" on the process can print these variables
   // out. The options are actually only available when built against a suitable
   // mesa and ParaView is told that they exist. They are parsed in the forward
   // executable infrastructure.
-  this->AddBooleanArgument("--native", 0, &this->DummyMesaFlag,
-    "Use the system-provided OpenGL implementation.");
+  this->AddBooleanArgument(
+    "--native", 0, &this->DummyMesaFlag, "Use the system-provided OpenGL implementation.");
   this->AddBooleanArgument("--mesa", 0, &this->DummyMesaFlag,
     "Use the provided Mesa build and its default rendering "
     "backend.");
@@ -296,8 +311,8 @@ void vtkPVOptions::Initialize()
     "Use the provided Mesa build and the software renderer "
     "(softpipe).");
 #if defined(PARAVIEW_WITH_SUPERBUILD_MESA_SWR)
-  this->AddBooleanArgument("--mesa-swr", 0, &this->DummyMesaFlag,
-    "Use the provided Mesa build and the SWR renderer.");
+  this->AddBooleanArgument(
+    "--mesa-swr", 0, &this->DummyMesaFlag, "Use the provided Mesa build and the SWR renderer.");
 #endif
 #endif
 }
@@ -354,19 +369,44 @@ int vtkPVOptions::PostProcess(int, const char* const*)
     vtksys::SystemInformation::SetStackTraceOnError(1);
   }
 
+  if (this->ForceOffscreenRendering && this->ForceOnscreenRendering)
+  {
+    vtkWarningMacro(
+      "`--force-offscreen-rendering` and `--force-onscreen-rendering` cannot be specified "
+      "at the same time. `--force-offscreen-rendering` will be used.");
+    this->ForceOnscreenRendering = 0;
+  }
+
+  if (this->UseOffscreenRendering)
+  {
+    vtkWarningMacro("`--use-offscreen-rendering` is deprecated. Use `--force-offscreen-rendering` "
+                    "to force offscreen if needed.");
+    this->ForceOffscreenRendering = 1;
+    this->ForceOnscreenRendering = 0; // just in case.
+  }
+
+  // This is just till we update all views and client code to handle the
+  // "UseOffscreenRendering" properly.
+  this->UseOffscreenRendering = this->ForceOffscreenRendering;
+
+  // if we want to debug rendering visually, we need to see the windows.
+  if (vtksys::SystemTools::GetEnv("PV_DEBUG_REMOTE_RENDERING"))
+  {
+    if (this->ForceOffscreenRendering)
+    {
+      vtkWarningMacro("Since `PV_DEBUG_REMOTE_RENDERING` is set in the environment "
+                      "`--force-offscreen-rendering` is ignored.");
+    }
+    this->ForceOffscreenRendering = 0;
+    this->ForceOnscreenRendering = 1;
+  }
+
   return 1;
 }
 
 //----------------------------------------------------------------------------
 int vtkPVOptions::WrongArgument(const char* argument)
 {
-  if (vtksys::SystemTools::GetFilenameLastExtension(argument) == ".pvb")
-  {
-    this->SetErrorMessage(
-      "Batch file argument to ParaView executable is deprecated. Please use \"pvbatch\".");
-    return 0;
-  }
-
   if (this->Superclass::WrongArgument(argument))
   {
     return 1;
@@ -390,6 +430,16 @@ int vtkPVOptions::DeprecatedArgument(const char* argument)
 {
   return this->Superclass::DeprecatedArgument(argument);
 }
+
+//----------------------------------------------------------------------------
+#if !defined(VTK_LEGACY_REMOVE)
+int vtkPVOptions::GetUseOffscreenRendering()
+{
+  VTK_LEGACY_REPLACED_BODY(vtkPVOptions::GetUseOffscreenRendering, "ParaView 5.5",
+    vtkPVOptions::GetForceOffscreenRendering);
+  return this->GetForceOffscreenRendering();
+}
+#endif
 
 //----------------------------------------------------------------------------
 void vtkPVOptions::PrintSelf(ostream& os, vtkIndent indent)
@@ -417,8 +467,14 @@ void vtkPVOptions::PrintSelf(ostream& os, vtkIndent indent)
 
   if (this->MultiClientMode)
   {
-    os << indent << "Allow several client to connect to that server.\n";
+    os << indent << "Allow several clients to connect to a server.\n";
   }
+
+  if (this->DisableFurtherConnections)
+  {
+    os << indent << "Disable further connections after the first client connects to a server..\n";
+  }
+
   if (this->MultiServerMode)
   {
     os << indent << "Allow a client to connect to multiple servers at the same time.\n";
@@ -439,8 +495,8 @@ void vtkPVOptions::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Stereo Rendering: " << (this->UseStereoRendering ? "Enabled" : "Disabled")
      << endl;
 
-  os << indent << "Offscreen Rendering: " << (this->UseOffscreenRendering ? "Enabled" : "Disabled")
-     << endl;
+  os << indent << "ForceOnscreenRendering: " << this->ForceOnscreenRendering << endl;
+  os << indent << "ForceOffscreenRendering: " << this->ForceOffscreenRendering << endl;
   os << indent << "EGL Device Index: " << this->EGLDeviceIndex << endl;
 
   os << indent << "Tiled Display: " << (this->TileDimensions[0] ? "Enabled" : "Disabled") << endl;
@@ -471,8 +527,9 @@ void vtkPVOptions::PrintSelf(ostream& os, vtkIndent indent)
 
   os << indent << "EnableStackTrace:" << (this->EnableStackTrace ? "yes" : "no") << endl;
 
-  os << indent << "UseCudaInterop " << this->UseCudaInterop << std::endl;
   os << indent << "SatelliteMessageIds " << this->SatelliteMessageIds << std::endl;
   os << indent << "PrintMonitors: " << this->PrintMonitors << std::endl;
   os << indent << "DisableXDisplayTests: " << this->DisableXDisplayTests << endl;
+  os << indent << "ForceNoMPIInitOnClient: " << this->ForceNoMPIInitOnClient << endl;
+  os << indent << "ForceMPIInitOnClient: " << this->ForceMPIInitOnClient << endl;
 }

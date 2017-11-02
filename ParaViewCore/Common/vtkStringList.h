@@ -31,7 +31,7 @@ class VTKPVCOMMON_EXPORT vtkStringList : public vtkObject
 public:
   static vtkStringList* New();
   vtkTypeMacro(vtkStringList, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -75,7 +75,7 @@ public:
 
 protected:
   vtkStringList();
-  ~vtkStringList();
+  ~vtkStringList() override;
 
   int NumberOfStrings;
   int StringArrayLength;
@@ -83,8 +83,8 @@ protected:
   void Reallocate(int num);
   void DeleteStrings();
 
-  vtkStringList(const vtkStringList&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkStringList&) VTK_DELETE_FUNCTION;
+  vtkStringList(const vtkStringList&) = delete;
+  void operator=(const vtkStringList&) = delete;
 };
 
 #endif

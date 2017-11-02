@@ -52,7 +52,7 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkPVGeometryFilter : public vtkDataObj
 public:
   static vtkPVGeometryFilter* New();
   vtkTypeMacro(vtkPVGeometryFilter, vtkDataObjectAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -207,24 +207,25 @@ public:
 
 protected:
   vtkPVGeometryFilter();
-  ~vtkPVGeometryFilter();
+  ~vtkPVGeometryFilter() override;
 
   //@{
   /**
    * Overridden to create vtkMultiBlockDataSet when input is a
    * composite-dataset and vtkPolyData when input is a vtkDataSet.
    */
-  virtual int RequestDataObject(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestDataObject(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
   virtual int RequestAMRData(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector);
   virtual int RequestCompositeData(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector);
-  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
   //@}
 
   // Create a default executive.
-  virtual vtkExecutive* CreateDefaultExecutive();
+  vtkExecutive* CreateDefaultExecutive() VTK_OVERRIDE;
 
   /**
    * Produce geometry for a block in the dataset.
@@ -294,21 +295,19 @@ protected:
    */
   int CheckAttributes(vtkDataObject* input);
 
-  // Callback registered with the InternalProgressObserver.
-  static void InternalProgressCallbackFunction(vtkObject*, unsigned long, void* clientdata, void*);
-  void InternalProgressCallback(vtkAlgorithm* algorithm);
-  // The observer to report progress from the internal readers.
-  vtkCallbackCommand* InternalProgressObserver;
+  // Callback for recording progress of internal filters.
+  void HandleGeometryFilterProgress(vtkObject* caller, unsigned long, void*);
 
-  virtual int FillInputPortInformation(int, vtkInformation*);
+  int FillInputPortInformation(int, vtkInformation*) VTK_OVERRIDE;
 
-  virtual void ReportReferences(vtkGarbageCollector*);
+  void ReportReferences(vtkGarbageCollector*) VTK_OVERRIDE;
 
   /**
    * Overridden to request ghost-cells for vtkUnstructuredGrid inputs so that we
    * don't generate internal surfaces.
    */
-  virtual int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestUpdateExtent(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   // Convenience method to purge ghost cells.
   void RemoveGhostCells(vtkPolyData*);
@@ -319,13 +318,12 @@ protected:
   int ForceUseStrips;
   vtkTimeStamp StripSettingMTime;
   int StripModFirstPass;
-
   bool HideInternalAMRFaces;
   bool UseNonOverlappingAMRMetaDataForOutlines;
 
 private:
-  vtkPVGeometryFilter(const vtkPVGeometryFilter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVGeometryFilter&) VTK_DELETE_FUNCTION;
+  vtkPVGeometryFilter(const vtkPVGeometryFilter&) = delete;
+  void operator=(const vtkPVGeometryFilter&) = delete;
 
   void AddCompositeIndex(vtkPolyData* pd, unsigned int index);
   //@{

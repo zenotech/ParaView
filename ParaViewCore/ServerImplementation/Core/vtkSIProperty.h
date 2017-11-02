@@ -38,7 +38,7 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSIProperty : public vtkObject
 public:
   static vtkSIProperty* New();
   vtkTypeMacro(vtkSIProperty, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -85,7 +85,7 @@ public:
 
 protected:
   vtkSIProperty();
-  ~vtkSIProperty();
+  ~vtkSIProperty() override;
 
   friend class vtkSIProxy;
 
@@ -133,8 +133,8 @@ protected:
   void SaveValueToCache(vtkSMMessage* proxyStateUpdate, int offset);
 
 private:
-  vtkSIProperty(const vtkSIProperty&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSIProperty&) VTK_DELETE_FUNCTION;
+  vtkSIProperty(const vtkSIProperty&) = delete;
+  void operator=(const vtkSIProperty&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

@@ -46,7 +46,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkMPIMToNSocketConnection : public vtkOb
 public:
   static vtkMPIMToNSocketConnection* New();
   vtkTypeMacro(vtkMPIMToNSocketConnection, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   void Initialize(int waiting_process_type);
 
@@ -110,7 +110,7 @@ protected:
   virtual void SetController(vtkMultiProcessController*);
   virtual void SetSocketCommunicator(vtkSocketCommunicator*);
   vtkMPIMToNSocketConnection();
-  ~vtkMPIMToNSocketConnection();
+  ~vtkMPIMToNSocketConnection() override;
 
 private:
   int PortNumber;
@@ -120,8 +120,8 @@ private:
   vtkMPIMToNSocketConnectionInternals* Internals;
   vtkMultiProcessController* Controller;
   vtkSocketCommunicator* SocketCommunicator;
-  vtkMPIMToNSocketConnection(const vtkMPIMToNSocketConnection&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkMPIMToNSocketConnection&) VTK_DELETE_FUNCTION;
+  vtkMPIMToNSocketConnection(const vtkMPIMToNSocketConnection&) = delete;
+  void operator=(const vtkMPIMToNSocketConnection&) = delete;
   bool IsWaiting;
 };
 

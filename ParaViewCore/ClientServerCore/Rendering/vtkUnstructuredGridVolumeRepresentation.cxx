@@ -155,6 +155,16 @@ void vtkUnstructuredGridVolumeRepresentation::MarkModified()
 }
 
 //----------------------------------------------------------------------------
+void vtkUnstructuredGridVolumeRepresentation::SetUseDataPartitions(bool val)
+{
+  if (this->UseDataPartitions != val)
+  {
+    this->UseDataPartitions = val;
+    this->MarkModified();
+  }
+}
+
+//----------------------------------------------------------------------------
 int vtkUnstructuredGridVolumeRepresentation::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkUnstructuredGridBase");
@@ -320,7 +330,15 @@ void vtkUnstructuredGridVolumeRepresentation::UpdateMapperParameters()
     info->Has(vtkDataObject::FIELD_NAME()))
   {
     colorArrayName = info->Get(vtkDataObject::FIELD_NAME());
-    fieldAssociation = info->Get(vtkDataObject::FIELD_ASSOCIATION());
+    // The Resample To Image filter transforms cell data to point data.
+    if (this->Internals->ActiveVolumeMapper == "Resample To Image")
+    {
+      fieldAssociation = vtkDataObject::FIELD_ASSOCIATION_POINTS;
+    }
+    else
+    {
+      fieldAssociation = info->Get(vtkDataObject::FIELD_ASSOCIATION());
+    }
   }
 
   activeMapper->SelectScalarArray(colorArrayName);
@@ -463,8 +481,8 @@ int vtkUnstructuredGridVolumeRepresentation::ProcessViewRequestResampleToImage(
     vtkPVRenderView::SetGeometryBounds(inInfo, this->DataBounds);
 
     // Pass partitioning information to the render view.
-    vtkPVRenderView::SetOrderedCompositingInformation(inInfo, this,
-      this->PExtentTranslator, this->WholeExtent, this->Origin, this->Spacing);
+    vtkPVRenderView::SetOrderedCompositingInformation(
+      inInfo, this, this->PExtentTranslator, this->WholeExtent, this->Origin, this->Spacing);
 
     vtkPVRenderView::SetRequiresDistributedRendering(inInfo, this, true);
     this->Actor->SetMapper(NULL);
@@ -501,7 +519,7 @@ int vtkUnstructuredGridVolumeRepresentation::RequestDataResampleToImage(
   this->CacheKeeper->SetCachingEnabled(this->GetUseCache());
   this->CacheKeeper->SetCacheTime(this->GetCacheKey());
 
-  vtkAbstractVolumeMapper *volumeMapper = this->GetActiveVolumeMapper();
+  vtkAbstractVolumeMapper* volumeMapper = this->GetActiveVolumeMapper();
 
   if (inputVector[0]->GetNumberOfInformationObjects() == 1)
   {

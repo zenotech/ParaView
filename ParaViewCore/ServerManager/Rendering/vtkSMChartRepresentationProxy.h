@@ -32,7 +32,7 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMChartRepresentationProxy
 public:
   static vtkSMChartRepresentationProxy* New();
   vtkTypeMacro(vtkSMChartRepresentationProxy, vtkSMRepresentationProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Returns client side representation object.
@@ -42,22 +42,22 @@ public:
   /**
    * Overridden to handle links with subproxy properties.
    */
-  int ReadXMLAttributes(vtkSMSessionProxyManager* pm, vtkPVXMLElement* element);
+  int ReadXMLAttributes(vtkSMSessionProxyManager* pm, vtkPVXMLElement* element) VTK_OVERRIDE;
 
 protected:
   vtkSMChartRepresentationProxy();
-  ~vtkSMChartRepresentationProxy();
+  ~vtkSMChartRepresentationProxy() override;
 
   /**
    * Overridden to ensure that whenever "Input" property changes, we update the
    * "Input" properties for all internal representations (including setting up
    * of the link to the extract-selection representation).
    */
-  virtual void SetPropertyModifiedFlag(const char* name, int flag);
+  void SetPropertyModifiedFlag(const char* name, int flag) VTK_OVERRIDE;
 
 private:
-  vtkSMChartRepresentationProxy(const vtkSMChartRepresentationProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMChartRepresentationProxy&) VTK_DELETE_FUNCTION;
+  vtkSMChartRepresentationProxy(const vtkSMChartRepresentationProxy&) = delete;
+  void operator=(const vtkSMChartRepresentationProxy&) = delete;
 };
 
 #endif

@@ -13,7 +13,12 @@
 
 =========================================================================*/
 /**
- * @class   vtkGridAxes3DActor
+ * @class vtkGridAxes3DActor
+ * @brief actor for a cube-axes like prop in the 3D view.
+ *
+ * vtkGridAxes3DActor is an alternate implementation for something like the
+ * vtkCubeAxesActor which can be used to render a 3D grid in a scene.
+ * It uses vtkGridAxes2DActor to render individual axes planes for the box.
  *
 */
 
@@ -37,12 +42,12 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkGridAxes3DActor : public vtkProp3D
 public:
   static vtkGridAxes3DActor* New();
   vtkTypeMacro(vtkGridAxes3DActor, vtkProp3D);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Shallow copy from another vtkGridAxes3DActor.
    */
-  virtual void ShallowCopy(vtkProp* prop);
+  void ShallowCopy(vtkProp* prop) VTK_OVERRIDE;
 
   //@{
   /**
@@ -227,64 +232,42 @@ public:
   int GetPrecision(int axis);
   //@}
 
-  //@{
-  /**
-   * Enable/Disable layer support. Default is off. When enabled, the prop can
-   * render in there separate layers:
-   * \li \c BackgroundLayer for all text labels and titles on the back faces,
-   * \li \c GeometryLayer for all 3D geometry e.g the grid wireframe, and
-   * \li \c ForegroundLayer for all text labels and titles on the front faces.
-   */
-  void SetEnableLayerSupport(bool val);
-  bool GetEnableLayerSupport();
-  vtkBooleanMacro(EnableLayerSupport, bool);
-  //@}
-
-  //@{
-  /**
-   * Get/Set the layer in which to render all background actors/text when
-   * EnableLayerSupport is ON. Default is 0.
-   */
-  void SetBackgroundLayer(int val);
-  int GetBackgroundLayer();
-  //@}
-
-  //@{
-  /**
-   * Get/Set the layer in which to render all 3D actors when
-   * EnableLayerSupport is ON. Default is 0.
-   */
-  void SetGeometryLayer(int val);
-  int GetGeometryLayer();
-  //@}
-
-  //@{
-  /**
-   * Get/Set the layer in which to render all foreground actors/text when
-   * EnableLayerSupport is ON. Default is 0.
-   */
-  void SetForegroundLayer(int val);
-  int GetForegroundLayer();
-  //@}
-
   //--------------------------------------------------------------------------
   // Methods for vtkProp3D API.
   //--------------------------------------------------------------------------
 
+  //@{
   /**
    * Returns the prop bounds.
    */
-  virtual double* GetBounds();
+  double* GetBounds() VTK_OVERRIDE;
+  using Superclass::GetBounds;
+  //@}
 
-  virtual int RenderOpaqueGeometry(vtkViewport*);
-  virtual int RenderTranslucentPolygonalGeometry(vtkViewport* viewport);
-  virtual int RenderOverlay(vtkViewport* viewport);
-  virtual int HasTranslucentPolygonalGeometry();
-  virtual void ReleaseGraphicsResources(vtkWindow*);
+  /**
+   * Get an bounding box that is expected to contain all rendered elements,
+   * since GetBounds() returns the bounding box the grid axes describes.
+   */
+  virtual void GetRenderedBounds(double bounds[6]);
+
+  //@{
+  /**
+   * If true, the actor will always be rendered during the opaque pass.
+   */
+  vtkSetMacro(ForceOpaque, bool);
+  vtkGetMacro(ForceOpaque, bool);
+  vtkBooleanMacro(ForceOpaque, bool);
+  //@}
+
+  int RenderOpaqueGeometry(vtkViewport*) VTK_OVERRIDE;
+  int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) VTK_OVERRIDE;
+  int RenderOverlay(vtkViewport* viewport) VTK_OVERRIDE;
+  int HasTranslucentPolygonalGeometry() VTK_OVERRIDE;
+  void ReleaseGraphicsResources(vtkWindow*) VTK_OVERRIDE;
 
 protected:
   vtkGridAxes3DActor();
-  ~vtkGridAxes3DActor();
+  ~vtkGridAxes3DActor() override;
 
   virtual void Update(vtkViewport* viewport);
 
@@ -298,9 +281,11 @@ protected:
 
   vtkTuple<vtkNew<vtkGridAxes2DActor>, 6> GridAxes2DActors;
 
+  bool ForceOpaque;
+
 private:
-  vtkGridAxes3DActor(const vtkGridAxes3DActor&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkGridAxes3DActor&) VTK_DELETE_FUNCTION;
+  vtkGridAxes3DActor(const vtkGridAxes3DActor&) = delete;
+  void operator=(const vtkGridAxes3DActor&) = delete;
 
   vtkMTimeType GetBoundsMTime;
 };

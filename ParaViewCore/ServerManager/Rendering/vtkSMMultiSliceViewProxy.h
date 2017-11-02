@@ -32,25 +32,26 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMMultiSliceViewProxy : public vtkSM
 public:
   static vtkSMMultiSliceViewProxy* New();
   vtkTypeMacro(vtkSMMultiSliceViewProxy, vtkSMRenderViewProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Similar to IsSelectionAvailable(), however, on failure returns the
    * error message otherwise 0.
    */
-  virtual const char* IsSelectVisiblePointsAvailable();
+  const char* IsSelectVisiblePointsAvailable() VTK_OVERRIDE;
 
   /**
    * Overridden to set initial default slices when a representation is created.
    * Not sure that's the best way to do this, but leaving the logic unchanged in
    * this pass.
    */
-  virtual vtkSMRepresentationProxy* CreateDefaultRepresentation(vtkSMProxy* proxy, int outputPort);
+  vtkSMRepresentationProxy* CreateDefaultRepresentation(
+    vtkSMProxy* proxy, int outputPort) VTK_OVERRIDE;
 
   /**
    * Overridden to forward the call to the internal root view proxy.
    */
-  virtual const char* GetRepresentationType(vtkSMSourceProxy* producer, int outputPort);
+  const char* GetRepresentationType(vtkSMSourceProxy* producer, int outputPort) VTK_OVERRIDE;
 
   /**
    * Fetchs data bounds from the client-side object. We simply fetch the
@@ -72,7 +73,7 @@ public:
 
 protected:
   vtkSMMultiSliceViewProxy();
-  ~vtkSMMultiSliceViewProxy();
+  ~vtkSMMultiSliceViewProxy() override;
 
   /**
    * Use the center of the source to initialize the view with three orthogonal
@@ -81,8 +82,8 @@ protected:
   void InitDefaultSlices(vtkSMSourceProxy* source, int opport, vtkSMRepresentationProxy* repr);
 
 private:
-  vtkSMMultiSliceViewProxy(const vtkSMMultiSliceViewProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMMultiSliceViewProxy&) VTK_DELETE_FUNCTION;
+  vtkSMMultiSliceViewProxy(const vtkSMMultiSliceViewProxy&) = delete;
+  void operator=(const vtkSMMultiSliceViewProxy&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

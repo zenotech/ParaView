@@ -158,7 +158,7 @@ void pqIntegrationModelSurfaceHelperWidget::resetSurfaceWidget(bool force)
         gb->setProperty("name", arrayName);
         gb->setProperty("type", type);
         QObject::connect(gb, SIGNAL(toggled(bool)), this, SIGNAL(arrayToGenerateChanged()));
-        delete labelName;
+        delete[] labelName;
 
         // And associated layout
         QGridLayout* gbLayout = new QGridLayout(gb);
@@ -261,14 +261,15 @@ vtkStringArray* pqIntegrationModelSurfaceHelperWidget::fillLeafNames(
           if (tmpCinfo->GetDataIsComposite() && !tmpCinfo->GetDataIsMultiPiece())
           {
             // Recursive call if the child is multiblock
-            pqIntegrationModelSurfaceHelperWidget::fillLeafNames(tmpInfo, baseName +
-              QString(cinfo->GetName(i)) + QString("/"), names);
+            pqIntegrationModelSurfaceHelperWidget::fillLeafNames(
+              tmpInfo, baseName + QString(cinfo->GetName(i)) + QString("/"), names);
           }
           else
           {
             // Recover name if the child is not
             names->InsertNextValue((QString::number(names->GetNumberOfValues()) + QString(":") +
-              baseName + cinfo->GetName(i)).toStdString());
+                                     baseName + cinfo->GetName(i))
+                                     .toStdString());
           }
         }
       }
@@ -334,8 +335,7 @@ void pqIntegrationModelSurfaceHelperWidget::setArrayToGenerate(const QList<QVari
     gb->setChecked(false);
   }
 
-  for (QList<QVariant>::const_iterator i = values.begin();
-       i != values.end(); i += 5)
+  for (QList<QVariant>::const_iterator i = values.begin(); i != values.end(); i += 5)
   {
     // Incremental python filling value check
     // When using python, this method is called incrementally,

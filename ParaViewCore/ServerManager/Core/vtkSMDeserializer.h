@@ -38,7 +38,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMDeserializer : public vtkObject
 {
 public:
   vtkTypeMacro(vtkSMDeserializer, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Convenience method for setting the SessionProxyManager. This is equivalent
@@ -64,7 +64,7 @@ public:
 
 protected:
   vtkSMDeserializer();
-  ~vtkSMDeserializer();
+  ~vtkSMDeserializer() override;
 
   // Friend to access NewProxy().
   friend class vtkSMProxyLocator;
@@ -84,8 +84,8 @@ protected:
   vtkWeakPointer<vtkSMSessionProxyManager> SessionProxyManager;
 
 private:
-  vtkSMDeserializer(const vtkSMDeserializer&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMDeserializer&) VTK_DELETE_FUNCTION;
+  vtkSMDeserializer(const vtkSMDeserializer&) = delete;
+  void operator=(const vtkSMDeserializer&) = delete;
 };
 
 #endif

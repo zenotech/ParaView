@@ -29,7 +29,7 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSIWriterProxy : public vtkSISource
 public:
   static vtkSIWriterProxy* New();
   vtkTypeMacro(vtkSIWriterProxy, vtkSISourceProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -38,8 +38,8 @@ public:
    * insert VTK-algorithms in the input pipeline.
    * Overridden to insert "CompleteArrays" filter in the pipeline.
    */
-  virtual void AddInput(int input_port, vtkAlgorithmOutput* connection, const char* method);
-  virtual void CleanInputs(const char* method);
+  void AddInput(int input_port, vtkAlgorithmOutput* connection, const char* method) VTK_OVERRIDE;
+  void CleanInputs(const char* method) VTK_OVERRIDE;
   //@}
 
   /**
@@ -51,7 +51,7 @@ public:
 
 protected:
   vtkSIWriterProxy();
-  ~vtkSIWriterProxy();
+  ~vtkSIWriterProxy() override;
 
   /**
    * Overridden to setup stuff on the writer e.g piece request, gather helpers
@@ -62,14 +62,14 @@ protected:
   /**
    * Read xml-attributes.
    */
-  virtual bool ReadXMLAttributes(vtkPVXMLElement* element);
+  bool ReadXMLAttributes(vtkPVXMLElement* element) VTK_OVERRIDE;
 
   char* FileNameMethod;
   vtkSetStringMacro(FileNameMethod);
 
 private:
-  vtkSIWriterProxy(const vtkSIWriterProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSIWriterProxy&) VTK_DELETE_FUNCTION;
+  vtkSIWriterProxy(const vtkSIWriterProxy&) = delete;
+  void operator=(const vtkSIWriterProxy&) = delete;
 };
 
 #endif

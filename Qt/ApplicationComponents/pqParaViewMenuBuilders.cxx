@@ -68,6 +68,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqImportCinemaReaction.h"
 #include "pqLinkSelectionReaction.h"
 #include "pqLoadDataReaction.h"
+#include "pqLoadMaterialsReaction.h"
 #include "pqLoadRestoreWindowLayoutReaction.h"
 #include "pqLoadStateReaction.h"
 #include "pqMainControlsToolbar.h"
@@ -76,7 +77,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqManagePluginsReaction.h"
 #include "pqPVApplicationCore.h"
 #include "pqProxyGroupMenuManager.h"
-#include "pqPythonShellReaction.h"
 #include "pqRecentFilesMenu.h"
 #include "pqReloadFilesReaction.h"
 #include "pqRepresentationToolbar.h"
@@ -101,6 +101,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqTraceReaction.h"
 #endif
 
+#include <QApplication>
 #include <QDockWidget>
 #include <QFileInfo>
 #include <QKeySequence>
@@ -118,12 +119,18 @@ void pqParaViewMenuBuilders::buildFileMenu(QMenu& menu)
   menu.setObjectName(objectName);
 
   QObject::connect(
-    ui.actionFileExit, SIGNAL(triggered()), pqApplicationCore::instance(), SLOT(quit()));
+    ui.actionFileExit, SIGNAL(triggered()), QApplication::instance(), SLOT(closeAllWindows()));
 
   // now setup reactions.
   new pqLoadDataReaction(ui.actionFileOpen);
   new pqImportCinemaReaction(ui.actionFileImportCinemaDatabase);
+#ifdef PARAVIEW_USE_OSPRAY
+  new pqLoadMaterialsReaction(ui.actionFileLoadMaterials);
+#else
+  delete ui.actionFileLoadMaterials;
+#endif
   new pqRecentFilesMenu(*ui.menuRecentFiles, ui.menuRecentFiles);
+  new pqReloadFilesReaction(ui.actionReloadFiles);
 
   new pqLoadStateReaction(ui.actionFileLoadServerState);
   new pqSaveStateReaction(ui.actionFileSaveServerState);
@@ -164,7 +171,6 @@ void pqParaViewMenuBuilders::buildEditMenu(QMenu& menu)
   new pqCopyReaction(ui.actionPaste, true);
   new pqApplicationSettingsReaction(ui.actionEditSettings);
   new pqDataQueryReaction(ui.actionQuery);
-  new pqReloadFilesReaction(ui.actionReloadFiles);
 }
 
 //-----------------------------------------------------------------------------
@@ -238,13 +244,7 @@ void pqParaViewMenuBuilders::buildToolsMenu(QMenu& menu)
     pqTestingReaction::LOCK_VIEW_SIZE_CUSTOM);
   menu.addSeparator();
   new pqTimerLogReaction(menu.addAction("Timer Log") << pqSetName("actionToolsTimerLog"));
-  QAction* action = menu.addAction("&Output Window") << pqSetName("actionToolsOutputWindow");
-  QObject::connect(
-    action, SIGNAL(triggered()), pqApplicationCore::instance(), SLOT(showOutputWindow()));
-
   menu.addSeparator(); // --------------------------------------------------
-
-  new pqPythonShellReaction(menu.addAction("Python Shell") << pqSetName("actionToolsPythonShell"));
 
 #ifdef PARAVIEW_ENABLE_PYTHON
   menu.addSeparator(); // --------------------------------------------------
@@ -292,13 +292,9 @@ void pqParaViewMenuBuilders::buildPipelineBrowserContextMenu(QWidget& widget)
 }
 
 //-----------------------------------------------------------------------------
-void pqParaViewMenuBuilders::buildMacrosMenu
-#ifdef PARAVIEW_ENABLE_PYTHON
-  (QMenu& menu)
-#else
-  (QMenu&)
-#endif
+void pqParaViewMenuBuilders::buildMacrosMenu(QMenu& menu)
 {
+  Q_UNUSED(menu);
 #ifdef PARAVIEW_ENABLE_PYTHON
   // Give the macros menu to the pqPythonMacroSupervisor
   pqPythonManager* manager = pqPVApplicationCore::instance()->pythonManager();

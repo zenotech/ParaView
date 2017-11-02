@@ -39,7 +39,7 @@ class VTKPVCINEMAREADER_EXPORT vtkCinemaDatabaseReader : public vtkPolyDataAlgor
 public:
   static vtkCinemaDatabaseReader* New();
   vtkTypeMacro(vtkCinemaDatabaseReader, vtkPolyDataAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -66,12 +66,12 @@ public:
    */
   void ClearControlParameter(const char* pname);
   void EnableControlParameterValue(const char* pname, const char* value);
-  void EnableControlParameterValue(const char* pname, int value_index);
+  void EnableControlParameterValue(const char* pname, double value);
   //@}
 
 protected:
   vtkCinemaDatabaseReader();
-  ~vtkCinemaDatabaseReader();
+  ~vtkCinemaDatabaseReader() override;
 
   int RequestInformation(
     vtkInformation*, vtkInformationVector**, vtkInformationVector* outVector) VTK_OVERRIDE;
@@ -93,8 +93,8 @@ protected:
   MapOfVectorOfString EnabledControlParameterValues;
 
 private:
-  vtkCinemaDatabaseReader(const vtkCinemaDatabaseReader&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCinemaDatabaseReader&) VTK_DELETE_FUNCTION;
+  vtkCinemaDatabaseReader(const vtkCinemaDatabaseReader&) = delete;
+  void operator=(const vtkCinemaDatabaseReader&) = delete;
 
   vtkNew<vtkCinemaDatabase> Helper;
 

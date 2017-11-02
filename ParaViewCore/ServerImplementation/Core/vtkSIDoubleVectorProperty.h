@@ -37,15 +37,15 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSIDoubleVectorProperty : public vt
 public:
   static vtkSIDoubleVectorProperty* New();
   vtkTypeMacro(vtkSIDoubleVectorProperty, vtkSIVectorProperty);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkSIDoubleVectorProperty();
-  ~vtkSIDoubleVectorProperty();
+  ~vtkSIDoubleVectorProperty() override;
 
 private:
-  vtkSIDoubleVectorProperty(const vtkSIDoubleVectorProperty&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSIDoubleVectorProperty&) VTK_DELETE_FUNCTION;
+  vtkSIDoubleVectorProperty(const vtkSIDoubleVectorProperty&) = delete;
+  void operator=(const vtkSIDoubleVectorProperty&) = delete;
 };
 
 #endif

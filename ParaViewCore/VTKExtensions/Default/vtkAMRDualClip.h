@@ -53,7 +53,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkAMRDualClip : public vtkMultiBlockData
 public:
   static vtkAMRDualClip* New();
   vtkTypeMacro(vtkAMRDualClip, vtkMultiBlockDataSetAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   vtkSetMacro(IsoValue, double);
   vtkGetMacro(IsoValue, double);
@@ -90,7 +90,7 @@ public:
 
 protected:
   vtkAMRDualClip();
-  ~vtkAMRDualClip();
+  ~vtkAMRDualClip() override;
 
   double IsoValue;
 
@@ -103,7 +103,7 @@ protected:
   // Needed for copying cell data to point data.
   vtkUnstructuredGrid* Mesh;
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   void InitializeCopyAttributes(vtkNonOverlappingAMR* hbdsInput, vtkDataSet* mesh);
 
@@ -113,8 +113,8 @@ protected:
    */
   vtkMultiBlockDataSet* DoRequestData(vtkNonOverlappingAMR* input, const char* arrayNameToProcess);
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int FillOutputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  int FillOutputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   void ShareBlockLocatorWithNeighbors(vtkAMRDualGridHelperBlock* block);
 
@@ -151,8 +151,8 @@ protected:
   vtkAMRDualClipLocator* BlockLocator;
 
 private:
-  vtkAMRDualClip(const vtkAMRDualClip&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkAMRDualClip&) VTK_DELETE_FUNCTION;
+  vtkAMRDualClip(const vtkAMRDualClip&) = delete;
+  void operator=(const vtkAMRDualClip&) = delete;
 };
 
 #endif

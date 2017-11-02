@@ -11,8 +11,9 @@
 
 int main(int argc, char* argv[])
 {
-  FEAdaptor::Initialize(argc, argv);
-  unsigned int numberOfTimeSteps = 100;
+  // The first argument is the program name
+  FEAdaptor::Initialize(argc - 1, argv + 1);
+  unsigned int numberOfTimeSteps = 5;
   for (unsigned int timeStep = 0; timeStep < numberOfTimeSteps; timeStep++)
   {
     // use a time step length of 0.1

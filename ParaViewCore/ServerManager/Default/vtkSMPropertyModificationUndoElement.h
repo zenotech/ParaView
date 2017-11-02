@@ -36,17 +36,17 @@ class VTKPVSERVERMANAGERDEFAULT_EXPORT vtkSMPropertyModificationUndoElement
 public:
   static vtkSMPropertyModificationUndoElement* New();
   vtkTypeMacro(vtkSMPropertyModificationUndoElement, vtkSMUndoElement);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Undo the operation encapsulated by this element.
    */
-  virtual int Undo();
+  int Undo() VTK_OVERRIDE;
 
   /**
    * Redo the operation encaspsulated by this element.
    */
-  virtual int Redo();
+  int Redo() VTK_OVERRIDE;
 
   /**
    * Set the property/proxy that was modified.
@@ -61,11 +61,11 @@ public:
    * represent change to the same property.
    * Returns if the merge was successful.
    */
-  virtual bool Merge(vtkUndoElement* vtkNotUsed(new_element));
+  bool Merge(vtkUndoElement* vtkNotUsed(new_element)) VTK_OVERRIDE;
 
 protected:
   vtkSMPropertyModificationUndoElement();
-  ~vtkSMPropertyModificationUndoElement();
+  ~vtkSMPropertyModificationUndoElement() override;
 
   int RevertToState();
 
@@ -76,9 +76,8 @@ protected:
   vtkSMMessage* PropertyState;
 
 private:
-  vtkSMPropertyModificationUndoElement(
-    const vtkSMPropertyModificationUndoElement&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMPropertyModificationUndoElement&) VTK_DELETE_FUNCTION;
+  vtkSMPropertyModificationUndoElement(const vtkSMPropertyModificationUndoElement&) = delete;
+  void operator=(const vtkSMPropertyModificationUndoElement&) = delete;
 };
 
 #endif

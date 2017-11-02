@@ -48,7 +48,7 @@ class VTKPVSERVERMANAGERDEFAULT_EXPORT vtkSMProxyClipboard : public vtkSMObject
 public:
   static vtkSMProxyClipboard* New();
   vtkTypeMacro(vtkSMProxyClipboard, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Put a proxy's state on the clipboard. Return true if the operation was
@@ -75,13 +75,13 @@ public:
 
 protected:
   vtkSMProxyClipboard();
-  ~vtkSMProxyClipboard();
+  ~vtkSMProxyClipboard() override;
 
   vtkSmartPointer<vtkPVXMLElement> CopiedState;
 
 private:
-  vtkSMProxyClipboard(const vtkSMProxyClipboard&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMProxyClipboard&) VTK_DELETE_FUNCTION;
+  vtkSMProxyClipboard(const vtkSMProxyClipboard&) = delete;
+  void operator=(const vtkSMProxyClipboard&) = delete;
 
   vtkSMProxyClipboardInternals* Internals;
 };

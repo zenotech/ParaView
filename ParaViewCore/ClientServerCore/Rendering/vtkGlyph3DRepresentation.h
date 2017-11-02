@@ -28,7 +28,7 @@
 #include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 
 class vtkGlyph3DMapper;
-class vtkPVArrowSource;
+class vtkArrowSource;
 
 class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkGlyph3DRepresentation
   : public vtkGeometryRepresentation
@@ -36,7 +36,7 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkGlyph3DRepresentation
 public:
   static vtkGlyph3DRepresentation* New();
   vtkTypeMacro(vtkGlyph3DRepresentation, vtkGeometryRepresentation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * vtkAlgorithm::ProcessRequest() equivalent for rendering passes. This is
@@ -44,8 +44,10 @@ public:
    * representations or ask them to perform certain tasks e.g.
    * PrepareForRendering.
    */
-  virtual int ProcessViewRequest(
-    vtkInformationRequestKey* request_type, vtkInformation* inInfo, vtkInformation* outInfo);
+  int ProcessViewRequest(vtkInformationRequestKey* request_type, vtkInformation* inInfo,
+    vtkInformation* outInfo) VTK_OVERRIDE;
+
+  void MarkModified() VTK_OVERRIDE;
 
   /**
    * Toggle the visibility of the original mesh.
@@ -57,47 +59,50 @@ public:
    * Get/Set the visibility for this representation. When the visibility of
    * representation of false, all view passes are ignored.
    */
-  virtual void SetVisibility(bool);
+  void SetVisibility(bool) VTK_OVERRIDE;
 
   //**************************************************************************
   // Forwarded to vtkGlyph3DMapper
   void SetMaskArray(const char* val);
   void SetScaleArray(const char* val);
   void SetOrientationArray(const char* val);
+  void SetSourceIndexArray(const char* val);
   void SetScaling(bool val);
   void SetScaleMode(int val);
   void SetScaleFactor(double val);
   void SetOrient(bool val);
   void SetOrientationMode(int val);
   void SetMasking(bool val);
+  void SetSourceIndexing(bool val);
+  void SetUseSourceTableTree(bool val);
 
   //***************************************************************************
   // Overridden to forward to the vtkGlyph3DMapper.
-  virtual void SetInterpolateScalarsBeforeMapping(int val);
-  virtual void SetLookupTable(vtkScalarsToColors* val);
-  virtual void SetMapScalars(int val);
-  virtual void SetStatic(int val);
+  void SetInterpolateScalarsBeforeMapping(int val) VTK_OVERRIDE;
+  void SetLookupTable(vtkScalarsToColors* val) VTK_OVERRIDE;
+  void SetMapScalars(int val) VTK_OVERRIDE;
+  void SetStatic(int val) VTK_OVERRIDE;
 
   //***************************************************************************
   // Overridden to forward to the vtkActor used for the glyphs (GlyphActor)
-  virtual void SetOrientation(double, double, double);
-  virtual void SetOrigin(double, double, double);
-  virtual void SetPickable(int val);
-  virtual void SetPosition(double, double, double);
-  virtual void SetScale(double, double, double);
-  virtual void SetTexture(vtkTexture*);
-  virtual void SetUserTransform(const double[16]);
+  void SetOrientation(double, double, double) VTK_OVERRIDE;
+  void SetOrigin(double, double, double) VTK_OVERRIDE;
+  void SetPickable(int val) VTK_OVERRIDE;
+  void SetPosition(double, double, double) VTK_OVERRIDE;
+  void SetScale(double, double, double) VTK_OVERRIDE;
+  void SetTexture(vtkTexture*) VTK_OVERRIDE;
+  void SetUserTransform(const double[16]) VTK_OVERRIDE;
 
 protected:
   vtkGlyph3DRepresentation();
-  ~vtkGlyph3DRepresentation();
+  ~vtkGlyph3DRepresentation() override;
 
   /**
    * Fill input port information.
    */
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   /**
    * Overridden to request single piece from the Glyph source.
@@ -110,42 +115,47 @@ protected:
    * vtkView::AddRepresentation().  Subclasses should override this method.
    * Returns true if the addition succeeds.
    */
-  virtual bool AddToView(vtkView* view);
+  bool AddToView(vtkView* view) VTK_OVERRIDE;
 
   /**
    * Removes the representation to the view.  This is called from
    * vtkView::RemoveRepresentation().  Subclasses should override this method.
    * Returns true if the removal succeeds.
    */
-  virtual bool RemoveFromView(vtkView* view);
+  bool RemoveFromView(vtkView* view) VTK_OVERRIDE;
 
   /**
    * Used in ConvertSelection to locate the prop used for actual rendering.
    */
-  virtual vtkPVLODActor* GetRenderedProp() { return this->GlyphActor; }
+  vtkPVLODActor* GetRenderedProp() VTK_OVERRIDE { return this->GlyphActor; }
 
   /**
    * Overridden to ensure that the coloring decisions are passed over to the
    * glyph mapper.
    */
-  virtual void UpdateColoringParameters();
+  void UpdateColoringParameters() VTK_OVERRIDE;
 
   /**
    * Determines bounds using the vtkGlyph3DMapper.
    */
   void ComputeGlyphBounds(double bounds[6]);
 
+  bool IsCached(double cache_key) VTK_OVERRIDE;
+
+  vtkAlgorithm* GlyphMultiBlockMaker;
+  vtkPVCacheKeeper* GlyphCacheKeeper;
+
   vtkGlyph3DMapper* GlyphMapper;
   vtkGlyph3DMapper* LODGlyphMapper;
 
   vtkPVLODActor* GlyphActor;
-  vtkPVArrowSource* DummySource;
+  vtkArrowSource* DummySource;
 
   bool MeshVisibility;
 
 private:
-  vtkGlyph3DRepresentation(const vtkGlyph3DRepresentation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkGlyph3DRepresentation&) VTK_DELETE_FUNCTION;
+  vtkGlyph3DRepresentation(const vtkGlyph3DRepresentation&) = delete;
+  void operator=(const vtkGlyph3DRepresentation&) = delete;
 };
 
 #endif

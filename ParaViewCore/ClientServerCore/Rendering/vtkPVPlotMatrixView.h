@@ -46,9 +46,9 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVPlotMatrixView : public vtkPVCo
 public:
   static vtkPVPlotMatrixView* New();
   vtkTypeMacro(vtkPVPlotMatrixView, vtkPVContextView);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  vtkAbstractContextItem* GetContextItem();
+  vtkAbstractContextItem* GetContextItem() VTK_OVERRIDE;
 
   // Description:
   // Representations can use this method to set the selection for a particular
@@ -56,7 +56,7 @@ public:
   // the chart using annotation link. Note this is meant to pass selection for
   // the local process alone. The view does not manage data movement for the
   // selection.
-  virtual void SetSelection(vtkChartRepresentation* repr, vtkSelection* selection);
+  void SetSelection(vtkChartRepresentation* repr, vtkSelection* selection) VTK_OVERRIDE;
 
   // Description:
   // Get/set the active plot in the scatter plot matrix.
@@ -279,7 +279,7 @@ public:
 
 protected:
   vtkPVPlotMatrixView();
-  ~vtkPVPlotMatrixView();
+  ~vtkPVPlotMatrixView() override;
 
   // Description:
   // The callback function when SelectionChangedEvent is invoked from
@@ -287,8 +287,8 @@ protected:
   void PlotMatrixSelectionCallback(vtkObject*, unsigned long, void*);
 
 private:
-  vtkPVPlotMatrixView(const vtkPVPlotMatrixView&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVPlotMatrixView&) VTK_DELETE_FUNCTION;
+  vtkPVPlotMatrixView(const vtkPVPlotMatrixView&) = delete;
+  void operator=(const vtkPVPlotMatrixView&) = delete;
 
   vtkScatterPlotMatrix* PlotMatrix;
 };

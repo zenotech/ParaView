@@ -39,7 +39,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkExtractsDeliveryHelper : public vtkObj
 public:
   static vtkExtractsDeliveryHelper* New();
   vtkTypeMacro(vtkExtractsDeliveryHelper, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   vtkSetMacro(ProcessIsProducer, bool);
   vtkGetMacro(ProcessIsProducer, bool);
@@ -73,7 +73,7 @@ public:
 
 protected:
   vtkExtractsDeliveryHelper();
-  ~vtkExtractsDeliveryHelper();
+  ~vtkExtractsDeliveryHelper() override;
 
   vtkDataObject* Collect(int nodes_to_collect_to, vtkDataObject*);
 
@@ -95,8 +95,8 @@ protected:
   vtkSmartPointer<vtkMultiProcessController> ParallelController;
 
 private:
-  vtkExtractsDeliveryHelper(const vtkExtractsDeliveryHelper&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkExtractsDeliveryHelper&) VTK_DELETE_FUNCTION;
+  vtkExtractsDeliveryHelper(const vtkExtractsDeliveryHelper&) = delete;
+  void operator=(const vtkExtractsDeliveryHelper&) = delete;
 };
 
 #endif

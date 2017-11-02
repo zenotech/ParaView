@@ -37,7 +37,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMLink : public vtkSMRemoteObject
 {
 public:
   vtkTypeMacro(vtkSMLink, vtkSMRemoteObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   enum UpdateDirections
   {
@@ -76,7 +76,7 @@ public:
    * This method will be used to fill the undo stack.
    * If not overriden this will return NULL.
    */
-  virtual const vtkSMMessage* GetFullState();
+  const vtkSMMessage* GetFullState() VTK_OVERRIDE;
 
   /**
    * This method is used to initialize the object to the given state
@@ -85,7 +85,7 @@ public:
    * globalIDs set. This enables splitting the load process in 2 step to prevent
    * invalid state when a property refers to a sub-proxy that does not exist yet.
    */
-  virtual void LoadState(const vtkSMMessage* msg, vtkSMProxyLocator* locator);
+  void LoadState(const vtkSMMessage* msg, vtkSMProxyLocator* locator) VTK_OVERRIDE;
 
   /**
    * Update the internal protobuf state
@@ -110,7 +110,7 @@ public:
 
 protected:
   vtkSMLink();
-  ~vtkSMLink();
+  ~vtkSMLink() override;
 
   /**
    * When the state has changed we call that method so the state can be shared
@@ -169,8 +169,8 @@ protected:
   vtkSMMessage* State;
 
 private:
-  vtkSMLink(const vtkSMLink&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMLink&) VTK_DELETE_FUNCTION;
+  vtkSMLink(const vtkSMLink&) = delete;
+  void operator=(const vtkSMLink&) = delete;
 };
 
 #endif

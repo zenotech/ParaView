@@ -47,21 +47,21 @@ void vtkRulerLineForInput::PrintSelf(ostream& os, vtkIndent indent)
 
 int vtkRulerLineForInput::FillInputPortInformation(int, vtkInformation* info)
 {
-  info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkPolyData");
+  info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   info->Append(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkMultiBlockDataSet");
   return 1;
 }
 
-int vtkRulerLineForInput::RequestInformation(
-  vtkInformation* vtkNotUsed(request), vtkInformationVector** vtkNotUsed(inVectors), vtkInformationVector* outVector)
+int vtkRulerLineForInput::RequestInformation(vtkInformation* vtkNotUsed(request),
+  vtkInformationVector** vtkNotUsed(inVectors), vtkInformationVector* outVector)
 {
   vtkInformation* outInfo = outVector->GetInformationObject(0);
   outInfo->Set(CAN_HANDLE_PIECE_REQUEST(), 1);
 
   return 1;
 }
-int vtkRulerLineForInput::RequestData(
-  vtkInformation* vtkNotUsed(request), vtkInformationVector** inVectors, vtkInformationVector* outVector)
+int vtkRulerLineForInput::RequestData(vtkInformation* vtkNotUsed(request),
+  vtkInformationVector** inVectors, vtkInformationVector* outVector)
 {
   vtkDataObject* inputData = vtkDataObject::GetData(inVectors[0], 0);
   vtkBoundingBox bbox;
@@ -78,11 +78,11 @@ int vtkRulerLineForInput::RequestData(
     assert(multiBlock);
     vtkSmartPointer<vtkCompositeDataIterator> itr =
       vtkSmartPointer<vtkCompositeDataIterator>::Take(multiBlock->NewIterator());
-    for (itr->InitTraversal(); !itr->IsDoneWithTraversal(); itr->GoToFirstItem())
+    for (itr->InitTraversal(); !itr->IsDoneWithTraversal(); itr->GoToNextItem())
     {
       vtkDataObject* block = itr->GetCurrentDataObject();
       vtkDataSet* blockAsDataset = vtkDataSet::SafeDownCast(block);
-      if (dataset)
+      if (blockAsDataset)
       {
         double tmpBounds[6];
         blockAsDataset->GetBounds(tmpBounds);

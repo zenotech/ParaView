@@ -49,7 +49,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkSpyPlotUniReader : public vtkObject
 public:
   vtkTypeMacro(vtkSpyPlotUniReader, vtkObject);
   static vtkSpyPlotUniReader* New();
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -62,7 +62,7 @@ public:
 
   /**
    * Reads the basic information from the file such as the header, number
-   * of fields, etc..
+   * of fields, etc.
    */
   virtual int ReadInformation();
 
@@ -233,7 +233,7 @@ public:
 
 protected:
   vtkSpyPlotUniReader();
-  ~vtkSpyPlotUniReader();
+  ~vtkSpyPlotUniReader() override;
   vtkSpyPlotBlock* Blocks;
 
 private:
@@ -315,8 +315,8 @@ private:
   int IsVolumeFraction(Variable* var);
 
 private:
-  vtkSpyPlotUniReader(const vtkSpyPlotUniReader&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSpyPlotUniReader&) VTK_DELETE_FUNCTION;
+  vtkSpyPlotUniReader(const vtkSpyPlotUniReader&) = delete;
+  void operator=(const vtkSpyPlotUniReader&) = delete;
 };
 
 inline double* vtkSpyPlotUniReader::GetTimeArray()

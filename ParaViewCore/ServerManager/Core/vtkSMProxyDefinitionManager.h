@@ -38,7 +38,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMProxyDefinitionManager : public vtkSMRe
 public:
   static vtkSMProxyDefinitionManager* New();
   vtkTypeMacro(vtkSMProxyDefinitionManager, vtkSMRemoteObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Synchronizes the client-side definitions using the server-side definitions,
@@ -52,7 +52,7 @@ public:
    * ensures that the internal references to vtkSIProxyDefinitionManager are
    * updated correctly.
    */
-  virtual void SetSession(vtkSMSession*);
+  void SetSession(vtkSMSession*) VTK_OVERRIDE;
 
   //***************************************************************************
   // enums re-defined from vtkSIProxyDefinitionManager for convenience.
@@ -207,18 +207,18 @@ public:
    * globalID set. This allow to split the load process in 2 step to prevent
    * invalid state when property refere to a sub-proxy that does not exist yet.
    */
-  virtual void LoadState(const vtkSMMessage* msg, vtkSMProxyLocator* locator);
+  void LoadState(const vtkSMMessage* msg, vtkSMProxyLocator* locator) VTK_OVERRIDE;
 
 protected:
   vtkSMProxyDefinitionManager();
-  ~vtkSMProxyDefinitionManager();
+  ~vtkSMProxyDefinitionManager() override;
 
   vtkEventForwarderCommand* Forwarder;
   vtkWeakPointer<vtkSIProxyDefinitionManager> ProxyDefinitionManager;
 
 private:
-  vtkSMProxyDefinitionManager(const vtkSMProxyDefinitionManager&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMProxyDefinitionManager&) VTK_DELETE_FUNCTION;
+  vtkSMProxyDefinitionManager(const vtkSMProxyDefinitionManager&) = delete;
+  void operator=(const vtkSMProxyDefinitionManager&) = delete;
 };
 
 #endif

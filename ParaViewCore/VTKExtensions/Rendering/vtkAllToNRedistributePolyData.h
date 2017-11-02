@@ -37,7 +37,7 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkAllToNRedistributePolyData
 {
 public:
   vtkTypeMacro(vtkAllToNRedistributePolyData, vtkWeightedRedistributePolyData);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   static vtkAllToNRedistributePolyData* New();
 
@@ -48,13 +48,13 @@ protected:
   vtkAllToNRedistributePolyData();
   ~vtkAllToNRedistributePolyData();
 
-  void MakeSchedule(vtkPolyData*, vtkCommSched*);
+  void MakeSchedule(vtkPolyData*, vtkCommSched*) VTK_OVERRIDE;
 
   int NumberOfProcesses;
 
 private:
-  vtkAllToNRedistributePolyData(const vtkAllToNRedistributePolyData&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkAllToNRedistributePolyData&) VTK_DELETE_FUNCTION;
+  vtkAllToNRedistributePolyData(const vtkAllToNRedistributePolyData&) = delete;
+  void operator=(const vtkAllToNRedistributePolyData&) = delete;
 };
 
 //****************************************************************

@@ -50,6 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMProxyListDomain.h"
 #include "vtkSMProxyManager.h"
 #include "vtkSMProxyProperty.h"
+#include "vtkSMSelectionLink.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMStringVectorProperty.h"
 #include "vtkSMViewProxy.h"
@@ -103,7 +104,7 @@ public:
   {
     Q_ASSERT(sizeof(RowIndex) == sizeof(void*));
   }
-  ~pqLinksEditorProxyModel() {}
+  ~pqLinksEditorProxyModel() override {}
 
   struct RowIndex
   {
@@ -140,7 +141,7 @@ public:
     return ri;
   }
 
-  QModelIndex index(int row, int column, const QModelIndex& pidx) const
+  QModelIndex index(int row, int column, const QModelIndex& pidx) const override
   {
     if (this->rowCount(pidx) <= row)
     {
@@ -162,7 +163,7 @@ public:
     return this->createIndex(row, column, this->encodeIndex(ri));
   }
 
-  QModelIndex parent(const QModelIndex& idx) const
+  QModelIndex parent(const QModelIndex& idx) const override
   {
     if (!idx.isValid() || idx.internalPointer() == NULL)
     {
@@ -187,7 +188,7 @@ public:
     return pqLinksModel::proxyListDomain(pxy);
   }
 
-  int rowCount(const QModelIndex& idx) const
+  int rowCount(const QModelIndex& idx) const override
   {
     if (!idx.isValid())
     {
@@ -219,11 +220,11 @@ public:
     return 0;
   }
 
-  int columnCount(const QModelIndex& /*idx*/) const { return 1; }
+  int columnCount(const QModelIndex& /*idx*/) const override { return 1; }
 
-  QVariant headerData(int, Qt::Orientation, int) const { return QVariant(); }
+  QVariant headerData(int, Qt::Orientation, int) const override { return QVariant(); }
 
-  QVariant data(const QModelIndex& idx, int role) const
+  QVariant data(const QModelIndex& idx, int role) const override
   {
     if (!idx.isValid())
     {
@@ -502,6 +503,11 @@ pqLinksEditor::pqLinksEditor(vtkSMLink* link, QWidget* p)
       {
         this->Ui->interactiveViewLinkCheckBox->setChecked(true);
       }
+      if (model->getLinkType(idx) == pqLinksModel::Selection)
+      {
+        this->Ui->convertToIndicesCheckBox->setChecked(
+          vtkSMSelectionLink::SafeDownCast(model->getLink(idx))->GetConvertToIndices());
+      }
     }
   }
   else
@@ -675,9 +681,9 @@ void pqLinksEditor::updateEnabledState()
     if (this->SelectedProxy1 && this->SelectedProxy2)
     {
       vtkSMProperty* p1 =
-        this->SelectedProxy1->GetProperty(this->SelectedProperty1.toLatin1().data());
+        this->SelectedProxy1->GetProperty(this->SelectedProperty1.toLocal8Bit().data());
       vtkSMProperty* p2 =
-        this->SelectedProxy2->GetProperty(this->SelectedProperty2.toLatin1().data());
+        this->SelectedProxy2->GetProperty(this->SelectedProperty2.toLocal8Bit().data());
       if (!p1 || !p2 || propertyType(p1) != propertyType(p2))
       {
         enabled = false;
@@ -703,9 +709,19 @@ void pqLinksEditor::updateEnabledState()
     vtkSMViewProxy::SafeDownCast(this->SelectedProxy1) != NULL &&
     vtkSMViewProxy::SafeDownCast(this->SelectedProxy2) != NULL &&
     this->SelectedProxy1 != this->SelectedProxy2 && this->linkType() == pqLinksModel::Proxy);
+
+  this->Ui->convertToIndicesCheckBox->setVisible(
+    vtkSMSourceProxy::SafeDownCast(this->SelectedProxy1) != NULL &&
+    vtkSMSourceProxy::SafeDownCast(this->SelectedProxy2) != NULL &&
+    this->SelectedProxy1 != this->SelectedProxy2 && this->linkType() == pqLinksModel::Selection);
 }
 
 bool pqLinksEditor::interactiveViewLinkChecked()
 {
   return this->Ui->interactiveViewLinkCheckBox->isChecked();
+}
+
+bool pqLinksEditor::convertToIndicesChecked()
+{
+  return this->Ui->convertToIndicesCheckBox->isChecked();
 }

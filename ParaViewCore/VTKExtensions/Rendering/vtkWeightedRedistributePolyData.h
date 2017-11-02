@@ -37,7 +37,7 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkWeightedRedistributePolyData
 {
 public:
   vtkTypeMacro(vtkWeightedRedistributePolyData, vtkRedistributePolyData);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Construct object.
@@ -60,12 +60,12 @@ protected:
     SCHED_2_TAG = 311
   };
 
-  virtual void MakeSchedule(vtkPolyData* input, vtkCommSched*);
+  virtual void MakeSchedule(vtkPolyData* input, vtkCommSched*) VTK_OVERRIDE;
   float* Weights;
 
 private:
-  vtkWeightedRedistributePolyData(const vtkWeightedRedistributePolyData&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkWeightedRedistributePolyData&) VTK_DELETE_FUNCTION;
+  vtkWeightedRedistributePolyData(const vtkWeightedRedistributePolyData&) = delete;
+  void operator=(const vtkWeightedRedistributePolyData&) = delete;
 };
 
 //****************************************************************

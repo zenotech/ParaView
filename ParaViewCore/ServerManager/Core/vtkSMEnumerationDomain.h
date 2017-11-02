@@ -31,6 +31,9 @@
 #include "vtkPVServerManagerCoreModule.h" //needed for exports
 #include "vtkSMDomain.h"
 
+#include <utility> // for std::pair
+#include <vector>  //  for std::vector
+
 struct vtkSMEnumerationDomainInternals;
 
 class VTKPVSERVERMANAGERCORE_EXPORT vtkSMEnumerationDomain : public vtkSMDomain
@@ -38,7 +41,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMEnumerationDomain : public vtkSMDomain
 public:
   static vtkSMEnumerationDomain* New();
   vtkTypeMacro(vtkSMEnumerationDomain, vtkSMDomain);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Returns true if the value of the propery is in the domain.
@@ -46,7 +49,7 @@ public:
    * vector values are in the domain, it returns 1. It returns
    * 0 otherwise.
    */
-  virtual int IsInDomain(vtkSMProperty* property);
+  int IsInDomain(vtkSMProperty* property) VTK_OVERRIDE;
 
   /**
    * Returns true if the int is in the domain. If value is
@@ -106,33 +109,39 @@ public:
    * Update self based on the "unchecked" values of all required
    * properties. Overwritten by sub-classes.
    */
-  virtual void Update(vtkSMProperty* property);
+  void Update(vtkSMProperty* property) VTK_OVERRIDE;
 
   //@{
   /**
    * Overridden to ensure that the property's default value is valid for the
    * enumeration, if not it will be set to the first enumeration value.
    */
-  virtual int SetDefaultValues(vtkSMProperty*, bool use_unchecked_values);
+  int SetDefaultValues(vtkSMProperty*, bool use_unchecked_values) VTK_OVERRIDE;
+
+  /**
+   * Returns a vector of pairs for entries in the enumeration domain.
+   * This makes it easier to iterate over entries.
+   */
+  const std::vector<std::pair<std::string, int> >& GetEntries() const;
 
 protected:
   vtkSMEnumerationDomain();
-  ~vtkSMEnumerationDomain();
+  ~vtkSMEnumerationDomain() override;
   //@}
 
   /**
    * Set the appropriate ivars from the xml element. Should
    * be overwritten by subclass if adding ivars.
    */
-  virtual int ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement* element);
+  int ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement* element) VTK_OVERRIDE;
 
-  virtual void ChildSaveState(vtkPVXMLElement* domainElement);
+  void ChildSaveState(vtkPVXMLElement* domainElement) VTK_OVERRIDE;
 
   vtkSMEnumerationDomainInternals* EInternals;
 
 private:
-  vtkSMEnumerationDomain(const vtkSMEnumerationDomain&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMEnumerationDomain&) VTK_DELETE_FUNCTION;
+  vtkSMEnumerationDomain(const vtkSMEnumerationDomain&) = delete;
+  void operator=(const vtkSMEnumerationDomain&) = delete;
 };
 
 #endif

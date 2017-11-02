@@ -13,11 +13,14 @@ import paraview
 from paraview import simple, servermanager
 from paraview.servermanager import ProxyProperty, InputProperty
 
-from vtk.vtkPVServerManagerCore import *
+from paraview.vtk.vtkPVServerManagerRendering import vtkSMPVRepresentationProxy
 
-# Needed for:
-#    vtkSMPVRepresentationProxy
-from vtk.vtkPVServerManagerRendering import *
+PY3 = False
+if sys.version_info >= (3,):
+    xrange = range
+    PY3 = True
+
+from vtk.web import buffer
 
 # =============================================================================
 # Pipeline management
@@ -56,7 +59,7 @@ class Pipeline:
         nid = str(node_id)
 
         # Add child
-        if self.children_ids.has_key(pid):
+        if pid in self.children_ids:
             self.children_ids[pid].append(nid)
         else:
             self.children_ids[pid] = [nid]
@@ -98,12 +101,12 @@ class Pipeline:
             node = getProxyAsPipelineNode(id, view)
             nid = str(node['proxy_id'])
 
-            if nodeToFill.has_key('children'):
+            if 'children' in nodeToFill:
                 nodeToFill['children'].append(node)
             else:
                 nodeToFill['children'] = [ node ]
 
-            if self.children_ids.has_key(nid):
+            if nid in self.children_ids:
                 self.__fill_children(node, self.children_ids[nid]);
 
 # =============================================================================
@@ -312,6 +315,8 @@ def updateProxyProperties(proxy, properties):
 # --------------------------------------------------------------------------
 
 def removeUnicode(value):
+    # python 3 is using str everywhere already.
+    if PY3: return value
     if type(value) == unicode:
         return str(value)
     if type(value) == list:

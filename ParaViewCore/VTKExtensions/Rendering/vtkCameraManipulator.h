@@ -38,7 +38,7 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkCameraManipulator : public vtkObject
 public:
   static vtkCameraManipulator* New();
   vtkTypeMacro(vtkCameraManipulator, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -112,7 +112,7 @@ public:
 
 protected:
   vtkCameraManipulator();
-  ~vtkCameraManipulator();
+  ~vtkCameraManipulator() override;
   //@}
 
   char* ManipulatorName;
@@ -129,8 +129,8 @@ protected:
   vtkCameraManipulatorGUIHelper* GUIHelper;
 
 private:
-  vtkCameraManipulator(const vtkCameraManipulator&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCameraManipulator&) VTK_DELETE_FUNCTION;
+  vtkCameraManipulator(const vtkCameraManipulator&) = delete;
+  void operator=(const vtkCameraManipulator&) = delete;
 };
 
 #endif

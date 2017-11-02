@@ -49,6 +49,7 @@ class vtkInteractorStyleRubberBandZoom;
 class vtkLight;
 class vtkLightKit;
 class vtkMatrix4x4;
+class vtkOSPRayMaterialLibrary;
 class vtkPartitionOrderingInterface;
 class vtkProp;
 class vtkPVAxesWidget;
@@ -75,7 +76,7 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVRenderView : public vtkPVView
 public:
   static vtkPVRenderView* New();
   vtkTypeMacro(vtkPVRenderView, vtkPVView);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   enum InteractionModes
   {
@@ -94,7 +95,8 @@ public:
    * selected, then whenever the user drags and creates a selection region, this
    * class will fire a vtkCommand::SelectionChangedEvent event with the
    * selection region as the argument.
-   * @CallOnAllProcessess - this must be called on all processes, however it will
+   * \note CallOnAllProcesses
+   * \note this must be called on all processes, however it will
    * have any effect only the driver processes i.e. the process with the
    * interactor.
    */
@@ -105,24 +107,24 @@ public:
   /**
    * Initialize the view with an identifier. Unless noted otherwise, this method
    * must be called before calling any other methods on this class.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
-  virtual void Initialize(unsigned int id);
+  void Initialize(unsigned int id) VTK_OVERRIDE;
 
   //@{
   /**
    * Overridden to call InvalidateCachedSelection() whenever the render window
    * parameters change.
    */
-  virtual void SetSize(int, int);
-  virtual void SetPosition(int, int);
+  void SetSize(int, int) VTK_OVERRIDE;
+  void SetPosition(int, int) VTK_OVERRIDE;
   //@}
 
   //@{
   /**
    * Gets the non-composited renderer for this view. This is typically used for
    * labels, 2D annotations etc.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   vtkGetObjectMacro(NonCompositedRenderer, vtkRenderer);
   //@}
@@ -155,10 +157,10 @@ public:
   /**
    * Returns the render window.
    */
-  vtkRenderWindow* GetRenderWindow();
+  vtkRenderWindow* GetRenderWindow() VTK_OVERRIDE;
 
   /**
-   * Returns the interactor. .
+   * Returns the interactor.
    */
   vtkRenderWindowInteractor* GetInteractor();
 
@@ -179,7 +181,7 @@ public:
   //@{
   /**
    * Resets the active camera using collective prop-bounds.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   void ResetCamera();
   void ResetCamera(double bounds[6]);
@@ -187,16 +189,18 @@ public:
 
   /**
    * Triggers a high-resolution render.
-   * @CallOnAllProcessess
+   * \note Can be called on processes involved in rendering i.e those returned
+   * by `this->GetStillRenderProcesses()`.
    */
-  virtual void StillRender();
+  void StillRender() VTK_OVERRIDE;
 
   /**
    * Triggers a interactive render. Based on the settings on the view, this may
    * result in a low-resolution rendering or a simplified geometry rendering.
-   * @CallOnAllProcessess
+   * \note Can be called on processes involved in rendering i.e those returned
+   * by `this->GetInteractiveRenderProcesses()`.
    */
-  virtual void InteractiveRender();
+  void InteractiveRender() VTK_OVERRIDE;
 
   //@{
   /**
@@ -205,7 +209,7 @@ public:
    * large displays, one may want to use a sub-sampled image even for
    * StillRender(). This is set it number of pixels to be sub-sampled by.
    * Note that image reduction factors have no effect when in built-in mode.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   vtkSetClampMacro(StillRenderImageReductionFactor, int, 1, 20);
   vtkGetMacro(StillRenderImageReductionFactor, int);
@@ -216,7 +220,7 @@ public:
    * Get/Set the reduction-factor to use when for InteractiveRender().
    * This is set it number of pixels to be sub-sampled by.
    * Note that image reduction factors have no effect when in built-in mode.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   vtkSetClampMacro(InteractiveRenderImageReductionFactor, int, 1, 20);
   vtkGetMacro(InteractiveRenderImageReductionFactor, int);
@@ -226,7 +230,7 @@ public:
   /**
    * Get/Set the data-size in megabytes above which remote-rendering should be
    * used, if possible.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   vtkSetMacro(RemoteRenderingThreshold, double);
   vtkGetMacro(RemoteRenderingThreshold, double);
@@ -236,7 +240,7 @@ public:
   /**
    * Get/Set the data-size in megabytes above which LOD rendering should be
    * used, if possible.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   vtkSetMacro(LODRenderingThreshold, double);
   vtkGetMacro(LODRenderingThreshold, double);
@@ -247,7 +251,7 @@ public:
    * Get/Set the LOD resolution. This affects the size of the grid used for
    * quadric clustering, for example. 1.0 implies maximum resolution while 0
    * implies minimum resolution.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   vtkSetClampMacro(LODResolution, double, 0.0, 1.0);
   vtkGetMacro(LODResolution, double);
@@ -270,7 +274,7 @@ public:
    * client.
    * See vtkPVClientServerSynchronizedRenderers::ConfigureCompressor() for
    * details.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   void ConfigureCompressor(const char* configuration);
 
@@ -283,7 +287,7 @@ public:
   //@{
   /**
    * Enable/Disable light kit.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   void SetUseLightKit(bool enable);
   vtkGetMacro(UseLightKit, bool);
@@ -345,7 +349,9 @@ public:
   /**
    * Make a selection. This will result in setting up of this->LastSelection
    * which can be accessed using GetLastSelection().
-   * @CallOnAllProcessess
+   * \note This method is called on call rendering processes and client (or
+   * driver). Thus, if doing client only rendering, this shouldn't be called on
+   * server nodes.
    */
   void SelectCells(int region[4]);
   void SelectCells(int region0, int region1, int region2, int region3)
@@ -369,7 +375,9 @@ public:
    * is the total length of polygon2DArray.
    * This will result in setting up of this->LastSelection
    * which can be accessed using GetLastSelection().
-   * @CallOnAllProcessess
+   * \note This method is called on call rendering processes and client (or
+   * driver). Thus, if doing client only rendering, this shouldn't be called on
+   * server nodes.
    */
   void SelectPolygonPoints(int* polygon2DArray, vtkIdType arrayLen);
   void SelectPolygonCells(int* polygon2DArray, vtkIdType arrayLen);
@@ -378,7 +386,8 @@ public:
 
   //@{
   /**
-   * Provides access to the last selection.
+   * Provides access to the last selection. This is valid only on the client or
+   * driver node displaying the composited result.
    */
   vtkGetObjectMacro(LastSelection, vtkSelection);
   //@}
@@ -395,44 +404,18 @@ public:
 
   //@{
   /**
-   * Set or get whether offscreen rendering should be used during
-   * CaptureWindow calls. On Apple machines, this flag has no effect.
-   */
-  vtkSetMacro(UseOffscreenRenderingForScreenshots, bool);
-  vtkBooleanMacro(UseOffscreenRenderingForScreenshots, bool);
-  vtkGetMacro(UseOffscreenRenderingForScreenshots, bool);
-  //@}
-
-  //@{
-  /**
-   * Get/Set whether to use offscreen rendering for all rendering. This is
-   * merely a suggestion. If --use-offscreen-rendering command line option is
-   * specified, then setting this flag to 0 on that process has no effect.
-   * Setting it to true, however, will ensure that even is
-   * --use-offscreen-rendering is not specified, it will use offscreen
-   * rendering.
-   */
-  virtual void SetUseOffscreenRendering(bool);
-  vtkBooleanMacro(UseOffscreenRendering, bool);
-  vtkGetMacro(UseOffscreenRendering, bool);
-  //@}
-
-  //@{
-  /**
-   * Get/Set the EGL device index (graphics card) used for rendering. This needs to
-   * be set before rendering. The graphics card needs to have the right extensions
-   * for this to work.
-   */
-  virtual void SetEGLDeviceIndex(int);
-  vtkGetMacro(EGLDeviceIndex, int);
-  //@}
-
-  //@{
-  /**
    * Returns if remote-rendering is possible on the current group of processes.
    */
   vtkGetMacro(RemoteRenderingAvailable, bool);
   void RemoteRenderingAvailableOff() { this->RemoteRenderingAvailable = false; }
+  //@}
+
+  //@{
+  /**
+   * Determine if NVPipe is an available compressor option.
+   */
+  void NVPipeAvailableOn();
+  void NVPipeAvailableOff();
   //@}
 
   //@{
@@ -445,13 +428,13 @@ public:
   /**
    * Invalidates cached selection. Called explicitly when view proxy thinks the
    * cache may have become obsolete.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   void InvalidateCachedSelection();
 
   /**
    * Returns the z-buffer value at the given location.
-   * @CallOnClientOnly
+   * \note CallOnClientOnly
    */
   double GetZbufferDataAtPoint(int x, int y);
 
@@ -462,13 +445,15 @@ public:
    * about LOD/remote rendering etc and not the actual size of the dataset.
    */
   static void SetPiece(vtkInformation* info, vtkPVDataRepresentation* repr, vtkDataObject* data,
-    unsigned long trueSize = 0);
-  static vtkAlgorithmOutput* GetPieceProducer(vtkInformation* info, vtkPVDataRepresentation* repr);
-  static void SetPieceLOD(vtkInformation* info, vtkPVDataRepresentation* repr, vtkDataObject* data);
+    unsigned long trueSize = 0, int port = 0);
+  static vtkAlgorithmOutput* GetPieceProducer(
+    vtkInformation* info, vtkPVDataRepresentation* repr, int port = 0);
+  static void SetPieceLOD(
+    vtkInformation* info, vtkPVDataRepresentation* repr, vtkDataObject* data, int port = 0);
   static vtkAlgorithmOutput* GetPieceProducerLOD(
-    vtkInformation* info, vtkPVDataRepresentation* repr);
+    vtkInformation* info, vtkPVDataRepresentation* repr, int port = 0);
   static void MarkAsRedistributable(
-    vtkInformation* info, vtkPVDataRepresentation* repr, bool value = true);
+    vtkInformation* info, vtkPVDataRepresentation* repr, bool value = true, int port = 0);
   static void SetGeometryBounds(
     vtkInformation* info, double bounds[6], vtkMatrix4x4* transform = NULL);
   static void SetStreamable(vtkInformation* info, vtkPVDataRepresentation* repr, bool streamable);
@@ -511,7 +496,8 @@ public:
    * root node will be sent to the client without any parallel communication.
    */
   static void SetDeliverToClientAndRenderingProcesses(vtkInformation* info,
-    vtkPVDataRepresentation* repr, bool deliver_to_client, bool gather_before_delivery);
+    vtkPVDataRepresentation* repr, bool deliver_to_client, bool gather_before_delivery,
+    int port = 0);
 
   //@{
   /**
@@ -565,15 +551,6 @@ public:
    */
   void RegisterPropForHardwareSelection(vtkPVDataRepresentation* repr, vtkProp* prop);
   void UnRegisterPropForHardwareSelection(vtkPVDataRepresentation* repr, vtkProp* prop);
-  //@}
-
-  //@{
-  /**
-   * Turn on/off the default light in the 3D renderer.
-   */
-  void SetLightSwitch(bool enable);
-  bool GetLightSwitch();
-  vtkBooleanMacro(LightSwitch, bool);
   //@}
 
   //@{
@@ -641,12 +618,9 @@ public:
   virtual void SetTexturedBackground(int val);
 
   //*****************************************************************
-  // Forward to vtkLight.
-  void SetAmbientColor(double r, double g, double b);
-  void SetSpecularColor(double r, double g, double b);
-  void SetDiffuseColor(double r, double g, double b);
-  void SetIntensity(double val);
-  void SetLightType(int val);
+  // Entry point for dynamic lights
+  void AddLight(vtkLight*);
+  void RemoveLight(vtkLight*);
 
   //*****************************************************************
   // Forward to vtkRenderWindow.
@@ -667,6 +641,8 @@ public:
   virtual void SetCamera2DManipulators(const int manipulators[9]);
   virtual void SetCamera3DManipulators(const int manipulators[9]);
   void SetCameraManipulators(vtkPVInteractorStyle* style, const int manipulators[9]);
+  virtual void SetCamera2DMouseWheelMotionFactor(double factor);
+  virtual void SetCamera3DMouseWheelMotionFactor(double factor);
 
   /**
    * Overridden to synchronize information among processes whenever data
@@ -675,7 +651,7 @@ public:
    * their inputs. Hence it's okay to do some extra inter-process communication
    * here.
    */
-  virtual void Update();
+  void Update() VTK_OVERRIDE;
 
   /**
    * Asks representations to update their LOD geometries.
@@ -782,7 +758,7 @@ public:
   /**
    * Provides access to the time when Update() was last called.
    */
-  unsigned long GetUpdateTimeStamp() { return this->UpdateTimeStamp; }
+  vtkMTimeType GetUpdateTimeStamp() { return this->UpdateTimeStamp; }
 
   /**
    * Copy internal fields that are used for rendering decision such as
@@ -888,6 +864,10 @@ public:
   void SetMaxFrames(int);
   int GetMaxFrames();
   //@}
+  /**
+   * Has OSPRay reached the max frames?
+   */
+  bool GetOSPRayContinueStreaming();
   //@{
   /**
    * Dimish or Amplify all lights in the scene.
@@ -895,6 +875,22 @@ public:
   void SetLightScale(double);
   double GetLightScale();
   //@}
+  /**
+   * Set the OSPRay renderer to use.
+   * May be either scivis (default) or pathtracer.
+   */
+  void SetOSPRayRendererType(std::string);
+  //@{
+  /**
+   * Control of background orientation for OSPRay.
+   */
+  void SetBackgroundNorth(double x, double y, double z);
+  void SetBackgroundEast(double x, double y, double z);
+  //@}
+  /**
+   * For OSPRay, set the library of materials.
+   */
+  virtual void SetMaterialLibrary(vtkOSPRayMaterialLibrary*);
 
   //@{
   /**
@@ -926,9 +922,13 @@ public:
   static void SetDiscreteCameras(
     vtkInformation* info, vtkPVDataRepresentation* repr, vtkPVCameraCollection* style);
   //@}
+
+  // Get the RenderViewBase used by this
+  vtkGetObjectMacro(RenderView, vtkRenderViewBase);
+
 protected:
   vtkPVRenderView();
-  ~vtkPVRenderView();
+  ~vtkPVRenderView() override;
 
   //@{
   /**
@@ -939,8 +939,8 @@ protected:
    * does any data-delivery, we don't assign IDs for these, nor affect the ID
    * uniquifier when a vtk3DWidgetRepresentation is added.
    */
-  virtual void AddRepresentationInternal(vtkDataRepresentation* rep);
-  virtual void RemoveRepresentationInternal(vtkDataRepresentation* rep);
+  void AddRepresentationInternal(vtkDataRepresentation* rep) VTK_OVERRIDE;
+  void RemoveRepresentationInternal(vtkDataRepresentation* rep) VTK_OVERRIDE;
   //@}
 
   /**
@@ -975,7 +975,7 @@ protected:
 
   /**
    * Synchronizes bounds information on all nodes.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   void SynchronizeGeometryBounds();
 
@@ -1040,7 +1040,6 @@ protected:
    */
   void PostSelect(vtkSelection* sel);
 
-  vtkLight* Light;
   vtkLightKit* LightKit;
   vtkRenderViewBase* RenderView;
   vtkRenderer* NonCompositedRenderer;
@@ -1079,9 +1078,6 @@ protected:
   double LODRenderingThreshold;
   vtkBoundingBox GeometryBounds;
 
-  bool UseOffscreenRendering;
-  int EGLDeviceIndex;
-  bool UseOffscreenRenderingForScreenshots;
   bool UseInteractiveRenderingForScreenshots;
   bool NeedsOrderedCompositing;
   bool RenderEmptyImages;
@@ -1115,8 +1111,8 @@ protected:
   bool LockBounds;
 
 private:
-  vtkPVRenderView(const vtkPVRenderView&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVRenderView&) VTK_DELETE_FUNCTION;
+  vtkPVRenderView(const vtkPVRenderView&) = delete;
+  void operator=(const vtkPVRenderView&) = delete;
 
   bool MakingSelection;
   int PreviousSwapBuffers;
@@ -1147,8 +1143,6 @@ private:
   void UpdateAnnotationText();
 
   vtkNew<vtkPartitionOrderingInterface> PartitionOrdering;
-
-  bool OrientationWidgetVisibility;
 
   int StereoType;
   int ServerStereoType;

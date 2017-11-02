@@ -32,7 +32,7 @@ class VTKPVVTKEXTENSIONSCORE_EXPORT vtkDistributedTrivialProducer : public vtkPV
 public:
   static vtkDistributedTrivialProducer* New();
   vtkTypeMacro(vtkDistributedTrivialProducer, vtkPVTrivialProducer);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Provide a global method to store a data object accross processes and allow
@@ -54,11 +54,11 @@ public:
 
 protected:
   vtkDistributedTrivialProducer();
-  ~vtkDistributedTrivialProducer();
+  ~vtkDistributedTrivialProducer() override;
 
 private:
-  vtkDistributedTrivialProducer(const vtkDistributedTrivialProducer&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkDistributedTrivialProducer&) VTK_DELETE_FUNCTION;
+  vtkDistributedTrivialProducer(const vtkDistributedTrivialProducer&) = delete;
+  void operator=(const vtkDistributedTrivialProducer&) = delete;
 
   static vtkPVTrivialProducerStaticInternal* InternalStatic;
 };

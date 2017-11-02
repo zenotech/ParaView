@@ -37,11 +37,6 @@ SET_SOURCE_FILES_PROPERTIES(
   ABSTRACT
   )
 
-# OpenGL2 specific definitions
-if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL2")
-  add_definitions(-DVTKGL2)
-endif()
-
 vtk_module_library(vtkPVServerManagerApplication ${Module_SRCS})
 
 #------------------------------------------------------------------------------
@@ -113,26 +108,31 @@ SET(requestedResourceFiles
   ${CMAKE_CURRENT_SOURCE_DIR}/Resources/utilities.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Resources/views_and_representations.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Resources/writers.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_opengl2.xml # has to be after views_and_representations
   ${module_sm_xmls}
   )
 if (PARAVIEW_USE_MPI)
   list(APPEND requestedResourceFiles
     ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_mpi.xml)
 endif()
-if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL2")
-  list(APPEND requestedResourceFiles
-    ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_opengl2.xml)
-else()
-  # Old OpenGL.
-  list(APPEND requestedResourceFiles
-    ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_opengl1.xml)
-endif()
 
 #------------------------------------------------------------------------------
+list(FIND VTK_MODULES_ENABLED "vtkIOXdmf2" vtkioxdmf2_index)
+if (vtkioxdmf2_index GREATER 0)
+  list(APPEND requestedResourceFiles
+    ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_xdmf2.xml)
+endif()
+
 list(FIND VTK_MODULES_ENABLED "vtkIOXdmf3" vtkioxdmf3_index)
 if (vtkioxdmf3_index GREATER 0)
   list(APPEND requestedResourceFiles
     ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_xdmf3.xml)
+endif()
+
+list(FIND VTK_MODULES_ENABLED "vtkIOLAS" vtkiolas_index)
+if (vtkiolas_index GREATER 0)
+  list(APPEND requestedResourceFiles
+    ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_las.xml)
 endif()
 
 list(FIND VTK_MODULES_ENABLED "vtkIOADIOS" vtkioadios_index)
@@ -140,6 +140,18 @@ if (vtkioadios_index GREATER 0)
   list(APPEND requestedResourceFiles
     ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_adios.xml)
 endif()
+
+if (PARAVIEW_USE_OPENTURNS)
+  list(APPEND requestedResourceFiles
+    ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_openturns.xml)
+endif()
+
+if (PARAVIEW_USE_OSPRAY)
+  list(APPEND requestedResourceFiles
+    ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_ospray.xml)
+endif()
+
+
 #------------------------------------------------------------------------------
 
 if (PARAVIEW_ENABLE_PYTHON)

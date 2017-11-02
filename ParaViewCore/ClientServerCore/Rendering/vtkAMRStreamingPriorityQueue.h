@@ -42,7 +42,7 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkAMRStreamingPriorityQueue : publi
 public:
   static vtkAMRStreamingPriorityQueue* New();
   vtkTypeMacro(vtkAMRStreamingPriorityQueue, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -92,13 +92,13 @@ public:
 
 protected:
   vtkAMRStreamingPriorityQueue();
-  ~vtkAMRStreamingPriorityQueue();
+  ~vtkAMRStreamingPriorityQueue() override;
 
   vtkMultiProcessController* Controller;
 
 private:
-  vtkAMRStreamingPriorityQueue(const vtkAMRStreamingPriorityQueue&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkAMRStreamingPriorityQueue&) VTK_DELETE_FUNCTION;
+  vtkAMRStreamingPriorityQueue(const vtkAMRStreamingPriorityQueue&) = delete;
+  void operator=(const vtkAMRStreamingPriorityQueue&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

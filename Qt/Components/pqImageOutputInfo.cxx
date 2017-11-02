@@ -30,17 +30,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
 #include "pqImageOutputInfo.h"
+#include "ui_pqImageOutputInfo.h"
 
 #include <pqView.h>
-
 #include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkPNGWriter.h>
+#include <vtkSMSaveScreenshotProxy.h>
 #include <vtkSmartPointer.h>
 #include <vtkUnsignedCharArray.h>
 #include <vtksys/SystemTools.hxx>
-
-#include "ui_pqImageOutputInfo.h"
 
 //-----------------------------------------------------------------------------
 pqImageOutputInfo::pqImageOutputInfo(QWidget* parent_)
@@ -79,6 +78,9 @@ void pqImageOutputInfo::initialize(
 
   QObject::connect(
     this->Ui->composite, SIGNAL(stateChanged(int)), this, SLOT(updateComposite(int)));
+
+  QObject::connect(
+    this->Ui->cbNoValues, SIGNAL(stateChanged(int)), this, SLOT(endisAbleDirectFloat(int)));
 
   this->setCinemaVisible(false);
 
@@ -151,6 +153,22 @@ void pqImageOutputInfo::showMagnification()
 }
 
 //-----------------------------------------------------------------------------
+void pqImageOutputInfo::hideFilenameDetails()
+{
+  this->Ui->imageFileName->hide();
+  this->Ui->imageFileNameLabel->hide();
+  this->Ui->imageTypeLabel->setText(QString("RGB file type"));
+}
+
+//-----------------------------------------------------------------------------
+void pqImageOutputInfo::showFilenameDetails()
+{
+  this->Ui->imageFileName->show();
+  this->Ui->imageFileNameLabel->show();
+  this->Ui->imageTypeLabel->setText(QString("Image Type"));
+}
+
+//-----------------------------------------------------------------------------
 int pqImageOutputInfo::getWriteFrequency()
 {
   return this->Ui->imageWriteFrequency->value();
@@ -178,6 +196,12 @@ bool pqImageOutputInfo::getComposite()
 bool pqImageOutputInfo::getUseFloatValues()
 {
   return this->Ui->cbUseFloatValues->isChecked();
+}
+
+//-----------------------------------------------------------------------------
+bool pqImageOutputInfo::getNoValues()
+{
+  return this->Ui->cbNoValues->isChecked();
 }
 
 //-----------------------------------------------------------------------------
@@ -234,32 +258,34 @@ void pqImageOutputInfo::setupScreenshotInfo()
   }
 
   QSize viewSize = this->View->getSize();
-  QSize thumbnailSize;
+  vtkVector2i thumbnailSize;
   if (viewSize.width() > viewSize.height())
   {
-    thumbnailSize.setWidth(100);
-    thumbnailSize.setHeight(100 * viewSize.height() / viewSize.width());
+    thumbnailSize[0] = 100;
+    thumbnailSize[1] = 100 * viewSize.height() / viewSize.width();
   }
   else
   {
-    thumbnailSize.setHeight(100);
-    thumbnailSize.setWidth(100 * viewSize.width() / viewSize.height());
+    thumbnailSize[0] = 100 * viewSize.width() / viewSize.height();
+    thumbnailSize[1] = 100;
   }
   if (this->View->widget()->isVisible())
   {
-    vtkSmartPointer<vtkImageData> image;
-    image.TakeReference(this->View->captureImage(thumbnailSize));
-    vtkNew<vtkPNGWriter> pngWriter;
-    pngWriter->SetInputData(image);
-    pngWriter->WriteToMemoryOn();
-    pngWriter->Update();
-    pngWriter->Write();
-    vtkUnsignedCharArray* result = pngWriter->GetResult();
-    QPixmap thumbnail;
-    thumbnail.loadFromData(
-      result->GetPointer(0), result->GetNumberOfTuples() * result->GetNumberOfComponents(), "PNG");
-
-    this->Ui->thumbnailLabel->setPixmap(thumbnail);
+    vtkSmartPointer<vtkImageData> image =
+      vtkSMSaveScreenshotProxy::CaptureImage(this->View->getViewProxy(), thumbnailSize);
+    if (image)
+    {
+      vtkNew<vtkPNGWriter> pngWriter;
+      pngWriter->SetInputData(image);
+      pngWriter->WriteToMemoryOn();
+      pngWriter->Update();
+      pngWriter->Write();
+      vtkUnsignedCharArray* result = pngWriter->GetResult();
+      QPixmap thumbnail;
+      thumbnail.loadFromData(result->GetPointer(0),
+        result->GetNumberOfTuples() * result->GetNumberOfComponents(), "PNG");
+      this->Ui->thumbnailLabel->setPixmap(thumbnail);
+    }
   }
 }
 
@@ -296,6 +322,7 @@ void pqImageOutputInfo::updateComposite(int choseComposite)
 {
   int index = this->Ui->cinemaExport->currentIndex();
   this->Ui->cinemaExport->clear();
+  this->Ui->cbNoValues->setEnabled(choseComposite);
   this->Ui->cbUseFloatValues->setEnabled(choseComposite);
   if (choseComposite)
   {
@@ -315,6 +342,12 @@ void pqImageOutputInfo::updateComposite(int choseComposite)
     this->Ui->cinemaExport->setCurrentIndex(index > 2 ? 2 : index);
     emit compositeChanged(false);
   }
+}
+
+//-----------------------------------------------------------------------------
+void pqImageOutputInfo::endisAbleDirectFloat(int choseDisable)
+{
+  this->Ui->cbUseFloatValues->setEnabled(choseDisable == 0);
 }
 
 //------------------------------------------------------------------------------

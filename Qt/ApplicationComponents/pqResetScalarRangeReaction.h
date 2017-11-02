@@ -41,6 +41,7 @@ class pqPipelineRepresentation;
 class pqDataRepresentation;
 class pqServer;
 class vtkEventQtSlotConnect;
+class vtkSMProxy;
 
 /**
 * @ingroup Reactions
@@ -59,7 +60,8 @@ public:
   {
     DATA,
     CUSTOM,
-    TEMPORAL
+    TEMPORAL,
+    VISIBLE
   };
 
   /**
@@ -67,7 +69,7 @@ public:
   * pqActiveObjects automatically.
   */
   pqResetScalarRangeReaction(QAction* parent, bool track_active_objects = true, Modes mode = DATA);
-  ~pqResetScalarRangeReaction();
+  ~pqResetScalarRangeReaction() override;
 
   /**
   * @deprecated Use resetScalarRangeToData().
@@ -79,25 +81,59 @@ public:
 
   /**
   * Reset to current data range.
+  *
+  * @param[in] repr The data representation to use to determine the data range.
+  *                 If `nullptr`, then the active representation is used, if
+  *                 available.
+  * @returns `true` if the operation was successful, otherwise `false`.
   */
   static bool resetScalarRangeToData(pqPipelineRepresentation* repr = NULL);
 
   /**
   * Reset range to a custom range.
+  *
+  * @param[in] repr The representation used to determine the transfer function
+  *                 to change range on. If \c repr is `nullptr`, then the active
+  *                 representation is used, if available.
+  * @returns `true` if the operation was successful, otherwise `false`.
   */
   static bool resetScalarRangeToCustom(pqPipelineRepresentation* repr = NULL);
 
   /**
+   * Reset range to a custom range.
+   *
+   * @param[in] tfProxy The transfer function proxy to reset the range on.
+   *
+   * @returns `true` if the operation was successful, otherwise `false`.
+   */
+  static bool resetScalarRangeToCustom(vtkSMProxy* tfProxy);
+
+  /**
   * Reset range to data range over time.
+  *
+  * @param[in] repr The data representation to use to determine the data range.
+  *                 If `nullptr`, then the active representation is used, if
+  *                 available.
+  * @returns `true` if the operation was successful, otherwise `false`.
   */
   static bool resetScalarRangeToDataOverTime(pqPipelineRepresentation* repr = NULL);
+
+  /**
+  * Reset range to data range for data visible in the view.
+  *
+  * @param[in] repr The data representation to use to determine the data range.
+  *                 If `nullptr`, then the active representation is used, if
+  *                 available.
+  * @returns `true` if the operation was successful, otherwise `false`.
+  */
+  static bool resetScalarRangeToVisible(pqPipelineRepresentation* repr = NULL);
 
 public slots:
   /**
   * Updates the enabled state. Applications need not explicitly call
   * this.
   */
-  void updateEnableState();
+  void updateEnableState() override;
 
   /**
   * Set the data representation explicitly when track_active_objects is false.
@@ -108,7 +144,7 @@ protected:
   /**
   * Called when the action is triggered.
   */
-  virtual void onTriggered();
+  void onTriggered() override;
 
 protected slots:
   virtual void onServerAdded(pqServer* server);

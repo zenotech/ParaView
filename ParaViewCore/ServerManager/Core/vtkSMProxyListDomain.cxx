@@ -43,9 +43,9 @@ class vtkSMLinkObserver : public vtkCommand
 public:
   vtkWeakPointer<vtkSMProperty> Output;
   typedef vtkCommand Superclass;
-  virtual const char* GetClassNameInternal() const { return "vtkSMLinkObserver"; }
+  const char* GetClassNameInternal() const override { return "vtkSMLinkObserver"; }
   static vtkSMLinkObserver* New() { return new vtkSMLinkObserver(); }
-  virtual void Execute(vtkObject* caller, unsigned long event, void* calldata)
+  void Execute(vtkObject* caller, unsigned long event, void* calldata) override
   {
     (void)event;
     (void)calldata;
@@ -54,6 +54,12 @@ public:
     {
       // this will copy both checked and unchecked property values.
       this->Output->Copy(input);
+    }
+    vtkSMProxy* parent = vtkSMProxy::SafeDownCast(caller);
+    if (parent && this->Output)
+    {
+      // this will update the output object.
+      this->Output->GetParent()->UpdateVTKObjects();
     }
   }
 };
@@ -97,6 +103,8 @@ public:
               input->AddObserver(vtkCommand::PropertyModifiedEvent, observer));
             this->ObserverIds.push_back(
               input->AddObserver(vtkCommand::UncheckedPropertyModifiedEvent, observer));
+            this->ObserverIds.push_back(
+              parent->AddObserver(vtkCommand::UpdatePropertyEvent, observer));
             observer->FastDelete();
             output->Copy(input);
           }
@@ -112,15 +120,16 @@ public:
         vtkSMProxy* src_subproxy = parent->GetSubProxy(name);
         if (!src_subproxy)
         {
-          vtkErrorWithObjectMacro(parent, "Subproxy " << name << " must be defined before "
-            "its properties can be shared with another subproxy.");
+          vtkErrorWithObjectMacro(parent, "Subproxy "
+              << name << " must be defined before "
+                         "its properties can be shared with another subproxy.");
           continue;
         }
         vtkNew<vtkSMProxyLink> sharingLink;
         sharingLink->PropagateUpdateVTKObjectsOff();
 
         // Read the exceptions.
-        for (unsigned int j=0; j < child->GetNumberOfNestedElements(); j++)
+        for (unsigned int j = 0; j < child->GetNumberOfNestedElements(); j++)
         {
           vtkPVXMLElement* exceptionProp = child->GetNestedElement(j);
           if (strcmp(exceptionProp->GetName(), "Exception") != 0)
@@ -325,6 +334,22 @@ const char* vtkSMProxyListDomain::GetProxyName(unsigned int cc)
 const char* vtkSMProxyListDomain::GetProxyName(vtkSMProxy* proxy)
 {
   return proxy ? proxy->GetXMLName() : NULL;
+}
+
+//-----------------------------------------------------------------------------
+vtkSMProxy* vtkSMProxyListDomain::GetProxyWithName(const char* pname)
+{
+  vtkSMProxyListDomainInternals::VectorOfProxies::const_iterator iter;
+  const vtkSMProxyListDomainInternals::VectorOfProxies& proxies = this->Internals->GetProxies();
+  for (iter = proxies.begin(); pname != NULL && iter != proxies.end(); iter++)
+  {
+    if (iter->Proxy && iter->Proxy->GetXMLName() && strcmp(iter->Proxy->GetXMLName(), pname) == 0)
+    {
+      return iter->Proxy;
+    }
+  }
+
+  return NULL;
 }
 
 //-----------------------------------------------------------------------------

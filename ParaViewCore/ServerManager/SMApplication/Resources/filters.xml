@@ -1,34 +1,6 @@
 <ServerManagerConfiguration>
   <ProxyGroup name="internal_filters">
     <!-- ==================================================================== -->
-    <SourceProxy class="vtkAppendArcLength"
-                 label="Append Arc-Length"
-                 name="AppendArcLength">
-      <Documentation long_help="Appends Arc length for input poly lines."
-                     short_help="Appends Arc length for input poly lines.">
-                     Internal filter used by (filters, ProbeLine).
-                     vtkAppendArcLength is used for filter such as
-                     plot-over-line. In such cases, we need to add an attribute
-                     array that is the arc_length over the length of the probed
-                     line. That's when vtkAppendArcLength can be used. It adds
-                     a new point-data array named "arc_length" with the
-                     computed arc length for each of the polylines in the
-                     input. For all other cell types, the arc length is set to
-                     0.</Documentation>
-      <InputProperty command="SetInputConnection"
-                     name="Input">
-        <ProxyGroupDomain name="groups">
-          <Group name="sources" />
-          <Group name="filters" />
-        </ProxyGroupDomain>
-        <DataTypeDomain name="input_type">
-          <DataType value="vtkPolyData" />
-        </DataTypeDomain>
-        <Documentation>The input.</Documentation>
-      </InputProperty>
-      <!-- End of AppendArcLength -->
-    </SourceProxy>
-    <!-- ==================================================================== -->
     <SourceProxy class="vtkPProbeFilter"
                  name="ProbeLine">
       <Documentation>Internal filter used by (filters, ProbeLine). The Plot
@@ -116,7 +88,6 @@
         </Documentation>
         <BooleanDomain name="bool" />
       </IntVectorProperty>
-
 
       <IntVectorProperty command="SetComputeTolerance"
                          default_values="1"
@@ -222,9 +193,69 @@
       </DoubleVectorProperty>
       <!-- End ExtractSelectionRange -->
     </SourceProxy>
+    <!-- ==================================================================== -->
+    <SourceProxy class="vtkPassThrough"
+                 name="PipelineConnection"
+                 label="Pipeline Connection">
+      <Documentation>
+        This proxy provides UI for selecting an existing pipeline connection.
+      </Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input"
+                     panel_widget="input_selector"
+                     null_on_empty="1"
+                     panel_visibility="always">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+        </DataTypeDomain>
+      </InputProperty>
+      <IntVectorProperty command="SetAllowNullInput"
+                         name="AllowNullInput"
+                         default_values="1"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Allow the filter to execute successful, producing an empty polydata,
+          when the input is not specified.
+        </Documentation>
+      </IntVectorProperty>
+      <!-- End PipelineConnection -->
+    </SourceProxy>
     <!-- End of internal_filters -->
   </ProxyGroup>
   <ProxyGroup name="filters">
+    <!-- ==================================================================== -->
+    <SourceProxy class="vtkAppendArcLength"
+                 label="Append Arc-Length"
+                 name="AppendArcLength">
+      <Documentation long_help="Appends Arc length for input poly lines."
+                     short_help="Appends Arc length for input poly lines.">
+                     vtkAppendArcLength is used for filter such as
+                     plot-over-line. In such cases, we need to add an attribute
+                     array that is the arc_length over the length of the probed
+                     line. That's when vtkAppendArcLength can be used. It adds
+                     a new point-data array named "arc_length" with the
+                     computed arc length for each of the polylines in the
+                     input. For all other cell types, the arc length is set to
+                     0.</Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkPolyData" />
+        </DataTypeDomain>
+        <Documentation>The input.</Documentation>
+      </InputProperty>
+      <!-- End of AppendArcLength -->
+    </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkPassThrough" label="Pass Through" name="PassThrough">
       <Documentation>
@@ -919,6 +950,18 @@
         <Documentation>This property specifies the input to the Integrate
         Attributes filter.</Documentation>
       </InputProperty>
+      <IntVectorProperty command="SetDivideAllCellDataByVolume"
+                         name="DivideCellDataByVolume"
+                         default_values="0"
+                         number_of_elements="1">
+        <Documentation>
+          This property specifies if the output data will be divided by the
+          volume/area computed for the integrated cells.  If it is on, then each
+          value in the output cell data will be divided by the area/volume.
+        </Documentation>
+        <BooleanDomain name="bool"/>
+      </IntVectorProperty>
+
       <Hints>
         <Visibility replace_input="0" />
         <!-- View can be used to specify the preferred view for the proxy -->
@@ -993,9 +1036,9 @@
           <Group name="sources" />
           <Group name="filters" />
         </ProxyGroupDomain>
-        <DataTypeDomain composite_data_supported="0"
+        <DataTypeDomain composite_data_supported="1"
                         name="input_type">
-          <DataType value="vtkDataSet" />
+          <DataType value="vtkDataObject" />
         </DataTypeDomain>
         <Documentation>This property specifies the input to the Append
         Attributes filter.</Documentation>
@@ -2304,13 +2347,13 @@ type as the input.</Documentation>
         Calculator filter. The scalar and vector variables may be chosen from
         this dataset's arrays.</Documentation>
       </InputProperty>
-      <IntVectorProperty command="SetAttributeMode"
-                         default_values="1"
-                         name="AttributeMode"
+      <IntVectorProperty command="SetAttributeType"
+                         default_values="0"
+                         name="AttributeType"
                          number_of_elements="1">
         <EnumerationDomain name="enum">
-          <Entry text="Point Data" value="1" />
-          <Entry text="Cell Data" value="2" />
+          <Entry text="Point Data" value="0" />
+          <Entry text="Cell Data" value="1" />
         </EnumerationDomain>
         <Documentation>This property determines whether the computation is to
         be performed on point-centered or cell-centered data.</Documentation>
@@ -2527,6 +2570,102 @@ array.
       <!-- End ForceTime -->
     </SourceProxy>
     <!-- ==================================================================== -->
+    <SourceProxy name="TemporalArrayOperator"
+                 label="Temporal Array Operator"
+                 class="vtkTemporalArrayOperatorFilter">
+      <Documentation>
+        Filter used to perform an operation on a data array at 2 different timesteps.
+      </Documentation>
+      <InputProperty
+         name="Input"
+         command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet"/>
+        </DataTypeDomain>
+        <InputArrayDomain attribute_type="any"
+                          name="input_array"/>
+        <Documentation>
+          This property specifies the input to the TemporalArrayOperator filter.
+        </Documentation>
+      </InputProperty>
+      <StringVectorProperty command="SetInputArrayToProcess"
+                            element_types="0 0 0 0 2"
+                            name="SelectInputArray"
+                            number_of_elements="5">
+        <ArrayListDomain name="array_list"
+                         input_domain_name="input_array">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <FieldDataDomain name="field_list">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </FieldDataDomain>
+        <Documentation>This property lists the name of the array from which to
+        use.</Documentation>
+      </StringVectorProperty>
+      <IntVectorProperty
+        name="FirstTimeStepIndex"
+        command="SetFirstTimeStepIndex"
+        number_of_elements="1"
+        animatable="1"
+        default_values="0">
+        <IntRangeDomain name="range"/>
+        <Documentation>
+          This property specifies the timestep index to use in the first part of the comparison computation
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetOperator"
+                         default_values="0"
+                         name="Operator"
+                         number_of_elements="1">
+        <EnumerationDomain name="enum">
+          <Entry text="+"
+                 value="0" />
+          <Entry text="-"
+                 value="1" />
+          <Entry text="*"
+                 value="2" />
+          <Entry text="/"
+                 value="3" />
+        </EnumerationDomain>
+        <Documentation>The property determines the operation to compute
+        between the first and second timestep data.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty
+        name="SecondTimeStepIndex"
+        command="SetSecondTimeStepIndex"
+        number_of_elements="1"
+        animatable="1"
+        default_values="0">
+        <IntRangeDomain name="range"/>
+        <Documentation>
+          This property specifies the timestep index to use in the second part of the comparison computation
+        </Documentation>
+      </IntVectorProperty>
+      <StringVectorProperty command="SetOutputArrayNameSuffix"
+                            name="OutputArrayNameSuffix"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <Documentation>This property set the suffix to be append to the output array name.
+        If empty, output will be suffixed with '_' and the operation type.
+        </Documentation>
+      </StringVectorProperty>
+      <Hints>
+        <ShowInMenu category="Temporal" />
+      </Hints>
+      <!-- End TemporalArrayOperator -->
+    </SourceProxy>
+
+    <!-- ==================================================================== -->
     <SourceProxy class="vtkImageGradient"
                  label="Gradient"
                  name="Gradient">
@@ -2708,6 +2847,41 @@ array.
         <Documentation>This property provides a name for the output array
         containing Q criterion.</Documentation>
       </StringVectorProperty>
+      <IntVectorProperty command="SetContributingCellOption"
+                         default_values="2"
+                         name="ContributingCellOption"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <EnumerationDomain name="enum">
+          <Entry text="All"
+                 value="0" />
+          <Entry text="Patch"
+                 value="1" />
+          <Entry text="Dataset Max"
+                 value="2" />
+        </EnumerationDomain>
+        <Documentation>Specify which dimensions of cells should be used
+        when computing gradient quantities. Default is to use
+        the dataset's maximum cell dimension.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetReplacementValueOption"
+                         default_values="1"
+                         name="ReplacementValueOption"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <EnumerationDomain name="enum">
+          <Entry text="Zero"
+                 value="0" />
+          <Entry text="NaN"
+                 value="1" />
+          <Entry text="Data Type Min"
+                 value="2" />
+          <Entry text="Data Type Max"
+                 value="2" />
+        </EnumerationDomain>
+        <Documentation>Specify what value to use for when the gradient quantities at a
+        point can't be computed with the selected **ContributingCellOption**.</Documentation>
+      </IntVectorProperty>
       <!-- End UnstructuredGradient -->
     </SourceProxy>
     <!-- ==================================================================== -->
@@ -4010,6 +4184,104 @@ array.
       <!-- End MeshQuality -->
     </SourceProxy>
     <!-- ==================================================================== -->
+    <SourceProxy class="vtkPCellSizeFilter"
+                 label="Cell Size"
+                 name="CellSize">
+      <Documentation long_help="This filter computes sizes for 0D (1 for vertex and number of points in for polyvertex), 1D (length), 2D (area)
+        and 3D (volume) cells. ComputePoint, ComputeLength, ComputeArea and ComputeVolume options can be used to specify what dimension
+        cells to compute for. Alternatively, the ComputeHighestDimension will compute sizes for only the highest dimension cells for
+        the vtkDataSet. The values are placed in a cell data array named ArrayName. The SumSize option will give a summation of the
+        computed cell sizes for a vtkDataSet and for composite datasets will contain a sum of the underlying blocks."
+        short_help="Compute cell sizes.">This filter computes sizes for 0D (1 for vertex and number of points in for polyvertex), 1D (length), 2D (area)
+        and 3D (volume) cells. ComputeVertexCount, ComputeLength, ComputeArea and ComputeVolume options can be used to specify what dimension
+        cells to compute for. The values are placed in a cell data array named ArrayName. The ComputeSum option will give a summation of the
+        computed cell sizes for a vtkDataSet and for composite datasets will contain a sum of the underlying blocks in the top-level block.</Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+          <DataType value="vtkCompositeDataSet" />
+        </DataTypeDomain>
+        <Documentation>This property specifies the input to the Cell Size filter.</Documentation>
+      </InputProperty>
+      <IntVectorProperty command="SetComputeVertexCount"
+                         default_values="1"
+                         name="ComputeVertexCount"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Specify whether or not to compute the number of points in 0D cells.</Documentation>
+      </IntVectorProperty>
+      <StringVectorProperty command="SetVertexCountArrayName"
+                            default_values="VertexCount"
+                            name="VertexCountArrayName"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <Documentation>
+          Specify the name of the array to store the 0D cell vertex count and optionally the field data vertex count sum.
+        </Documentation>
+      </StringVectorProperty>
+      <IntVectorProperty command="SetComputeLength"
+                         default_values="1"
+                         name="ComputeLength"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Specify whether or not to compute the length of 1D cells.</Documentation>
+      </IntVectorProperty>
+      <StringVectorProperty command="SetLengthArrayName"
+                            default_values="Length"
+                            name="LengthArrayName"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <Documentation>
+          Specify the name of the array to store the 1D cell length and optionally the field data length sum.
+        </Documentation>
+      </StringVectorProperty>
+      <IntVectorProperty command="SetComputeArea"
+                         default_values="1"
+                         name="ComputeArea"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Specify whether or not to compute the area of 2D cells.</Documentation>
+      </IntVectorProperty>
+      <StringVectorProperty command="SetAreaArrayName"
+                            default_values="Area"
+                            name="AreaArrayName"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <Documentation>
+          Specify the name of the array to store 2D cell area and optionally the field data area sum.
+        </Documentation>
+      </StringVectorProperty>
+      <IntVectorProperty command="SetComputeVolume"
+                         default_values="1"
+                         name="ComputeVolume"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Specify whether or not to compute the volume of 3D cells .</Documentation>
+      </IntVectorProperty>
+      <StringVectorProperty command="SetVolumeArrayName"
+                            default_values="Volume"
+                            name="VolumeArrayName"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <Documentation>
+          Specify the name of the array to store 3D cell volume and optionally the field data volume sum.
+        </Documentation>
+      </StringVectorProperty>
+      <IntVectorProperty command="SetComputeSum"
+                         default_values="0"
+                         name="ComputeSum"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Specify whether or not to sum the computed sizes of cells in datasets. The result is stored in field data.</Documentation>
+      </IntVectorProperty>
+      <!-- End CellSize -->
+    </SourceProxy>
+    <!-- ==================================================================== -->
     <SourceProxy class="vtkPPolyDataNormals"
                  label="Generate Surface Normals"
                  name="PolyDataNormals">
@@ -4274,7 +4546,7 @@ array.
         per piece will be chosen at random; otherwise the unique value will
         match the id of the process.</Documentation>
       </IntVectorProperty>
-      <!-- End PieceScalars -->
+      <!-- End ProcessIdScalars -->
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkPointDataToCellData"
@@ -4311,6 +4583,17 @@ array.
         point data will be passed to the output. If set to 1, then the input
         point data is passed through to the output; otherwise, only generated
         cell data is placed into the output.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetCategoricalData"
+                         default_values="0"
+                         name="CategoricalData"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <BooleanDomain name="bool" />
+        <Documentation>Control whether the input point data is to be
+        treated as categorical. If  the data is categorical, then the
+        resultant cell data will be determined by  a majority rules
+        vote, with ties going to the smaller value.</Documentation>
       </IntVectorProperty>
       <!-- End PointDataToCellData -->
     </SourceProxy>
@@ -4751,6 +5034,17 @@ array.
         <Documentation>If this property is set to 1, the output will contain
         the union of the input dataset and its reflection. Otherwise the output
         will contain only the reflection of the input data.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetFlipAllInputArrays"
+                         default_values="1"
+                         name="FlipAllInputArrays"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation> If off, only Vectors, Normals and Tensors will be flipped.
+        If on, all 3-component data arrays ( considered as 3D vectors),
+        6-component data arrays (considered as symmetric tensors),
+        9-component data arrays (considered as tensors ) of signed type will be flipped.
+        All other arrays won't be flipped and will only be copied.</Documentation>
       </IntVectorProperty>
       <!-- End ReflectionFilter -->
     </SourceProxy>
@@ -5359,15 +5653,20 @@ array.
       <Documentation
         long_help="This filter generates an ellipsoid, cuboid, cylinder or superquadric glyph at
                    each point of the input data set. The glyphs are oriented and scaled according
-                   to eigenvalues and eigenvectors of tensor point data of the input data set."
+                   to eigenvalues and eigenvectors of tensor point data of the input data set.
+                   This filter supports symmetric tensors. Symmetric tensor are expected to have
+                   the following order: XX, YY, ZZ, XY, YZ, XZ"
         short_help="This filter generates an ellipsoid, cuboid, cylinder or superquadric glyph at each
                    point of the input data set. The glyphs are oriented and scaled according to eigenvalues
-                   and eigenvectors of tensor point data of the input data set.">
+                   and eigenvectors of tensor point data of the input data set.
+                   This filter supports symmetric tensors. Symmetric tensor components are expected to have
+                   the following order: XX, YY, ZZ, XY, YZ, XZ">
 
         The Tensor Glyph filter generates an ellipsoid, cuboid, cylinder or superquadric glyph at every point in
         the input data set. The glyphs are oriented and scaled according to eigenvalues and eigenvectors of tensor
         point data of the input data set. The Tensor Glyph filter operates on any type of data set. Its output is
-        polygonal.
+        polygonal. This filter supports symmetric tensors. Symmetric tensor components are expected to have the
+        following order: XX, YY, ZZ, XY, YZ, XZ"
       </Documentation>
 
     <InputProperty
@@ -5983,6 +6282,9 @@ array.
             <Property function="ArraySelection" name="SelectInputScalars" />
           </RequiredProperties>
         </BoundsDomain>
+        <Hints>
+          <NoDefault/>
+        </Hints>
         <Documentation>The scalar value at a given point is multiplied by the
         value of this property to determine the magnitude of the change vector
         for that point.</Documentation>
@@ -6078,6 +6380,9 @@ array.
             <Property function="ArraySelection" name="SelectInputVectors" />
           </RequiredProperties>
         </BoundsDomain>
+        <Hints>
+          <NoDefault/>
+        </Hints>
         <Documentation>Each component of the selected vector array will be
         multiplied by the value of this property before being used to compute
         new point coordinates.</Documentation>
@@ -6252,6 +6557,107 @@ array.
       <!-- End Cut -->
     </SourceProxy>
 
+    <!-- ==================================================================== -->
+    <SourceProxy class="vtkPlaneCutter"
+                 name="SliceWithPlane"
+                 label="Slice With Plane">
+      <Documentation long_help="This filter slices a data set with a plane. Slicing is similar to a contour. It creates surfaces from volumes and lines from surfaces. This filter is faster than the standard Slice filter."
+                     short_help="Slice datasets with a plane.">This filter
+                     extracts the portion of the input dataset that lies along
+                     the specified plane. The Slice filter takes any type of
+                     dataset as input. The output of this filter is a multiblock of multipiece
+                     polygonal data. This is a multithreded implementation.
+                     </Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+          <DataType value="vtkCompositeDataSet" />
+        </DataTypeDomain>
+        <Documentation>This property specifies the input of the slice
+        filter.</Documentation>
+      </InputProperty>
+      <ProxyProperty command="SetPlane"
+                     name="Plane">
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="implicit_functions"
+                 name="Plane" />
+        </ProxyListDomain>
+        <Documentation>This property sets the parameters of the plane
+        function.</Documentation>
+      </ProxyProperty>
+      <IntVectorProperty animateable="0"
+                         command="SetBuildTree"
+                         default_values="1"
+                         name="BuildTree"
+                         panel_visibility="advanced"
+                         number_of_elements="1">
+       <BooleanDomain name="bool" />
+       <Documentation>
+        If enabled and input is not an Image Data, Sphere Tree will be computed, for a faster slice computation.
+       </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty animateable="0"
+                         command="SetBuildHierarchy"
+                         default_values="1"
+                         name="BuildHierarchy"
+                         panel_visibility="advanced"
+                         number_of_elements="1">
+       <BooleanDomain name="bool" />
+       <Documentation>
+        If enabled and input is not an Image Data, Tree hierarchy will be computed, for a faster slice computation.
+       </Documentation>
+       <Hints>
+         <PropertyWidgetDecorator type="ShowWidgetDecorator">
+           <Property name="BuildTree" function="boolean" />
+         </PropertyWidgetDecorator>
+       </Hints>
+      </IntVectorProperty>
+      <IntVectorProperty animateable="0"
+                         command="SetComputeNormals"
+                         default_values="0"
+                         name="ComputeNormals"
+                         panel_visibility="advanced"
+                         number_of_elements="1">
+       <BooleanDomain name="bool" />
+       <Documentation>
+        If enabled, compute the normal on each cell. Since all output cells are coplanar,
+        the normal generated is simply the normal of the plane used to slice with.
+        By default computing of normals is disabled.
+       </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty animateable="0"
+                         command="SetInterpolateAttributes"
+                         default_values="1"
+                         name="InterpolateAttributes"
+                         panel_visibility="advanced"
+                         number_of_elements="1">
+       <BooleanDomain name="bool" />
+       <Documentation>
+        If enabled, interpolate attribute data. By default this is
+        enabled. Point data is always interpolated. Cell data is transferred
+        unless input is an image data.
+       </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty animateable="0"
+                         command="SetGeneratePolygons"
+                         default_values="1"
+                         name="GeneratePolygons"
+                         panel_visibility="advanced"
+                         number_of_elements="1">
+       <BooleanDomain name="bool" />
+       <Documentation>
+        If enabled and input is a Structured Grid or a Rectilinear Grid,
+        output slice will consist of polygons instead of only triangles.
+       </Documentation>
+      </IntVectorProperty>
+
+      <!-- End SliceWithPlane -->
+    </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkExtractGeometry"
                  label="Extract Cells By Region"
@@ -6899,7 +7305,7 @@ points in the input. Defaults to ***Single***.
                          number_of_elements="1">
         <BooleanDomain name="bool" />
         <Documentation>This parameter controls whether to produce triangles in the output.
-        Warning: Many filters do not properly handle non-trianglular polygons.
+        Warning: Many filters do not properly handle non-triangular polygons.
         </Documentation>
       </IntVectorProperty>
       <DoubleVectorProperty animateable="1"
@@ -7488,7 +7894,6 @@ source.</Documentation>
       </Hints>
       <!-- End LegacyGlyph -->
     </SourceProxy>
-
 
     <!-- ==================================================================== -->
     <SourceProxy class="vtkPVGlyphFilter"
@@ -8216,7 +8621,7 @@ source.</Documentation>
              servers="1"
              type="ProbeLine" />
       <Proxy compound_name="AppendArcLength1"
-             group="internal_filters"
+             group="filters"
              id="588"
              servers="1"
              type="AppendArcLength">
@@ -8250,7 +8655,7 @@ source.</Documentation>
       <Hints>
         <Visibility replace_input="0" />
         <!-- View can be used to specify the preferred view for the proxy -->
-        <View type="XYChartView" />
+        <View type="XYChartView" also_show_in_current_view="1" />
         <Plotable />
       </Hints>
       <!-- End ProbeLine -->
@@ -8431,12 +8836,18 @@ source.</Documentation>
                      Stream Tracer filter generates streamlines in a vector
                      field from a collection of seed points. Production of
                      streamlines terminates if a streamline crosses the
-                     exterior boundary of the input dataset. Other reasons for
-                     termination are listed for the MaximumNumberOfSteps,
-                     TerminalSpeed, and MaximumPropagation properties. This
-                     filter operates on any type of dataset, provided it has
-                     point-centered vectors. The output is polygonal data
-                     containing polylines.</Documentation>
+                     exterior boundary of the input dataset
+                     (ReasonForTermination=1). Other reasons for termination
+                     include an initialization issue (ReasonForTermination=2),
+                     computing an unexpected value (ReasonForTermination=3),
+                     reached the Maximum Streamline Length input value
+                     (ReasonForTermination=4), reached the Maximum Steps
+                     input value (ReasonForTermination=5), and velocity was
+                     lower than the Terminal Speed input value
+                     (ReasonForTermination=6). This filter operates on any
+                     type of dataset, provided it has point-centered vectors.
+                     The output is polygonal data containing polylines.
+      </Documentation>
       <InputProperty clean_command="RemoveAllInputs"
                      command="AddInputConnection"
                      name="Input">
@@ -8563,7 +8974,7 @@ source.</Documentation>
                             number_of_elements="1"
                             panel_visibility="advanced" >
         <DoubleRangeDomain name="range" />
-        <Documentation>When using the Runge-Kutta 4-5 ingrator, this property
+        <Documentation>When using the Runge-Kutta 4-5 integrator, this property
         specifies the minimum integration step size.</Documentation>
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetMaximumIntegrationStep"
@@ -8573,7 +8984,7 @@ source.</Documentation>
                             number_of_elements="1"
                             panel_visibility="advanced">
         <DoubleRangeDomain name="range" />
-        <Documentation>When using the Runge-Kutta 4-5 ingrator, this property
+        <Documentation>When using the Runge-Kutta 4-5 integrator, this property
         specifies the maximum integration step size.</Documentation>
       </DoubleVectorProperty>
       <IntVectorProperty command="SetMaximumNumberOfSteps"
@@ -8675,20 +9086,231 @@ source.</Documentation>
       <!-- End StreamTracer -->
     </SourceProxy>
     <!-- ==================================================================== -->
+    <SourceProxy class="vtkEvenlySpacedStreamlines2D"
+                 label="Evenly Spaced Streamlines 2D"
+                 name="EvenlySpacedStreamlines2D">
+      <Documentation long_help="Produce evenly spaced streamlines in a 2D vector field."
+                     short_help="Produce evenly spaced streamlines in a 2D vector field.">
+                     This filter generates evenly spaced streamlines in a 2D
+                     vector field from a start postion. Production of
+                     streamlines terminates if a streamline crosses the
+                     exterior boundary of the input dataset
+                     (ReasonForTermination=1), an initialization issue (ReasonForTermination=2),
+                     computing an unexpected value (ReasonForTermination=3),
+                     reached the Maximum Streamline Length input value
+                     (ReasonForTermination=4), reached the Maximum Steps
+                     input value (ReasonForTermination=5), velocity was
+                     lower than the Terminal Speed input value
+                     (ReasonForTermination=6), a streamline formed a loop
+                     (ReasonForTermination=7), and the streamline was too close to
+                     other streamlines (ReasonForTermination=8). This filter
+                     operates on a 2D dataset alligned with plane XY with
+                     point-centered vectors aligned with plane XY.
+                     The output is polygonal data containing polylines.
+      </Documentation>
+      <InputProperty clean_command="RemoveAllInputs"
+                     command="AddInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain composite_data_supported="1"
+                        name="input_type">
+          <DataType value="vtkDataSet" />
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array"
+                          number_of_components="3" />
+        <Documentation>This property specifies the input to the filter.</Documentation>
+      </InputProperty>
+      <StringVectorProperty animateable="0"
+                            command="SetInputArrayToProcess"
+                            element_types="0 0 0 0 2"
+                            label="Vectors"
+                            name="SelectInputVectors"
+                            number_of_elements="5">
+        <ArrayListDomain attribute_type="Vectors"
+                         name="array_list">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>This property contains the name of the vector array from
+        which to generate streamlines.</Documentation>
+      </StringVectorProperty>
+      <IntVectorProperty command="SetInterpolatorType"
+                         default_values="0"
+                         name="InterpolatorType"
+                         number_of_elements="1"
+                         panel_visibility="advanced" >
+        <EnumerationDomain name="enum">
+          <Entry text="Interpolator with Point Locator"
+                 value="0" />
+          <Entry text="Interpolator with Cell Locator"
+                 value="1" />
+        </EnumerationDomain>
+        <Documentation>This property determines which interpolator to use for
+        evaluating the velocity vector field. The first is faster though the
+        second is more robust in locating cells during streamline
+        integration.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetIntegratorType"
+                         default_values="1"
+                         name="IntegratorType"
+                         number_of_elements="1">
+        <EnumerationDomain name="enum">
+          <Entry text="Runge-Kutta 2"
+                 value="0" />
+          <Entry text="Runge-Kutta 4"
+                 value="1" />
+        </EnumerationDomain>
+        <Documentation>This property determines which integrator (with
+        increasing accuracy) to use for creating streamlines.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetIntegrationStepUnit"
+                         default_values="2"
+                         label="Integration Step Unit"
+                         name="IntegrationStepUnit"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <EnumerationDomain name="enum">
+          <Entry text="Length"
+                 value="1" />
+          <Entry text="Cell Length"
+                 value="2" />
+        </EnumerationDomain>
+        <Documentation>This property specifies the unit for
+        Initial integration step size. The Length unit refers
+        to the arc length that a particle travels/advects within a single step.
+        The Cell Length unit represents the step size as a number of
+        cells.</Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty command="SetInitialIntegrationStep"
+                            default_values="0.2"
+                            label="Initial Step Length"
+                            name="InitialIntegrationStep"
+                            number_of_elements="1"
+                            panel_visibility="advanced" >
+        <DoubleRangeDomain name="range" />
+        <Documentation>This property specifies the initial integration step
+        size. For non-adaptive integrators (Runge-Kutta 2 and Runge-Kutta 4),
+        it is fixed (always equal to this initial value) throughout the
+        integration.</Documentation>
+      </DoubleVectorProperty>
+      <IntVectorProperty command="SetMaximumNumberOfSteps"
+                         default_values="2000"
+                         label="Maximum Steps"
+                         name="MaximumNumberOfSteps"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <IntRangeDomain name="range" />
+        <Documentation>This property specifies the maximum number of steps,
+        beyond which streamline integration is terminated.</Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty command="SetSeparatingDistance"
+                            default_values="2"
+                            label="Separating Distance"
+                            name="SeparatingDistance"
+                            number_of_elements="1"
+                            panel_visibility="default" >
+        <DoubleRangeDomain name="range" />
+        <Documentation>Specify the separating distance between
+        streamlines expressed in IntegrationStepUnit.</Documentation>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetSeparatingDistanceRatio"
+                            default_values="0.4"
+                            label="Separating Distance Ratio"
+                            name="SeparatingDistanceRatio"
+                            number_of_elements="1"
+                            panel_visibility="default" >
+        <DoubleRangeDomain name="range" />
+        <Documentation>Specifies SeparatingDistanceRatio. If streamlines
+        get closer than SeparatingDistance * SeparatingDistanceRatio to
+        other streamlines integration stops.</Documentation>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetClosedLoopMaximumDistance"
+                            default_values="0.2"
+                            label="Closed Loop Maximum Distance"
+                            name="ClosedLoopMaximumDistance"
+                            number_of_elements="1"
+                            panel_visibility="default" >
+        <DoubleRangeDomain name="range" />
+        <Documentation>Loops are considered closed if the have two points at
+        distance less than this. This is expressed in IntegrationStepUnit.</Documentation>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetStartPosition"
+                            default_values="0 0 0 "
+                            label="Start Position"
+                            name="StartPosition"
+                            number_of_elements="3"
+                            panel_visibility="default" >
+        <BoundsDomain default_mode="mid" mode="normal" name="range">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
+        <Documentation>Specify the starting point (seed) of the first streamline
+        in the global coordinate system.</Documentation>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetTerminalSpeed"
+                            default_values="0.000000000001"
+                            label="Terminal Speed"
+                            name="TerminalSpeed"
+                            number_of_elements="1"
+                            panel_visibility="advanced" >
+        <DoubleRangeDomain name="range" />
+        <Documentation>This property specifies the terminal speed, below which
+        particle advection/integration is terminated.</Documentation>
+      </DoubleVectorProperty>
+      <IntVectorProperty command="SetComputeVorticity"
+                         default_values="1"
+                         name="ComputeVorticity"
+                         number_of_elements="1"
+                         panel_visibility="advanced" >
+        <BooleanDomain name="bool" />
+        <Documentation>Specify whether or not to compute
+        vorticity.</Documentation>
+      </IntVectorProperty>
+
+      <PropertyGroup label="Streamline Parameters">
+        <Property name="StartPosition" />
+        <Property name="SeparatingDistance" />
+        <Property name="SeparatingDistanceRatio" />
+        <Property name="ClosedLoopMaximumDistance" />
+        <Property name="IntegratorType" />
+        <Property name="IntegrationStepUnit" />
+        <Property name="InitialIntegrationStep" />
+        <Property name="MaximumNumberOfSteps" />
+        <Property name="TerminalSpeed" />
+      </PropertyGroup>
+
+      <Hints>
+        <Visibility replace_input="2" />
+      </Hints>
+      <!-- End EvenlySpacedStreamlines2D -->
+    </SourceProxy>
+    <!-- ==================================================================== -->
     <SourceProxy class="vtkStreamTracer"
                  label="Stream Tracer With Custom Source"
                  name="ArbitrarySourceStreamTracer">
       <Documentation long_help="Integrate streamlines in a vector field."
                      short_help="Integrate streamlines in a vector field.">The
-                     Stream Tracer filter generates streamlines in a vector
-                     field from a collection of seed points. Production of
-                     streamlines terminates if a streamline crosses the
-                     exterior boundary of the input dataset. Other reasons for
-                     termination are listed for the MaximumNumberOfSteps,
-                     TerminalSpeed, and MaximumPropagation properties. This
-                     filter operates on any type of dataset, provided it has
-                     point-centered vectors. The output is polygonal data
-                     containing polylines. This filter takes a Source input
+                     Stream Tracer With Custom Source filter generates streamlines
+                     in a vector field from a collection of seed points. Production
+                     of streamlines terminates if a streamline crosses the
+                     exterior boundary of the input dataset
+                     (ReasonForTermination=1). Other reasons for termination
+                     include an initialization issue (ReasonForTermination=2),
+                     computing an unexpected value (ReasonForTermination=3),
+                     reached the Maximum Streamline Length input value
+                     (ReasonForTermination=4), reached the Maximum Steps
+                     input value (ReasonForTermination=5), and velocity was
+                     lower than the Terminal Speed input value
+                     (ReasonForTermination=6). This filter operates on any
+                     type of dataset, provided it has point-centered vectors.
+                     The output is polygonal data containing polylines.
+                     This filter takes a Source input
                      that provides the seed points.</Documentation>
       <InputProperty clean_command="RemoveAllInputs"
                      command="AddInputConnection"
@@ -8723,6 +9345,22 @@ source.</Documentation>
         <Documentation>This property contains the name of the vector array from
         which to generate streamlines.</Documentation>
       </StringVectorProperty>
+      <IntVectorProperty command="SetInterpolatorType"
+                         default_values="0"
+                         name="InterpolatorType"
+                         number_of_elements="1"
+                         panel_visibility="advanced" >
+        <EnumerationDomain name="enum">
+          <Entry text="Interpolator with Point Locator"
+                 value="0" />
+          <Entry text="Interpolator with Cell Locator"
+                 value="1" />
+        </EnumerationDomain>
+        <Documentation>This property determines which interpolator to use for
+        evaluating the velocity vector field. The first is faster though the
+        second is more robust in locating cells during streamline
+        integration.</Documentation>
+      </IntVectorProperty>
       <IntVectorProperty command="SetSurfaceStreamlines"
                          default_values="0"
                          name="Surface Streamlines"
@@ -8801,7 +9439,7 @@ source.</Documentation>
                             number_of_elements="1"
                             panel_visibility="advanced">
         <DoubleRangeDomain name="range" />
-        <Documentation>When using the Runge-Kutta 4-5 ingrator, this property
+        <Documentation>When using the Runge-Kutta 4-5 integrator, this property
         specifies the minimum integration step size.</Documentation>
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetMaximumIntegrationStep"
@@ -8811,7 +9449,7 @@ source.</Documentation>
                             number_of_elements="1"
                             panel_visibility="advanced">
         <DoubleRangeDomain name="range" />
-        <Documentation>When using the Runge-Kutta 4-5 ingrator, this property
+        <Documentation>When using the Runge-Kutta 4-5 integrator, this property
         specifies the maximum integration step size.</Documentation>
       </DoubleVectorProperty>
       <IntVectorProperty command="SetMaximumNumberOfSteps"
@@ -10690,6 +11328,27 @@ source.</Documentation>
       </InputProperty>
     </SourceProxy>
     <!-- ==================================================================== -->
+    <SourceProxy class="vtkRemoveGhosts"
+                 label="Remove Ghost Information"
+                 name="RemoveGhostInformation">
+      <Documentation long_help="Removes ghost information."
+                     short_help="Removes ghost information.">Removes ghost
+      cells and point data and cell data ghost arrays.</Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkPolyData" />
+          <DataType value="vtkUnstructuredGrid" />
+        </DataTypeDomain>
+        <Documentation>This property specifies the input to the remove ghost
+        information filter.</Documentation>
+      </InputProperty>
+    </SourceProxy>
+    <!-- ==================================================================== -->
     <SourceProxy class="vtkMergeCompositeDataSet"
                  name="FlattenFilter">
       <InputProperty command="SetInputConnection"
@@ -10815,6 +11474,84 @@ source.</Documentation>
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkReductionFilter"
+                 name="AppendReductionFilter"
+                 label="Append Reduce">
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain composite_data_supported="0"
+                        name="input_type">
+          <DataType value="vtkDataSet" />
+        </DataTypeDomain>
+        <Documentation>Set the input to the Reduction filter.</Documentation>
+      </InputProperty>
+      <StringVectorProperty command="SetPostGatherHelperName"
+                            name="PostGatherHelperName"
+                            panel_visibility="never"
+                            default_values="vtkAppendFilter"
+                            number_of_elements="1">
+        <Documentation>Set the algorithm that takes multiple inputs and
+        produces a single reduced output.</Documentation>
+      </StringVectorProperty>
+      <IntVectorProperty command="SetReductionMode"
+                         default_values="2"
+                         name="ReductionMode"
+                         number_of_elements="1">
+        <EnumerationDomain name="enum">
+          <Entry text="Reduce all data to one processor"
+                 value="0" />
+          <Entry text="Move all data to one processor"
+                 value="1" />
+          <Entry text="Reduce all data to all processors"
+                 value="2" />
+        </EnumerationDomain>
+        <Documentation>Set the reduction mode. Reducing all data to one
+        processor means that the destination process will have all data while
+        each other process will still have it's own data. Moving all to one processor means
+        that the destination process will have all data while other process have no data
+        anymore. Reduce all data to all processors is self explanatory.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetReductionProcessId"
+                         default_values="0"
+                         name="ReduceTo"
+                         number_of_elements="1">
+        <IntRangeDomain min="0"
+                        name="range" />
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="ReductionMode"
+                                   value="2"
+                                   inverse="1"/>
+          <!-- show this widget when ReductionMode is not 2 -->
+        </Hints>
+        <Documentation>Set the process to reduce to.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetPassThrough"
+                         default_values="-1"
+                         name="OnlyFrom"
+                         number_of_elements="1">
+        <IntRangeDomain min="-1"
+                        name="range" />
+        <Documentation>If set to a non-negative value, then produce results
+        using only the node Id specified.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetGenerateProcessIds"
+                         default_values="0"
+                         name="GenerateProcessIds"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>If true, the filter will generate vtkOriginalProcessIds
+        arrays indicating the process id on which the cell/point was
+        generated.</Documentation>
+      </IntVectorProperty>
+      <!-- End ReductionFilter -->
+    </SourceProxy>
+    <!-- ==================================================================== -->
+    <SourceProxy class="vtkReductionFilter"
                  name="ReductionFilter">
       <InputProperty command="SetInputConnection"
                      name="Input">
@@ -10824,6 +11561,25 @@ source.</Documentation>
         </ProxyGroupDomain>
         <Documentation>Set the input to the Reduction filter.</Documentation>
       </InputProperty>
+      <IntVectorProperty command="SetReductionMode"
+                         default_values="0"
+                         name="ReductionMode"
+                         number_of_elements="1">
+        <EnumerationDomain name="enum">
+          <Entry text="Move all data to one processor"
+                 value="0" />
+          <Entry text="Reduce all data to one processor"
+                 value="1" />
+          <Entry text="Reduce all data to all processors"
+                 value="2" />
+        </EnumerationDomain>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetReductionProcessId"
+                         default_values="0"
+                         name="ReduceTo"
+                         number_of_elements="1">
+      </IntVectorProperty>
+
       <StringVectorProperty command="SetPreGatherHelperName"
                             name="PreGatherHelperName"
                             number_of_elements="1">
@@ -10885,16 +11641,8 @@ source.</Documentation>
                          number_of_elements_per_command="1"
                          panel_visibility="default"
                          repeat_command="1">
-        <Hints>
-          <!-- Tells the widget not to use flat-indicies for this property.
-                Only needed when number_of_elements_per_command==1
-          -->
-          <UseFlatIndex value="0" />
-        </Hints>
-        <CompositeTreeDomain mode="leaves"
+        <CompositeTreeDomain mode="amr"
                              name="tree">
-          <!-- mode="leaves" since multi-pieces are treated as a single leaf
-               node wth the exception of vtkExtractDataSets -->
           <RequiredProperties>
             <Property function="Input"
                       name="Input" />
@@ -11056,7 +11804,7 @@ source.</Documentation>
                          name="SelectedDataSets"
                          number_of_elements_per_command="2"
                          repeat_command="1">
-        <CompositeTreeDomain mode="leaves"
+        <CompositeTreeDomain mode="amr"
                              name="tree">
           <RequiredProperties>
             <Property function="Input"
@@ -11205,6 +11953,23 @@ source.</Documentation>
         </NumberOfComponentsDomain>
         <Documentation>The value of this property specifies the array component
         from which the histogram should be computed.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetCenterBinsAroundMinAndMax"
+                         default_values="0"
+                         name="CenterBinsAroundMinAndMax"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <BooleanDomain name="bool" />
+        <Documentation>When set to true, first and last bin will be centered
+          around the minimum and the maximum values of the data.
+          By default, set to false.</Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="UseCustomBinRanges"
+                                   value="0" />
+          <!-- show this widget when UseCustomBinRanges==0 -->
+        </Hints>
       </IntVectorProperty>
       <IntVectorProperty command="SetCalculateAverages"
                          default_values="0"
@@ -11522,6 +12287,45 @@ source.</Documentation>
         <Documentation>Set the input to the Texture Map to Plane
         filter.</Documentation>
       </InputProperty>
+      <DoubleVectorProperty animateable="1"
+                            command="SetOrigin"
+                            default_values="0.0 0.0 0.0"
+                            name="Origin"
+                            number_of_elements="3"
+                            panel_visibility="default">
+        <Documentation>This property specifies the 3D coordinates for the
+        origin of the plane. Set all to zero if you want to use automatic
+        generation.</Documentation>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty animateable="1"
+                            command="SetPoint1"
+                            default_values="0.0 0.0 0.0"
+                            name="Point1"
+                            number_of_elements="3"
+                            panel_visibility="default">
+        <Documentation>This property specifies the 3D coordinates for
+        Point1 of the plane. Set all to zero if you want to use automatic
+        generation.</Documentation>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty animateable="1"
+                            command="SetPoint2"
+                            default_values="0.0 0.0 0.0"
+                            name="Point2"
+                            number_of_elements="3"
+                            panel_visibility="default">
+        <Documentation>This property specifies the 3D coordinates for
+        Point2 of the plane. Set all to zero if you want to use automatic
+        generation.</Documentation>
+      </DoubleVectorProperty>
+      <IntVectorProperty command="SetAutomaticPlaneGeneration"
+                         default_values="1"
+                         name="Automatic"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>If set the plane values will be automatically generated.
+        Note that for this to work all the Origin, Point1 and Point2 must all
+        be set to zero.</Documentation>
+      </IntVectorProperty>
       <!-- End TextureMapToPlane -->
     </SourceProxy>
     <!-- ==================================================================== -->
@@ -11602,6 +12406,60 @@ source.</Documentation>
         180-&gt;0 degrees. Otherwise, the s-coordinate ranges from 0-&gt;1
         between 0-&gt;360 degrees.</Documentation>
       </IntVectorProperty>
+
+      <IntVectorProperty name="GenerateCylinderAutomatically"
+        command="SetAutomaticCylinderGeneration"
+        number_of_elements="1"
+        default_values="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          When set, the filter will try to determine the size and orientation of the cylinder
+          used for texture mapping using data bounds.
+        </Documentation>
+      </IntVectorProperty>
+
+      <DoubleVectorProperty name="Point1"
+        command="SetPoint1"
+        number_of_elements="3"
+        default_values="0 0 0">
+        <BoundsDomain name="bounds" mode="normal" default_mode="mid,mid,min">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
+        <Documentation>
+          When **GenerateCylinderAutomatically** is not set, specify the first point defining
+          the axis of the cylinder through its center.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="enabled_state"
+                                   property="GenerateCylinderAutomatically"
+                                   value="0" />
+        </Hints>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty name="Point2"
+        command="SetPoint2"
+        number_of_elements="3"
+        default_values="0 0 0">
+        <BoundsDomain name="bounds" mode="normal" default_mode="mid,mid,max">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
+        <Documentation>
+          When **GenerateCylinderAutomatically** is not set, specify the second point defining
+          the axis of the cylinder through its center.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="enabled_state"
+                                   property="GenerateCylinderAutomatically"
+                                   value="0" />
+        </Hints>
+      </DoubleVectorProperty>
+
       <!-- End TextureMapToCylinder -->
     </SourceProxy>
     <!-- ==================================================================== -->
@@ -11995,6 +12853,12 @@ source.</Documentation>
                          number_of_elements="1">
         <BooleanDomain name="bool" />
       </IntVectorProperty>
+      <IntVectorProperty command="SetAllowMissingArray"
+                         default_values="0"
+                         name="AllowMissingArray"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
       <!-- End of ConvertSelection -->
     </SourceProxy>
     <!-- ==================================================================== -->
@@ -12088,7 +12952,7 @@ source.</Documentation>
                   name="Consistency"
                   number_of_elements="1">
           <Element index="0"
-                   value="1" />
+                   value="0" />
           <Domain id="1224.Consistency.bool"
                   name="bool" />
         </Property>
@@ -12952,7 +13816,8 @@ source.</Documentation>
       <Hints>
         <Visibility replace_input="1" />
         <!-- View can be used to specify the preferred view for the proxy -->
-        <View type="SpreadSheetView" />
+        <View type="SpreadSheetView" port="0" />
+        <View type="None" port="1" />
       </Hints>
     </SourceProxy>
     <!-- ContingencyStatistics -->
@@ -13111,7 +13976,8 @@ source.</Documentation>
       <Hints>
         <Visibility replace_input="1" />
         <!-- View can be used to specify the preferred view for the proxy -->
-        <View type="SpreadSheetView" />
+        <View type="SpreadSheetView" port="0" />
+        <View type="None" port="1" />
       </Hints>
     </SourceProxy>
     <!-- DescriptiveStatistics -->
@@ -13287,7 +14153,8 @@ source.</Documentation>
       <Hints>
         <Visibility replace_input="1" />
         <!-- View can be used to specify the preferred view for the proxy -->
-        <View type="SpreadSheetView" />
+        <View type="SpreadSheetView" port="0" />
+        <View type="None" port="1" />
       </Hints>
     </SourceProxy>
     <!-- K Means -->
@@ -13453,7 +14320,8 @@ source.</Documentation>
       <Hints>
         <Visibility replace_input="1" />
         <!-- View can be used to specify the preferred view for the proxy -->
-        <View type="SpreadSheetView" />
+        <View type="SpreadSheetView" port="0" />
+        <View type="None" port="1" />
       </Hints>
     </SourceProxy>
     <!-- MulticorrelativeStatistics -->
@@ -13688,7 +14556,8 @@ source.</Documentation>
       <Hints>
         <Visibility replace_input="1" />
         <!-- View can be used to specify the preferred view for the proxy -->
-        <View type="SpreadSheetView" />
+        <View type="SpreadSheetView" port="0" />
+        <View type="None" port="1" />
       </Hints>
     </SourceProxy>
     <!-- PCAStatistics -->
@@ -14613,6 +15482,36 @@ source.</Documentation>
       <!-- End ImageDataToUniformGrid -->
     </SourceProxy>
     <!-- ==================================================================== -->
+    <SourceProxy class="vtkAggregateDataSetFilter"
+                 label="Aggregate Dataset"
+                 name="AggregateDataSet">
+      <Documentation long_help="This filter aggregates polydata or unstructured grids onto a subset of processes."
+                     short_help="Aggregate a data set onto a subset of processes.">
+        This filter aggregates polydata or unstructured grids onto a subset of processes.
+      </Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkPolyData" />
+          <DataType value="vtkUnstructuredGrid" />
+        </DataTypeDomain>
+        <Documentation>This property specifies the input to the filter.
+        </Documentation>
+      </InputProperty>
+      <IntVectorProperty command="SetNumberOfTargetProcesses"
+                         default_values="1"
+                         name="NumberOfTargetProcesses"
+                         number_of_elements="1">
+        <Documentation>This property specifies the number of target processes to
+        aggregate the data set onto.</Documentation>
+      </IntVectorProperty>
+      <!-- End AggregateDataSet -->
+    </SourceProxy>
+    <!-- ==================================================================== -->
     <SourceProxy class="vtkAngularPeriodicFilter"
                  label="Angular Periodic Filter"
                  name="AngularPeriodicFilter">
@@ -14640,7 +15539,7 @@ source.</Documentation>
                          number_of_elements_per_command="1"
                          panel_visibility="default"
                          repeat_command="1">
-        <CompositeTreeDomain mode="all"
+        <CompositeTreeDomain mode="leaves"
                              name="tree">
           <RequiredProperties>
             <Property function="Input"
@@ -14864,6 +15763,17 @@ source.</Documentation>
         dataset.</Documentation>
       </InputProperty>
 
+      <IntVectorProperty command="SetCategoricalData"
+                         default_values="0"
+                         name="CategoricalData"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <BooleanDomain name="bool" />
+        <Documentation>Control whether the source point data is to be
+        treated as categorical. If the data is categorical, then the
+        resultant data will be determined by a nearest neighbor
+        interpolation scheme rather than by linear interpolation.</Documentation>
+      </IntVectorProperty>
       <IntVectorProperty command="SetPassCellArrays"
                          default_values="0"
                          name="PassCellArrays"
@@ -14956,6 +15866,25 @@ source.</Documentation>
         </DataTypeDomain>
       </InputProperty>
 
+      <IntVectorProperty command="SetUseRange"
+                         name="SelectionMode"
+                         number_of_elements="1"
+                         default_values="0">
+        <EnumerationDomain name="enum">
+          <Entry text="Select Time Steps"
+                 value="0" />
+          <Entry text="Select Time Range"
+                 value="1" />
+        </EnumerationDomain>
+        <Documentation>
+          Extract time steps supports two ways to select the time steps to be extracted:
+
+          - **Select Time Steps**: Specify time steps to be extracted by their index
+
+          - **Select Time Range**: Specify the start and end time steps of a range by their index and optionally specify
+          a stride to optionally take every nth timestep in the range.
+        </Documentation>
+      </IntVectorProperty>
       <IntVectorProperty animateable="1"
                          command="AddTimeStepIndex"
                          clean_command="ClearTimeStepIndices"
@@ -14972,22 +15901,80 @@ source.</Documentation>
         <Documentation>
           This property specifies the indices of the time steps to extract.
         </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator" mode="visibility" property="SelectionMode" value="0">
+          </PropertyWidgetDecorator>
+        </Hints>
       </IntVectorProperty>
       <DoubleVectorProperty information_only="1"
                             name="TimestepValues">
         <TimeStepsInformationHelper />
       </DoubleVectorProperty>
 
+      <IntVectorProperty command="SetRange"
+                         name="TimeStepRange"
+                         number_of_elements="2"
+                         default_values="0 1">
+        <TimeStepIndexDomain name="timestep_index_range" default_mode="min">
+          <RequiredProperties>
+            <Property function="Input" name="Input"/>
+          </RequiredProperties>
+        </TimeStepIndexDomain>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator" mode="visibility" property="SelectionMode" value="1">
+          </PropertyWidgetDecorator>
+        </Hints>
+        <Documentation>
+          Select the beginning and end indices of the range of timesteps to extract.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty command="SetTimeStepInterval"
+                         name="TimeStepInterval"
+                         number_of_elements="1"
+                         default_values="1">
+        <IntRangeDomain name="range" min="1"/>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator" mode="visibility" property="SelectionMode" value="1">
+          </PropertyWidgetDecorator>
+        </Hints>
+        <Documentation>
+          Select the stride to use when extracting the range of time steps (the n in every nth timestep).
+        </Documentation>
+      </IntVectorProperty>
+
       <PropertyGroup label="Time Step Indices">
         <Property name="TimeStepIndices" />
       </PropertyGroup>
+
+      <IntVectorProperty command="SetTimeEstimationMode"
+                         name="ApproximationMode"
+                         number_of_elements="1"
+                         default_values="2"
+                         panel_visibility="advanced">
+        <EnumerationDomain name="enum">
+          <Entry text="Previous Time Step"
+                 value="0" />
+          <Entry text="Next Time Step"
+                 value="1" />
+          <Entry text="Nearest Time Step"
+                 value="2" />
+        </EnumerationDomain>
+        <Documentation>
+          If the scene's time does not match the time in any of the timesteps selected (likely because something
+          else in the scene has time steps at different times) this setting controls which timestep should
+          be returned by the filter.  The options are the previous time step, the nearest time step and the next
+          time step.
+        </Documentation>
+      </IntVectorProperty>
+
 
       <!-- End ExtractTimeSteps -->
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkRulerLineForInput"
                  name="RulerFilter"
-                 label="Ruler">
+                 label="Bounding Ruler">
       <Documentation short_help="Create a line along the input to use as a ruler">
         This filter creates a line along the object and defaults its
         representation to showing a ruler along that line.
@@ -15021,6 +16008,61 @@ source.</Documentation>
         <Visibility replace_input="0" />
       </Hints>
       <!-- End vtkRulerLineForInput -->
+    </SourceProxy>
+    <!-- ==================================================================== -->
+    <SourceProxy class="vtkSynchronizeTimeFilter"
+                 label="Synchronize Time"
+                 name="SynchronizeTime">
+      <Documentation short_help="Set 'close' time step values from the source to the input">
+        Synchronize time step values in the first input (Input) to time step
+        values in the second input (Source) that are considered close enough.
+        The outputted data set is from the first input and the number of
+        output time steps is also equal to the number of time steps in
+        the first input. Time step values in the first input that are
+        "close" to time step values in the second input are replaced
+        with the value from the second input. Close is determined to
+        be if the difference is less than RelativeTolerance multiplied
+        by the time range of the first input.
+      </Documentation>
+      <InputProperty command="SetInputConnection" name="DataToPass">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+          <DataType value="vtkCompositeDataSet" />
+        </DataTypeDomain>
+        <Documentation>This property specifies the dataset whose geometry and
+        fields will be output.</Documentation>
+      </InputProperty>
+      <InputProperty command="SetSourceConnection" name="TimeToSync">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+          <DataType value="vtkCompositeDataSet" />
+        </DataTypeDomain>
+        <Documentation>This property specifies the dataset from which to obtain
+        the time step values.</Documentation>
+      </InputProperty>
+      <DoubleVectorProperty
+          name="RelativeTolerance"
+          command="SetRelativeTolerance"
+          number_of_elements="1"
+          default_values="0.00001"
+          panel_visibility="advanced">
+      </DoubleVectorProperty>
+      <DoubleVectorProperty information_only="1"
+                            name="TimestepValues">
+        <TimeStepsInformationHelper />
+      </DoubleVectorProperty>
+      <Hints>
+        <Visibility RelativeTolerance="1" />
+      </Hints>
+      <!-- End vtkSynchronizeTimeFilter -->
     </SourceProxy>
   </ProxyGroup>
 </ServerManagerConfiguration>

@@ -4,8 +4,170 @@ Major API Changes             {#MajorAPIChanges}
 This page documents major API/design changes between different versions since we
 started tracking these (starting after version 4.2).
 
-Changes since 5.2
------------------
+Changes in 5.5
+--------------
+
+###Changes to Python shell###
+
+`pqPythonShell` now is a fairly self contained class. One no longer has to go
+through `pqPythonManager` or `pqPythonDialog` to create it. `pqPythonDialog` has
+been deprecated. `pqPythonManager` has been relegated to a helper class to
+support macros (together with `pqPythonMacroSupervisor`). The Python macro
+infrastructure may be revamped in future, but is left unchanged for now.
+
+If you want a Python shell in your application, simply create an instance of
+`pqPythonShell` and add it where ever you choose. Multiple instances are also
+supported.
+
+###Changes to offscreen rendering options###
+
+ParaView executables now automatically choose to create on-screen or off-screen
+render windows for rendering based on the executable type and current
+configuration. As a result **"UseOffscreenRendering"** property on views has
+been removed to avoid conflicting with the new approach. Executables have new
+command line arguments: `--force-offscreen-rendering` and
+`--force-onscreen-rendering` that can be used to override the default behavior
+for the process.
+
+###Changes to vtkArrayCalculator
+`vtkArrayCalculator::SetAttributeMode` is deprecated in favor of `vtkArrayCalculator::SetAttributeType`
+which takes vtkDataObject attribute modes instead of custom constants as its parameter value.
+The ParaView calculator filter's AttributeMode property's values changed as a result of this.
+
+###Changes to vtkSMViewProxy::CaptureWindowInternal###
+
+`vtkSMViewProxy::CaptureWindowInternal` now takes a 2-component magnification
+factor rather than a single component. That allows for more accurate target image
+resolution than before (see #17567).
+
+###Replaced LockScalarRange property in PVLookupTable with AutomaticRescaleRangeMode###
+
+The `LockScalarRange` property in the `PVLookupTable` proxy has been removed. It
+has been replaced by the `AutomaticRescaleRangeMode` property. When
+`AutomaticRescaleRangeMode` is set to `vtkSMTransferFunctionManager::Never`,
+the transfer function minimum and maximum value is never updated, no matter what
+event occurs. This corresponds to when `LockScalarRange` was set to "on" in
+previous versions of ParaView. When `AutomaticRescaleRangeMode` is set to a
+different option, that option governs how and when the transfer function is
+reset. This option overrides whichever option is set in the `GeneralSettings`
+property `TransferFunctionResetMode`.
+
+The `TransferFunctionResetMode` property still exists, but it has been slightly
+repurposed. No longer does it control the range reset mode for ALL transfer
+functions. Instead, it serves the following functions:
+
+* determining the `AutomaticRescaleRangeMode` when a lookup table is created, and
+
+* determining what the `AutomaticRescaleRangeMode` should be when the data array
+  range is updated to the data range of the selected representation
+
+As part of this change, the enum values
+
+    GROW_ON_APPLY
+    GROW_ON_APPLY_AND_TIMESTEP
+    RESET_ON_APPLY
+    RESET_ON_APPLY_AND_TIMESTEP
+
+have been moved from `vtkPVGeneralSettings.h` to `vtkSMTransferFunctionManager.h`.
+
+###Deprecated pqDisplayPolicy###
+
+`pqDisplayPolicy`, a class that has been unofficially deprecated since
+`vtkSMParaViewPipelineControllerWithRendering` was introduced is now officially
+deprecated and will be removed in future. Use
+`vtkSMParaViewPipelineControllerWithRendering` to show/hide data in views
+instead of `pqDisplayPolicy`.
+
+Changes in 5.4
+--------------
+
+###Moved vtkAppendArcLength to VTK and exposed this filter in the UI.
+
+As a result of this change, `vtkAppendArcLength` was moved from
+the `internal_filters` to the `filters` group.
+
+###Changes to Save Screenshot / Save Animation###
+
+`pqSaveSnapshotDialog` is removed. This class was used by
+`pqSaveScreenshotReaction` to present user with options to control the saved
+image. This is now done using `pqProxyWidgetDialog` for the **(misc,
+SaveScreenshot)** proxy. See `pqSaveScreenshotReaction` for details.
+
+`pqStereoModeHelper` has been removed. It was to help save/restore stereo mode
+for views for saving screenshots and animations. All of that logic is now
+encapsulated in `vtkSMSaveScreenshotProxy`.
+
+`pqMultiViewWidget::captureImage`, `pqMultiViewWidget::writeImage`,
+`pqTabbedMultiViewWidget::captureImage`, `pqTabbedMultiViewWidget::writeImage`,
+`pqView::captureImage`, `pqView::writeImage` have been deprecated and will be removed in
+future releases. Saving and capturing images now goes through pqSaveScreenshotReaction
+(or **vtkSMScreenshotOptions** proxy).
+
+Changes in 5.3
+--------------
+
+###Removed pqRescaleCustomScalarRangeReaction, pqRescaleVisibleScalarRangeReaction###
+
+`pqRescaleCustomScalarRangeReaction` and `pqRescaleVisibleScalarRangeReaction`
+have been removed and replaced by the more
+generic `pqResetScalarRangeReaction`. Set mode
+to`pqResetScalarRangeReaction::CUSTOM` when instantiating
+`pqResetScalarRangeReaction` to make it behave as
+`pqRescaleCustomScalarRangeReaction`. The mode can be set to
+`pqResetScalarRangeReaction::VISIBLE`, for
+`pqRescaleVisibleScalarRangeReaction`.
+
+###Dropped support for pqProxyPanel and subclasses (Legacy Panels)###
+
+`pqProxyPanel` and its subclasses that formed the default mechanism for providing
+custom panels for filters, displays, views, etc. before ParaView 3.98 has now
+been removed. Refer to the
+[wiki](http://www.paraview.org/Wiki/ParaView/Properties_Panel) for getting
+oriented with the currently supported way for customizing the properties panel.
+This also removes plugin macros `ADD_PARAVIEW_OBJECT_PANEL()`, and
+`ADD_PARAVIEW_DISPLAY_PANEL()`.
+
+###Qt 5 Support (replacing QVTKWidget)###
+
+ParaView has switched over to using Qt 5 by default. While for most cases the
+application code should be unaffected, if your app was directly creating (or
+using) `QVTKWidget` however, you will need to change it. When
+building with Qt 5, you are expected to use `QVTKOpenGLWidget` instead of
+`QVTKWidget` (which is still needed when building with Qt 4).
+Since ParaView supports building with Qt 4 and 5 for this release, to make it
+easier, we have the following solution.
+
+A new header **pqQVTKWidgetBase.h** defines a new typedef `pqQVTKWidgetBase`.
+Include this header in your code and replace `QVTKWidget` with `pqQVTKWidgetBase`.
+`pqQVTKWidgetBase` gets typedef'ed to `QVTKWidget` for Qt 4 builds and to
+`QVTKOpenGLWidget` for Qt 5 builds.
+
+If your existing code was creating and setting up a new instance of
+`QVTKWidget`, you need to change it further. QVTKOpenGLWidget cannot work with
+any `vtkRenderWindow` (as was the case with QVTKWidget),
+it instead needs a `vtkGenericRenderWindow` (see the documentation
+for `QVTKOpenGLWidget` for details). To make that easier, **pqQVTKWidgetBase.h**
+defines another typedef `pqQVTKWidgetBaseRenderWindowType`. The code to create
+and setup QVTKWidget can then be changed as follows:
+
+    vtkNew<pqQVTKWidgetBaseRenderWindowType> renWindow;
+    pqQVTKWidgetBase* widget = new pqQVTKWidgetBase(...);
+    widget->SetRenderWindow(renWindow.Get());
+
+If you are using a `vtkView` to create the viewport. You can set that up as
+follows:
+
+    vtkNew<pqQVTKWidgetBaseRenderWindowType> renWindow;
+    pqQVTKWidgetBase* widget = new pqQVTKWidgetBase(...);
+    widget->SetRenderWindow(renWindow.Get());
+
+    vtkNew<vtkContextView> view;
+    view->SetRenderWindow(renWindow.Get());
+
+If your application supports Qt 5 alone, when you should directly use
+`QVTKOpenGLWidget`. `pqQVTKWidgetBase` is a temporary solution to support
+building with Qt 5 and Qt 4. Qt 4 support will be deprecated and remove in
+future releases.
 
 ###Removed ctkRangeSlider and ctkDoubleRangeSlider###
 
@@ -55,14 +217,14 @@ of input ports is defined in the XML plugin file with the *input_ports* attribut
 The different input ports are then defined with InputProperty having each a
 different *port_index*:
 
-   <SourceProxy name="Name" class="vtkPythonProgrammableFilter" label="label" input_ports="2">
-      <InputProperty name="Source" command="SetInputConnection" port_index="0">
-        [...]
-      </InputProperty>
-      <InputProperty name="Target" command="SetInputConnection" port_index="1">
-        [...]
-      </InputProperty>
-   </SourceProxy>
+    <SourceProxy name="Name" class="vtkPythonProgrammableFilter" label="label" input_ports="2">
+       <InputProperty name="Source" command="SetInputConnection" port_index="0">
+         [...]
+       </InputProperty>
+       <InputProperty name="Target" command="SetInputConnection" port_index="1">
+         [...]
+       </InputProperty>
+    </SourceProxy>
 
 Changes in 5.1
 --------------

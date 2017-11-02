@@ -84,6 +84,7 @@ public:
 
     this->insert("PointArrayStatus", QPixmap(":/pqWidgets/Icons/pqNodalData16.png"));
     this->insert("CellArrayStatus", QPixmap(":/pqWidgets/Icons/pqCellCenterData16.png"));
+    this->insert("ColumnArrayStatus", QPixmap(":/pqWidgets/Icons/pqSpreadsheet16.png"));
     this->insert("SetStatus", QPixmap(":/pqWidgets/Icons/pqSideSetData16.png"));
   }
 };
@@ -226,7 +227,7 @@ bool pqExodusIIVariableSelectionWidget::eventFilter(QObject* object, QEvent* qev
 //-----------------------------------------------------------------------------
 void pqExodusIIVariableSelectionWidget::propertyChanged(const QString& pname)
 {
-  QVariant properyValue = this->property(pname.toLatin1().data());
+  QVariant properyValue = this->property(pname.toLocal8Bit().data());
   if (pname == "GenerateObjectIdCellArray")
   {
     this->setStatus(pname, "Object Ids", properyValue.toBool());
@@ -311,9 +312,9 @@ void pqExodusIIVariableSelectionWidget::updateProperty()
   foreach (const QString& key, this->Internals->KeysToUpdate)
   {
     QVariant newValue = this->Internals->value(key);
-    if (this->property(key.toLatin1().data()) != newValue)
+    if (this->property(key.toLocal8Bit().data()) != newValue)
     {
-      this->setProperty(key.toLatin1().data(), newValue);
+      this->setProperty(key.toLocal8Bit().data(), newValue);
     }
   }
   this->Internals->KeysToUpdate.clear();

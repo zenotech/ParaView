@@ -36,11 +36,11 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMDeserializerXML : public vtkSMDeseriali
 public:
   static vtkSMDeserializerXML* New();
   vtkTypeMacro(vtkSMDeserializerXML, vtkSMDeserializer);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkSMDeserializerXML();
-  ~vtkSMDeserializerXML();
+  ~vtkSMDeserializerXML() override;
 
   // Friend to access NewProxy().
   friend class vtkSMProxyLocator;
@@ -48,7 +48,7 @@ protected:
   /**
    * Create a new proxy with the \c id if possible.
    */
-  virtual vtkSMProxy* NewProxy(vtkTypeUInt32 id, vtkSMProxyLocator* locator);
+  vtkSMProxy* NewProxy(vtkTypeUInt32 id, vtkSMProxyLocator* locator) VTK_OVERRIDE;
 
   /**
    * Locate the XML for the proxy with the given id.
@@ -66,8 +66,8 @@ protected:
    * Create a new proxy of the given group and name. Default implementation
    * simply asks the proxy manager to create a new proxy of the requested type.
    */
-  virtual vtkSMProxy* CreateProxy(
-    const char* xmlgroup, const char* xmlname, const char* subProxyName = NULL);
+  vtkSMProxy* CreateProxy(
+    const char* xmlgroup, const char* xmlname, const char* subProxyName = NULL) VTK_OVERRIDE;
 
   /**
    * Called after a new proxy has been created. Gives the subclasses an
@@ -77,8 +77,8 @@ protected:
   virtual void CreatedNewProxy(vtkTypeUInt32 id, vtkSMProxy* proxy);
 
 private:
-  vtkSMDeserializerXML(const vtkSMDeserializerXML&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMDeserializerXML&) VTK_DELETE_FUNCTION;
+  vtkSMDeserializerXML(const vtkSMDeserializerXML&) = delete;
+  void operator=(const vtkSMDeserializerXML&) = delete;
 };
 
 #endif

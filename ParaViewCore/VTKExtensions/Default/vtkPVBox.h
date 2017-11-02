@@ -30,7 +30,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVBox : public vtkBox
 public:
   static vtkPVBox* New();
   vtkTypeMacro(vtkPVBox, vtkBox);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -73,7 +73,7 @@ public:
 
 protected:
   vtkPVBox();
-  ~vtkPVBox();
+  ~vtkPVBox() override;
   void UpdateTransform();
 
   double Position[3];
@@ -81,8 +81,8 @@ protected:
   double Scale[3];
 
 private:
-  vtkPVBox(const vtkPVBox&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVBox&) VTK_DELETE_FUNCTION;
+  vtkPVBox(const vtkPVBox&) = delete;
+  void operator=(const vtkPVBox&) = delete;
 };
 
 #endif

@@ -39,7 +39,7 @@ public:
     vtkSMViewProxy* renModule, pqServer* server, QObject* parent = NULL);
 
   // Destructor.
-  virtual ~pqPythonView();
+  ~pqPythonView() override;
 
   /**
   * Set/get the Python script
@@ -52,42 +52,18 @@ public:
   */
   vtkSMPythonViewProxy* getPythonViewProxy();
 
-protected slots:
-  virtual void initializeAfterObjectsCreated();
-
-  /**
-  * Setups up RenderModule and QVTKWidget binding.
-  * This method is called for all pqRenderView objects irrespective
-  * of whether it is created from state/undo-redo/python or by the GUI. Hence
-  * don't change any render module properties here.
-  */
-  virtual void initializeWidgets();
-
 protected:
   /**
   * Overridden to popup the context menu, if some actions have been added
   * using addMenuAction.
   */
-  virtual bool eventFilter(QObject* caller, QEvent* e);
+  bool eventFilter(QObject* caller, QEvent* e) override;
 
   /**
   * Creates a new instance of the QWidget subclass to be used to show this
   * view.
   */
-  virtual QWidget* createWidget();
-
-  /**
-  * Use this method to initialize the pqObject state using the
-  * underlying vtkSMProxy. This needs to be done only once,
-  * after the object has been created.
-  */
-  virtual void initialize();
-
-  /**
-  * On Mac, we usually try to cache the front buffer to avoid unecessary
-  */
-  //  updates.
-  bool AllowCaching;
+  QWidget* createWidget() override;
 
 private:
   Q_DISABLE_COPY(pqPythonView)

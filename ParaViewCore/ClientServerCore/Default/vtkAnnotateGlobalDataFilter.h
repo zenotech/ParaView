@@ -39,7 +39,7 @@ class VTKPVCLIENTSERVERCOREDEFAULT_EXPORT vtkAnnotateGlobalDataFilter
 public:
   static vtkAnnotateGlobalDataFilter* New();
   vtkTypeMacro(vtkAnnotateGlobalDataFilter, vtkPythonAnnotationFilter);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -65,19 +65,28 @@ public:
   vtkGetStringMacro(Postfix);
   //@}
 
+  //@{
+  /**
+   * Set the format to use when displaying the field value
+   */
+  vtkSetStringMacro(Format);
+  vtkGetStringMacro(Format);
+  //@}
+
 protected:
   vtkAnnotateGlobalDataFilter();
-  ~vtkAnnotateGlobalDataFilter();
+  ~vtkAnnotateGlobalDataFilter() override;
 
-  virtual void EvaluateExpression();
+  void EvaluateExpression() VTK_OVERRIDE;
 
   char* Prefix;
   char* Postfix;
   char* FieldArrayName;
+  char* Format;
 
 private:
-  vtkAnnotateGlobalDataFilter(const vtkAnnotateGlobalDataFilter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkAnnotateGlobalDataFilter&) VTK_DELETE_FUNCTION;
+  vtkAnnotateGlobalDataFilter(const vtkAnnotateGlobalDataFilter&) = delete;
+  void operator=(const vtkAnnotateGlobalDataFilter&) = delete;
 };
 
 #endif

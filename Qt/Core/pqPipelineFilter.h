@@ -51,7 +51,7 @@ class PQCORE_EXPORT pqPipelineFilter : public pqPipelineSource
 
 public:
   pqPipelineFilter(QString name, vtkSMProxy* proxy, pqServer* server, QObject* parent = NULL);
-  virtual ~pqPipelineFilter();
+  ~pqPipelineFilter() override;
 
   /**
   * Returns the inputs ports on any proxy.
@@ -127,7 +127,7 @@ public:
   * "Replace input" is a hint given to the GUI to turn off input visibility
   * when the filter is created.
   * Returns if this proxy replaces input on creation.
-  * This checks the "Hints" for the proxy, if any. If a <Visibility>
+  * This checks the "Hints" for the proxy, if any. If a `<Visibility>`
   * element is present with replace_input="0", then this method
   * returns false, otherwise true.
   */
@@ -151,7 +151,7 @@ protected:
   * underlying vtkSMProxy. This needs to be done only once,
   * after the object has been created.
   */
-  virtual void initialize();
+  void initialize() override;
 
   /**
   * Called when a input property changes. \c portname is the name of the input

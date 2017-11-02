@@ -19,10 +19,11 @@
 #include "vtkDynamicLoader.h"
 #include "vtkObjectFactory.h"
 
+#include <vtksys/SystemTools.hxx>
+
 #include <map>
 #include <sstream>
 #include <string>
-#include <sys/stat.h>
 #include <vector>
 
 vtkStandardNewMacro(vtkClientServerInterpreter);
@@ -63,8 +64,8 @@ public:
     ContextInformation* Context;
 
   private:
-    FunctionWithContext(const FunctionWithContext&) VTK_DELETE_FUNCTION;
-    FunctionWithContext& operator=(const FunctionWithContext&) VTK_DELETE_FUNCTION;
+    FunctionWithContext(const FunctionWithContext&) = delete;
+    FunctionWithContext& operator=(const FunctionWithContext&) = delete;
   };
   typedef FunctionWithContext<vtkClientServerNewInstanceFunction> NewInstanceFunction;
   typedef FunctionWithContext<vtkClientServerCommandFunction> CommandFunction;
@@ -715,14 +716,17 @@ class vtkClientServerInterpreterCommand : public vtkCommand
 {
 public:
   static vtkClientServerInterpreterCommand* New() { return new vtkClientServerInterpreterCommand; }
-  void Execute(vtkObject*, unsigned long, void*) { this->Interpreter->ProcessStream(this->Stream); }
+  void Execute(vtkObject*, unsigned long, void*) override
+  {
+    this->Interpreter->ProcessStream(this->Stream);
+  }
 
   vtkClientServerStream Stream;
   vtkClientServerInterpreter* Interpreter;
 
 protected:
   vtkClientServerInterpreterCommand() {}
-  ~vtkClientServerInterpreterCommand() {}
+  ~vtkClientServerInterpreterCommand() override {}
 private:
   vtkClientServerInterpreterCommand(const vtkClientServerInterpreterCommand&);
   void operator=(const vtkClientServerInterpreterCommand&);
@@ -798,7 +802,6 @@ int vtkClientServerInterpreter::CallCommandFunction(const char* cname, vtkObject
 
   vtkClientServerCommandFunction function = n->Function;
   void* ctx = n->Context ? n->Context->Context : 0;
-
   return function(this, ptr, method, msg, result, ctx);
 }
 
@@ -916,7 +919,7 @@ int vtkClientServerInterpreter::Load(const char* moduleName, const char* const* 
   libName += vtkDynamicLoader::LibExtension();
   for (PathsType::iterator p = paths.begin(); p != paths.end(); ++p)
   {
-    struct stat data;
+    vtksys::SystemTools::Stat_t data;
     std::string fullPath = *p;
 
 #if defined(CMAKE_INTDIR)
@@ -925,7 +928,7 @@ int vtkClientServerInterpreter::Load(const char* moduleName, const char* const* 
     std::string fullPathWithIntDir = fullPath;
     fullPathWithIntDir += CMAKE_INTDIR "/";
     fullPathWithIntDir += libName;
-    if (stat(fullPathWithIntDir.c_str(), &data) == 0)
+    if (vtksys::SystemTools::Stat(fullPathWithIntDir.c_str(), &data) == 0)
     {
       return this->LoadInternal(moduleName, fullPathWithIntDir.c_str());
     }
@@ -936,7 +939,7 @@ int vtkClientServerInterpreter::Load(const char* moduleName, const char* const* 
 
     // Look in the directory specified.
     fullPath += libName;
-    if (stat(fullPath.c_str(), &data) == 0)
+    if (vtksys::SystemTools::Stat(fullPath.c_str(), &data) == 0)
     {
       return this->LoadInternal(moduleName, fullPath.c_str());
     }

@@ -31,12 +31,12 @@ class VTKPVCATALYSTTESTDRIVER_EXPORT vtkCPFieldBuilder : public vtkCPBaseFieldBu
 {
 public:
   vtkTypeMacro(vtkCPFieldBuilder, vtkCPBaseFieldBuilder);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Return a field on Grid.
    */
-  virtual void BuildField(unsigned long TimeStep, double Time, vtkDataSet* Grid) = 0;
+  virtual void BuildField(unsigned long TimeStep, double Time, vtkDataSet* Grid) VTK_OVERRIDE = 0;
 
   /**
    * Return the highest order of discretization of the field.
@@ -64,8 +64,8 @@ protected:
   ~vtkCPFieldBuilder();
 
 private:
-  vtkCPFieldBuilder(const vtkCPFieldBuilder&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCPFieldBuilder&) VTK_DELETE_FUNCTION;
+  vtkCPFieldBuilder(const vtkCPFieldBuilder&) = delete;
+  void operator=(const vtkCPFieldBuilder&) = delete;
 
   /**
    * The name of the array that will be inserted into the point/cell data.

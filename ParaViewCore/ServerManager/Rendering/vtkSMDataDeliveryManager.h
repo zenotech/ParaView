@@ -41,7 +41,7 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMDataDeliveryManager : public vtkSM
 public:
   static vtkSMDataDeliveryManager* New();
   vtkTypeMacro(vtkSMDataDeliveryManager, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Get/Set the view proxy for whom we are delivering the data.
@@ -64,7 +64,7 @@ public:
 
 protected:
   vtkSMDataDeliveryManager();
-  ~vtkSMDataDeliveryManager();
+  ~vtkSMDataDeliveryManager() override;
 
   vtkWeakPointer<vtkSMViewProxy> ViewProxy;
 
@@ -78,8 +78,8 @@ protected:
   vtkTimeStamp DeliveryTimestamps[4];
 
 private:
-  vtkSMDataDeliveryManager(const vtkSMDataDeliveryManager&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMDataDeliveryManager&) VTK_DELETE_FUNCTION;
+  vtkSMDataDeliveryManager(const vtkSMDataDeliveryManager&) = delete;
+  void operator=(const vtkSMDataDeliveryManager&) = delete;
 };
 
 #endif

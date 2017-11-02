@@ -31,29 +31,29 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMPlotMatrixViewProxy : public vtkSM
 public:
   static vtkSMPlotMatrixViewProxy* New();
   vtkTypeMacro(vtkSMPlotMatrixViewProxy, vtkSMContextViewProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Provides access to the vtk plot matrix.
    */
-  virtual vtkAbstractContextItem* GetContextItem();
+  vtkAbstractContextItem* GetContextItem() VTK_OVERRIDE;
 
 protected:
-  virtual void CreateVTKObjects();
+  void CreateVTKObjects() VTK_OVERRIDE;
   void ActivePlotChanged();
 
-  void PostRender(bool);
+  void PostRender(bool) VTK_OVERRIDE;
 
   bool ActiveChanged;
 
   vtkSMPlotMatrixViewProxy();
-  ~vtkSMPlotMatrixViewProxy();
+  ~vtkSMPlotMatrixViewProxy() override;
   void SendAnimationPath();
   void AnimationTickEvent();
 
 private:
-  vtkSMPlotMatrixViewProxy(const vtkSMPlotMatrixViewProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMPlotMatrixViewProxy&) VTK_DELETE_FUNCTION;
+  vtkSMPlotMatrixViewProxy(const vtkSMPlotMatrixViewProxy&) = delete;
+  void operator=(const vtkSMPlotMatrixViewProxy&) = delete;
 };
 
 #endif

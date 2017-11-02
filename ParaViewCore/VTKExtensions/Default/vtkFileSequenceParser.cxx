@@ -41,6 +41,7 @@ vtkFileSequenceParser::vtkFileSequenceParser()
   // sequence ending with extension, and starting with series number,
   // but not followed by ". or _".
   reg_ex5(new vtksys::RegularExpression("^([0-9.]+)([a-zA-Z])(.*)\\.(.*)$"))
+
   ,
   // fallback: any sequence with a number in the middle (taking the last number
   // if multiple exist).
@@ -58,13 +59,12 @@ vtkFileSequenceParser::~vtkFileSequenceParser()
   delete this->reg_ex3;
   delete this->reg_ex4;
   delete this->reg_ex5;
-  delete this->reg_ex_last;
 
   this->SetSequenceName(NULL);
 }
 
 //-----------------------------------------------------------------------------
-bool vtkFileSequenceParser::ParseFileSequence(char* file)
+bool vtkFileSequenceParser::ParseFileSequence(const char* file)
 {
   bool match = false;
   if (this->reg_ex->find(file))
@@ -105,12 +105,17 @@ bool vtkFileSequenceParser::ParseFileSequence(char* file)
     this->SequenceIndex = atoi(reg_ex5->match(1).c_str());
     match = true;
   }
-  else if (this->reg_ex_last->find(file))
+  else
   {
-    this->SetSequenceName(
-      std::string(this->reg_ex_last->match(1) + ".." + this->reg_ex_last->match(3)).c_str());
-    this->SequenceIndex = atoi(reg_ex_last->match(2).c_str());
-    match = true;
+    std::string fname_wo_ext = vtksys::SystemTools::GetFilenameWithoutExtension(file);
+    std::string ext = vtksys::SystemTools::GetFilenameExtension(file);
+    if (this->reg_ex_last->find(fname_wo_ext))
+    {
+      this->SetSequenceName(
+        (this->reg_ex_last->match(1) + ".." + this->reg_ex_last->match(3) + ext).c_str());
+      this->SequenceIndex = atoi(reg_ex_last->match(2).c_str());
+      match = true;
+    }
   }
   return match;
 }

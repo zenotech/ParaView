@@ -37,7 +37,7 @@ class VTKPVANIMATION_EXPORT vtkPVKeyFrame : public vtkObject
 {
 public:
   vtkTypeMacro(vtkPVKeyFrame, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
   static vtkPVKeyFrame* New();
 
   //@{
@@ -85,14 +85,14 @@ public:
 
 protected:
   vtkPVKeyFrame();
-  ~vtkPVKeyFrame();
+  ~vtkPVKeyFrame() override;
 
   double KeyTime;
   vtkPVKeyFrameInternals* Internals;
 
 private:
-  vtkPVKeyFrame(const vtkPVKeyFrame&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVKeyFrame&) VTK_DELETE_FUNCTION;
+  vtkPVKeyFrame(const vtkPVKeyFrame&) = delete;
+  void operator=(const vtkPVKeyFrame&) = delete;
 };
 
 #endif

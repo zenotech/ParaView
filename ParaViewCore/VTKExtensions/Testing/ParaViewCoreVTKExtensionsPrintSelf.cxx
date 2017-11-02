@@ -83,7 +83,6 @@
 #include "vtkPSciVizPCAStats.h"
 #include "vtkPVAMRDualClip.h"
 #include "vtkPVArrayCalculator.h"
-#include "vtkPVArrowSource.h"
 #include "vtkPVAxesActor.h"
 #include "vtkPVAxesWidget.h"
 #include "vtkPVBox.h"
@@ -137,8 +136,6 @@
 #include "vtkQuerySelectionSource.h"
 #include "vtkRectilinearGridConnectivity.h"
 #include "vtkReductionFilter.h"
-#include "vtkScatterPlotMapper.h"
-#include "vtkScatterPlotPainter.h"
 #include "vtkSciVizStatistics.h"
 #include "vtkSelectionConverter.h"
 #include "vtkSelectionSerializer.h"
@@ -273,7 +270,6 @@ int ParaViewCoreVTKExtensionsPrintSelf(int, char* [])
   PRINT_SELF(vtkPSciVizPCAStats);
   PRINT_SELF(vtkPVAMRDualClip);
   PRINT_SELF(vtkPVArrayCalculator);
-  PRINT_SELF(vtkPVArrowSource);
   PRINT_SELF(vtkPVAxesActor);
   PRINT_SELF(vtkPVAxesWidget);
   PRINT_SELF(vtkPVBox);
@@ -322,8 +318,6 @@ int ParaViewCoreVTKExtensionsPrintSelf(int, char* [])
   PRINT_SELF(vtkQuerySelectionSource);
   PRINT_SELF(vtkRectilinearGridConnectivity);
   PRINT_SELF(vtkReductionFilter);
-  PRINT_SELF(vtkScatterPlotMapper);
-  PRINT_SELF(vtkScatterPlotPainter);
   PRINT_SELF(vtkSciVizStatistics);
   PRINT_SELF(vtkSelectionConverter);
   PRINT_SELF(vtkSelectionSerializer);

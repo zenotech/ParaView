@@ -39,7 +39,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMProxyIterator : public vtkSMObject
 public:
   static vtkSMProxyIterator* New();
   vtkTypeMacro(vtkSMProxyIterator, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Override the set sesssion so the SessionProxyManager could be cache for
@@ -119,7 +119,7 @@ public:
 
 protected:
   vtkSMProxyIterator();
-  ~vtkSMProxyIterator();
+  ~vtkSMProxyIterator() override;
 
   bool SkipPrototypes;
   int Mode;
@@ -128,8 +128,8 @@ protected:
 private:
   vtkSMProxyIteratorInternals* Internals;
 
-  vtkSMProxyIterator(const vtkSMProxyIterator&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMProxyIterator&) VTK_DELETE_FUNCTION;
+  vtkSMProxyIterator(const vtkSMProxyIterator&) = delete;
+  void operator=(const vtkSMProxyIterator&) = delete;
 };
 
 #endif

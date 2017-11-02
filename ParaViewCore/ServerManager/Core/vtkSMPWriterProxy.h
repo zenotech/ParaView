@@ -33,15 +33,15 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMPWriterProxy : public vtkSMWriterProxy
 public:
   static vtkSMPWriterProxy* New();
   vtkTypeMacro(vtkSMPWriterProxy, vtkSMWriterProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkSMPWriterProxy();
-  ~vtkSMPWriterProxy();
+  ~vtkSMPWriterProxy() override;
 
 private:
-  vtkSMPWriterProxy(const vtkSMPWriterProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMPWriterProxy&) VTK_DELETE_FUNCTION;
+  vtkSMPWriterProxy(const vtkSMPWriterProxy&) = delete;
+  void operator=(const vtkSMPWriterProxy&) = delete;
 };
 
 #endif

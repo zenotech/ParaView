@@ -43,23 +43,23 @@ public:
   /**
    * see vtkAlgorithm for details
    */
-  virtual int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkPVMergeTablesMultiBlock();
-  ~vtkPVMergeTablesMultiBlock();
+  ~vtkPVMergeTablesMultiBlock() override;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int FillOutputPortInformation(int port, vtkInformation* info);
-  virtual vtkExecutive* CreateDefaultExecutive();
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  int FillOutputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  vtkExecutive* CreateDefaultExecutive() VTK_OVERRIDE;
 
 private:
-  vtkPVMergeTablesMultiBlock(const vtkPVMergeTablesMultiBlock&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVMergeTablesMultiBlock&) VTK_DELETE_FUNCTION;
+  vtkPVMergeTablesMultiBlock(const vtkPVMergeTablesMultiBlock&) = delete;
+  void operator=(const vtkPVMergeTablesMultiBlock&) = delete;
 };
 
 #endif

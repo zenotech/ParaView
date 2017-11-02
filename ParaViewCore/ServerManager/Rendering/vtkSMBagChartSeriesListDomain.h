@@ -35,24 +35,24 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMBagChartSeriesListDomain
 public:
   static vtkSMBagChartSeriesListDomain* New();
   vtkTypeMacro(vtkSMBagChartSeriesListDomain, vtkSMChartSeriesListDomain);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Set the default values for the property.
    */
-  virtual int SetDefaultValues(vtkSMProperty*, bool use_unchecked_values);
+  int SetDefaultValues(vtkSMProperty*, bool use_unchecked_values) VTK_OVERRIDE;
 
 protected:
   vtkSMBagChartSeriesListDomain();
-  ~vtkSMBagChartSeriesListDomain();
+  ~vtkSMBagChartSeriesListDomain() override;
 
-  virtual int ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement* element);
+  int ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement* element) VTK_OVERRIDE;
 
   int ArrayType;
 
 private:
-  vtkSMBagChartSeriesListDomain(const vtkSMBagChartSeriesListDomain&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMBagChartSeriesListDomain&) VTK_DELETE_FUNCTION;
+  vtkSMBagChartSeriesListDomain(const vtkSMBagChartSeriesListDomain&) = delete;
+  void operator=(const vtkSMBagChartSeriesListDomain&) = delete;
 };
 
 #endif

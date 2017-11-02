@@ -34,7 +34,7 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkBlockDeliveryPreprocessor
 public:
   static vtkBlockDeliveryPreprocessor* New();
   vtkTypeMacro(vtkBlockDeliveryPreprocessor, vtkDataObjectAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -90,17 +90,18 @@ public:
 
 protected:
   vtkBlockDeliveryPreprocessor();
-  ~vtkBlockDeliveryPreprocessor();
+  ~vtkBlockDeliveryPreprocessor() override;
 
-  virtual vtkExecutive* CreateDefaultExecutive();
+  vtkExecutive* CreateDefaultExecutive() VTK_OVERRIDE;
 
   /**
    * This is called by the superclass.
    * This is the method you should override.
    */
-  virtual int RequestDataObject(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestDataObject(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   int FieldAssociation;
   int FlattenTable;
@@ -108,8 +109,8 @@ protected:
   bool GenerateCellConnectivity;
 
 private:
-  vtkBlockDeliveryPreprocessor(const vtkBlockDeliveryPreprocessor&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkBlockDeliveryPreprocessor&) VTK_DELETE_FUNCTION;
+  vtkBlockDeliveryPreprocessor(const vtkBlockDeliveryPreprocessor&) = delete;
+  void operator=(const vtkBlockDeliveryPreprocessor&) = delete;
 
   class CompositeDataSetIndicesType;
   CompositeDataSetIndicesType* CompositeDataSetIndices;

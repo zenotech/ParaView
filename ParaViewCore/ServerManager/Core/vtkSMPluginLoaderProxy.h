@@ -32,7 +32,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMPluginLoaderProxy : public vtkSMProxy
 public:
   static vtkSMPluginLoaderProxy* New();
   vtkTypeMacro(vtkSMPluginLoaderProxy, vtkSMProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Loads the plugin. Returns true on success else false. To get the error
@@ -50,11 +50,11 @@ public:
 
 protected:
   vtkSMPluginLoaderProxy();
-  ~vtkSMPluginLoaderProxy();
+  ~vtkSMPluginLoaderProxy() override;
 
 private:
-  vtkSMPluginLoaderProxy(const vtkSMPluginLoaderProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMPluginLoaderProxy&) VTK_DELETE_FUNCTION;
+  vtkSMPluginLoaderProxy(const vtkSMPluginLoaderProxy&) = delete;
+  void operator=(const vtkSMPluginLoaderProxy&) = delete;
 };
 
 #endif

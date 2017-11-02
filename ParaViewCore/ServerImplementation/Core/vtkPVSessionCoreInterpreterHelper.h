@@ -38,7 +38,7 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkPVSessionCoreInterpreterHelper : p
 public:
   static vtkPVSessionCoreInterpreterHelper* New();
   vtkTypeMacro(vtkPVSessionCoreInterpreterHelper, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Returns the vtkSIObject for the global-id. This is used by SIOBJECT() and
@@ -87,14 +87,14 @@ public:
 
 protected:
   vtkPVSessionCoreInterpreterHelper();
-  ~vtkPVSessionCoreInterpreterHelper();
+  ~vtkPVSessionCoreInterpreterHelper() override;
 
   vtkWeakPointer<vtkPVSessionCore> Core;
   int LogLevel;
 
 private:
-  vtkPVSessionCoreInterpreterHelper(const vtkPVSessionCoreInterpreterHelper&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVSessionCoreInterpreterHelper&) VTK_DELETE_FUNCTION;
+  vtkPVSessionCoreInterpreterHelper(const vtkPVSessionCoreInterpreterHelper&) = delete;
+  void operator=(const vtkPVSessionCoreInterpreterHelper&) = delete;
 };
 
 #endif

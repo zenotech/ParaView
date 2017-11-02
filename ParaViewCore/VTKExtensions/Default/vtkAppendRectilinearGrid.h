@@ -32,29 +32,31 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkAppendRectilinearGrid : public vtkRect
 public:
   static vtkAppendRectilinearGrid* New();
   vtkTypeMacro(vtkAppendRectilinearGrid, vtkRectilinearGridAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkAppendRectilinearGrid();
-  ~vtkAppendRectilinearGrid();
+  ~vtkAppendRectilinearGrid() override;
 
   // Propagate UPDATE_EXTENT up to the inputs.
-  virtual int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestUpdateExtent(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   // Tell the output information about the data this filter will produce.
-  virtual int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestInformation(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   // Perform actual execution.
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   void CopyArray(
     vtkAbstractArray* outArray, const int* outExt, vtkAbstractArray* inArray, const int* inExt);
 
 private:
-  vtkAppendRectilinearGrid(const vtkAppendRectilinearGrid&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkAppendRectilinearGrid&) VTK_DELETE_FUNCTION;
+  vtkAppendRectilinearGrid(const vtkAppendRectilinearGrid&) = delete;
+  void operator=(const vtkAppendRectilinearGrid&) = delete;
 };
 
 #endif

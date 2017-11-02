@@ -140,7 +140,7 @@ void pqTimerLogDisplay::refresh()
     timerInfo = vtkSmartPointer<vtkPVTimerInformation>::New();
     timerInfo->SetLogThreshold(this->LogThreshold);
     server->session()->GatherInformation(vtkPVSession::RENDER_SERVER, timerInfo, 0);
-    if (server->isRenderServerSeparate())
+    if (!server->isRenderServerSeparate())
     {
       this->addToLog("Server", timerInfo);
     }
@@ -314,13 +314,13 @@ void pqTimerLogDisplay::save(const QString& filename)
   file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text);
   if (file.error() != QFile::NoError)
   {
-    qWarning("Could not open %s for reading.", filename.toLatin1().data());
+    qWarning("Could not open %s for reading.", filename.toLocal8Bit().data());
     return;
   }
   QTextStream(&file) << this->ui->log->toPlainText();
   if (file.error() != QFile::NoError)
   {
-    qWarning("Error writing to %s.", filename.toLatin1().data());
+    qWarning("Error writing to %s.", filename.toLocal8Bit().data());
   }
   file.close();
 }

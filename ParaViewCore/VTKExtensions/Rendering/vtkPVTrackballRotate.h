@@ -31,16 +31,16 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkPVTrackballRotate : public vtkCamera
 public:
   static vtkPVTrackballRotate* New();
   vtkTypeMacro(vtkPVTrackballRotate, vtkCameraManipulator);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
    * Event bindings controlling the effects of pressing mouse buttons
    * or moving the mouse.
    */
-  virtual void OnMouseMove(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* rwi);
-  virtual void OnButtonDown(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* rwi);
-  virtual void OnButtonUp(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* rwi);
+  void OnMouseMove(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* rwi) VTK_OVERRIDE;
+  void OnButtonDown(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* rwi) VTK_OVERRIDE;
+  void OnButtonUp(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* rwi) VTK_OVERRIDE;
   //@}
 
   //@{
@@ -50,19 +50,10 @@ public:
    * perform any interactions.
    * Overridden to capture if the x,y,z key is pressed.
    */
-  virtual void OnKeyUp(vtkRenderWindowInteractor* iren);
-  virtual void OnKeyDown(vtkRenderWindowInteractor* iren);
+  void OnKeyUp(vtkRenderWindowInteractor* iren) VTK_OVERRIDE;
+  void OnKeyDown(vtkRenderWindowInteractor* iren) VTK_OVERRIDE;
   //@}
 
-  //@{
-  /**
-   * For setting the center of rotation.
-   */
-  vtkSetVector3Macro(Center, double);
-  vtkGetVector3Macro(Center, double);
-  //@}
-
-  //@{
   /**
    * Returns the currently pressed key code.
    */
@@ -70,16 +61,11 @@ public:
 
 protected:
   vtkPVTrackballRotate();
-  ~vtkPVTrackballRotate();
-  //@}
-
-  double Center[3];
-  double DisplayCenter[2];
+  ~vtkPVTrackballRotate() override;
 
   char KeyCode;
-
-  vtkPVTrackballRotate(const vtkPVTrackballRotate&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVTrackballRotate&) VTK_DELETE_FUNCTION;
+  vtkPVTrackballRotate(const vtkPVTrackballRotate&) = delete;
+  void operator=(const vtkPVTrackballRotate&) = delete;
 };
 
 #endif

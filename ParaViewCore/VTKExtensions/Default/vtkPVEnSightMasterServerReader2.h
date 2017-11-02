@@ -33,7 +33,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVEnSightMasterServerReader2
 public:
   static vtkPVEnSightMasterServerReader2* New();
   vtkTypeMacro(vtkPVEnSightMasterServerReader2, vtkPGenericEnSightReader);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -104,17 +104,18 @@ public:
    */
   void SetByteOrderToBigEndian();
   void SetByteOrderToLittleEndian();
-  void SetByteOrder(int byteOrder);
-  int GetByteOrder();
+  void SetByteOrder(int byteOrder) VTK_OVERRIDE;
+  int GetByteOrder() VTK_OVERRIDE;
   const char* GetByteOrderAsString();
   //@}
 
 protected:
   vtkPVEnSightMasterServerReader2();
-  ~vtkPVEnSightMasterServerReader2();
+  ~vtkPVEnSightMasterServerReader2() override;
 
-  virtual int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestInformation(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
   int ParseMasterServerFile();
 
   // The MPI controller used to communicate with the instances in
@@ -135,8 +136,8 @@ protected:
   int InformationError;
 
 private:
-  vtkPVEnSightMasterServerReader2(const vtkPVEnSightMasterServerReader2&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVEnSightMasterServerReader2&) VTK_DELETE_FUNCTION;
+  vtkPVEnSightMasterServerReader2(const vtkPVEnSightMasterServerReader2&) = delete;
+  void operator=(const vtkPVEnSightMasterServerReader2&) = delete;
 };
 
 #endif

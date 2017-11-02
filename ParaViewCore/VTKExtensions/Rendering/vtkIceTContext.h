@@ -53,7 +53,7 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkIceTContext : public vtkObject
 public:
   vtkTypeMacro(vtkIceTContext, vtkObject);
   static vtkIceTContext* New();
-  virtual void PrintSelf(ostream& os, vtkIndent indent);
+  virtual void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -101,8 +101,8 @@ protected:
   int UseOpenGL;
 
 private:
-  vtkIceTContext(const vtkIceTContext&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkIceTContext&) VTK_DELETE_FUNCTION;
+  vtkIceTContext(const vtkIceTContext&) = delete;
+  void operator=(const vtkIceTContext&) = delete;
 
   vtkIceTContextOpaqueHandle* Context;
 };

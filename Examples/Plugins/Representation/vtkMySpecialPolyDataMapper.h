@@ -30,15 +30,15 @@ class VTK_EXPORT vtkMySpecialPolyDataMapper : public vtkCompositePolyDataMapper2
 public:
   static vtkMySpecialPolyDataMapper* New();
   vtkTypeMacro(vtkMySpecialPolyDataMapper, vtkCompositePolyDataMapper2);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkMySpecialPolyDataMapper();
   ~vtkMySpecialPolyDataMapper();
 
 private:
-  vtkMySpecialPolyDataMapper(const vtkMySpecialPolyDataMapper&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkMySpecialPolyDataMapper&) VTK_DELETE_FUNCTION;
+  vtkMySpecialPolyDataMapper(const vtkMySpecialPolyDataMapper&) = delete;
+  void operator=(const vtkMySpecialPolyDataMapper&) = delete;
 };
 
 #endif

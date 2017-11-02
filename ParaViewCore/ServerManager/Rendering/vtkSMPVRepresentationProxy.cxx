@@ -288,7 +288,9 @@ bool vtkSMPVRepresentationProxy::RescaleTransferFunctionToDataRange(
   vtkSMProxy* lut = vtkSMPropertyHelper(lutProperty).GetAsProxy();
   vtkSMProxy* sof = vtkSMPropertyHelper(sofProperty).GetAsProxy();
 
-  if (force == false && vtkSMPropertyHelper(lut, "LockScalarRange", true).GetAsInt() != 0)
+  if (force == false &&
+    vtkSMPropertyHelper(lut, "AutomaticRescaleRangeMode", true).GetAsInt() ==
+      vtkSMTransferFunctionManager::NEVER)
   {
     // nothing to change, range is locked.
     return true;
@@ -349,7 +351,7 @@ bool vtkSMPVRepresentationProxy::RescaleTransferFunctionToDataRange(
     else
     {
       double range[2];
-      info->GetComponentRange(component, range);
+      info->GetComponentFiniteRange(component, range);
       if (range[1] >= range[0])
       {
         // the range must be large enough, compared to values order of magnitude
@@ -508,10 +510,26 @@ bool vtkSMPVRepresentationProxy::SetScalarColoringInternal(
 
   // Now, setup transfer functions.
   bool haveComponent = useComponent;
+  bool separate = false;
   vtkNew<vtkSMTransferFunctionManager> mgr;
   if (vtkSMProperty* lutProperty = this->GetProperty("LookupTable"))
   {
-    vtkSMProxy* lutProxy = mgr->GetColorTransferFunction(arrayname, this->GetSessionProxyManager());
+    std::string name;
+    if (vtkSMPropertyHelper(this, "UseSeparateColorMap", true).GetAsInt())
+    {
+      // Use global id for separate color map
+      std::ostringstream ss;
+      ss << "Separate_" << this->GetGlobalIDAsString() << "_" << arrayname;
+      name = ss.str();
+      separate = true;
+    }
+    else
+    {
+      name = arrayname;
+    }
+
+    vtkSMProxy* lutProxy =
+      mgr->GetColorTransferFunction(name.c_str(), this->GetSessionProxyManager());
     if (useComponent)
     {
       if (component >= 0)
@@ -562,7 +580,8 @@ bool vtkSMPVRepresentationProxy::SetScalarColoringInternal(
             .arg("display", this)
             .arg("arrayname", arrayname)
             .arg("attribute_type", attribute_type)
-            .arg("component", componentName);
+            .arg("component", componentName)
+            .arg("separate", separate);
         }
         else
         {
@@ -577,7 +596,8 @@ bool vtkSMPVRepresentationProxy::SetScalarColoringInternal(
     SM_SCOPED_TRACE(SetScalarColoring)
       .arg("display", this)
       .arg("arrayname", arrayname)
-      .arg("attribute_type", attribute_type);
+      .arg("attribute_type", attribute_type)
+      .arg("separate", separate);
   }
 
   if (vtkSMProperty* sofProperty = this->GetProperty("ScalarOpacityFunction"))

@@ -60,13 +60,12 @@ class PQCOMPONENTS_EXPORT pqSignalAdaptorSelectionTreeWidget : public QObject
 public:
   /**
   * Constructor.
-  * \param domain The StringListDomain from which the adaptor
-  *        can obtain the list of possible values for this widget.
   * \param treeWidget The QTreeWidget controlled by this adaptor.
+  * \param property   The property linked to the widget.
   */
   pqSignalAdaptorSelectionTreeWidget(QTreeWidget* treeWidget, vtkSMProperty* property);
 
-  virtual ~pqSignalAdaptorSelectionTreeWidget();
+  ~pqSignalAdaptorSelectionTreeWidget() override;
 
   /**
   * Returns a list of strings which  correspond to the currently
@@ -97,7 +96,7 @@ signals:
 public slots:
   /**
   * Set the selected value on the widget. All the strings in the
-  * \values are set as selected in the tree widget.
+  * \param values are set as selected in the tree widget.
   * If a string is present that is not in the domain, it will
   * be ignored.
   */

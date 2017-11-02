@@ -72,7 +72,7 @@ public:
   // Description:
   // Standard methids for printing and determining type information.
   vtkTypeMacro(vtkFastMarchingGeodesicPath, vtkGeodesicPath);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Description:
   // The instance of the geodesic filter.
@@ -123,9 +123,9 @@ public:
 
 protected:
   vtkFastMarchingGeodesicPath();
-  ~vtkFastMarchingGeodesicPath();
+  ~vtkFastMarchingGeodesicPath() override;
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   // Do the fast marching and gradient backtracking
   virtual void ComputePath(vtkPolyData*);
@@ -139,8 +139,8 @@ protected:
   vtkFastMarchingGeodesicDistance* Geodesic;
 
 private:
-  vtkFastMarchingGeodesicPath(const vtkFastMarchingGeodesicPath&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkFastMarchingGeodesicPath&) VTK_DELETE_FUNCTION;
+  vtkFastMarchingGeodesicPath(const vtkFastMarchingGeodesicPath&) = delete;
+  void operator=(const vtkFastMarchingGeodesicPath&) = delete;
 };
 
 #endif

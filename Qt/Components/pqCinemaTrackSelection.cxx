@@ -62,15 +62,15 @@ public:
     this->initializeRootItem();
   };
 
-  ~pqArraySelectionModel(){};
+  ~pqArraySelectionModel() override{};
 
-  void initializeRootItem()
+  void initializeRootItem() override
   {
     pqAbstractItemSelectionModel::RootItem->setData(0, Qt::DisplayRole, "Name");
     pqAbstractItemSelectionModel::RootItem->setData(1, Qt::DisplayRole, "Data Type");
   };
 
-  void populateModel(void* proxy)
+  void populateModel(void* proxy) override
   {
     vtkSMSourceProxy* sourceProxy = static_cast<vtkSMSourceProxy*>(proxy);
     vtkPVDataInformation* dataInfo = sourceProxy->GetDataInformation();
@@ -79,35 +79,46 @@ public:
       return;
     }
 
-    vtkPVDataSetAttributesInformation const* attribInfo = dataInfo->GetPointDataInformation();
-    if (!attribInfo)
-    {
-      return;
-    }
-
-    int const numArrays = attribInfo->GetNumberOfArrays();
     QList<QTreeWidgetItem*> newItems;
-    for (int i = 0; i < numArrays; i++)
+    for (int align = 0; align < 2; align++)
     {
-      vtkPVArrayInformation* arrInfo = attribInfo->GetArrayInformation(i);
-      if (!arrInfo)
+      vtkPVDataSetAttributesInformation const* attribInfo;
+      if (align == 0)
+      {
+        attribInfo = dataInfo->GetPointDataInformation();
+      }
+      else
+      {
+        attribInfo = dataInfo->GetCellDataInformation();
+      }
+      if (!attribInfo)
       {
         continue;
       }
 
-      QTreeWidgetItem* item = new QTreeWidgetItem();
-      item->setData(0, Qt::DisplayRole, arrInfo->GetName());
-      // item->setData(0, Qt::DecorationRole, pixmaps[k]);
-      QString dataType = vtkImageScalarTypeNameMacro(arrInfo->GetDataType());
-      item->setData(1, Qt::DisplayRole, dataType);
-      item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable);
+      int numArrays = attribInfo->GetNumberOfArrays();
+      for (int i = 0; i < numArrays; i++)
+      {
+        vtkPVArrayInformation* arrInfo = attribInfo->GetArrayInformation(i);
+        if (!arrInfo)
+        {
+          continue;
+        }
 
-      // Ignore Normals arrays by default
-      Qt::CheckState check =
-        QString(arrInfo->GetName()) == QString("Normals") ? Qt::Unchecked : Qt::Checked;
-      item->setCheckState(0, check);
+        QTreeWidgetItem* item = new QTreeWidgetItem();
+        item->setData(0, Qt::DisplayRole, arrInfo->GetName());
+        // item->setData(0, Qt::DecorationRole, pixmaps[align]);
+        QString dataType = vtkImageScalarTypeNameMacro(arrInfo->GetDataType());
+        item->setData(1, Qt::DisplayRole, dataType);
+        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable);
 
-      newItems.append(item);
+        // Ignore Normals arrays by default
+        Qt::CheckState check =
+          QString(arrInfo->GetName()) == QString("Normals") ? Qt::Unchecked : Qt::Checked;
+        item->setCheckState(0, check);
+
+        newItems.append(item);
+      }
     }
     RootItem->addChildren(newItems);
   };
@@ -253,9 +264,9 @@ void pqCinemaTrackSelection::onPipelineItemChanged(
 
     // array selection is disabled, so set jump to the 'controls' tab
     if (!this->Ui->tabProxyProperties->isTabEnabled(0))
-      {
-        this->Ui->tabProxyProperties->setCurrentIndex(1);
-      }
+    {
+      this->Ui->tabProxyProperties->setCurrentIndex(1);
+    }
   }
   else
   {

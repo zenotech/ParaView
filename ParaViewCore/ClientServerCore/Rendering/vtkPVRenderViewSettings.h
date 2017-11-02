@@ -35,17 +35,12 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVRenderViewSettings : public vtk
 public:
   static vtkPVRenderViewSettings* New();
   vtkTypeMacro(vtkPVRenderViewSettings, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Access the singleton.
    */
   static vtkPVRenderViewSettings* GetInstance();
-
-  /**
-   * Get/Set use display lists.
-   */
-  void SetUseDisplayLists(bool val);
 
   enum
   {
@@ -93,15 +88,15 @@ public:
 
 protected:
   vtkPVRenderViewSettings();
-  ~vtkPVRenderViewSettings();
+  ~vtkPVRenderViewSettings() override;
 
   vtkIdType OutlineThreshold;
   int PointPickingRadius;
   bool DisableIceT;
 
 private:
-  vtkPVRenderViewSettings(const vtkPVRenderViewSettings&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVRenderViewSettings&) VTK_DELETE_FUNCTION;
+  vtkPVRenderViewSettings(const vtkPVRenderViewSettings&) = delete;
+  void operator=(const vtkPVRenderViewSettings&) = delete;
 
   static vtkSmartPointer<vtkPVRenderViewSettings> Instance;
 };

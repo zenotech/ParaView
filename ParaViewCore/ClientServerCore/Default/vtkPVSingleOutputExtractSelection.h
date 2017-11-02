@@ -31,15 +31,15 @@ class VTKPVCLIENTSERVERCOREDEFAULT_EXPORT vtkPVSingleOutputExtractSelection
 public:
   static vtkPVSingleOutputExtractSelection* New();
   vtkTypeMacro(vtkPVSingleOutputExtractSelection, vtkPVExtractSelection);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkPVSingleOutputExtractSelection();
-  ~vtkPVSingleOutputExtractSelection();
+  ~vtkPVSingleOutputExtractSelection() override;
 
 private:
-  vtkPVSingleOutputExtractSelection(const vtkPVSingleOutputExtractSelection&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVSingleOutputExtractSelection&) VTK_DELETE_FUNCTION;
+  vtkPVSingleOutputExtractSelection(const vtkPVSingleOutputExtractSelection&) = delete;
+  void operator=(const vtkPVSingleOutputExtractSelection&) = delete;
 };
 
 #endif

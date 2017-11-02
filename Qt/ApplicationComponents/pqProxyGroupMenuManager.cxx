@@ -149,6 +149,8 @@ pqProxyGroupMenuManager::pqProxyGroupMenuManager(QMenu* _menu, const QString& re
   this->Internal->ProxyManagerCallBackId =
     pqCoreUtilities::connect(vtkSMProxyManager::GetProxyManager(),
       vtkSMProxyManager::ActiveSessionChanged, this, SLOT(switchActiveServer()));
+
+  QObject::connect(this->menu(), SIGNAL(aboutToShow()), this, SLOT(updateMenuStyle()));
 }
 
 //-----------------------------------------------------------------------------
@@ -166,13 +168,13 @@ pqProxyGroupMenuManager::~pqProxyGroupMenuManager()
 //-----------------------------------------------------------------------------
 void pqProxyGroupMenuManager::addProxy(const QString& xmlgroup, const QString& xmlname)
 {
-  this->Internal->addProxy(xmlgroup.toLatin1().data(), xmlname.toLatin1().data(), QString());
+  this->Internal->addProxy(xmlgroup.toLocal8Bit().data(), xmlname.toLocal8Bit().data(), QString());
 }
 
 //-----------------------------------------------------------------------------
 void pqProxyGroupMenuManager::removeProxy(const QString& xmlgroup, const QString& xmlname)
 {
-  this->Internal->removeProxy(xmlgroup.toLatin1().data(), xmlname.toLatin1().data());
+  this->Internal->removeProxy(xmlgroup.toLocal8Bit().data(), xmlname.toLocal8Bit().data());
 }
 
 //-----------------------------------------------------------------------------
@@ -220,7 +222,8 @@ void pqProxyGroupMenuManager::loadConfiguration(vtkPVXMLElement* root)
   }
   if (this->ResourceTagName != root->GetName())
   {
-    this->loadConfiguration(root->FindNestedElementByName(this->ResourceTagName.toLatin1().data()));
+    this->loadConfiguration(
+      root->FindNestedElementByName(this->ResourceTagName.toLocal8Bit().data()));
     return;
   }
 
@@ -371,6 +374,7 @@ void pqProxyGroupMenuManager::populateMenu()
   // actions that are no longer shown in the menu. Hence we disconnect all
   // signal connections.
   QMenu* _menu = this->menu();
+
   QList<QAction*> menuActions = _menu->actions();
   foreach (QAction* action, menuActions)
   {
@@ -450,6 +454,14 @@ void pqProxyGroupMenuManager::populateMenu()
 }
 
 //-----------------------------------------------------------------------------
+void pqProxyGroupMenuManager::updateMenuStyle()
+{
+  pqSettings* settings = pqApplicationCore::instance()->settings();
+  bool sc = settings->value("GeneralSettings.ForceSingleColumnMenus", false).toBool();
+  this->menu()->setStyleSheet(QString("QMenu { menu-scrollable: %1; }").arg(sc ? 1 : 0));
+}
+
+//-----------------------------------------------------------------------------
 QAction* pqProxyGroupMenuManager::getAction(const QString& pgroup, const QString& pname)
 {
   if (pname.isEmpty() || pgroup.isEmpty())
@@ -469,7 +481,12 @@ QAction* pqProxyGroupMenuManager::getAction(const QString& pgroup, const QString
 
   vtkSMSessionProxyManager* pxm =
     vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
-  vtkSMProxy* prototype = pxm->GetPrototypeProxy(pgroup.toLatin1().data(), pname.toLatin1().data());
+  if (!pxm)
+  {
+    return 0;
+  }
+  vtkSMProxy* prototype =
+    pxm->GetPrototypeProxy(pgroup.toLocal8Bit().data(), pname.toLocal8Bit().data());
   if (prototype)
   {
     QString label = prototype->GetXMLLabel() ? prototype->GetXMLLabel() : pname;
@@ -589,7 +606,7 @@ vtkSMProxy* pqProxyGroupMenuManager::getPrototype(QAction* action) const
   QPair<QString, QString> key(data_list[0], data_list[1]);
   vtkSMSessionProxyManager* pxm =
     vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
-  return pxm->GetPrototypeProxy(key.first.toLatin1().data(), key.second.toLatin1().data());
+  return pxm->GetPrototypeProxy(key.first.toLocal8Bit().data(), key.second.toLocal8Bit().data());
 }
 
 //-----------------------------------------------------------------------------
@@ -745,7 +762,7 @@ void pqProxyGroupMenuManager::lookForNewDefinitions()
   iter.TakeReference(pxdm->NewIterator());
   foreach (QString groupName, this->Internal->ProxyDefinitionGroupToListen)
   {
-    iter->AddTraversalGroupName(groupName.toLatin1().data());
+    iter->AddTraversalGroupName(groupName.toLocal8Bit().data());
   }
 
   // Loop over proxy that should be inserted inside the UI
@@ -794,21 +811,6 @@ void pqProxyGroupMenuManager::lookForNewDefinitions()
       }
     }
   }
-
-  // Removing old definitions that don't exist anymore.
-  QSet<QPair<QString, QString> > setToRemove = this->Internal->Proxies.keys().toSet();
-  setToRemove.subtract(definitionSet);
-  QPair<QString, QString> key;
-  foreach (key, setToRemove)
-  {
-    // This extra test should be removed once the main definition has been updated
-    // with the Hints/ShowInMenu...
-    if (!pxdm->HasDefinition(key.first.toLatin1().data(), key.second.toLatin1().data()))
-    {
-      this->Internal->removeProxy(key.first, key.second);
-    }
-  }
-
   // Update the menu with the current definition
   this->populateMenu();
 }

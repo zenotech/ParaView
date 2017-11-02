@@ -46,7 +46,8 @@ class vtkVRTrackStyle : public vtkVRInteractorStyle
 {
 public:
   static vtkVRTrackStyle* New();
-  vtkTypeMacro(vtkVRTrackStyle, vtkVRInteractorStyle) void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkVRTrackStyle, vtkVRInteractorStyle);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   virtual int GetControlledPropertySize() { return 16; }
 
@@ -56,8 +57,8 @@ protected:
   virtual void HandleTracker(const vtkVREventData& data);
 
 private:
-  vtkVRTrackStyle(const vtkVRTrackStyle&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkVRTrackStyle&) VTK_DELETE_FUNCTION;
+  vtkVRTrackStyle(const vtkVRTrackStyle&) = delete;
+  void operator=(const vtkVRTrackStyle&) = delete;
 };
 
 #endif // vtkVRTrackStyle.h_

@@ -35,7 +35,7 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkLZ4Compressor : public vtkImageCompr
 public:
   static vtkLZ4Compressor* New();
   vtkTypeMacro(vtkLZ4Compressor, vtkImageCompressor);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -53,29 +53,29 @@ public:
    * Compress/Decompress data array on the objects input with results
    * in the objects output. See also Set/GetInput/Output.
    */
-  virtual int Compress();
-  virtual int Decompress();
+  int Compress() VTK_OVERRIDE;
+  int Decompress() VTK_OVERRIDE;
   //@}
 
   //@{
   /**
    * Serialize/Restore compressor configuration (but not the data) into the stream.
    */
-  virtual void SaveConfiguration(vtkMultiProcessStream* stream);
-  virtual bool RestoreConfiguration(vtkMultiProcessStream* stream);
-  virtual const char* SaveConfiguration();
-  virtual const char* RestoreConfiguration(const char* stream);
+  void SaveConfiguration(vtkMultiProcessStream* stream) VTK_OVERRIDE;
+  bool RestoreConfiguration(vtkMultiProcessStream* stream) VTK_OVERRIDE;
+  const char* SaveConfiguration() VTK_OVERRIDE;
+  const char* RestoreConfiguration(const char* stream) VTK_OVERRIDE;
   //@}
 
 protected:
   vtkLZ4Compressor();
-  ~vtkLZ4Compressor();
+  ~vtkLZ4Compressor() override;
 
   int Quality;
 
 private:
-  vtkLZ4Compressor(const vtkLZ4Compressor&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkLZ4Compressor&) VTK_DELETE_FUNCTION;
+  vtkLZ4Compressor(const vtkLZ4Compressor&) = delete;
+  void operator=(const vtkLZ4Compressor&) = delete;
 
   // Used when Quality > 1.
   vtkNew<vtkUnsignedCharArray> TemporaryBuffer;

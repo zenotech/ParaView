@@ -160,19 +160,15 @@ bool vtkSMSessionClient::Connect(const char* url)
   vtkPVOptions* options = pm->GetOptions();
 
   std::ostringstream handshake;
-  handshake << "handshake=paraview." << PARAVIEW_VERSION;
+  handshake << "handshake=paraview-" << PARAVIEW_VERSION;
   // Add connect-id if needed. The connect-id is added to the handshake that
   // must match on client and server processes.
   if (options->GetConnectID() != 0)
   {
     handshake << ".connect_id." << options->GetConnectID();
   }
-// Add rendering backend information.
-#ifdef VTKGL2
+  // Add rendering backend information.
   handshake << ".renderingbackend.opengl2";
-#else
-  handshake << ".renderingbackend.opengl";
-#endif
 
   std::string data_server_url;
   std::string render_server_url;
@@ -254,7 +250,6 @@ bool vtkSMSessionClient::Connect(const char* url)
     }
     else if (result == -1)
     {
-      vtkErrorMacro("Some error in socket processing.");
       break;
     }
   }
@@ -1012,4 +1007,12 @@ vtkSMCollaborationManager* vtkSMSessionClient::GetCollaborationManager()
     this->CollaborationCommunicator->SetSession(this);
   }
   return this->CollaborationCommunicator;
+}
+
+//-----------------------------------------------------------------------------
+int vtkSMSessionClient::GetConnectID()
+{
+  vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
+  vtkPVOptions* options = pm->GetOptions();
+  return options->GetConnectID();
 }

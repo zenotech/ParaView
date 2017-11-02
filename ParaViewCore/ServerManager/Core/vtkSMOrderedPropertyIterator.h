@@ -39,7 +39,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMOrderedPropertyIterator : public vtkSMO
 public:
   static vtkSMOrderedPropertyIterator* New();
   vtkTypeMacro(vtkSMOrderedPropertyIterator, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Set the proxy to be used.
@@ -86,14 +86,14 @@ public:
 
 protected:
   vtkSMOrderedPropertyIterator();
-  ~vtkSMOrderedPropertyIterator();
+  ~vtkSMOrderedPropertyIterator() override;
 
   vtkSMProxy* Proxy;
   unsigned int Index;
 
 private:
-  vtkSMOrderedPropertyIterator(const vtkSMOrderedPropertyIterator&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMOrderedPropertyIterator&) VTK_DELETE_FUNCTION;
+  vtkSMOrderedPropertyIterator(const vtkSMOrderedPropertyIterator&) = delete;
+  void operator=(const vtkSMOrderedPropertyIterator&) = delete;
 };
 
 #endif

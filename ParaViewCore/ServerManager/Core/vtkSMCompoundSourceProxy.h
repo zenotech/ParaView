@@ -46,7 +46,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMCompoundSourceProxy : public vtkSMSourc
 public:
   static vtkSMCompoundSourceProxy* New();
   vtkTypeMacro(vtkSMCompoundSourceProxy, vtkSMSourceProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Add a proxy to be included in this compound proxy.
@@ -105,20 +105,20 @@ public:
    * Each output port proxy corresponds to an actual output port on the
    * algorithm.
    */
-  virtual void CreateOutputPorts();
+  void CreateOutputPorts() VTK_OVERRIDE;
 
   /**
    * Creates extract selection proxies for each output port if not already
    * created. Overridden to update the selection proxies.
    */
-  virtual void CreateSelectionProxies();
+  void CreateSelectionProxies() VTK_OVERRIDE;
 
   /**
    * Update the VTK object on the server by pushing the values of
    * all modifed properties (un-modified properties are ignored).
    * If the object has not been created, it will be created first.
    */
-  virtual void UpdateVTKObjects();
+  void UpdateVTKObjects() VTK_OVERRIDE;
 
   /**
    * This is the same as save state except it will remove all references to
@@ -132,18 +132,18 @@ public:
 
 protected:
   vtkSMCompoundSourceProxy();
-  ~vtkSMCompoundSourceProxy();
+  ~vtkSMCompoundSourceProxy() override;
 
   /**
    * Read attributes from an XML element.
    */
-  virtual int ReadXMLAttributes(vtkSMSessionProxyManager* pm, vtkPVXMLElement* element);
+  int ReadXMLAttributes(vtkSMSessionProxyManager* pm, vtkPVXMLElement* element) VTK_OVERRIDE;
 
   /**
    * Call superclass' and then assigns a new executive
    * (vtkCompositeDataPipeline)
    */
-  virtual void CreateVTKObjects();
+  void CreateVTKObjects() VTK_OVERRIDE;
 
   // returns 1 if the value element should be written.
   // proxy property values that point to "outside" proxies
@@ -153,8 +153,8 @@ protected:
   void StripValues(vtkPVXMLElement* propertyElem);
 
 private:
-  vtkSMCompoundSourceProxy(const vtkSMCompoundSourceProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMCompoundSourceProxy&) VTK_DELETE_FUNCTION;
+  vtkSMCompoundSourceProxy(const vtkSMCompoundSourceProxy&) = delete;
+  void operator=(const vtkSMCompoundSourceProxy&) = delete;
 
   class vtkInternals;
   vtkInternals* CSInternals;

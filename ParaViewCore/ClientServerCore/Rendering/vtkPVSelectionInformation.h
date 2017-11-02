@@ -37,24 +37,24 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVSelectionInformation : public v
 public:
   static vtkPVSelectionInformation* New();
   vtkTypeMacro(vtkPVSelectionInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Copy information from a selection to internal datastructure.
    */
-  virtual void CopyFromObject(vtkObject*);
+  void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
   /**
    * Merge another information object.
    */
-  virtual void AddInformation(vtkPVInformation*);
+  void AddInformation(vtkPVInformation*) VTK_OVERRIDE;
 
   //@{
   /**
    * Manage a serialized version of the information.
    */
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
+  void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
   //@}
 
   //@{
@@ -67,14 +67,14 @@ public:
 
 protected:
   vtkPVSelectionInformation();
-  ~vtkPVSelectionInformation();
+  ~vtkPVSelectionInformation() override;
 
   void Initialize();
   vtkSelection* Selection;
 
 private:
-  vtkPVSelectionInformation(const vtkPVSelectionInformation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVSelectionInformation&) VTK_DELETE_FUNCTION;
+  vtkPVSelectionInformation(const vtkPVSelectionInformation&) = delete;
+  void operator=(const vtkPVSelectionInformation&) = delete;
 };
 
 #endif

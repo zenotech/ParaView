@@ -40,13 +40,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqServerManagerObserver.h"
 #include "pqUndoStack.h"
 #include "pqView.h"
-
+#include "vtkErrorCode.h"
+#include "vtkImageData.h"
 #include "vtkSMProxyManager.h"
+#include "vtkSMSaveScreenshotProxy.h"
+#include "vtkSMSaveScreenshotProxy.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMTrace.h"
+#include "vtkSMUtilities.h"
 #include "vtkSMViewLayoutProxy.h"
 
 #include <QEvent>
+#include <QGridLayout>
 #include <QInputDialog>
 #include <QLabel>
 #include <QMenu>
@@ -57,7 +62,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QStyle>
 #include <QTabBar>
 #include <QTabWidget>
-#include <QVBoxLayout>
 #include <QtDebug>
 
 //-----------------------------------------------------------------------------
@@ -66,6 +70,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 pqTabbedMultiViewWidget::pqTabWidget::pqTabWidget(QWidget* parentObject)
   : Superclass(parentObject)
   , ReadOnly(false)
+  , InPreviewMode(false)
+  , TabBarVisibility(true)
 {
 }
 
@@ -164,6 +170,64 @@ void pqTabbedMultiViewWidget::pqTabWidget::setReadOnly(bool val)
 }
 
 //-----------------------------------------------------------------------------
+void pqTabbedMultiViewWidget::pqTabWidget::setTabBarVisibility(bool val)
+{
+  this->TabBarVisibility = val;
+  if (!this->InPreviewMode)
+  {
+    this->tabBar()->setVisible(val);
+  }
+}
+
+//-----------------------------------------------------------------------------
+bool pqTabbedMultiViewWidget::pqTabWidget::preview(const QSize& nsize)
+{
+  if (nsize.isEmpty())
+  {
+    // exit preview mode.
+    if (this->InPreviewMode)
+    {
+      this->InPreviewMode = false;
+      this->tabBar()->setVisible(this->TabBarVisibility);
+      this->setDocumentMode(false);
+      this->setMaximumSize(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
+      if (pqMultiViewWidget* widget = qobject_cast<pqMultiViewWidget*>(this->currentWidget()))
+      {
+        widget->setForceSplitter(false);
+        widget->setDecorationsVisible(true);
+      }
+    }
+    return true;
+  }
+  else
+  {
+    // enter preview mode.
+    this->InPreviewMode = true;
+    this->tabBar()->setVisible(false);
+    this->setDocumentMode(true);
+    bool retval = true;
+
+    const vtkVector2i tsize(nsize.width(), nsize.height());
+    // max available size is clamped by parent widget's contentsRect.
+    const QRect crect = this->parentWidget()->contentsRect();
+    vtkVector2i csize(crect.width(), crect.height());
+    const int magnification = vtkSMSaveScreenshotProxy::ComputeMagnification(tsize, csize);
+    if (magnification > 1)
+    {
+      retval = false; // cannot respect size. using aspect ratio only.
+    }
+    this->setMaximumSize(QSize(csize[0], csize[1]));
+
+    if (pqMultiViewWidget* widget = qobject_cast<pqMultiViewWidget*>(this->currentWidget()))
+    {
+      widget->setForceSplitter(true);
+      widget->setDecorationsVisible(false);
+    }
+    return retval;
+  }
+}
+
+//-----------------------------------------------------------------------------
 // ****************     pqTabbedMultiViewWidget   **********************
 //-----------------------------------------------------------------------------
 class pqTabbedMultiViewWidget::pqInternals
@@ -220,11 +284,10 @@ pqTabbedMultiViewWidget::pqTabbedMultiViewWidget(QWidget* parentObject)
   connect(this->Internals->TabWidget->tabBar(), SIGNAL(customContextMenuRequested(const QPoint&)),
     this, SLOT(contextMenuRequested(const QPoint&)));
 
-  QVBoxLayout* vbox = new QVBoxLayout();
-  this->setLayout(vbox);
-  vbox->setMargin(0);
-  vbox->setSpacing(0);
-  vbox->addWidget(this->Internals->TabWidget);
+  QGridLayout* glayout = new QGridLayout(this);
+  glayout->setMargin(0);
+  glayout->setSpacing(0);
+  glayout->addWidget(this->Internals->TabWidget, 0, 0);
 
   pqApplicationCore* core = pqApplicationCore::instance();
 
@@ -280,6 +343,18 @@ bool pqTabbedMultiViewWidget::readOnly() const
 }
 
 //-----------------------------------------------------------------------------
+void pqTabbedMultiViewWidget::setTabVisibility(bool visible)
+{
+  this->Internals->TabWidget->setTabBarVisibility(visible);
+}
+
+//-----------------------------------------------------------------------------
+bool pqTabbedMultiViewWidget::tabVisibility() const
+{
+  return this->Internals->TabWidget->tabBarVisibility();
+}
+
+//-----------------------------------------------------------------------------
 void pqTabbedMultiViewWidget::toggleFullScreen()
 {
   if (this->Internals->FullScreenWindow)
@@ -295,11 +370,10 @@ void pqTabbedMultiViewWidget::toggleFullScreen()
     fullScreenWindow->setObjectName("FullScreenWindow");
     this->layout()->removeWidget(this->Internals->TabWidget);
 
-    QVBoxLayout* vbox = new QVBoxLayout(fullScreenWindow);
-    vbox->setSpacing(0);
-    vbox->setMargin(0);
-
-    vbox->addWidget(this->Internals->TabWidget);
+    QGridLayout* glayout = new QGridLayout(fullScreenWindow);
+    glayout->setSpacing(0);
+    glayout->setMargin(0);
+    glayout->addWidget(this->Internals->TabWidget, 0, 0);
     fullScreenWindow->showFullScreen();
     fullScreenWindow->show();
 
@@ -321,6 +395,13 @@ void pqTabbedMultiViewWidget::proxyAdded(pqProxy* proxy)
   {
     pqView* view = qobject_cast<pqView*>(proxy);
     if (pqApplicationCore::instance()->isLoadingState() || view == NULL)
+    {
+      return;
+    }
+    // also check with the proxy manager, since the pqApplicationCore's state
+    // loading flag won't get set if state was being loaded from Python Shell.
+    vtkSMSessionProxyManager* pxm = proxy->getServer()->proxyManager();
+    if (pxm && pxm->GetInLoadXMLState())
     {
       return;
     }
@@ -561,55 +642,6 @@ bool pqTabbedMultiViewWidget::eventFilter(QObject* obj, QEvent* evt)
 }
 
 //-----------------------------------------------------------------------------
-vtkImageData* pqTabbedMultiViewWidget::captureImage(int dx, int dy)
-{
-  pqMultiViewWidget* widget =
-    qobject_cast<pqMultiViewWidget*>(this->Internals->TabWidget->currentWidget());
-  if (widget)
-  {
-    return widget->captureImage(dx, dy);
-  }
-  return NULL;
-}
-
-//-----------------------------------------------------------------------------
-int pqTabbedMultiViewWidget::prepareForCapture(int dx, int dy)
-{
-  pqMultiViewWidget* widget =
-    qobject_cast<pqMultiViewWidget*>(this->Internals->TabWidget->currentWidget());
-  if (widget)
-  {
-    return widget->prepareForCapture(dx, dy);
-  }
-
-  return 1;
-}
-
-//-----------------------------------------------------------------------------
-void pqTabbedMultiViewWidget::cleanupAfterCapture()
-{
-  pqMultiViewWidget* widget =
-    qobject_cast<pqMultiViewWidget*>(this->Internals->TabWidget->currentWidget());
-  if (widget)
-  {
-    widget->cleanupAfterCapture();
-  }
-}
-
-//-----------------------------------------------------------------------------
-bool pqTabbedMultiViewWidget::writeImage(const QString& filename, int dx, int dy, int quality)
-{
-  pqMultiViewWidget* widget =
-    qobject_cast<pqMultiViewWidget*>(this->Internals->TabWidget->currentWidget());
-  if (widget)
-  {
-    return widget->writeImage(filename, dx, dy, quality);
-  }
-
-  return 1;
-}
-
-//-----------------------------------------------------------------------------
 void pqTabbedMultiViewWidget::toggleWidgetDecoration()
 {
   pqMultiViewWidget* widget =
@@ -644,6 +676,12 @@ void pqTabbedMultiViewWidget::lockViewSize(const QSize& viewSize)
   }
 
   emit this->viewSizeLocked(!viewSize.isEmpty());
+}
+
+//-----------------------------------------------------------------------------
+bool pqTabbedMultiViewWidget::preview(const QSize& nsize)
+{
+  return this->Internals->TabWidget->preview(nsize);
 }
 
 //-----------------------------------------------------------------------------
@@ -733,7 +771,7 @@ void pqTabbedMultiViewWidget::contextMenuRequested(const QPoint& point)
     {
       SM_SCOPED_TRACE(CallFunction)
         .arg("RenameLayout")
-        .arg(newName.toLatin1().data())
+        .arg(newName.toLocal8Bit().data())
         .arg((vtkObject*)proxy->getProxy());
 
       proxy->rename(newName);

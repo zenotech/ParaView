@@ -35,13 +35,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqComponentsModule.h" // for exports
 #include <QDialog>
 #include <QModelIndex>
-#include <QScopedPointer> // for QScopedPointer
+#include <QScopedPointer>    // for QScopedPointer
+#include <vtk_jsoncpp_fwd.h> // for forward declarations
 
 class QModelIndex;
-namespace Json
-{
-class Value;
-}
 
 /**
 * pqPresetDialog is the dialog used by to show the user with a choice of color
@@ -71,7 +68,7 @@ public:
   };
 
   pqPresetDialog(QWidget* parent = 0, Modes mode = SHOW_ALL);
-  virtual ~pqPresetDialog();
+  ~pqPresetDialog() override;
 
   /**
   * Set the current preset using its name.

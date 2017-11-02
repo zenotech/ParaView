@@ -36,13 +36,14 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPGenericEnSightReader : public vtkGene
 public:
   static vtkPGenericEnSightReader* New();
   vtkTypeMacro(vtkPGenericEnSightReader, vtkGenericEnSightReader);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkPGenericEnSightReader();
-  ~vtkPGenericEnSightReader();
+  ~vtkPGenericEnSightReader() override;
 
-  virtual int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestInformation(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   /**
    * Multi Process cache. Will be read a lot of times.
@@ -57,8 +58,8 @@ protected:
   int MultiProcessNumberOfProcesses;
 
 private:
-  vtkPGenericEnSightReader(const vtkPGenericEnSightReader&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPGenericEnSightReader&) VTK_DELETE_FUNCTION;
+  vtkPGenericEnSightReader(const vtkPGenericEnSightReader&) = delete;
+  void operator=(const vtkPGenericEnSightReader&) = delete;
 };
 
 #endif

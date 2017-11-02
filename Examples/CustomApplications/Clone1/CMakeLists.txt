@@ -20,22 +20,12 @@ endif()
 # include rules for creating custom applications.
 include(ParaViewBranding)
 pv_find_package_qt(qt_targets
-  QT4_COMPONENTS QtGui
   QT5_COMPONENTS Widgets)
 
 #------------------------------------------------------------------------------
 # Add extra library containing custom code for the client.
-IF (PARAVIEW_QT_VERSION VERSION_GREATER "4")
-  QT5_WRAP_CPP(MOC_BUILT_SOURCES
-    myMainWindow.h)
-  QT5_WRAP_UI(UI_BUILT_SOURCES
-    myMainWindow.ui)
-ELSE ()
-  QT4_WRAP_CPP(MOC_BUILT_SOURCES
-    myMainWindow.h)
-  QT4_WRAP_UI(UI_BUILT_SOURCES
-    myMainWindow.ui)
-ENDIF ()
+pv_qt_wrap_cpp(MOC_BUILT_SOURCES myMainWindow.h)
+pv_qt_wrap_ui(UI_BUILT_SOURCES myMainWindow.ui)
 
 SOURCE_GROUP("Generated" FILES
   ${MOC_BUILT_SOURCES}
@@ -64,7 +54,6 @@ build_paraview_client(paraview_revised
   GUI_CONFIGURATION_XMLS
     ${CMAKE_CURRENT_SOURCE_DIR}/ParaViewSources.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/ParaViewFilters.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/ParaViewWriters.xml
   SOURCES ${ParaView_SOURCE_FILES}
 )
 target_link_libraries(paraview_revised LINK_PRIVATE ${qt_targets})

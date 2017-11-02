@@ -45,7 +45,7 @@ class VTKPVCINEMAREADER_EXPORT vtkCinemaLayerMapper : public vtkMapper2D
 public:
   static vtkCinemaLayerMapper* New();
   vtkTypeMacro(vtkCinemaLayerMapper, vtkMapper2D);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * We update the rendering objects in this method.
@@ -131,7 +131,7 @@ public:
 
 protected:
   vtkCinemaLayerMapper();
-  ~vtkCinemaLayerMapper();
+  ~vtkCinemaLayerMapper() override;
 
   bool ScalarVisibility;
   vtkScalarsToColors* LookupTable;
@@ -146,8 +146,8 @@ protected:
   bool RenderLayersAsImage;
 
 private:
-  vtkCinemaLayerMapper(const vtkCinemaLayerMapper&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCinemaLayerMapper&) VTK_DELETE_FUNCTION;
+  vtkCinemaLayerMapper(const vtkCinemaLayerMapper&) = delete;
+  void operator=(const vtkCinemaLayerMapper&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

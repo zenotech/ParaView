@@ -33,11 +33,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ui_pqQueryClauseWidget.h"
 #include "ui_pqQueryCompositeTreeDialog.h"
 
+#include "pqCompositeDataInformationTreeModel.h"
 #include "pqHelpWindow.h"
 #include "pqOutputPort.h"
 #include "pqPipelineSource.h"
 #include "pqServer.h"
-#include "pqSignalAdaptorCompositeTreeWidget.h"
 #include "vtkDataObject.h"
 #include "vtkPVArrayInformation.h"
 #include "vtkPVDataInformation.h"
@@ -52,6 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMSourceProxy.h"
 #include "vtkSelectionNode.h"
 
+#include <QDebug>
 #include <QMap>
 
 namespace
@@ -79,6 +80,25 @@ public:
     }
   }
 };
+
+bool isAMR(vtkPVDataInformation* dinfo)
+{
+  switch (dinfo->GetCompositeDataSetType())
+  {
+    case VTK_HIERARCHICAL_BOX_DATA_SET:
+    case VTK_HIERARCHICAL_DATA_SET:
+    case VTK_UNIFORM_GRID_AMR:
+    case VTK_NON_OVERLAPPING_AMR:
+    case VTK_OVERLAPPING_AMR:
+      return true;
+  }
+  return false;
+}
+
+bool isMultiBlock(vtkPVDataInformation* dinfo)
+{
+  return dinfo->GetCompositeDataSetType() == VTK_MULTIBLOCK_DATA_SET;
+}
 }
 
 // BUG #13806, remove collective operations temporarily since they don't work
@@ -251,6 +271,16 @@ void pqQueryClauseWidget::populateSelectionCriteria(pqQueryClauseWidget::Criteri
     }
   }
 
+  if (type_flags & POINTS_NEAR && this->attributeType() == vtkDataObject::POINT)
+  {
+    this->Internals->criteria->addItem("Point", POINTS_NEAR);
+  }
+
+  if (type_flags & POINT_IN_CELL && this->attributeType() == vtkDataObject::CELL)
+  {
+    this->Internals->criteria->addItem("Cell", POINT_IN_CELL);
+  }
+
   vtkPVDataInformation* dataInfo = this->producer()->getDataInformation();
 
   if (type_flags & QUERY)
@@ -258,14 +288,14 @@ void pqQueryClauseWidget::populateSelectionCriteria(pqQueryClauseWidget::Criteri
     this->Internals->criteria->addItem("Query", QUERY);
   }
 
-  if (dataInfo->GetCompositeDataSetType() == VTK_MULTIBLOCK_DATA_SET)
+  if (isMultiBlock(dataInfo))
   {
     if (type_flags & BLOCK)
     {
       this->Internals->criteria->addItem("Block ID", BLOCK);
     }
   }
-  else if (dataInfo->GetCompositeDataSetType() == VTK_HIERARCHICAL_BOX_DATA_SET)
+  else if (isAMR(dataInfo))
   {
     if (type_flags & AMR_LEVEL)
     {
@@ -341,6 +371,15 @@ void pqQueryClauseWidget::populateSelectionCondition()
       this->Internals->condition->addItem("is", pqQueryClauseWidget::AMR_BLOCK_VALUE);
       break;
 
+    case POINT_IN_CELL:
+      this->Internals->condition->addItem("contains", pqQueryClauseWidget::LOCATION);
+      break;
+
+    case POINTS_NEAR:
+      this->Internals->condition->addItem(
+        "nearest to", pqQueryClauseWidget::LOCATION_AND_TOLERANCE);
+      break;
+
     case ANY:
     case INVALID:
       break;
@@ -371,6 +410,7 @@ void pqQueryClauseWidget::updateValueWidget()
       break;
 
     case TRIPLET_OF_VALUES:
+    case LOCATION:
       this->Internals->valueStackedWidget->setCurrentIndex(2);
       break;
 
@@ -383,6 +423,10 @@ void pqQueryClauseWidget::updateValueWidget()
 
     case BLOCK_NAME_VALUE:
       this->Internals->valueStackedWidget->setCurrentIndex(3);
+      break;
+
+    case LOCATION_AND_TOLERANCE:
+      this->Internals->valueStackedWidget->setCurrentIndex(5);
       break;
   }
 }
@@ -415,14 +459,8 @@ void pqQueryClauseWidget::updateDependentClauseWidgets()
 #endif
 
   vtkPVDataInformation* dataInfo = this->producer()->getDataInformation();
-  if (dataInfo->GetCompositeDataSetType() == VTK_MULTIBLOCK_DATA_SET)
-  {
-    multi_block = true;
-  }
-  else if (dataInfo->GetCompositeDataSetType() == VTK_HIERARCHICAL_BOX_DATA_SET)
-  {
-    amr = true;
-  }
+  multi_block = isMultiBlock(dataInfo);
+  amr = isAMR(dataInfo);
 
   QVBoxLayout* vbox = qobject_cast<QVBoxLayout*>(this->layout());
 
@@ -513,53 +551,74 @@ void pqQueryClauseWidget::showCompositeTree()
     ui.Blocks->setSelectionMode(QAbstractItemView::ExtendedSelection);
   }
 
-  pqSignalAdaptorCompositeTreeWidget adaptor(
-    ui.Blocks, this->producer()->getOutputPortProxy(), vtkSMCompositeTreeDomain::NONE);
+  pqCompositeDataInformationTreeModel dmodel;
+  if (criteria_type == AMR_BLOCK)
+  {
+    // if selecting AMR_BLOCK, we need to expand multipiece nodes.
+    dmodel.setExpandMultiPiece(true);
+  }
+
+  ui.Blocks->setModel(&dmodel);
+  dmodel.reset(this->producer()->getDataInformation());
+  ui.Blocks->expandAll();
   if (dialog.exec() != QDialog::Accepted)
   {
     return;
   }
 
-  QStringList values;
-  QList<QTreeWidgetItem*> selItems = ui.Blocks->selectedItems();
-  foreach (QTreeWidgetItem* item, selItems)
+  // to convert selected indexes to flat or amr ids, we use a trick. We make the
+  // model check the selected indexes and then use existing API on the model to
+  // access the indexes for the checked nodes.
+  QModelIndexList selIndexes = ui.Blocks->selectionModel()->selectedIndexes();
+  foreach (const QModelIndex& idx, selIndexes)
   {
-    int current_flat_index = adaptor.flatIndex(item);
-    switch (criteria_type)
+    if (idx.isValid())
     {
-      case BLOCK:
-        if (this->Internals->criteria->currentText() == "Block ID")
-        {
-          values << QString("%1").arg(current_flat_index);
-        }
-        else
-        {
-          // name.
-          QString blockName = adaptor.blockName(item);
-          if (blockName.isEmpty())
-          {
-            qWarning("Data block doesn't have a name assigned to it. Query may"
-                     " not work. Use 'Block ID' based criteria instead.");
-          }
-          else
-          {
-            values << blockName;
-          }
-        }
-        break;
-
-      case AMR_LEVEL:
-        values << QString("%1").arg(adaptor.hierarchicalLevel(item));
-        break;
-
-      case AMR_BLOCK:
-        values << QString("%1").arg(adaptor.hierarchicalBlockIndex(item));
-        break;
-
-      default:
-        qCritical("Invalid criteria_type.");
+      dmodel.setData(idx, Qt::Checked, Qt::CheckStateRole);
     }
   }
+
+  QStringList values;
+  switch (criteria_type)
+  {
+    case BLOCK:
+    {
+      const QList<unsigned int> findexes = dmodel.checkedNodes();
+      foreach (unsigned int idx, findexes)
+      {
+        values << QString::number(idx);
+      }
+    }
+    break;
+    case AMR_LEVEL:
+    {
+      const QList<unsigned int> levels = dmodel.checkedLevels();
+      foreach (unsigned int idx, levels)
+      {
+        values << QString::number(idx);
+      }
+    }
+    break;
+    case AMR_BLOCK:
+    {
+      typedef QPair<unsigned int, unsigned int> UIPair;
+      const QList<UIPair> amrIndexes = dmodel.checkedLevelDatasets();
+      QSet<unsigned int> uniq;
+      foreach (const UIPair& idx, amrIndexes)
+      {
+        uniq.insert(idx.second);
+      }
+      foreach (unsigned int idx, uniq)
+      {
+        values << QString::number(idx);
+      }
+    }
+    break;
+
+    default:
+      qCritical("Invalid criteria_type.");
+  }
+
   this->Internals->value_block->setText(values.join(","));
 }
 
@@ -634,6 +693,8 @@ void pqQueryClauseWidget::addSelectionQualifiers(vtkSMProxy* selSource)
     case AMR_BLOCK:
     case PROCESSID:
     case QUERY:
+    case POINTS_NEAR:
+    case POINT_IN_CELL:
     case ANY:
       // Options not supported
       break;
@@ -730,6 +791,39 @@ void pqQueryClauseWidget::addSelectionQualifiers(vtkSMProxy* selSource)
           this->Internals->value_z->text());
       }
       break;
+    case LOCATION:
+      if (query.isEmpty())
+      {
+        query = "cellContainsPoint(inputs, [(%1,%2,%3),])";
+      }
+      if (!this->Internals->value_x->text().isEmpty() &&
+        !this->Internals->value_y->text().isEmpty() && !this->Internals->value_z->text().isEmpty())
+      {
+        values << this->Internals->value_x->text();
+        values << this->Internals->value_y->text();
+        values << this->Internals->value_z->text();
+        query = query.arg(this->Internals->value_x->text(), this->Internals->value_y->text(),
+          this->Internals->value_z->text());
+      }
+      break;
+    case LOCATION_AND_TOLERANCE:
+      if (query.isEmpty())
+      {
+        query = "pointIsNear([(%1,%2,%3),], %4, inputs)";
+      }
+      if (!this->Internals->location_x->text().isEmpty() &&
+        !this->Internals->location_y->text().isEmpty() &&
+        !this->Internals->location_z->text().isEmpty() &&
+        !this->Internals->location_tolerance->text().isEmpty())
+      {
+        values << this->Internals->location_x->text();
+        values << this->Internals->location_y->text();
+        values << this->Internals->location_z->text();
+        values << this->Internals->location_tolerance->text();
+        query = query.arg(this->Internals->location_x->text(), this->Internals->location_y->text(),
+          this->Internals->location_z->text(), this->Internals->location_tolerance->text());
+      }
+      break;
 
     case BLOCK_ID_VALUE:
     case LIST_OF_BLOCK_ID_VALUES:
@@ -802,7 +896,7 @@ void pqQueryClauseWidget::addSelectionQualifiers(vtkSMProxy* selSource)
   {
     case QUERY:
       vtkSMPropertyHelper(selSource, "QueryString")
-        .Set(values[0].toString().toLatin1().constData());
+        .Set(values[0].toString().toLocal8Bit().constData());
       break;
 
     case BLOCK:
@@ -816,8 +910,10 @@ void pqQueryClauseWidget::addSelectionQualifiers(vtkSMProxy* selSource)
     case INDEX:
     case GLOBALID:
     case THRESHOLD:
+    case POINTS_NEAR:
+    case POINT_IN_CELL:
       this->LastQuery = query;
-      vtkSMPropertyHelper(selSource, "QueryString").Set(query.toLatin1().constData());
+      vtkSMPropertyHelper(selSource, "QueryString").Set(query.toLocal8Bit().constData());
       break;
     case AMR_LEVEL:
     {

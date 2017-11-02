@@ -17,13 +17,15 @@
 #include "vtkBoundingBox.h"
 #include "vtkCommand.h"
 #include "vtkDebugLeaks.h"
+#include "vtkGenericOpenGLRenderWindow.h"
 #include "vtkMultiProcessStream.h"
 #include "vtkObjectFactory.h"
 #include "vtkPVAxesWidget.h"
+#include "vtkPVOptions.h"
+#include "vtkPVRenderingCapabilitiesInformation.h"
 #include "vtkPVServerInformation.h"
 #include "vtkPVSession.h"
 #include "vtkProcessModule.h"
-#include "vtkRenderWindow.h"
 #include "vtkRenderer.h"
 #include "vtkRendererCollection.h"
 #include "vtkSelectionSerializer.h"
@@ -38,6 +40,80 @@
 #include <sstream>
 #include <vector>
 #include <vtksys/SystemTools.hxx>
+
+bool vtkPVSynchronizedRenderWindows::UseGenericOpenGLRenderWindow = false;
+//----------------------------------------------------------------------------
+void vtkPVSynchronizedRenderWindows::SetUseGenericOpenGLRenderWindow(bool val)
+{
+  vtkPVSynchronizedRenderWindows::UseGenericOpenGLRenderWindow = val;
+}
+
+//----------------------------------------------------------------------------
+bool vtkPVSynchronizedRenderWindows::GetUseGenericOpenGLRenderWindow()
+{
+  return vtkPVSynchronizedRenderWindows::UseGenericOpenGLRenderWindow;
+}
+
+//----------------------------------------------------------------------------
+vtkRenderWindow* vtkPVSynchronizedRenderWindows::NewRenderWindowInternal()
+{
+  if (vtkPVSynchronizedRenderWindows::UseGenericOpenGLRenderWindow)
+  {
+    return vtkGenericOpenGLRenderWindow::New();
+  }
+
+  bool force_offscreen = false;
+  switch (this->Mode)
+  {
+    case BUILTIN:
+    case CLIENT:
+      force_offscreen = false;
+      break;
+
+    case RENDER_SERVER:
+      if (!this->GetIsInTileDisplay() && !this->GetIsInCave())
+      {
+        force_offscreen = true;
+      }
+      break;
+
+    case BATCH:
+      force_offscreen = true;
+      break;
+
+    case DATA_SERVER:
+    case INVALID:
+      // return a dummy render window.
+      return vtkGenericOpenGLRenderWindow::New();
+  }
+
+  if (vtkPVOptions* options = vtkProcessModule::GetProcessModule()->GetOptions())
+  {
+    if (options->GetForceOnscreenRendering())
+    {
+      force_offscreen = false;
+    }
+    else if (options->GetForceOffscreenRendering())
+    {
+      force_offscreen = true;
+    }
+  }
+
+  if (force_offscreen)
+  {
+    // this may be a headless window if ParaView was built with headless
+    // capabilities.
+    vtkSmartPointer<vtkRenderWindow> renWindow =
+      vtkPVRenderingCapabilitiesInformation::NewOffscreenRenderWindow();
+    renWindow->Register(nullptr);
+    return renWindow.GetPointer();
+  }
+
+  // let vtkObjectFactory give us a native render window.
+  return vtkRenderWindow::New();
+}
+
+//----------------------------------------------------------------------------
 
 class vtkPVSynchronizedRenderWindows::vtkInternals
 {
@@ -228,7 +304,7 @@ public:
     return obs;
   }
 
-  virtual void Execute(vtkObject* ocaller, unsigned long eventId, void*)
+  void Execute(vtkObject* ocaller, unsigned long eventId, void*) override
   {
     vtkRenderWindow* renWin = vtkRenderWindow::SafeDownCast(ocaller);
     if (this->Target && this->Target->GetEnabled())
@@ -567,7 +643,7 @@ vtkRenderWindow* vtkPVSynchronizedRenderWindows::NewRenderWindow()
     case DATA_SERVER:
     {
       // we could very return a dummy window here.
-      vtkRenderWindow* window = vtkRenderWindow::New();
+      vtkRenderWindow* window = vtkPVSynchronizedRenderWindows::NewRenderWindowInternal();
       window->SetWindowName("ParaView Data-Server");
       return window;
     }
@@ -577,7 +653,7 @@ vtkRenderWindow* vtkPVSynchronizedRenderWindows::NewRenderWindow()
     {
       // client always creates new window for each view in the multi layout
       // configuration.
-      vtkRenderWindow* window = vtkRenderWindow::New();
+      vtkRenderWindow* window = vtkPVSynchronizedRenderWindows::NewRenderWindowInternal();
       window->DoubleBufferOn();
       window->AlphaBitPlanesOn();
       window->SetWindowName("ParaView");
@@ -590,7 +666,7 @@ vtkRenderWindow* vtkPVSynchronizedRenderWindows::NewRenderWindow()
       // all views share the same render window.
       if (!this->Internals->SharedRenderWindow)
       {
-        vtkRenderWindow* window = vtkRenderWindow::New();
+        vtkRenderWindow* window = vtkPVSynchronizedRenderWindows::NewRenderWindowInternal();
         window->DoubleBufferOn();
         window->AlphaBitPlanesOn();
         std::ostringstream name_stream;

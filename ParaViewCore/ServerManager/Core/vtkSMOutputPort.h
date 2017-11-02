@@ -46,7 +46,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMOutputPort : public vtkSMProxy
 public:
   static vtkSMOutputPort* New();
   vtkTypeMacro(vtkSMOutputPort, vtkSMProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Returns data information. If data information is marked
@@ -92,7 +92,7 @@ public:
 
 protected:
   vtkSMOutputPort();
-  ~vtkSMOutputPort();
+  ~vtkSMOutputPort() override;
 
   /**
    * Get the classname of the dataset from server.
@@ -139,8 +139,8 @@ protected:
   bool TemporalDataInformationValid;
 
 private:
-  vtkSMOutputPort(const vtkSMOutputPort&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMOutputPort&) VTK_DELETE_FUNCTION;
+  vtkSMOutputPort(const vtkSMOutputPort&) = delete;
+  void operator=(const vtkSMOutputPort&) = delete;
 
   friend class vtkSMSourceProxy;
   friend class vtkSMCompoundSourceProxy;

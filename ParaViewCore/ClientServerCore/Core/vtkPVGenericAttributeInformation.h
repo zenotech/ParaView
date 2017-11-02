@@ -36,19 +36,19 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVGenericAttributeInformation
 public:
   static vtkPVGenericAttributeInformation* New();
   vtkTypeMacro(vtkPVGenericAttributeInformation, vtkPVArrayInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Transfer information about a single object into this object.
    */
-  virtual void CopyFromObject(vtkObject*);
+  void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
 protected:
   vtkPVGenericAttributeInformation();
-  ~vtkPVGenericAttributeInformation();
+  ~vtkPVGenericAttributeInformation() override;
 
-  vtkPVGenericAttributeInformation(const vtkPVGenericAttributeInformation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVGenericAttributeInformation&) VTK_DELETE_FUNCTION;
+  vtkPVGenericAttributeInformation(const vtkPVGenericAttributeInformation&) = delete;
+  void operator=(const vtkPVGenericAttributeInformation&) = delete;
 };
 
 #endif

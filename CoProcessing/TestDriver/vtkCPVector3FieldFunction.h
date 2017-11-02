@@ -29,26 +29,26 @@ class VTKPVCATALYSTTESTDRIVER_EXPORT vtkCPVector3FieldFunction : public vtkCPTen
 {
 public:
   vtkTypeMacro(vtkCPVector3FieldFunction, vtkCPTensorFieldFunction);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Get the NumberOfComponents.
    */
-  virtual unsigned int GetNumberOfComponents() { return 3; };
+  virtual unsigned int GetNumberOfComponents() VTK_OVERRIDE { return 3; };
 
   /**
    * Compute the field value at Point.
    */
   virtual double ComputeComponenentAtPoint(
-    unsigned int component, double point[3], unsigned long timeStep, double time) = 0;
+    unsigned int component, double point[3], unsigned long timeStep, double time) VTK_OVERRIDE = 0;
 
 protected:
   vtkCPVector3FieldFunction();
   ~vtkCPVector3FieldFunction();
 
 private:
-  vtkCPVector3FieldFunction(const vtkCPVector3FieldFunction&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCPVector3FieldFunction&) VTK_DELETE_FUNCTION;
+  vtkCPVector3FieldFunction(const vtkCPVector3FieldFunction&) = delete;
+  void operator=(const vtkCPVector3FieldFunction&) = delete;
 };
 
 #endif

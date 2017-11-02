@@ -25,18 +25,22 @@
 #include "vtkSMSourceProxy.h"
 
 class vtkPVProminentValuesInformation;
+namespace vtkPVComparativeViewNS
+{
+class vtkCloningVectorOfRepresentations;
+}
 
 class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMRepresentationProxy : public vtkSMSourceProxy
 {
 public:
   static vtkSMRepresentationProxy* New();
   vtkTypeMacro(vtkSMRepresentationProxy, vtkSMSourceProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Calls MarkDirty() and invokes ModifiedEvent.
    */
-  virtual void MarkDirty(vtkSMProxy* modifiedProxy);
+  void MarkDirty(vtkSMProxy* modifiedProxy) VTK_OVERRIDE;
 
   /**
    * Returns information about the data that is finally rendered by this
@@ -66,18 +70,18 @@ public:
    * Calls Update() on all sources. It also creates output ports if
    * they are not already created.
    */
-  virtual void UpdatePipeline();
+  void UpdatePipeline() VTK_OVERRIDE;
 
   /**
    * Calls Update() on all sources with the given time request.
    * It also creates output ports if they are not already created.
    */
-  virtual void UpdatePipeline(double time);
+  void UpdatePipeline(double time) VTK_OVERRIDE;
 
   /**
    * Overridden to reset this->MarkedModified flag.
    */
-  virtual void PostUpdateData();
+  void PostUpdateData() VTK_OVERRIDE;
 
   /**
    * Called after the view updates.
@@ -87,7 +91,7 @@ public:
   /**
    * Overridden to reserve additional IDs for use by internal composite representation
    */
-  virtual vtkTypeUInt32 GetGlobalID();
+  vtkTypeUInt32 GetGlobalID() VTK_OVERRIDE;
 
   //@{
   /**
@@ -108,18 +112,18 @@ public:
 
 protected:
   vtkSMRepresentationProxy();
-  ~vtkSMRepresentationProxy();
+  ~vtkSMRepresentationProxy() override;
 
   // Unlike subproxies in regular proxies, subproxies in representations
   // typically represent internal representations e.g. label representation,
   // representation for selection etc. In that case, if the internal
   // representation is modified, we need to ensure that any of our consumers is
   // a consumer of all our subproxies as well.
-  virtual void AddConsumer(vtkSMProperty* property, vtkSMProxy* proxy);
-  virtual void RemoveConsumer(vtkSMProperty* property, vtkSMProxy* proxy);
-  virtual void RemoveAllConsumers();
+  void AddConsumer(vtkSMProperty* property, vtkSMProxy* proxy) VTK_OVERRIDE;
+  void RemoveConsumer(vtkSMProperty* property, vtkSMProxy* proxy) VTK_OVERRIDE;
+  void RemoveAllConsumers() VTK_OVERRIDE;
 
-  virtual void CreateVTKObjects();
+  void CreateVTKObjects() VTK_OVERRIDE;
   void OnVTKRepresentationUpdated();
 
   virtual void UpdatePipelineInternal(double time, bool doTime);
@@ -127,16 +131,16 @@ protected:
   /**
    * Mark the data information as invalid.
    */
-  virtual void InvalidateDataInformation();
+  void InvalidateDataInformation() VTK_OVERRIDE;
 
   /**
    * Overridden to restore this->Servers flag state.
    */
-  virtual int LoadXMLState(vtkPVXMLElement* element, vtkSMProxyLocator* locator);
+  int LoadXMLState(vtkPVXMLElement* element, vtkSMProxyLocator* locator) VTK_OVERRIDE;
 
 private:
-  vtkSMRepresentationProxy(const vtkSMRepresentationProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMRepresentationProxy&) VTK_DELETE_FUNCTION;
+  vtkSMRepresentationProxy(const vtkSMRepresentationProxy&) = delete;
+  void operator=(const vtkSMRepresentationProxy&) = delete;
 
   /**
    * HACK: Returns true for lookuptable, piecewise function proxies which are
@@ -161,7 +165,7 @@ private:
   friend class vtkSMViewProxy;
   //@}
 
-  friend class vtkPVComparativeView;
+  friend class vtkPVComparativeViewNS::vtkCloningVectorOfRepresentations;
   void ClearMarkedModified() { this->MarkedModified = false; }
   bool MarkedModified;
   bool VTKRepresentationUpdated;

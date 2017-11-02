@@ -43,7 +43,7 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMTransferFunctionManager : public v
 public:
   static vtkSMTransferFunctionManager* New();
   vtkTypeMacro(vtkSMTransferFunctionManager, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Returns a color transfer function proxy instance for mapping a data array
@@ -74,16 +74,28 @@ public:
   /**
    * Iterates over all "known" transfer function proxies and request each one of
    * them to update its range using data information currently available.
-   * If \c extend is true, the transfer function is expanded to accommodate
-   * current data range rather then resetting it to the range.
+   * Set \c animating to true if this is called in the context of an animation,
+   * false otherwise.
    */
   void ResetAllTransferFunctionRangesUsingCurrentData(
-    vtkSMSessionProxyManager* pxm, bool extend = false);
+    vtkSMSessionProxyManager* pxm, bool animating = false);
 
   enum UpdateScalarBarsMode
   {
     HIDE_UNUSED_SCALAR_BARS = 0x01,
     SHOW_USED_SCALAR_BARS = 0x02
+  };
+
+  /**
+   * Enum for TransferFunctionResetMode
+   */
+  enum TransferFunctionResetMode
+  {
+    NEVER = -1,
+    GROW_ON_APPLY = 0,
+    GROW_ON_APPLY_AND_TIMESTEP = 1,
+    RESET_ON_APPLY = 2,
+    RESET_ON_APPLY_AND_TIMESTEP = 3
   };
 
   /**
@@ -94,6 +106,12 @@ public:
   virtual bool UpdateScalarBars(vtkSMProxy* viewProxy, unsigned int mode);
 
   /**
+   * Updates all scalar bars using provided lutProxy, the representation
+   * is used to recover the component title
+   */
+  virtual bool UpdateScalarBarsComponentTitle(vtkSMProxy* lutProxy, vtkSMProxy* representation);
+
+  /**
    * Hides the scalar bar, if any, for the lutProxy in the view if it's not
    * being used. Returns true if the scalar bar visibility was changed.
    */
@@ -101,11 +119,11 @@ public:
 
 protected:
   vtkSMTransferFunctionManager();
-  ~vtkSMTransferFunctionManager();
+  ~vtkSMTransferFunctionManager() override;
 
 private:
-  vtkSMTransferFunctionManager(const vtkSMTransferFunctionManager&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMTransferFunctionManager&) VTK_DELETE_FUNCTION;
+  vtkSMTransferFunctionManager(const vtkSMTransferFunctionManager&) = delete;
+  void operator=(const vtkSMTransferFunctionManager&) = delete;
 };
 
 #endif

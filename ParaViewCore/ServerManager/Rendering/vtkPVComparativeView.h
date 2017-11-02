@@ -38,7 +38,7 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkPVComparativeView : public vtkObject
 public:
   static vtkPVComparativeView* New();
   vtkTypeMacro(vtkPVComparativeView, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Provides empty handlers to simulate the vtkPVView API.
@@ -98,13 +98,6 @@ public:
   void RemoveRepresentation(vtkSMProxy*);
 
   /**
-   * Removes all added representations from this view.
-   * Simply calls RemoveRepresentation() on all added representations
-   * one by one.
-   */
-  void RemoveAllRepresentations();
-
-  /**
    * Updates the data pipelines for all visible representations.
    */
   void Update();
@@ -115,18 +108,6 @@ public:
    * views.
    */
   void GetViews(vtkCollection* collection);
-
-  //@{
-  /**
-   * Get all internal vtkSMRepresentations for a given view.  If the given
-   * view is not managed by this comparative view it will be ignored.  The
-   * representations should only be used by the GUI for creating representation
-   * clones.  It is not recommended to directly change the properties of the returned
-   * representations.
-   */
-  void GetRepresentationsForView(vtkSMViewProxy*, vtkCollection*);
-  void GetRepresentations(int x, int y, vtkCollection*);
-  //@}
 
   //@{
   /**
@@ -160,6 +141,12 @@ public:
     this->UpdateViewLayout();
   }
   //@}
+
+  /**
+   * Satisfying vtkPVView API. We don't need to do anything here since the
+   * subviews have their own PPI settings.
+   */
+  void SetPPI(int) {}
 
   //@{
   /**
@@ -206,39 +193,16 @@ public:
    */
   void PrepareForScreenshot() {}
   void CleanupAfterScreenshot() {}
-  vtkImageData* CaptureWindow(int magnification);
+  vtkImageData* CaptureWindow(int magX, int magY);
 
 protected:
   vtkPVComparativeView();
-  ~vtkPVComparativeView();
-
-  /**
-   * Creates and appends a new internal view.
-   * This not only creates a new view but also new copies of representations
-   * for all the representations in the view and adds them to the new view.
-   */
-  void AddNewView();
-
-  /**
-   * Removes an internal view and all the representations in that view.
-   */
-  void RemoveView(vtkSMViewProxy* remove);
+  ~vtkPVComparativeView() override;
 
   /**
    * Update layout for internal views.
    */
   void UpdateViewLayout();
-
-  /**
-   * Update all representations belonging for the indicated position.
-   */
-  void UpdateAllRepresentations(int x, int y);
-
-  /**
-   * Clears the cached data for representations belonging to the indicated
-   * position.
-   */
-  void ClearDataCaches(int x, int y);
 
   int Dimensions[2];
   int ViewSize[2];
@@ -252,8 +216,8 @@ protected:
   vtkSMViewProxy* RootView;
 
 private:
-  vtkPVComparativeView(const vtkPVComparativeView&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVComparativeView&) VTK_DELETE_FUNCTION;
+  vtkPVComparativeView(const vtkPVComparativeView&) = delete;
+  void operator=(const vtkPVComparativeView&) = delete;
 
   class vtkInternal;
   vtkInternal* Internal;

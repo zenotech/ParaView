@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#include "vtkPVConfig.h"
 #include "pqImportCinemaReaction.h"
+#include "vtkPVConfig.h"
 
 #include "pqActiveObjects.h"
 #include "pqCoreUtilities.h"
@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqView.h"
 #include "vtkNew.h"
 
-#if defined(VTKGL2) && defined(PARAVIEW_ENABLE_PYTHON)
+#if defined(PARAVIEW_ENABLE_PYTHON)
 #include "vtkSMCinemaDatabaseImporter.h"
 #endif
 
@@ -65,7 +65,7 @@ pqImportCinemaReaction::~pqImportCinemaReaction()
 //-----------------------------------------------------------------------------
 void pqImportCinemaReaction::updateEnableState()
 {
-#if defined(VTKGL2) && defined(PARAVIEW_ENABLE_PYTHON)
+#if defined(PARAVIEW_ENABLE_PYTHON)
   bool enable_state = false;
   pqActiveObjects& activeObjects = pqActiveObjects::instance();
   vtkSMSession* session =
@@ -84,14 +84,7 @@ void pqImportCinemaReaction::updateEnableState()
 //-----------------------------------------------------------------------------
 bool pqImportCinemaReaction::loadCinemaDatabase()
 {
-#if !defined(VTKGL2)
-  pqCoreUtilities::promptUser("pqImportCinemaReaction::NoOpenGL2", QMessageBox::Critical,
-    tr("Incompatible rendering backend"),
-    tr("'OpenGL2' rendering backend is required to load a Cinema database, "
-       "but is not available in this build."),
-    QMessageBox::Ok | QMessageBox::Save);
-  return false;
-#elif !defined(PARAVIEW_ENABLE_PYTHON)
+#if !defined(PARAVIEW_ENABLE_PYTHON)
   pqCoreUtilities::promptUser("pqImportCinemaReaction::NoPython", QMessageBox::Critical,
     tr("Python support not enabled"), tr("Python support is required to load a Cinema database, "
                                          "but is not available in this build."),
@@ -114,15 +107,15 @@ bool pqImportCinemaReaction::loadCinemaDatabase()
 //-----------------------------------------------------------------------------
 bool pqImportCinemaReaction::loadCinemaDatabase(const QString& dbase, pqServer* server)
 {
-#if defined(VTKGL2) && defined(PARAVIEW_ENABLE_PYTHON)
+#if defined(PARAVIEW_ENABLE_PYTHON)
   CLEAR_UNDO_STACK();
 
   server = (server != NULL) ? server : pqActiveObjects::instance().activeServer();
   pqView* view = pqActiveObjects::instance().activeView();
 
   vtkNew<vtkSMCinemaDatabaseImporter> importer;
-  if (!importer->ImportCinema(dbase.toLatin1().data(), server->session(),
-        (view ? view->getViewProxy() : NULL)))
+  if (!importer->ImportCinema(
+        dbase.toLatin1().data(), server->session(), (view ? view->getViewProxy() : NULL)))
   {
     qCritical("Failed to import Cinema database.");
     return false;

@@ -97,11 +97,11 @@ public:
 
   // Description:
   // Overridden to include ArrowSourceObject's MTime.
-  virtual vtkMTimeType GetMTime();
+  vtkMTimeType GetMTime() VTK_OVERRIDE;
 
 protected:
   vtkArrowGlyphFilter();
-  ~vtkArrowGlyphFilter();
+  ~vtkArrowGlyphFilter() override;
 
   enum
   {
@@ -109,9 +109,10 @@ protected:
     GlyphNPointsScatter = 738234
   };
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
-  virtual int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
-  virtual int FillInputPortInformation(int, vtkInformation*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
+  int RequestUpdateExtent(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
+  int FillInputPortInformation(int, vtkInformation*) VTK_OVERRIDE;
 
   vtkIdType GatherTotalNumberOfPoints(vtkIdType localNumPts);
   int MaskAndExecute(vtkIdType numPts, vtkIdType maxNumPts, vtkDataSet* input,
@@ -140,8 +141,8 @@ protected:
   vtkArrowSource* ArrowSourceObject;
 
 private:
-  vtkArrowGlyphFilter(const vtkArrowGlyphFilter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkArrowGlyphFilter&) VTK_DELETE_FUNCTION;
+  vtkArrowGlyphFilter(const vtkArrowGlyphFilter&) = delete;
+  void operator=(const vtkArrowGlyphFilter&) = delete;
 };
 
 #endif

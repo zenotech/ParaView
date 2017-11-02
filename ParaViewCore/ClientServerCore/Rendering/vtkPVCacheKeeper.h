@@ -39,13 +39,13 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVCacheKeeper : public vtkDataObj
 public:
   static vtkPVCacheKeeper* New();
   vtkTypeMacro(vtkPVCacheKeeper, vtkDataObjectAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Methods for saving, clearing and updating flip books.
    * This removes all saved cache.
    */
-  void RemoveAllCaches();
+  virtual void RemoveAllCaches();
 
   //@{
   /**
@@ -59,8 +59,8 @@ public:
    * Returns if the given \c cacheTime is available in the cache.
    * Does not cause any updates.
    */
-  bool IsCached(double cacheTime);
-  bool IsCached() { return this->IsCached(this->CacheTime); }
+  virtual bool IsCached(double cacheTime);
+  virtual bool IsCached() { return this->IsCached(this->CacheTime); }
 
   //@{
   /**
@@ -85,7 +85,7 @@ public:
 
 protected:
   vtkPVCacheKeeper();
-  ~vtkPVCacheKeeper();
+  ~vtkPVCacheKeeper() override;
 
   //@{
   /**
@@ -97,24 +97,24 @@ protected:
   //@}
 
   int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
   int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
-  virtual vtkExecutive* CreateDefaultExecutive();
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
+  vtkExecutive* CreateDefaultExecutive() VTK_OVERRIDE;
 
   /**
    * Called to save the data in cache. Returns true if data is saved otherwise
    * false.
    */
-  bool SaveData(vtkDataObject*);
+  virtual bool SaveData(vtkDataObject*);
 
   bool CachingEnabled;
   double CacheTime;
   vtkCacheSizeKeeper* CacheSizeKeeper;
 
 private:
-  vtkPVCacheKeeper(const vtkPVCacheKeeper&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVCacheKeeper&) VTK_DELETE_FUNCTION;
+  vtkPVCacheKeeper(const vtkPVCacheKeeper&) = delete;
+  void operator=(const vtkPVCacheKeeper&) = delete;
 
   class vtkCacheMap;
   vtkCacheMap* Cache;

@@ -30,19 +30,19 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPEquivalenceSet : public vtkEquivalenc
 {
 public:
   vtkTypeMacro(vtkPEquivalenceSet, vtkEquivalenceSet);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
   static vtkPEquivalenceSet* New();
 
   // Globally equivalent set IDs are reassigned to be sequential.
-  virtual int ResolveEquivalences();
+  int ResolveEquivalences() VTK_OVERRIDE;
 
 protected:
   vtkPEquivalenceSet();
-  ~vtkPEquivalenceSet();
+  ~vtkPEquivalenceSet() override;
 
 private:
-  vtkPEquivalenceSet(const vtkPEquivalenceSet&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPEquivalenceSet&) VTK_DELETE_FUNCTION;
+  vtkPEquivalenceSet(const vtkPEquivalenceSet&) = delete;
+  void operator=(const vtkPEquivalenceSet&) = delete;
 };
 
 #endif /* vtkPEquivalenceSet_h */

@@ -33,7 +33,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMCoreUtilities : public vtkObject
 public:
   static vtkSMCoreUtilities* New();
   vtkTypeMacro(vtkSMCoreUtilities, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Given a proxy (or proxy prototype), returns the name of the property that
@@ -65,11 +65,18 @@ public:
 
   //@{
   /**
-   * Given a range, adjusts it so that it is a valid range i.e. range[0] <
-   * range[1]. This will always perturb the range[1] by a factor of the value itself.
-   * This assumes range[1] < range[0] to indicate an invalid range and returns
-   * false without changing them. If the range is changed, returns true,
-   * otherwise false.
+   * Adjust the given range to make it suitable for use with color maps. The
+   * current logic (which may change in future) does the following:
+   * 1. If the range is invalid i.e range[1] < range[0], simply returns `false`
+   *    and keeps the range unchanged.
+   * 2. If the range[0] == range[1] (using logic to handle nearly similar
+   *    floating points numbers), then the range[1] is adjusted to be such that
+   *    range[1] > range[0p].
+   * 3. If range[0] < range[1] (beyond the margin of error checked for in (2),
+   *    then range is left unchanged.
+   *
+   * @returns `true` if the range was changed, `false` is the range was left
+   * unchanged.
    */
   static bool AdjustRange(double range[2]);
   static bool AdjustRange(double& rmin, double& rmax)
@@ -82,13 +89,41 @@ public:
   }
   //@}
 
+  //@{
+  /**
+   * Compares \c val1 and \c val2 and returns true is the two numbers are within
+   * \c ulpsDiff ULPs (units in last place) from each other.
+   */
+  static bool AlmostEqual(const double range[2], int ulpsDiff);
+  static bool AlmostEqual(double rmin, double rmax, int ulpsDiff)
+  {
+    double range[2] = { rmin, rmax };
+    return vtkSMCoreUtilities::AlmostEqual(range, ulpsDiff);
+  }
+  //@}
+
+  //@{
+  /**
+   * Given a proxy and a port number get the name of the input.
+   */
+  static const char* GetInputPropertyName(vtkSMProxy* proxy, int port = 0);
+  //@}
+
+  /**
+   * Given a VTK cell type value from the enum in vtkCellTypes.h,
+   * returns a string describing that cell type for use if ParaView's GUI.
+   * For example it pasesd VTK_TRIANGLE it will return "Triangle".
+   * If an unknown cell type is passed to this it returns the string "Unknown".
+   */
+  static const char* GetStringForCellType(int cellType);
+
 protected:
   vtkSMCoreUtilities();
-  ~vtkSMCoreUtilities();
+  ~vtkSMCoreUtilities() override;
 
 private:
-  vtkSMCoreUtilities(const vtkSMCoreUtilities&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMCoreUtilities&) VTK_DELETE_FUNCTION;
+  vtkSMCoreUtilities(const vtkSMCoreUtilities&) = delete;
+  void operator=(const vtkSMCoreUtilities&) = delete;
 };
 
 #endif

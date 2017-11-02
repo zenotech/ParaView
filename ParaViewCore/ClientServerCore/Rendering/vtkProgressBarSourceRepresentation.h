@@ -38,7 +38,7 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkProgressBarSourceRepresentation
 public:
   static vtkProgressBarSourceRepresentation* New();
   vtkTypeMacro(vtkProgressBarSourceRepresentation, vtkPVDataRepresentation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -48,12 +48,12 @@ public:
   vtkGetObjectMacro(ProgressBarWidgetRepresentation, vtk3DWidgetRepresentation);
   //@}
 
-  virtual void MarkModified();
+  void MarkModified() VTK_OVERRIDE;
 
   /**
    * Set the visibility.
    */
-  virtual void SetVisibility(bool);
+  void SetVisibility(bool) VTK_OVERRIDE;
 
   /**
    * Set the interactivity.
@@ -66,50 +66,50 @@ public:
    * representations or ask them to perform certain tasks e.g.
    * PrepareForRendering.
    */
-  int ProcessViewRequest(
-    vtkInformationRequestKey* request_type, vtkInformation* inInfo, vtkInformation* outInfo);
+  int ProcessViewRequest(vtkInformationRequestKey* request_type, vtkInformation* inInfo,
+    vtkInformation* outInfo) VTK_OVERRIDE;
 
   // BTX
 protected:
   vtkProgressBarSourceRepresentation();
-  ~vtkProgressBarSourceRepresentation();
+  ~vtkProgressBarSourceRepresentation() override;
 
   /**
    * Fill input port information.
    */
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   /**
    * Overridden to invoke vtkCommand::UpdateDataEvent.
    */
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   /**
    * Adds the representation to the view.  This is called from
    * vtkView::AddRepresentation().  Subclasses should override this method.
    * Returns true if the addition succeeds.
    */
-  virtual bool AddToView(vtkView* view);
+  bool AddToView(vtkView* view) VTK_OVERRIDE;
 
   /**
    * Removes the representation to the view.  This is called from
    * vtkView::RemoveRepresentation().  Subclasses should override this method.
    * Returns true if the removal succeeds.
    */
-  virtual bool RemoveFromView(vtkView* view);
+  bool RemoveFromView(vtkView* view) VTK_OVERRIDE;
 
   /**
    * Overridden to check with the vtkPVCacheKeeper to see if the key is cached.
    */
-  virtual bool IsCached(double cache_key);
+  bool IsCached(double cache_key) VTK_OVERRIDE;
 
   vtkPVCacheKeeper* CacheKeeper;
   vtkSmartPointer<vtkPolyData> DummyPolyData;
   vtk3DWidgetRepresentation* ProgressBarWidgetRepresentation;
 
 private:
-  vtkProgressBarSourceRepresentation(const vtkProgressBarSourceRepresentation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkProgressBarSourceRepresentation&) VTK_DELETE_FUNCTION;
+  vtkProgressBarSourceRepresentation(const vtkProgressBarSourceRepresentation&) = delete;
+  void operator=(const vtkProgressBarSourceRepresentation&) = delete;
   // ETX
 };
 

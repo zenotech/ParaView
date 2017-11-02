@@ -63,7 +63,7 @@ public:
   pqProxyWidget(vtkSMProxy* proxy, QWidget* parent = 0, Qt::WindowFlags flags = 0);
   pqProxyWidget(vtkSMProxy* proxy, const QStringList& properties, QWidget* parent = 0,
     Qt::WindowFlags flags = 0);
-  virtual ~pqProxyWidget();
+  ~pqProxyWidget() override;
 
   /**
   * Returns the proxy this panel shows.
@@ -81,7 +81,7 @@ public:
   /**
   * When this is true, the panel uses a descriptive layout where the
   * documentation for properties is used instead of their labels. pqProxyWidget
-  * automatically adopts this style of layout if <UseDocumentationForLabels />
+  * automatically adopts this style of layout if `<UseDocumentationForLabels />`
   * hint is present in the proxy.
   */
   bool useDocumentationForLabels() const { return this->UseDocumentationForLabels; }
@@ -124,7 +124,7 @@ public:
   /**
   * Returns true if the proxy has XML hints indicating that the panel should
   * show a header label for the documentation. pqProxyWidget uses the
-  * <ShowProxyDocumentationInPanel /> hint for this purpose.
+  * `<ShowProxyDocumentationInPanel />` hint for this purpose.
   */
   static DocumentationType showProxyDocumentationInPanel(vtkSMProxy* proxy);
 
@@ -189,8 +189,8 @@ public slots:
   void saveAsDefaults();
 
 protected:
-  void showEvent(QShowEvent* event);
-  void hideEvent(QHideEvent* event);
+  void showEvent(QShowEvent* event) override;
+  void hideEvent(QHideEvent* event) override;
 
 private slots:
   /**

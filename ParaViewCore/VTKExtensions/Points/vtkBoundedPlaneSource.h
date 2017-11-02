@@ -31,7 +31,7 @@ class VTKPVVTKEXTENSIONSPOINTS_EXPORT vtkBoundedPlaneSource : public vtkPolyData
 public:
   static vtkBoundedPlaneSource* New();
   vtkTypeMacro(vtkBoundedPlaneSource, vtkPolyDataAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -68,9 +68,9 @@ public:
 
 protected:
   vtkBoundedPlaneSource();
-  ~vtkBoundedPlaneSource();
+  ~vtkBoundedPlaneSource() override;
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   double Center[3];
   double Normal[3];
@@ -78,8 +78,8 @@ protected:
   int Resolution;
 
 private:
-  vtkBoundedPlaneSource(const vtkBoundedPlaneSource&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkBoundedPlaneSource&) VTK_DELETE_FUNCTION;
+  vtkBoundedPlaneSource(const vtkBoundedPlaneSource&) = delete;
+  void operator=(const vtkBoundedPlaneSource&) = delete;
 };
 
 #endif

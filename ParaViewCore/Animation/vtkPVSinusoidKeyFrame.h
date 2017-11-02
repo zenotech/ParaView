@@ -33,14 +33,14 @@ class VTKPVANIMATION_EXPORT vtkPVSinusoidKeyFrame : public vtkPVKeyFrame
 public:
   static vtkPVSinusoidKeyFrame* New();
   vtkTypeMacro(vtkPVSinusoidKeyFrame, vtkPVKeyFrame);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * This method will do the actual interpolation.
    * currenttime is normalized to the time range between
    * this key frame and the next key frame.
    */
-  virtual void UpdateValue(double currenttime, vtkPVAnimationCue* cue, vtkPVKeyFrame* next);
+  void UpdateValue(double currenttime, vtkPVAnimationCue* cue, vtkPVKeyFrame* next) VTK_OVERRIDE;
 
   //@{
   /**
@@ -69,15 +69,15 @@ public:
 
 protected:
   vtkPVSinusoidKeyFrame();
-  ~vtkPVSinusoidKeyFrame();
+  ~vtkPVSinusoidKeyFrame() override;
 
   double Phase;
   double Frequency;
   double Offset;
 
 private:
-  vtkPVSinusoidKeyFrame(const vtkPVSinusoidKeyFrame&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVSinusoidKeyFrame&) VTK_DELETE_FUNCTION;
+  vtkPVSinusoidKeyFrame(const vtkPVSinusoidKeyFrame&) = delete;
+  void operator=(const vtkPVSinusoidKeyFrame&) = delete;
 };
 
 #endif

@@ -260,6 +260,12 @@ typedef struct nifti_global_options
     int allow_upper_fext;    /*!< allow uppercase file extensions */
 } nifti_global_options;
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4610) // struct 'X' can never be instantiated - user defined constructor required
+#pragma warning(disable: 4510) // default constructor could not be generated
+#pragma warning(disable: 4512) // assignment operator could not be generated
+#endif
 typedef struct nifti_type_ele
 {
     int    type;           /* should match the NIFTI_TYPE_ #define */
@@ -267,6 +273,9 @@ typedef struct nifti_type_ele
     int    swapsize;       /* bytes per swap piece, matches nifti_image */
     char const * const name;           /* text string to match #define */
 } nifti_type_ele;
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #undef  LNI_FERR /* local nifti file error, to be compact and repetative */
 #define LNI_FERR(func,msg,file)                                      \
@@ -311,7 +320,7 @@ class vtknifti1_io : public vtkObject
 public:
   static vtknifti1_io *New();
   vtkTypeMacro(vtknifti1_io,vtkObject);
-  virtual void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 /*****************************************************************************/
 /*--------------- Prototypes of functions defined in this file --------------*/
@@ -549,7 +558,7 @@ static int    valid_nifti_extensions(const nifti_image *nim);
 /*------------------------------------------------------------------------*/
 protected:
   vtknifti1_io();
-  ~vtknifti1_io();
+  ~vtknifti1_io() override;
 
 
 /*---------------------------------------------------------------------------*/
@@ -598,8 +607,8 @@ static int nifti_write_extensions(znzFile fp, nifti_image *nim);
 static int nifti_extension_size(nifti_image *nim);
 
   private:
-  vtknifti1_io(const vtknifti1_io&) VTK_DELETE_FUNCTION;
-  void operator=(const vtknifti1_io&) VTK_DELETE_FUNCTION;
+  vtknifti1_io(const vtknifti1_io&) = delete;
+  void operator=(const vtknifti1_io&) = delete;
 
 };
 

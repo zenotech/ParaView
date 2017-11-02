@@ -40,7 +40,7 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkMPIMoveData : public vtkPassInput
 public:
   static vtkMPIMoveData* New();
   vtkTypeMacro(vtkMPIMoveData, vtkPassInputTypeAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Use this method to initialize all communicators/sockets using ParaView
@@ -141,13 +141,13 @@ public:
 
 protected:
   vtkMPIMoveData();
-  ~vtkMPIMoveData();
+  ~vtkMPIMoveData() override;
 
-  virtual int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
-  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
+  int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
+  int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   vtkMultiProcessController* Controller;
   vtkMultiProcessController* ClientDataServerSocketController;
@@ -192,8 +192,8 @@ private:
   int UpdateNumberOfPieces;
   int UpdatePiece;
 
-  vtkMPIMoveData(const vtkMPIMoveData&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkMPIMoveData&) VTK_DELETE_FUNCTION;
+  vtkMPIMoveData(const vtkMPIMoveData&) = delete;
+  void operator=(const vtkMPIMoveData&) = delete;
 
   static bool UseZLibCompression;
 };

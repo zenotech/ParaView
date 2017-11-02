@@ -33,8 +33,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
+#include "pqCoreUtilities.h"
+#include "pqDoubleRangeDialog.h"
 #include "pqEditColorMapReaction.h"
-#include "pqMultiBlockInspectorPanel.h"
 #include "pqPVApplicationCore.h"
 #include "pqPipelineRepresentation.h"
 #include "pqRenderView.h"
@@ -50,6 +51,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkPVDataInformation.h"
 #include "vtkPVGeneralSettings.h"
 #include "vtkSMArrayListDomain.h"
+#include "vtkSMDoubleMapProperty.h"
+#include "vtkSMDoubleMapPropertyIterator.h"
+#include "vtkSMIntVectorProperty.h"
 #include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMProperty.h"
 #include "vtkSMPropertyHelper.h"
@@ -91,22 +95,6 @@ QPair<int, QString> convert(const QVariant& val)
     result.second = list[1];
   }
   return result;
-}
-
-pqMultiBlockInspectorPanel* getMultiBlockInspectorPanel()
-{
-  // get multi-block inspector panel
-  pqMultiBlockInspectorPanel* panel = 0;
-  foreach (QWidget* widget, qApp->topLevelWidgets())
-  {
-    panel = widget->findChild<pqMultiBlockInspectorPanel*>();
-
-    if (panel)
-    {
-      break;
-    }
-  }
-  return panel;
 }
 }
 
@@ -368,7 +356,7 @@ void pqPipelineContextMenuBehavior::colorMenuTriggered(QAction* action)
     vtkSMProxy* oldLutProxy = vtkSMPropertyHelper(reprProxy, "LookupTable", true).GetAsProxy();
 
     vtkSMPVRepresentationProxy::SetScalarColoring(
-      reprProxy, array.second.toLatin1().data(), array.first);
+      reprProxy, array.second.toLocal8Bit().data(), array.first);
 
     vtkNew<vtkSMTransferFunctionManager> tmgr;
 
@@ -434,6 +422,39 @@ void pqPipelineContextMenuBehavior::hide()
   }
 }
 
+namespace
+{
+void readVisibilityMap(vtkSMIntVectorProperty* ivp, QMap<unsigned int, int>& visibilities)
+{
+  for (unsigned i = 0; i + 1 < ivp->GetNumberOfElements(); i += 2)
+  {
+    visibilities[ivp->GetElement(i)] = ivp->GetElement(i + 1);
+  }
+}
+
+void setVisibilitiesFromMap(
+  vtkSMIntVectorProperty* ivp, QMap<unsigned int, int>& visibilities, vtkSMProxy* proxy)
+{
+  std::vector<int> vector;
+
+  for (QMap<unsigned int, int>::const_iterator i = visibilities.begin(); i != visibilities.end();
+       i++)
+  {
+    vector.push_back(static_cast<int>(i.key()));
+    vector.push_back(static_cast<int>(i.value()));
+  }
+  BEGIN_UNDO_SET("Change Block Visibilities");
+  if (!vector.empty())
+  {
+    // if property changes, ModifiedEvent will be fired and
+    // this->UpdateUITimer will be started.
+    ivp->SetElements(&vector[0], static_cast<unsigned int>(vector.size()));
+  }
+  proxy->UpdateVTKObjects();
+  END_UNDO_SET();
+}
+}
+
 //-----------------------------------------------------------------------------
 void pqPipelineContextMenuBehavior::hideBlock()
 {
@@ -443,11 +464,20 @@ void pqPipelineContextMenuBehavior::hideBlock()
     return;
   }
 
-  pqMultiBlockInspectorPanel* panel = getMultiBlockInspectorPanel();
-  if (panel)
+  vtkSMProxy* proxy = this->PickedRepresentation->getProxy();
+  vtkSMProperty* property = proxy->GetProperty("BlockVisibility");
+  if (property)
   {
-    panel->setBlockVisibility(this->PickedBlocks, false);
+    vtkSMIntVectorProperty* ivp = vtkSMIntVectorProperty::SafeDownCast(property);
+    QMap<unsigned int, int> visibilities;
+    readVisibilityMap(ivp, visibilities);
+    for (int i = 0; i < this->PickedBlocks.size(); ++i)
+    {
+      visibilities[this->PickedBlocks[i]] = 0;
+    }
+    setVisibilitiesFromMap(ivp, visibilities, proxy);
   }
+  this->PickedRepresentation->renderViewEventually();
 }
 
 //-----------------------------------------------------------------------------
@@ -459,21 +489,35 @@ void pqPipelineContextMenuBehavior::showOnlyBlock()
     return;
   }
 
-  pqMultiBlockInspectorPanel* panel = getMultiBlockInspectorPanel();
-  if (panel)
+  vtkSMProxy* proxy = this->PickedRepresentation->getProxy();
+  vtkSMProperty* property = proxy->GetProperty("BlockVisibility");
+  if (property)
   {
-    panel->showOnlyBlocks(this->PickedBlocks);
+    vtkSMIntVectorProperty* ivp = vtkSMIntVectorProperty::SafeDownCast(property);
+    QMap<unsigned int, int> visibilities;
+    visibilities[0] = 0;
+    for (int i = 0; i < this->PickedBlocks.size(); ++i)
+    {
+      visibilities[this->PickedBlocks[i]] = 1;
+    }
+    setVisibilitiesFromMap(ivp, visibilities, proxy);
   }
+  this->PickedRepresentation->renderViewEventually();
 }
 
 //-----------------------------------------------------------------------------
 void pqPipelineContextMenuBehavior::showAllBlocks()
 {
-  pqMultiBlockInspectorPanel* panel = getMultiBlockInspectorPanel();
-  if (panel)
+  vtkSMProxy* proxy = this->PickedRepresentation->getProxy();
+  vtkSMProperty* property = proxy->GetProperty("BlockVisibility");
+  if (property)
   {
-    panel->showAllBlocks();
+    vtkSMIntVectorProperty* ivp = vtkSMIntVectorProperty::SafeDownCast(property);
+    QMap<unsigned int, int> visibilities;
+    visibilities[0] = 1;
+    setVisibilitiesFromMap(ivp, visibilities, proxy);
   }
+  this->PickedRepresentation->renderViewEventually();
 }
 
 //-----------------------------------------------------------------------------
@@ -485,11 +529,20 @@ void pqPipelineContextMenuBehavior::unsetBlockVisibility()
     return;
   }
 
-  pqMultiBlockInspectorPanel* panel = getMultiBlockInspectorPanel();
-  if (panel)
+  vtkSMProxy* proxy = this->PickedRepresentation->getProxy();
+  vtkSMProperty* property = proxy->GetProperty("BlockVisibility");
+  if (property)
   {
-    panel->clearBlockVisibility(this->PickedBlocks);
+    vtkSMIntVectorProperty* ivp = vtkSMIntVectorProperty::SafeDownCast(property);
+    QMap<unsigned int, int> visibilities;
+    readVisibilityMap(ivp, visibilities);
+    for (int i = 0; i < this->PickedBlocks.size(); ++i)
+    {
+      visibilities.remove(this->PickedBlocks[i]);
+    }
+    setVisibilitiesFromMap(ivp, visibilities, proxy);
   }
+  this->PickedRepresentation->renderViewEventually();
 }
 
 //-----------------------------------------------------------------------------
@@ -501,16 +554,24 @@ void pqPipelineContextMenuBehavior::setBlockColor()
     return;
   }
 
-  pqMultiBlockInspectorPanel* panel = getMultiBlockInspectorPanel();
-  if (panel)
+  QColor qcolor = QColorDialog::getColor(QColor(), pqCoreUtilities::mainWidget(),
+    "Choose Block Color", QColorDialog::DontUseNativeDialog);
+
+  vtkSMProxy* proxy = this->PickedRepresentation->getProxy();
+  vtkSMProperty* property = proxy->GetProperty("BlockColor");
+  if (property)
   {
-    QColor color = QColorDialog::getColor(
-      QColor(), panel, "Choose Block Color", QColorDialog::DontUseNativeDialog);
-    if (color.isValid())
+    BEGIN_UNDO_SET("Change Block Colors");
+    vtkSMDoubleMapProperty* dmp = vtkSMDoubleMapProperty::SafeDownCast(property);
+    for (int i = 0; i < this->PickedBlocks.size(); ++i)
     {
-      panel->setBlockColor(this->PickedBlocks, color);
+      double color[] = { qcolor.redF(), qcolor.greenF(), qcolor.blueF() };
+      dmp->SetElements(this->PickedBlocks[i], color);
     }
+    proxy->UpdateVTKObjects();
+    END_UNDO_SET();
   }
+  this->PickedRepresentation->renderViewEventually();
 }
 
 //-----------------------------------------------------------------------------
@@ -522,11 +583,38 @@ void pqPipelineContextMenuBehavior::unsetBlockColor()
     return;
   }
 
-  pqMultiBlockInspectorPanel* panel = getMultiBlockInspectorPanel();
-  if (panel)
+  vtkSMProxy* proxy = this->PickedRepresentation->getProxy();
+  vtkSMProperty* property = proxy->GetProperty("BlockColor");
+  if (property)
   {
-    panel->clearBlockColor(this->PickedBlocks);
+    BEGIN_UNDO_SET("Change Block Colors");
+    vtkSMDoubleMapProperty* dmp = vtkSMDoubleMapProperty::SafeDownCast(property);
+    QMap<unsigned int, QColor> blockColors;
+    vtkSmartPointer<vtkSMDoubleMapPropertyIterator> iter;
+    iter.TakeReference(dmp->NewIterator());
+    for (iter->Begin(); !iter->IsAtEnd(); iter->Next())
+    {
+      QColor color = QColor::fromRgbF(
+        iter->GetElementComponent(0), iter->GetElementComponent(1), iter->GetElementComponent(2));
+      blockColors.insert(iter->GetKey(), color);
+    }
+    for (int i = 0; i < this->PickedBlocks.size(); ++i)
+    {
+      blockColors.remove(this->PickedBlocks[i]);
+    }
+
+    dmp->ClearElements();
+    QMap<unsigned int, QColor>::const_iterator iter2;
+    for (iter2 = blockColors.begin(); iter2 != blockColors.end(); iter2++)
+    {
+      QColor qcolor = iter2.value();
+      double color[] = { qcolor.redF(), qcolor.greenF(), qcolor.blueF() };
+      dmp->SetElements(iter2.key(), color);
+    }
+    proxy->UpdateVTKObjects();
+    END_UNDO_SET();
   }
+  this->PickedRepresentation->renderViewEventually();
 }
 
 //-----------------------------------------------------------------------------
@@ -538,11 +626,35 @@ void pqPipelineContextMenuBehavior::setBlockOpacity()
     return;
   }
 
-  pqMultiBlockInspectorPanel* panel = getMultiBlockInspectorPanel();
-  if (panel)
+  vtkSMProxy* proxy = this->PickedRepresentation->getProxy();
+  vtkSMProperty* property = proxy->GetProperty("BlockOpacity");
+  if (property)
   {
-    panel->promptAndSetBlockOpacity(this->PickedBlocks);
+    vtkSMDoubleMapProperty* dmp = vtkSMDoubleMapProperty::SafeDownCast(property);
+    // Hope this works?
+    double current_opacity = 1;
+    if (dmp->HasElement(this->PickedBlocks[0]))
+    {
+      current_opacity = dmp->GetElement(this->PickedBlocks[0]);
+    }
+
+    pqDoubleRangeDialog dialog("Opacity:", 0.0, 1.0, pqCoreUtilities::mainWidget());
+    dialog.setValue(current_opacity);
+    bool ok = dialog.exec();
+    if (!ok)
+    {
+      return;
+    }
+    BEGIN_UNDO_SET("Change Block Opacities");
+
+    for (int i = 0; i < this->PickedBlocks.size(); ++i)
+    {
+      dmp->SetElement(this->PickedBlocks[i], dialog.value());
+    }
+    proxy->UpdateVTKObjects();
+    END_UNDO_SET();
   }
+  this->PickedRepresentation->renderViewEventually();
 }
 
 //-----------------------------------------------------------------------------
@@ -554,20 +666,84 @@ void pqPipelineContextMenuBehavior::unsetBlockOpacity()
     return;
   }
 
-  pqMultiBlockInspectorPanel* panel = getMultiBlockInspectorPanel();
-  if (panel)
+  vtkSMProxy* proxy = this->PickedRepresentation->getProxy();
+  vtkSMProperty* property = proxy->GetProperty("BlockOpacity");
+  if (property)
   {
-    panel->clearBlockOpacity(this->PickedBlocks);
+    BEGIN_UNDO_SET("Change Block Opacities");
+    vtkSMDoubleMapProperty* dmp = vtkSMDoubleMapProperty::SafeDownCast(property);
+
+    for (int i = 0; i < this->PickedBlocks.size(); ++i)
+    {
+      dmp->RemoveElement(this->PickedBlocks[i]);
+    }
+    proxy->UpdateVTKObjects();
+    END_UNDO_SET();
   }
+  this->PickedRepresentation->renderViewEventually();
+}
+
+namespace
+{
+const char* findBlockName(
+  int flatIndexTarget, int& flatIndexCurrent, vtkPVCompositeDataInformation* currentInfo)
+{
+  // An interior block shouldn't be selected, only blocks with geometry can be
+  if (flatIndexCurrent == flatIndexTarget)
+  {
+    return nullptr;
+  }
+  for (unsigned int i = 0; i < currentInfo->GetNumberOfChildren(); i++)
+  {
+    ++flatIndexCurrent;
+    if (flatIndexCurrent == flatIndexTarget)
+    {
+      return currentInfo->GetName(i);
+    }
+    else if (flatIndexCurrent > flatIndexTarget)
+    {
+      return nullptr;
+    }
+    vtkPVDataInformation* childInfo = currentInfo->GetDataInformation(i);
+    if (childInfo)
+    {
+      vtkPVCompositeDataInformation* compositeChildInfo = childInfo->GetCompositeDataInformation();
+
+      // recurse down through child blocks only if the child block
+      // is composite and is not a multi-piece data set
+      if (compositeChildInfo->GetDataIsComposite() && !compositeChildInfo->GetDataIsMultiPiece())
+      {
+        const char* result = findBlockName(flatIndexTarget, flatIndexCurrent, compositeChildInfo);
+        if (result)
+        {
+          return result;
+        }
+      }
+      else if (compositeChildInfo && compositeChildInfo->GetDataIsMultiPiece())
+      {
+        flatIndexCurrent += compositeChildInfo->GetNumberOfChildren();
+      }
+    }
+  }
+  return nullptr;
+}
 }
 
 //-----------------------------------------------------------------------------
 QString pqPipelineContextMenuBehavior::lookupBlockName(unsigned int flatIndex) const
 {
-  pqMultiBlockInspectorPanel* panel = getMultiBlockInspectorPanel();
-  if (panel)
+  vtkPVDataInformation* info = this->PickedRepresentation->getRepresentedDataInformation();
+  if (!info)
   {
-    return panel->lookupBlockName(flatIndex);
+    return QString();
+  }
+  vtkPVCompositeDataInformation* compositeInfo = info->GetCompositeDataInformation();
+
+  int myIdx = 0;
+  const char* name = findBlockName(flatIndex, myIdx, compositeInfo);
+  if (name)
+  {
+    return QString(name);
   }
   else
   {

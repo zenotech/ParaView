@@ -33,11 +33,11 @@ class VTKPVSERVERIMPLEMENTATIONRENDERING_EXPORT vtkSIImageTextureProxy : public 
 public:
   static vtkSIImageTextureProxy* New();
   vtkTypeMacro(vtkSIImageTextureProxy, vtkSISourceProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkSIImageTextureProxy();
-  ~vtkSIImageTextureProxy();
+  ~vtkSIImageTextureProxy() override;
 
   /**
    * Overridden to hookup the image source with the Texture, if available.
@@ -45,8 +45,8 @@ protected:
   bool CreateVTKObjects() VTK_OVERRIDE;
 
 private:
-  vtkSIImageTextureProxy(const vtkSIImageTextureProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSIImageTextureProxy&) VTK_DELETE_FUNCTION;
+  vtkSIImageTextureProxy(const vtkSIImageTextureProxy&) = delete;
+  void operator=(const vtkSIImageTextureProxy&) = delete;
 };
 
 #endif

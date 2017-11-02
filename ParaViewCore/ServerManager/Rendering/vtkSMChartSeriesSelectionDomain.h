@@ -31,6 +31,11 @@
  * the domain changes preserving status for existing series i.e. it won't affect
  * the state for any series that already set on the property. Thus, it's not a
  * true "reset", but more like "update".
+ *
+ * Supported XML attributes
+ * \li hide_partial_arrays : when set to 1, partial arrays will not be shown in
+ * the domain (default).
+ *
 */
 
 #ifndef vtkSMChartSeriesSelectionDomain_h
@@ -51,13 +56,13 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMChartSeriesSelectionDomain
 public:
   static vtkSMChartSeriesSelectionDomain* New();
   vtkTypeMacro(vtkSMChartSeriesSelectionDomain, vtkSMStringListDomain);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Update self checking the "unchecked" values of all required
    * properties.
    */
-  virtual void Update(vtkSMProperty*);
+  void Update(vtkSMProperty*) VTK_OVERRIDE;
 
   enum DefaultModes
   {
@@ -72,7 +77,7 @@ public:
    * Set the property's default value based on the domain. How the value is
    * determined using the range is controlled by DefaultMode.
    */
-  virtual int SetDefaultValues(vtkSMProperty*, bool use_unchecked_values);
+  int SetDefaultValues(vtkSMProperty*, bool use_unchecked_values) VTK_OVERRIDE;
 
   //@{
   /**
@@ -96,9 +101,11 @@ public:
   }
   static bool GetLoadNoChartVariables() { return vtkSMChartSeriesSelectionDomain::LoadNoVariables; }
 
+  vtkSetStringMacro(DefaultValue);
+
 protected:
   vtkSMChartSeriesSelectionDomain();
-  ~vtkSMChartSeriesSelectionDomain();
+  ~vtkSMChartSeriesSelectionDomain() override;
 
   /**
    * Returns the datainformation from the current input, if possible.
@@ -108,7 +115,7 @@ protected:
   /**
    * Process any specific XML definition tags.
    */
-  virtual int ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement* element);
+  int ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement* element) VTK_OVERRIDE;
 
   /**
    * Returns the default visibility for a series given its name.
@@ -153,7 +160,6 @@ protected:
    * Value used when DefaultMode==VALUE
    */
   char* DefaultValue;
-  vtkSetStringMacro(DefaultValue);
   //@}
 
   /**
@@ -161,11 +167,16 @@ protected:
    */
   bool FlattenTable;
 
+  /**
+   * Specify if Partial Arrays should be hidden
+   */
+  bool HidePartialArrays;
+
   static bool LoadNoVariables;
 
 private:
-  vtkSMChartSeriesSelectionDomain(const vtkSMChartSeriesSelectionDomain&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMChartSeriesSelectionDomain&) VTK_DELETE_FUNCTION;
+  vtkSMChartSeriesSelectionDomain(const vtkSMChartSeriesSelectionDomain&) = delete;
+  void operator=(const vtkSMChartSeriesSelectionDomain&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

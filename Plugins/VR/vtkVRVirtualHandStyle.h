@@ -46,8 +46,8 @@ class vtkVRVirtualHandStyle : public vtkVRTrackStyle
 {
 public:
   static vtkVRVirtualHandStyle* New();
-  vtkTypeMacro(vtkVRVirtualHandStyle, vtkVRTrackStyle) void PrintSelf(
-    ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkVRVirtualHandStyle, vtkVRTrackStyle);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkVRVirtualHandStyle();
@@ -68,8 +68,8 @@ protected:
   vtkNew<vtkMatrix4x4> NewModelMatrix;
 
 private:
-  vtkVRVirtualHandStyle(const vtkVRVirtualHandStyle&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkVRVirtualHandStyle&) VTK_DELETE_FUNCTION;
+  vtkVRVirtualHandStyle(const vtkVRVirtualHandStyle&) = delete;
+  void operator=(const vtkVRVirtualHandStyle&) = delete;
 };
 
 #endif // vtkVRVirtualHandStyle.h

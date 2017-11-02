@@ -61,7 +61,7 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkKdTreeGenerator : public vtkObject
 public:
   static vtkKdTreeGenerator* New();
   vtkTypeMacro(vtkKdTreeGenerator, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -87,7 +87,7 @@ public:
 
 protected:
   vtkKdTreeGenerator();
-  ~vtkKdTreeGenerator();
+  ~vtkKdTreeGenerator() override;
 
   //@{
   /**
@@ -135,8 +135,8 @@ protected:
   int* Regions;
 
 private:
-  vtkKdTreeGenerator(const vtkKdTreeGenerator&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkKdTreeGenerator&) VTK_DELETE_FUNCTION;
+  vtkKdTreeGenerator(const vtkKdTreeGenerator&) = delete;
+  void operator=(const vtkKdTreeGenerator&) = delete;
 };
 
 #endif

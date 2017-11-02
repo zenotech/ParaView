@@ -59,7 +59,7 @@ class VTKPVCATALYST_EXPORT vtkCPProcessor : public vtkObject
 public:
   static vtkCPProcessor* New();
   vtkTypeMacro(vtkCPProcessor, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /// Add in a pipeline that is externally configured. Returns 1 if
   /// successful and 0 otherwise.
@@ -112,8 +112,8 @@ protected:
   virtual vtkObject* NewInitializationHelper();
 
 private:
-  vtkCPProcessor(const vtkCPProcessor&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCPProcessor&) VTK_DELETE_FUNCTION;
+  vtkCPProcessor(const vtkCPProcessor&) = delete;
+  void operator=(const vtkCPProcessor&) = delete;
 
   vtkCPProcessorInternals* Internal;
   vtkObject* InitializationHelper;

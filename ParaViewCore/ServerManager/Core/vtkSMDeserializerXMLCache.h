@@ -36,7 +36,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMDeserializerXMLCache : public vtkSMDese
 public:
   static vtkSMDeserializerXMLCache* New();
   vtkTypeMacro(vtkSMDeserializerXMLCache, vtkSMDeserializerXML);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Allow to register a given XML state for a given proxy GlobalId
@@ -45,7 +45,7 @@ public:
 
 protected:
   vtkSMDeserializerXMLCache();
-  ~vtkSMDeserializerXMLCache();
+  ~vtkSMDeserializerXMLCache() override;
 
   // Friend to access NewProxy().
   friend class vtkSMProxyLocator;
@@ -53,11 +53,11 @@ protected:
   /**
    * Locate the XML for the proxy with the given id.
    */
-  virtual vtkPVXMLElement* LocateProxyElement(vtkTypeUInt32 id);
+  vtkPVXMLElement* LocateProxyElement(vtkTypeUInt32 id) VTK_OVERRIDE;
 
 private:
-  vtkSMDeserializerXMLCache(const vtkSMDeserializerXMLCache&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMDeserializerXMLCache&) VTK_DELETE_FUNCTION;
+  vtkSMDeserializerXMLCache(const vtkSMDeserializerXMLCache&) = delete;
+  void operator=(const vtkSMDeserializerXMLCache&) = delete;
 
   class vtkInternal;
   vtkInternal* Internals;

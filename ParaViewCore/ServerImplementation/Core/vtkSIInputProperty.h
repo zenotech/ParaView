@@ -31,7 +31,7 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSIInputProperty : public vtkSIProx
 public:
   static vtkSIInputProperty* New();
   vtkTypeMacro(vtkSIInputProperty, vtkSIProxyProperty);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -43,24 +43,24 @@ public:
 
 protected:
   vtkSIInputProperty();
-  ~vtkSIInputProperty();
+  ~vtkSIInputProperty() override;
 
   /**
    * Push a new state to the underneath implementation
    */
-  virtual bool Push(vtkSMMessage*, int);
+  bool Push(vtkSMMessage*, int) VTK_OVERRIDE;
 
   /**
    * Parse the xml for the property.
    */
-  virtual bool ReadXMLAttributes(vtkSIProxy* proxyhelper, vtkPVXMLElement* element);
+  bool ReadXMLAttributes(vtkSIProxy* proxyhelper, vtkPVXMLElement* element) VTK_OVERRIDE;
 
   vtkSetMacro(PortIndex, int);
   int PortIndex;
 
 private:
-  vtkSIInputProperty(const vtkSIInputProperty&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSIInputProperty&) VTK_DELETE_FUNCTION;
+  vtkSIInputProperty(const vtkSIInputProperty&) = delete;
+  void operator=(const vtkSIInputProperty&) = delete;
 };
 
 #endif

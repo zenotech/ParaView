@@ -62,7 +62,7 @@ public:
    * lookup table to generate 4-component unsigned char scalars.
    * This ivar does not affect other scalars like unsigned short, float,
    * etc. These scalars are always mapped through lookup tables.
-   * Look at vtkTexture::MapColorScalarsThroughLookupTable for more details.
+   * Look at vtkTexture::SetColorMode for more details.
    */
   static vtkInformationIntegerKey* MAP_SCALARS();
 
@@ -135,8 +135,7 @@ public:
   //@{
   /**
    * Set if LUT must be used when scalars in the image can be directly used as
-   * colors. Look at vtkTexture::MapColorScalarsThroughLookupTable for more
-   * details.
+   * colors. Look at vtkTexture::SetColorMode for more details.
    */
   vtkSetMacro(MapScalars, int);
   vtkGetMacro(MapScalars, int);
@@ -210,8 +209,8 @@ protected:
   vtkTimeStamp UpdateTime;
 
 private:
-  vtkTexturePainter(const vtkTexturePainter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkTexturePainter&) VTK_DELETE_FUNCTION;
+  vtkTexturePainter(const vtkTexturePainter&) = delete;
+  void operator=(const vtkTexturePainter&) = delete;
 };
 
 #endif

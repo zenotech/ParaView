@@ -148,6 +148,8 @@ pqSGExportStateWizard::pqSGExportStateWizard(QWidget* parentObject, Qt::WindowFl
   // this->setWizardStyle(ModernStyle);
   this->setOption(QWizard::NoCancelButton, false);
   this->Internals->wViewSelection->hide();
+  this->Internals->fileNamePaddingAmountLabel->hide();
+  this->Internals->fileNamePaddingAmountSpinBox->hide();
   this->Internals->rescaleDataRange->hide();
   this->Internals->laRescaleDataRange->hide();
 
@@ -169,6 +171,11 @@ pqSGExportStateWizard::pqSGExportStateWizard(QWidget* parentObject, Qt::WindowFl
     this->Internals->wViewSelection, SLOT(setVisible(bool)));
 
   QObject::connect(this->Internals->outputRendering, SIGNAL(toggled(bool)),
+    this->Internals->fileNamePaddingAmountSpinBox, SLOT(setVisible(bool)));
+  QObject::connect(this->Internals->outputRendering, SIGNAL(toggled(bool)),
+    this->Internals->fileNamePaddingAmountLabel, SLOT(setVisible(bool)));
+
+  QObject::connect(this->Internals->outputRendering, SIGNAL(toggled(bool)),
     this->Internals->rescaleDataRange, SLOT(setVisible(bool)));
   QObject::connect(this->Internals->outputRendering, SIGNAL(toggled(bool)),
     this->Internals->laRescaleDataRange, SLOT(setVisible(bool)));
@@ -179,8 +186,8 @@ pqSGExportStateWizard::pqSGExportStateWizard(QWidget* parentObject, Qt::WindowFl
     this->Internals->outputRendering, SLOT(setChecked(bool)));
   QObject::connect(this->Internals->outputCinema, SIGNAL(toggled(bool)),
     this->Internals->wCinemaTrackSelection, SLOT(setVisible(bool)));
-  QObject::connect(this->Internals->outputCinema, SIGNAL(toggled(bool)),
-    this, SLOT(toggleCinema(bool)));
+  QObject::connect(
+    this->Internals->outputCinema, SIGNAL(toggled(bool)), this, SLOT(toggleCinema(bool)));
   QObject::connect(this->Internals->wViewSelection, SIGNAL(arraySelectionEnabledChanged(bool)),
     this->Internals->wCinemaTrackSelection, SLOT(enableArraySelection(bool)));
 
@@ -319,7 +326,7 @@ bool pqSGExportStateWizard::validateCurrentPage()
   {
     // ensure Python in initialized.
     vtkPythonInterpreter::Initialize();
-    vtkPythonInterpreter::RunSimpleString(command.toLatin1().data());
+    vtkPythonInterpreter::RunSimpleString(command.toLocal8Bit().data());
     return true;
   }
   return false;

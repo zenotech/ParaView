@@ -30,32 +30,32 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSICollaborationManager : public vt
 public:
   static vtkSICollaborationManager* New();
   vtkTypeMacro(vtkSICollaborationManager, vtkSIObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Push a new state to the underneath implementation
    * The provided implementation just store the message
    * and return it at the Pull one.
    */
-  virtual void Push(vtkSMMessage* msg);
+  void Push(vtkSMMessage* msg) VTK_OVERRIDE;
 
   /**
    * Pull the current state of the underneath implementation
    * The provided implementation update the given message with the one
    * that has been previously pushed
    */
-  virtual void Pull(vtkSMMessage* msg);
+  void Pull(vtkSMMessage* msg) VTK_OVERRIDE;
 
 protected:
   vtkSICollaborationManager();
-  virtual ~vtkSICollaborationManager();
+  ~vtkSICollaborationManager() override;
 
   friend class vtkInternal;
   void BroadcastToClients(vtkSMMessage* msg);
 
 private:
-  vtkSICollaborationManager(const vtkSICollaborationManager&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSICollaborationManager&) VTK_DELETE_FUNCTION;
+  vtkSICollaborationManager(const vtkSICollaborationManager&) = delete;
+  void operator=(const vtkSICollaborationManager&) = delete;
 
   class vtkInternal;
   vtkInternal* Internal;

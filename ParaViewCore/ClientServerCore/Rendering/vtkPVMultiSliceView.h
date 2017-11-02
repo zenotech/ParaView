@@ -35,9 +35,9 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVMultiSliceView : public vtkPVRe
 public:
   static vtkPVMultiSliceView* New();
   vtkTypeMacro(vtkPVMultiSliceView, vtkPVRenderView);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  virtual void Update();
+  void Update() VTK_OVERRIDE;
 
   void SetNumberOfXSlices(unsigned int count) { this->SetNumberOfSlices(0, count); }
   void SetXSlices(const double* values) { this->SetSlices(0, values); }
@@ -72,9 +72,9 @@ public:
 
 protected:
   vtkPVMultiSliceView();
-  ~vtkPVMultiSliceView();
+  ~vtkPVMultiSliceView() override;
 
-  virtual void AboutToRenderOnLocalProcess(bool interactive);
+  void AboutToRenderOnLocalProcess(bool interactive) VTK_OVERRIDE;
 
   void SetNumberOfSlices(int type, unsigned int count);
   void SetSlices(int type, const double* values);
@@ -84,8 +84,8 @@ protected:
   vtkTimeStamp ModelTransformationMatrixUpdateTime;
 
 private:
-  vtkPVMultiSliceView(const vtkPVMultiSliceView&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVMultiSliceView&) VTK_DELETE_FUNCTION;
+  vtkPVMultiSliceView(const vtkPVMultiSliceView&) = delete;
+  void operator=(const vtkPVMultiSliceView&) = delete;
 
   class vtkSliceInternal;
   vtkSliceInternal* Internal;

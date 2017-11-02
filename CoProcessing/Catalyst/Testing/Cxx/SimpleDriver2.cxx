@@ -26,7 +26,10 @@ class VTK_EXPORT vtkCPImplementedTestDriver : public vtkCPTestDriver
 public:
   static vtkCPImplementedTestDriver* New();
   vtkTypeMacro(vtkCPImplementedTestDriver, vtkCPTestDriver);
-  void PrintSelf(ostream& os, vtkIndent indent) { this->Superclass::PrintSelf(os, indent); }
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE
+  {
+    this->Superclass::PrintSelf(os, indent);
+  }
 
 protected:
   vtkCPImplementedTestDriver()
@@ -61,8 +64,8 @@ protected:
   ~vtkCPImplementedTestDriver(){};
 
 private:
-  vtkCPImplementedTestDriver(const vtkCPImplementedTestDriver&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCPImplementedTestDriver&) VTK_DELETE_FUNCTION;
+  vtkCPImplementedTestDriver(const vtkCPImplementedTestDriver&) = delete;
+  void operator=(const vtkCPImplementedTestDriver&) = delete;
 };
 
 vtkStandardNewMacro(vtkCPImplementedTestDriver);

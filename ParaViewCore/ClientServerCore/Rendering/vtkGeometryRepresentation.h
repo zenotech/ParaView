@@ -27,8 +27,10 @@
 
 #ifndef vtkGeometryRepresentation_h
 #define vtkGeometryRepresentation_h
+#include <array>         // needed for array
+#include <unordered_map> // needed for unordered_map
 
-#include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
+#include "vtkPVClientServerCoreRenderingModule.h" // needed for exports
 #include "vtkPVDataRepresentation.h"
 #include "vtkProperty.h" // needed for VTK_POINTS etc.
 
@@ -50,7 +52,7 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkGeometryRepresentation
 public:
   static vtkGeometryRepresentation* New();
   vtkTypeMacro(vtkGeometryRepresentation, vtkPVDataRepresentation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * vtkAlgorithm::ProcessRequest() equivalent for rendering passes. This is
@@ -58,8 +60,8 @@ public:
    * representations or ask them to perform certain tasks e.g.
    * PrepareForRendering.
    */
-  virtual int ProcessViewRequest(
-    vtkInformationRequestKey* request_type, vtkInformation* inInfo, vtkInformation* outInfo);
+  int ProcessViewRequest(vtkInformationRequestKey* request_type, vtkInformation* inInfo,
+    vtkInformation* outInfo) VTK_OVERRIDE;
 
   /**
    * This needs to be called on all instances of vtkGeometryRepresentation when
@@ -67,13 +69,13 @@ public:
    * have any real-input on the client side which messes with the Update
    * requests.
    */
-  virtual void MarkModified();
+  void MarkModified() VTK_OVERRIDE;
 
   /**
    * Get/Set the visibility for this representation. When the visibility of
    * representation of false, all view passes are ignored.
    */
-  virtual void SetVisibility(bool val);
+  void SetVisibility(bool val) VTK_OVERRIDE;
 
   //@{
   /**
@@ -131,7 +133,7 @@ public:
   /**
    * Returns the data object that is rendered from the given input port.
    */
-  virtual vtkDataObject* GetRenderedDataObject(int port);
+  vtkDataObject* GetRenderedDataObject(int port) VTK_OVERRIDE;
 
   /**
    * Returns true if this class would like to get ghost-cells if available for
@@ -168,6 +170,7 @@ public:
   virtual void SetPointSize(double val);
   virtual void SetSpecularColor(double r, double g, double b);
   virtual void SetSpecularPower(double val);
+  virtual void SetLuminosity(double val);
 
   //***************************************************************************
   // Forwarded to Actor.
@@ -257,6 +260,11 @@ public:
   virtual void SetScalingFunction(vtkPiecewiseFunction* pwf);
   //@}
 
+  /**
+   * For OSPRay, choose from among available materials.
+   */
+  virtual void SetMaterial(const char*);
+
   //@{
   /**
    * Specify whether or not to redistribute the data. The default is false
@@ -270,7 +278,7 @@ public:
 
 protected:
   vtkGeometryRepresentation();
-  ~vtkGeometryRepresentation();
+  ~vtkGeometryRepresentation() override;
 
   /**
    * This method is called in the constructor. If the subclasses override any of
@@ -283,7 +291,7 @@ protected:
   /**
    * Fill input port information.
    */
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   /**
    * Subclasses should override this to connect inputs to the internal pipeline
@@ -295,32 +303,27 @@ protected:
    * GetInternalSelectionOutputPort should be used to obtain a selection or
    * annotation port whose selections are localized for a particular input data object.
    */
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   /**
    * Overridden to request correct ghost-level to avoid internal surfaces.
    */
-  virtual int RequestUpdateExtent(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
-
-  /**
-   * Produce meta-data about this representation that the view may find useful.
-   */
-  VTK_LEGACY(virtual bool GenerateMetaData(vtkInformation*, vtkInformation*));
+  int RequestUpdateExtent(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   /**
    * Adds the representation to the view.  This is called from
    * vtkView::AddRepresentation().  Subclasses should override this method.
    * Returns true if the addition succeeds.
    */
-  virtual bool AddToView(vtkView* view);
+  bool AddToView(vtkView* view) VTK_OVERRIDE;
 
   /**
    * Removes the representation to the view.  This is called from
    * vtkView::RemoveRepresentation().  Subclasses should override this method.
    * Returns true if the removal succeeds.
    */
-  virtual bool RemoveFromView(vtkView* view);
+  bool RemoveFromView(vtkView* view) VTK_OVERRIDE;
 
   /**
    * Passes on parameters to vtkProperty and vtkMapper
@@ -335,13 +338,19 @@ protected:
   /**
    * Overridden to check with the vtkPVCacheKeeper to see if the key is cached.
    */
-  virtual bool IsCached(double cache_key);
+  bool IsCached(double cache_key) VTK_OVERRIDE;
 
-  // Callback registered with the InternalProgressObserver.
-  static void InternalProgressCallbackFunction(vtkObject*, unsigned long, void* clientdata, void*);
-  void InternalProgressCallback(vtkAlgorithm* algorithm);
-  // The observer to report progress from the internal filters.
-  vtkCallbackCommand* InternalProgressObserver;
+  // Progress Callback
+  void HandleGeometryRepresentationProgress(vtkObject* caller, unsigned long, void*);
+
+  /**
+   * Block attributes in a mapper are referenced to each block through DataObject
+   * pointers. Since DataObjects may change after updating the pipeline, this class
+   * maintains an additional map using the flat-index as a key.  This method updates
+   * the mapper's attributes with those cached in this representation; This is done
+   * after the data has updated (multi-block nodes change after an update).
+   */
+  void UpdateBlockAttributes(vtkMapper* mapper);
 
   vtkAlgorithm* GeometryFilter;
   vtkAlgorithm* MultiBlockMaker;
@@ -366,9 +375,16 @@ protected:
 
   bool UseDataPartitions;
 
+  bool BlockAttrChanged = false;
+  vtkTimeStamp BlockAttributeTime;
+  bool UpdateBlockAttrLOD = false;
+  std::unordered_map<unsigned int, bool> BlockVisibilities;
+  std::unordered_map<unsigned int, double> BlockOpacities;
+  std::unordered_map<unsigned int, std::array<double, 3> > BlockColors;
+
 private:
-  vtkGeometryRepresentation(const vtkGeometryRepresentation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkGeometryRepresentation&) VTK_DELETE_FUNCTION;
+  vtkGeometryRepresentation(const vtkGeometryRepresentation&) = delete;
+  void operator=(const vtkGeometryRepresentation&) = delete;
 
   friend class vtkSelectionRepresentation;
   char* DebugString;

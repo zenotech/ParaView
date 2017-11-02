@@ -31,7 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ========================================================================*/
 #include "pqComparativeContextView.h"
 
-#include "QVTKWidget.h"
+#include "pqQVTKWidgetBase.h"
 #include "pqServer.h"
 #include "pqUndoStack.h"
 #include "vtkCollection.h"
@@ -53,7 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class pqComparativeContextView::pqInternal
 {
 public:
-  QMap<vtkSMViewProxy*, QPointer<QVTKWidget> > RenderWidgets;
+  QMap<vtkSMViewProxy*, QPointer<pqQVTKWidgetBase> > RenderWidgets;
   vtkSmartPointer<vtkEventQtSlotConnect> VTKConnect;
 
   pqInternal() { this->VTKConnect = vtkSmartPointer<vtkEventQtSlotConnect>::New(); }
@@ -67,14 +67,16 @@ class pqComparativeWidget : public QWidget
 {
 public:
   vtkWeakPointer<vtkSMProxy> ViewProxy;
-  void resizeEvent(QResizeEvent* evt)
+  void resizeEvent(QResizeEvent* evt) override
   {
     this->QWidget::resizeEvent(evt);
 
-    BEGIN_UNDO_EXCLUDE();
+    QSize asize = this->size() * this->devicePixelRatio();
     int view_size[2];
-    view_size[0] = this->size().width();
-    view_size[1] = this->size().height();
+    view_size[0] = asize.width();
+    view_size[1] = asize.height();
+
+    BEGIN_UNDO_EXCLUDE();
     vtkSMPropertyHelper(this->ViewProxy, "ViewSize").Set(view_size, 2);
     this->ViewProxy->UpdateProperty("ViewSize");
     END_UNDO_EXCLUDE();
@@ -97,7 +99,7 @@ pqComparativeContextView::pqComparativeContextView(const QString& type, const QS
 //-----------------------------------------------------------------------------
 pqComparativeContextView::~pqComparativeContextView()
 {
-  foreach (QVTKWidget* wdg, this->Internal->RenderWidgets.values())
+  foreach (pqQVTKWidgetBase* wdg, this->Internal->RenderWidgets.values())
   {
     delete wdg;
   }
@@ -166,7 +168,7 @@ void pqComparativeContextView::updateViewWidgets()
   // Destroy old QVTKWidgets widgets.
   foreach (vtkSMViewProxy* key, removed)
   {
-    QVTKWidget* item = this->Internal->RenderWidgets.take(key);
+    pqQVTKWidgetBase* item = this->Internal->RenderWidgets.take(key);
     delete item;
   }
 
@@ -176,7 +178,7 @@ void pqComparativeContextView::updateViewWidgets()
     vtkSMContextViewProxy* cntxtView = vtkSMContextViewProxy::SafeDownCast(key);
     cntxtView->UpdateVTKObjects();
 
-    QVTKWidget* wdg = new QVTKWidget();
+    pqQVTKWidgetBase* wdg = new pqQVTKWidgetBase();
     wdg->SetRenderWindow(cntxtView->GetContextView()->GetRenderWindow());
     cntxtView->SetupInteractor(wdg->GetInteractor());
     wdg->installEventFilter(this);
@@ -206,7 +208,7 @@ void pqComparativeContextView::updateViewWidgets()
     {
       int index = y * dimensions[0] + x;
       vtkSMViewProxy* view = vtkSMViewProxy::SafeDownCast(currentViews->GetItemAsObject(index));
-      QVTKWidget* vtkwidget = this->Internal->RenderWidgets[view];
+      pqQVTKWidgetBase* vtkwidget = this->Internal->RenderWidgets[view];
       layout->addWidget(vtkwidget, y, x);
     }
   }

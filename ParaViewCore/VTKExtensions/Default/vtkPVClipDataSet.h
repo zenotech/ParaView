@@ -31,11 +31,11 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVClipDataSet : public vtkTableBasedCl
 {
 public:
   vtkTypeMacro(vtkPVClipDataSet, vtkTableBasedClipDataSet);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   static vtkPVClipDataSet* New();
 
-  virtual int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   //@{
   /**
@@ -49,14 +49,14 @@ public:
 
 protected:
   vtkPVClipDataSet(vtkImplicitFunction* cf = NULL);
-  ~vtkPVClipDataSet();
+  ~vtkPVClipDataSet() override;
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   virtual int RequestDataObject(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
-  virtual int FillInputPortInformation(int, vtkInformation* info);
-  virtual int FillOutputPortInformation(int, vtkInformation* info);
+  int FillInputPortInformation(int, vtkInformation* info) VTK_OVERRIDE;
+  int FillOutputPortInformation(int, vtkInformation* info) VTK_OVERRIDE;
 
   //@{
   /**
@@ -73,8 +73,8 @@ protected:
   bool UseAMRDualClipForAMR;
 
 private:
-  vtkPVClipDataSet(const vtkPVClipDataSet&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVClipDataSet&) VTK_DELETE_FUNCTION;
+  vtkPVClipDataSet(const vtkPVClipDataSet&) = delete;
+  void operator=(const vtkPVClipDataSet&) = delete;
 };
 
 #endif

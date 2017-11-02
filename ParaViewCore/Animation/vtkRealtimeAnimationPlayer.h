@@ -30,7 +30,7 @@ class VTKPVANIMATION_EXPORT vtkRealtimeAnimationPlayer : public vtkAnimationPlay
 public:
   static vtkRealtimeAnimationPlayer* New();
   vtkTypeMacro(vtkRealtimeAnimationPlayer, vtkAnimationPlayer);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -42,18 +42,18 @@ public:
 
 protected:
   vtkRealtimeAnimationPlayer();
-  ~vtkRealtimeAnimationPlayer();
+  ~vtkRealtimeAnimationPlayer() override;
 
-  virtual void StartLoop(double, double, double*);
-  virtual void EndLoop() {}
+  void StartLoop(double, double, double*) VTK_OVERRIDE;
+  void EndLoop() VTK_OVERRIDE {}
 
   /**
    * Return the next time given the current time.
    */
-  virtual double GetNextTime(double currentime);
+  double GetNextTime(double currentime) VTK_OVERRIDE;
 
-  virtual double GoToNext(double start, double end, double currenttime);
-  virtual double GoToPrevious(double start, double end, double currenttime);
+  double GoToNext(double start, double end, double currenttime) VTK_OVERRIDE;
+  double GoToPrevious(double start, double end, double currenttime) VTK_OVERRIDE;
 
   unsigned long Duration;
   double StartTime;
@@ -63,8 +63,8 @@ protected:
   vtkTimerLog* Timer;
 
 private:
-  vtkRealtimeAnimationPlayer(const vtkRealtimeAnimationPlayer&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkRealtimeAnimationPlayer&) VTK_DELETE_FUNCTION;
+  vtkRealtimeAnimationPlayer(const vtkRealtimeAnimationPlayer&) = delete;
+  void operator=(const vtkRealtimeAnimationPlayer&) = delete;
 };
 
 #endif

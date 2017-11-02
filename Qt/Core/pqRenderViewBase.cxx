@@ -115,7 +115,7 @@ public:
       QString txt = "Full resolution render in: ";
       txt += QString::number(this->TimeLeftBeforeFullResolution);
       txt += " s";
-      this->writeToStatusBar(txt.toLatin1().data());
+      this->writeToStatusBar(txt.toLocal8Bit().data());
       this->TimeLeftBeforeFullResolution -= 0.1;
     }
     else
@@ -132,7 +132,6 @@ pqRenderViewBase::pqRenderViewBase(const QString& type, const QString& group, co
 {
   this->Internal = new pqRenderViewBase::pqInternal();
   this->InteractiveDelayUpdateTimer = new pqTimer(this);
-  this->AllowCaching = true;
 }
 
 //-----------------------------------------------------------------------------
@@ -146,26 +145,6 @@ QWidget* pqRenderViewBase::createWidget()
 {
   pqQVTKWidget* vtkwidget = new pqQVTKWidget();
   vtkwidget->setViewProxy(this->getProxy());
-
-// do image caching for performance
-// For now, we are doing this only on Apple because it can render
-// and capture a frame buffer even when it is obstructred by a
-// window. This does not work as well on other platforms.
-
-#if defined(__APPLE__)
-  if (this->AllowCaching)
-  {
-    // Don't override the caching flag here. It is set correctly by
-    // pqQVTKWidget.  I don't know why this explicit marking cached dirty was
-    // done. But in case it's needed for streaming view, I am letting it be.
-    // vtkwidget->setAutomaticImageCacheEnabled(true);
-
-    // help the QVTKWidget know when to clear the cache
-    this->getConnector()->Connect(
-      this->getProxy(), vtkCommand::ModifiedEvent, vtkwidget, SLOT(markCachedImageAsDirty()));
-  }
-#endif
-
   vtkwidget->setContextMenuPolicy(Qt::NoContextMenu);
   vtkwidget->installEventFilter(this);
   return vtkwidget;
@@ -177,7 +156,7 @@ void pqRenderViewBase::initialize()
   this->Superclass::initialize();
 
   // The render module needs to obtain client side objects
-  // for the RenderWindow etc. to initialize the QVTKWidget
+  // for the RenderWindow etc. to initialize the pqQVTKWidgetBase
   // correctly. It cannot do this unless the underlying proxy
   // has been created. Since any pqProxy should never call
   // UpdateVTKObjects() on itself in the constructor, we
@@ -216,15 +195,6 @@ void pqRenderViewBase::initializeAfterObjectsCreated()
     QObject::connect(
       this->InteractiveDelayUpdateTimer, SIGNAL(timeout()), this, SLOT(updateStatusMessage()));
   }
-
-  // when PV_NO_OFFSCREEN_SCREENSHOTS is set, by default, we disable offscreen
-  // screenshots.
-  vtkSMProxy* proxy = this->getProxy();
-  if (getenv("PV_NO_OFFSCREEN_SCREENSHOTS"))
-  {
-    vtkSMPropertyHelper(proxy, "UseOffscreenRenderingForScreenshots", /*quiet*/ true).Set(0);
-  }
-  proxy->UpdateVTKObjects();
 }
 
 //-----------------------------------------------------------------------------
@@ -277,34 +247,6 @@ bool pqRenderViewBase::eventFilter(QObject* caller, QEvent* e)
 
   return Superclass::eventFilter(caller, e);
 }
-
-//-----------------------------------------------------------------------------
-#if !defined(VTK_LEGACY_REMOVE)
-void pqRenderViewBase::setStereo(int mode)
-{
-  VTK_LEGACY_BODY(pqRenderViewBase::setStereo, "ParaView 5.1");
-  QList<pqView*> views =
-    pqApplicationCore::instance()->getServerManagerModel()->findItems<pqView*>();
-  foreach (pqView* view, views)
-  {
-    vtkSMProxy* viewProxy = view->getProxy();
-    if (mode >= VTK_STEREO_CRYSTAL_EYES && mode <= VTK_STEREO_SPLITVIEWPORT_HORIZONTAL)
-    {
-      vtkSMPropertyHelper(viewProxy, "StereoType", /*quiet*/ true).Set(mode);
-      vtkSMPropertyHelper(viewProxy, "StereoRender", /*quiet*/ true).Set(1);
-    }
-    else
-    {
-      vtkSMPropertyHelper(viewProxy, "StereoRender", /*quiet*/ true).Set(0);
-    }
-    viewProxy->UpdateVTKObjects();
-    if (mode != 0)
-    {
-      view->forceRender();
-    }
-  }
-}
-#endif
 
 //-----------------------------------------------------------------------------
 void pqRenderViewBase::beginDelayInteractiveRender()

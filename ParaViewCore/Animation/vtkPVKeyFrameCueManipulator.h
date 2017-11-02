@@ -47,7 +47,7 @@ class VTKPVANIMATION_EXPORT vtkPVKeyFrameCueManipulator : public vtkPVCueManipul
 {
 public:
   vtkTypeMacro(vtkPVKeyFrameCueManipulator, vtkPVCueManipulator);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
   static vtkPVKeyFrameCueManipulator* New();
 
   /**
@@ -129,7 +129,7 @@ public:
    */
 protected:
   vtkPVKeyFrameCueManipulator();
-  ~vtkPVKeyFrameCueManipulator();
+  ~vtkPVKeyFrameCueManipulator() override;
   //@}
 
   /**
@@ -146,16 +146,16 @@ protected:
    * is done only once per Animation cycle. The Initialize method is used to
    * indicate that a new animation cycle has begun.
    */
-  virtual void Initialize(vtkPVAnimationCue*);
+  void Initialize(vtkPVAnimationCue*) VTK_OVERRIDE;
 
-  virtual void Finalize(vtkPVAnimationCue*);
+  void Finalize(vtkPVAnimationCue*) VTK_OVERRIDE;
 
   vtkPVKeyFrameCueManipulatorInternals* Internals;
   /**
    * This updates the values based on currenttime.
    * currenttime is normalized to the time range of the Cue.
    */
-  virtual void UpdateValue(double currenttime, vtkPVAnimationCue* cueproxy);
+  void UpdateValue(double currenttime, vtkPVAnimationCue* cueproxy) VTK_OVERRIDE;
 
   int AddKeyFrameInternal(vtkPVKeyFrame* keyframe);
   int RemoveKeyFrameInternal(vtkPVKeyFrame* keyframe);
@@ -168,8 +168,8 @@ protected:
   int LastAddedKeyFrameIndex;
 
 private:
-  vtkPVKeyFrameCueManipulator(const vtkPVKeyFrameCueManipulator&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVKeyFrameCueManipulator&) VTK_DELETE_FUNCTION;
+  vtkPVKeyFrameCueManipulator(const vtkPVKeyFrameCueManipulator&) = delete;
+  void operator=(const vtkPVKeyFrameCueManipulator&) = delete;
 };
 
 #endif

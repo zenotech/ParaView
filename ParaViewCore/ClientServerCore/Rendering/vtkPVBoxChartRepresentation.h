@@ -34,12 +34,12 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVBoxChartRepresentation
 public:
   static vtkPVBoxChartRepresentation* New();
   vtkTypeMacro(vtkPVBoxChartRepresentation, vtkChartRepresentation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Set visibility of the representation.
    */
-  virtual void SetVisibility(bool visible);
+  void SetVisibility(bool visible) VTK_OVERRIDE;
 
   //@{
   /**
@@ -87,22 +87,22 @@ public:
 
 protected:
   vtkPVBoxChartRepresentation();
-  ~vtkPVBoxChartRepresentation();
+  ~vtkPVBoxChartRepresentation() override;
 
   /**
    * Overridden to pass information about changes to series visibility etc. to
    * the plot-matrix.
    */
-  virtual void PrepareForRendering();
+  void PrepareForRendering() VTK_OVERRIDE;
 
-  virtual bool AddToView(vtkView* view);
+  bool AddToView(vtkView* view) VTK_OVERRIDE;
 
   /**
    * Removes the representation to the view.  This is called from
    * vtkView::RemoveRepresentation().  Subclasses should override this method.
    * Returns true if the removal succeeds.
    */
-  virtual bool RemoveFromView(vtkView* view);
+  bool RemoveFromView(vtkView* view) VTK_OVERRIDE;
 
   int LineThickness;
   int LineStyle;
@@ -110,8 +110,8 @@ protected:
   bool Legend;
 
 private:
-  vtkPVBoxChartRepresentation(const vtkPVBoxChartRepresentation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVBoxChartRepresentation&) VTK_DELETE_FUNCTION;
+  vtkPVBoxChartRepresentation(const vtkPVBoxChartRepresentation&) = delete;
+  void operator=(const vtkPVBoxChartRepresentation&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

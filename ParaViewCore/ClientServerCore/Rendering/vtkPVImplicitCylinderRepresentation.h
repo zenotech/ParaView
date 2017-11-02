@@ -32,16 +32,15 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVImplicitCylinderRepresentation
 public:
   static vtkPVImplicitCylinderRepresentation* New();
   vtkTypeMacro(vtkPVImplicitCylinderRepresentation, vtkImplicitCylinderRepresentation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkPVImplicitCylinderRepresentation();
-  ~vtkPVImplicitCylinderRepresentation();
+  ~vtkPVImplicitCylinderRepresentation() override;
 
 private:
-  vtkPVImplicitCylinderRepresentation(
-    const vtkPVImplicitCylinderRepresentation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVImplicitCylinderRepresentation&) VTK_DELETE_FUNCTION;
+  vtkPVImplicitCylinderRepresentation(const vtkPVImplicitCylinderRepresentation&) = delete;
+  void operator=(const vtkPVImplicitCylinderRepresentation&) = delete;
 };
 
 #endif

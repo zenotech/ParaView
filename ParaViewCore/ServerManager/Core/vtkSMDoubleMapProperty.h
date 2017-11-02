@@ -33,7 +33,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMDoubleMapProperty : public vtkSMMapProp
 public:
   static vtkSMDoubleMapProperty* New();
   vtkTypeMacro(vtkSMDoubleMapProperty, vtkSMMapProperty);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Sets the number of components.
@@ -88,7 +88,12 @@ public:
   /**
    * Returns the number of elements.
    */
-  virtual vtkIdType GetNumberOfElements();
+  vtkIdType GetNumberOfElements() VTK_OVERRIDE;
+
+  /**
+   * Returns true if the property has an element with the given index
+   */
+  bool HasElement(vtkIdType index);
 
   /**
    * Clears all of the elements from the property.
@@ -106,32 +111,32 @@ public:
   /**
    * Copy all property values.
    */
-  virtual void Copy(vtkSMProperty* src);
+  void Copy(vtkSMProperty* src) VTK_OVERRIDE;
 
   /**
    * For properties that support specifying defaults in XML configuration, this
    * method will reset the property value to the default values specified in the
    * XML.
    */
-  virtual void ResetToXMLDefaults();
+  void ResetToXMLDefaults() VTK_OVERRIDE;
 
 protected:
   vtkSMDoubleMapProperty();
-  ~vtkSMDoubleMapProperty();
+  ~vtkSMDoubleMapProperty() override;
 
-  virtual void WriteTo(vtkSMMessage* msg);
+  void WriteTo(vtkSMMessage* msg) VTK_OVERRIDE;
 
-  virtual void ReadFrom(
-    const vtkSMMessage* message, int message_offset, vtkSMProxyLocator* locator);
+  void ReadFrom(
+    const vtkSMMessage* message, int message_offset, vtkSMProxyLocator* locator) VTK_OVERRIDE;
 
-  virtual int ReadXMLAttributes(vtkSMProxy* parent, vtkPVXMLElement* element);
+  int ReadXMLAttributes(vtkSMProxy* parent, vtkPVXMLElement* element) VTK_OVERRIDE;
 
-  virtual void SaveStateValues(vtkPVXMLElement* propertyElement);
-  virtual int LoadState(vtkPVXMLElement* element, vtkSMProxyLocator* loader);
+  void SaveStateValues(vtkPVXMLElement* propertyElement) VTK_OVERRIDE;
+  int LoadState(vtkPVXMLElement* element, vtkSMProxyLocator* loader) VTK_OVERRIDE;
 
 private:
-  vtkSMDoubleMapProperty(const vtkSMDoubleMapProperty&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMDoubleMapProperty&) VTK_DELETE_FUNCTION;
+  vtkSMDoubleMapProperty(const vtkSMDoubleMapProperty&) = delete;
+  void operator=(const vtkSMDoubleMapProperty&) = delete;
 
   vtkSMDoubleMapPropertyPrivate* Private;
 };

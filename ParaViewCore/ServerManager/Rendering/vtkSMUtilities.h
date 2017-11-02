@@ -34,7 +34,7 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMUtilities : public vtkSMObject
 public:
   static vtkSMUtilities* New();
   vtkTypeMacro(vtkSMUtilities, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Save the image to a file.
@@ -100,11 +100,11 @@ public:
 
 protected:
   vtkSMUtilities() {}
-  ~vtkSMUtilities() {}
+  ~vtkSMUtilities() override {}
 
 private:
-  vtkSMUtilities(const vtkSMUtilities&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMUtilities&) VTK_DELETE_FUNCTION;
+  vtkSMUtilities(const vtkSMUtilities&) = delete;
+  void operator=(const vtkSMUtilities&) = delete;
 };
 
 #endif

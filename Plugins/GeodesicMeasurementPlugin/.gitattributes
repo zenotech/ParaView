@@ -1,0 +1,2 @@
+FmmMesh/**  -format.clang-format
+*.inl       -crlf

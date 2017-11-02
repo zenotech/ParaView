@@ -46,7 +46,8 @@ class vtkVRGrabWorldStyle : public vtkVRTrackStyle
 {
 public:
   static vtkVRGrabWorldStyle* New();
-  vtkTypeMacro(vtkVRGrabWorldStyle, vtkVRTrackStyle) void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkVRGrabWorldStyle, vtkVRTrackStyle);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkVRGrabWorldStyle();
@@ -68,8 +69,8 @@ protected:
   vtkNew<vtkMatrix4x4> CachedRotMatrix;
 
 private:
-  vtkVRGrabWorldStyle(const vtkVRGrabWorldStyle&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkVRGrabWorldStyle&) VTK_DELETE_FUNCTION;
+  vtkVRGrabWorldStyle(const vtkVRGrabWorldStyle&) = delete;
+  void operator=(const vtkVRGrabWorldStyle&) = delete;
 
   float GetSpeedFactor(vtkCamera* cam);
 };

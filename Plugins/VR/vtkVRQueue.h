@@ -82,7 +82,8 @@ class vtkVRQueue : public vtkObject
 {
 public:
   static vtkVRQueue* New();
-  vtkTypeMacro(vtkVRQueue, vtkObject) void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkVRQueue, vtkObject);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   void Enqueue(const vtkVREventData& data);
   bool IsEmpty() const;
@@ -95,8 +96,8 @@ protected:
   ~vtkVRQueue();
 
 private:
-  vtkVRQueue(const vtkVRQueue&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkVRQueue&) VTK_DELETE_FUNCTION;
+  vtkVRQueue(const vtkVRQueue&) = delete;
+  void operator=(const vtkVRQueue&) = delete;
 
   std::queue<vtkVREventData> Queue;
   mutable vtkNew<vtkMutexLock> Mutex;

@@ -57,7 +57,7 @@ class PQCOMPONENTS_EXPORT pqExportViewSelection : public QWidget
 
 public:
   pqExportViewSelection(QWidget* parent_ = NULL);
-  ~pqExportViewSelection();
+  ~pqExportViewSelection() override;
 
   void populateViews(
     QList<pqRenderViewBase*> const& renderViews, QList<pqContextView*> const& contextViews);
@@ -94,7 +94,7 @@ public:
   QString getSelectionAsString(QString const& scriptFromat);
 
 signals:
-  void arraySelectionEnabledChanged(bool enabled); 
+  void arraySelectionEnabledChanged(bool enabled);
 
 private slots:
 

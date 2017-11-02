@@ -29,14 +29,10 @@
 #
 #=========================================================================
 set(Module_SRCS
-  pq3DWidgetFactory.cxx
-  pq3DWidgetFactory.h
   pqAnimationCue.cxx
   pqAnimationCue.h
   pqAnimationScene.cxx
   pqAnimationScene.h
-  pqAnimationSceneImageWriter.cxx
-  pqAnimationSceneImageWriter.h
   pqApplicationCore.cxx
   pqApplicationCore.h
   pqAutoStartInterface.cxx
@@ -69,8 +65,6 @@ set(Module_SRCS
   pqDataRepresentation.h
   pqDebug.cxx
   pqDebug.h
-  pqDisplayPolicy.cxx
-  pqDisplayPolicy.h
   pqFileDialog.cxx
   pqFileDialogEventPlayer.cxx
   pqFileDialogEventPlayer.h
@@ -113,12 +107,8 @@ set(Module_SRCS
   pqOptions.h
   pqOutputPort.cxx
   pqOutputPort.h
-  pqOutputWindowAdapter.cxx
-  pqOutputWindowAdapter.h
-  pqOutputWindow.cxx
-  pqOutputWindow.h
-  pqOutputWindowModel.cxx
-  pqOutputWindowModel.h
+  pqOutputWidget.cxx
+  pqOutputWidget.h
   pqParallelCoordinatesChartView.cxx
   pqParallelCoordinatesChartView.h
   pqPipelineFilter.cxx
@@ -145,6 +135,7 @@ set(Module_SRCS
   pqProxyModifiedStateUndoElement.h
   pqProxySelection.cxx
   pqProxySelection.h
+  pqQVTKWidgetBase.h
   pqQVTKWidget.cxx
   pqQVTKWidgetEventPlayer.cxx
   pqQVTKWidgetEventPlayer.h
@@ -197,8 +188,6 @@ set(Module_SRCS
   pqSpreadSheetViewWidget.h
   pqStandardServerManagerModelInterface.cxx
   pqStandardServerManagerModelInterface.h
-  pqStereoModeHelper.cxx
-  pqStereoModeHelper.h
   pqTimeKeeper.cxx
   pqTimeKeeper.h
   pqTreeLayoutStrategyInterface.cxx
@@ -228,7 +217,6 @@ set(Module_SRCS
 )
 
 set (Module_MOC_HDRS
-  pq3DWidgetFactory.h
   pqAnimationCue.h
   pqAnimationScene.h
   pqApplicationCore.h
@@ -244,7 +232,6 @@ set (Module_MOC_HDRS
   pqCoreTestUtility.h
   pqCoreUtilities.h
   pqDataRepresentation.h
-  pqDisplayPolicy.h
   pqFileDialogEventPlayer.h
   pqFileDialogEventTranslator.h
   pqFileDialogFavoriteModel.h
@@ -263,9 +250,7 @@ set (Module_MOC_HDRS
   pqNonEditableStyledItemDelegate.h
   pqObjectBuilder.h
   pqOutputPort.h
-  pqOutputWindowAdapter.h
-  pqOutputWindow.h
-  pqOutputWindowModel.h
+  pqOutputWidget.h
   pqParallelCoordinatesChartView.h
   pqPipelineFilter.h
   pqPipelineRepresentation.h
@@ -310,8 +295,16 @@ set (Module_MOC_HDRS
   pqXYChartView.h
 )
 
+if(NOT VTK_LEGACY_REMOVE)
+  list(APPEND Module_SRCS
+    pqDisplayPolicy.cxx
+    pqDisplayPolicy.h)
+  list(APPEND Module_MOC_HDRS
+    pqDisplayPolicy.h)
+endif()
+
 set (Module_UI_FILES
-  Resources/UI/pqOutputWindow.ui
+  Resources/UI/pqOutputWidget.ui
   Resources/UI/pqFileDialog.ui
 )
 
@@ -333,13 +326,22 @@ endif()
 include(ParaViewQt)
 if (PARAVIEW_USE_QTHELP)
   pv_find_package_qt(qt_private_targets REQUIRED QUIET
-    QT4_COMPONENTS QtHelp
     QT5_COMPONENTS Help)
+
+  set(${vtk-module}_EXPORT_CODE_INSTALL
+    "include(\${ParaView_CMAKE_DIR}/ParaViewQt.cmake)
+    pv_find_package_qt(__${vtk-module}_qt_targets REQUIRED QUIET
+      QT5_COMPONENTS Help)")
 else()
   pv_find_package_qt(qt_private_targets REQUIRED QUIET
-    QT4_COMPONENTS QtGui
     QT5_COMPONENTS Widgets)
+
+  set(${vtk-module}_EXPORT_CODE_INSTALL
+    "include(\${ParaView_CMAKE_DIR}/ParaViewQt.cmake)
+    pv_find_package_qt(__${vtk-module}_qt_targets REQUIRED QUIET
+      QT5_COMPONENTS Widgets)")
 endif()
+set(${vtk-module}_EXPORT_CODE_BUILD "${${vtk-module}_EXPORT_CODE_INSTALL}")
 
 pv_qt_wrap_cpp(__Module_MOC_SRCS ${Module_MOC_HDRS})
 pv_qt_wrap_ui(__Module_UI_SRCS ${Module_UI_FILES})

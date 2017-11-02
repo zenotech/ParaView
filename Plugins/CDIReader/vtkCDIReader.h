@@ -106,7 +106,7 @@ class VTKIONETCDF_EXPORT vtkCDIReader : public vtkUnstructuredGridAlgorithm
 public:
   static vtkCDIReader* New();
   vtkTypeMacro(vtkCDIReader, vtkUnstructuredGridAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   vtkSetStringMacro(FileName);
   vtkGetStringMacro(FileName);
@@ -187,7 +187,7 @@ public:
 
 protected:
   vtkCDIReader();
-  ~vtkCDIReader();
+  ~vtkCDIReader() override;
   void DestroyData();
   void SetDefaults();
   bool invertedTopography;
@@ -225,8 +225,9 @@ protected:
   double DTime;
 
   vtkCallbackCommand* SelectionObserver;
-  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
-  int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
+  int RequestInformation(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
   static void SelectionCallback(
     vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);
 

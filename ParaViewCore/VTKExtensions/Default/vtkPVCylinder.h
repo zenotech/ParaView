@@ -29,38 +29,40 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVCylinder : public vtkCylinder
 {
 public:
   static vtkPVCylinder* New();
-  vtkTypeMacro(vtkPVCylinder, vtkCylinder) void PrintSelf(ostream& os, vtkIndent indent);
+
+  vtkTypeMacro(vtkPVCylinder, vtkCylinder);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
    * Get/Set the vector defining the direction of the cylinder.
    */
-  void SetAxis(double x, double y, double z);
-  void SetAxis(const double axis[3]);
-  vtkGetVector3Macro(Axis, double)
-    //@}
+  void SetOrientedAxis(double x, double y, double z);
+  void SetOrientedAxis(const double axis[3]);
+  vtkGetVector3Macro(OrientedAxis, double);
+  //@}
 
-    // Reimplemented to update transform on change:
-    virtual void SetCenter(double x, double y, double z);
-  virtual void SetCenter(double xyz[3]);
+  // Reimplemented to update transform on change:
+  void SetCenter(double x, double y, double z) VTK_OVERRIDE;
+  void SetCenter(double xyz[3]) VTK_OVERRIDE;
 
 protected:
   vtkPVCylinder();
-  ~vtkPVCylinder();
+  ~vtkPVCylinder() override;
 
   void UpdateTransform();
 
-  double Axis[3];
+  double OrientedAxis[3];
 
 private:
-  vtkPVCylinder(const vtkPVCylinder&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVCylinder&) VTK_DELETE_FUNCTION;
+  vtkPVCylinder(const vtkPVCylinder&) = delete;
+  void operator=(const vtkPVCylinder&) = delete;
 };
 
-inline void vtkPVCylinder::SetAxis(double x, double y, double z)
+inline void vtkPVCylinder::SetOrientedAxis(double x, double y, double z)
 {
   double axis[3] = { x, y, z };
-  this->SetAxis(axis);
+  this->SetOrientedAxis(axis);
 }
 
 #endif

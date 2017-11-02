@@ -37,7 +37,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkIsoVolume : public vtkDataObjectAlgori
 public:
   static vtkIsoVolume* New();
   vtkTypeMacro(vtkIsoVolume, vtkDataObjectAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Criterion is cells whose scalars are between lower and upper thresholds
@@ -55,17 +55,18 @@ public:
 
 protected:
   vtkIsoVolume();
-  ~vtkIsoVolume();
+  ~vtkIsoVolume() override;
 
   // Usual data generation methods.
-  virtual int RequestData(vtkInformation* request, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(
+    vtkInformation* request, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   /**
    * This filter produces a vtkMultiBlockDataSet when the input is a
    * vtkCompositeDataSet otherwise, it produces a vtkUnstructuredGrid.
    */
-  virtual int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   vtkDataObject* Clip(
     vtkDataObject* input, double value, const char* array_name, int fieldAssociation, bool invert);
@@ -74,8 +75,8 @@ protected:
   double UpperThreshold;
 
 private:
-  vtkIsoVolume(const vtkIsoVolume&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkIsoVolume&) VTK_DELETE_FUNCTION;
+  vtkIsoVolume(const vtkIsoVolume&) = delete;
+  void operator=(const vtkIsoVolume&) = delete;
 };
 
 #endif // vtkIsoVolume_h
