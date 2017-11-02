@@ -39,6 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqComponentsTestUtility.h"
 #include "pqCoreUtilities.h"
 #include "pqItemViewSearchWidget.h"
+#include "pqLoadDataReaction.h"
 #include "pqOptions.h"
 #include "pqPropertiesPanel.h"
 #include "pqQuickLaunchDialog.h"
@@ -58,8 +59,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QFileOpenEvent>
 #include <QList>
 #include <QShortcut>
-
-#include "pqLoadDataReaction.h"
 
 //-----------------------------------------------------------------------------
 pqPVApplicationCore::pqPVApplicationCore(int& argc, char** argv, pqOptions* options)
@@ -207,7 +206,7 @@ bool pqPVApplicationCore::eventFilter(QObject* obj, QEvent* event_)
       files.append(fileEvent->file());
 
       // By default we always update the options
-      this->Options->SetParaViewDataName(files[0].toLatin1().data());
+      this->Options->SetParaViewDataName(files[0].toLocal8Bit().data());
 
       // If the application is already started just load the data
       if (vtkProcessModule::GetProcessModule()->GetSession())
@@ -237,8 +236,8 @@ void pqPVApplicationCore::loadStateFromPythonFile(const QString& filename, pqSer
   this->LoadingState = false;
 #else
   // Avoid unused parameter warnings
-  (void) filename;
-  (void) server;
+  (void)filename;
+  (void)server;
   qCritical() << "Cannot load a python state file since ParaView was not built with Python.";
 #endif
 }

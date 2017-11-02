@@ -31,25 +31,25 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkPVTrackballZoomToMouse : public vtkP
 public:
   static vtkPVTrackballZoomToMouse* New();
   vtkTypeMacro(vtkPVTrackballZoomToMouse, vtkPVTrackballZoom);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
    * Event bindings controlling the effects of pressing mouse buttons
    * or moving the mouse.
    */
-  virtual void OnMouseMove(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* rwi);
-  virtual void OnButtonDown(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* rwi);
+  void OnMouseMove(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* rwi) VTK_OVERRIDE;
+  void OnButtonDown(int x, int y, vtkRenderer* ren, vtkRenderWindowInteractor* rwi) VTK_OVERRIDE;
   //@}
 
 protected:
   vtkPVTrackballZoomToMouse();
-  ~vtkPVTrackballZoomToMouse();
+  ~vtkPVTrackballZoomToMouse() override;
 
   int ZoomPosition[2];
 
-  vtkPVTrackballZoomToMouse(const vtkPVTrackballZoomToMouse&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVTrackballZoomToMouse&) VTK_DELETE_FUNCTION;
+  vtkPVTrackballZoomToMouse(const vtkPVTrackballZoomToMouse&) = delete;
+  void operator=(const vtkPVTrackballZoomToMouse&) = delete;
 };
 
 #endif

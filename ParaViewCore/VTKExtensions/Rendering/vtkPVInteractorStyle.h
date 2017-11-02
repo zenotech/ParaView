@@ -39,20 +39,20 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkPVInteractorStyle
 public:
   static vtkPVInteractorStyle* New();
   vtkTypeMacro(vtkPVInteractorStyle, vtkInteractorStyleTrackballCamera);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
    * Event bindings controlling the effects of pressing mouse buttons
    * or moving the mouse.
    */
-  virtual void OnMouseMove();
-  virtual void OnLeftButtonDown();
-  virtual void OnLeftButtonUp();
-  virtual void OnMiddleButtonDown();
-  virtual void OnMiddleButtonUp();
-  virtual void OnRightButtonDown();
-  virtual void OnRightButtonUp();
+  void OnMouseMove() VTK_OVERRIDE;
+  void OnLeftButtonDown() VTK_OVERRIDE;
+  void OnLeftButtonUp() VTK_OVERRIDE;
+  void OnMiddleButtonDown() VTK_OVERRIDE;
+  void OnMiddleButtonUp() VTK_OVERRIDE;
+  void OnRightButtonDown() VTK_OVERRIDE;
+  void OnRightButtonUp() VTK_OVERRIDE;
   //@}
 
   //@{
@@ -61,15 +61,15 @@ public:
    * since we don't have a mechanism to activate a manipulator by key presses
    * currently.
    */
-  virtual void OnKeyDown();
-  virtual void OnKeyUp();
+  void OnKeyDown() VTK_OVERRIDE;
+  void OnKeyUp() VTK_OVERRIDE;
   //@}
 
   /**
    * Overrides superclass behaviors to only support the key codes that make
    * sense in a ParaView application.
    */
-  virtual void OnChar();
+  void OnChar() VTK_OVERRIDE;
 
   /**
    * Access to adding or removing manipulators.
@@ -135,9 +135,9 @@ public:
 
 protected:
   vtkPVInteractorStyle();
-  ~vtkPVInteractorStyle();
+  ~vtkPVInteractorStyle() override;
 
-  virtual void Dolly(double factor);
+  void Dolly(double factor) VTK_OVERRIDE;
 
   vtkCameraManipulator* CurrentManipulator;
   double CenterOfRotation[3];
@@ -150,8 +150,8 @@ protected:
   void OnButtonUp(int button);
   void ResetLights();
 
-  vtkPVInteractorStyle(const vtkPVInteractorStyle&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVInteractorStyle&) VTK_DELETE_FUNCTION;
+  vtkPVInteractorStyle(const vtkPVInteractorStyle&) = delete;
+  void operator=(const vtkPVInteractorStyle&) = delete;
 };
 
 #endif

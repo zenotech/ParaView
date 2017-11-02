@@ -35,7 +35,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVExtractBagPlots : public vtkMultiBlo
 public:
   static vtkPVExtractBagPlots* New();
   vtkTypeMacro(vtkPVExtractBagPlots, vtkMultiBlockDataSetAlgorithm);
-  virtual void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -105,11 +105,11 @@ public:
 
 protected:
   vtkPVExtractBagPlots();
-  virtual ~vtkPVExtractBagPlots();
+  ~vtkPVExtractBagPlots() override;
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
-  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   void GetEigenvalues(vtkMultiBlockDataSet* outputMetaDS, vtkDoubleArray* eigenvalues);
   void GetEigenvectors(
@@ -125,8 +125,8 @@ protected:
   bool UseSilvermanRule;
 
 private:
-  vtkPVExtractBagPlots(const vtkPVExtractBagPlots&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVExtractBagPlots&) VTK_DELETE_FUNCTION;
+  vtkPVExtractBagPlots(const vtkPVExtractBagPlots&) = delete;
+  void operator=(const vtkPVExtractBagPlots&) = delete;
 };
 
 #endif // vtkPVExtractBagPlots_h

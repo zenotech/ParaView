@@ -10,6 +10,10 @@ if (PARAVIEW_ENABLE_PYTHON)
       vtkFiltersProgrammable)
 endif ()
 
+if (PARAVIEW_ENABLE_NVPIPE)
+  list(APPEND __dependencies vtknvpipe)
+endif ()
+
 set (__compile_dependencies)
 if (PARAVIEW_ENABLE_PYTHON AND PARAVIEW_USE_MPI)
   list(APPEND __compile_dependencies vtkmpi4py)
@@ -31,6 +35,7 @@ vtk_module(vtkPVClientServerCoreCore
     vtkCommonSystem
     vtkIOLegacy
     vtkCommonCore
+    vtkPVVTKExtensionsSIL
   PRIVATE_DEPENDS
     vtksys
   COMPILE_DEPENDS

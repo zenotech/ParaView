@@ -33,7 +33,7 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMWidgetRepresentationProxy : public
 public:
   static vtkSMWidgetRepresentationProxy* New();
   vtkTypeMacro(vtkSMWidgetRepresentationProxy, vtkSMProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -47,15 +47,15 @@ public:
 
 protected:
   vtkSMWidgetRepresentationProxy();
-  ~vtkSMWidgetRepresentationProxy();
+  ~vtkSMWidgetRepresentationProxy() override;
 
   virtual void SendRepresentation();
 
   int RepresentationState;
 
 private:
-  vtkSMWidgetRepresentationProxy(const vtkSMWidgetRepresentationProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMWidgetRepresentationProxy&) VTK_DELETE_FUNCTION;
+  vtkSMWidgetRepresentationProxy(const vtkSMWidgetRepresentationProxy&) = delete;
+  void operator=(const vtkSMWidgetRepresentationProxy&) = delete;
 };
 
 #endif

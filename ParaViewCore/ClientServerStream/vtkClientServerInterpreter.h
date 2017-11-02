@@ -66,7 +66,7 @@ class VTKCLIENTSERVER_EXPORT vtkClientServerInterpreter : public vtkObject
 public:
   static vtkClientServerInterpreter* New();
   vtkTypeMacro(vtkClientServerInterpreter, vtkObject);
-  void PrintSelf(ostream&, vtkIndent);
+  void PrintSelf(ostream&, vtkIndent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -124,6 +124,7 @@ public:
   /**
    * Creates a new instance for the class specified using the interpreter.
    */
+  VTK_NEWINSTANCE
   vtkObjectBase* NewInstance(const char* classname);
 
   /**
@@ -192,7 +193,7 @@ public:
 protected:
   // constructor and destructor
   vtkClientServerInterpreter();
-  ~vtkClientServerInterpreter();
+  ~vtkClientServerInterpreter() override;
 
   // A stream to which a log is written.
   ostream* LogStream;
@@ -224,8 +225,8 @@ private:
   friend class vtkClientServerInterpreterCommand;
 
 private:
-  vtkClientServerInterpreter(const vtkClientServerInterpreter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkClientServerInterpreter&) VTK_DELETE_FUNCTION;
+  vtkClientServerInterpreter(const vtkClientServerInterpreter&) = delete;
+  void operator=(const vtkClientServerInterpreter&) = delete;
   int NextAvailableId;
 };
 

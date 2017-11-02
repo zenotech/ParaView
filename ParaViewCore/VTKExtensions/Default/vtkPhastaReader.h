@@ -40,7 +40,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPhastaReader : public vtkUnstructuredG
 public:
   static vtkPhastaReader* New();
   vtkTypeMacro(vtkPhastaReader, vtkUnstructuredGridAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -72,10 +72,10 @@ public:
 
 protected:
   vtkPhastaReader();
-  ~vtkPhastaReader();
+  ~vtkPhastaReader() override;
 
-  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   void ReadGeomFile(
     char* GeomFileName, int& firstVertexNo, vtkPoints* points, int& noOfNodes, int& noOfCells);
@@ -107,8 +107,8 @@ private:
 private:
   vtkPhastaReaderInternal* Internal;
 
-  vtkPhastaReader(const vtkPhastaReader&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPhastaReader&) VTK_DELETE_FUNCTION;
+  vtkPhastaReader(const vtkPhastaReader&) = delete;
+  void operator=(const vtkPhastaReader&) = delete;
 };
 
 #endif

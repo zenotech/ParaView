@@ -16,6 +16,7 @@
 
 #include "vtkDoubleArray.h"
 #include "vtkLookupTable.h"
+#include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkStringArray.h"
 #include "vtkVariantArray.h"
@@ -167,6 +168,12 @@ vtkIdType vtkPVDiscretizableColorTransferFunction::SetAnnotationInFullSet(
   {
     return this->SetAnnotationInFullSet(x, annotation);
   }
+  else if (value == "")
+  {
+    // NOTE: This prevents the value "" in vtkStringArrays from being annotated.
+    // Hopefully, that isn't a desired use case.
+    return -1;
+  }
   return this->SetAnnotationInFullSet(val, annotation);
 }
 
@@ -274,8 +281,12 @@ void vtkPVDiscretizableColorTransferFunction::Build()
   this->ResetAnnotations();
 
   int annotationCount = 0;
+
   if (this->AnnotatedValuesInFullSet)
   {
+    vtkNew<vtkVariantArray> builtValues;
+    vtkNew<vtkStringArray> builtAnnotations;
+
     for (vtkIdType i = 0; i < this->AnnotatedValuesInFullSet->GetNumberOfTuples(); ++i)
     {
       vtkStdString annotation = this->AnnotationsInFullSet->GetValue(i);
@@ -293,7 +304,8 @@ void vtkPVDiscretizableColorTransferFunction::Build()
 
       if (useAnnotation)
       {
-        this->SetAnnotation(value, annotation);
+        builtValues->InsertNextValue(value);
+        builtAnnotations->InsertNextValue(annotation);
 
         if (i < this->IndexedColorsInFullSet->GetNumberOfTuples())
         {
@@ -304,6 +316,7 @@ void vtkPVDiscretizableColorTransferFunction::Build()
         }
       }
     }
+    this->SetAnnotations(builtValues.GetPointer(), builtAnnotations.GetPointer());
   }
 
   this->Superclass::Build();

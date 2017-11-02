@@ -35,6 +35,9 @@
 #include "vtkSMViewLayoutProxy.h"
 #include "vtkSMViewProxy.h"
 #include "vtkSmartPointer.h"
+#include "vtkTimerLog.h"
+
+#include "vtkSMMaterialLibraryProxy.h"
 
 #include <cassert>
 #include <string>
@@ -42,12 +45,13 @@
 namespace
 {
 //---------------------------------------------------------------------------
-const char* vtkFindTypeFromHints(vtkPVXMLElement* hints, const int outputPort, const char* xmlTag,
-  const char* xmlAttributeName = NULL, const char* xmlAttributeValue = NULL)
+vtkPVXMLElement* vtkFindChildFromHints(vtkPVXMLElement* hints, const int outputPort,
+  const char* xmlTag, const char* xmlAttributeName = nullptr,
+  const char* xmlAttributeValue = nullptr)
 {
   if (!hints)
   {
-    return NULL;
+    return nullptr;
   }
   for (unsigned int cc = 0, max = hints->GetNumberOfNestedElements(); cc < max; cc++)
   {
@@ -69,13 +73,10 @@ const char* vtkFindTypeFromHints(vtkPVXMLElement* hints, const int outputPort, c
           continue;
         }
       }
-      if (const char* type = child->GetAttribute("type"))
-      {
-        return type;
-      }
+      return child;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //---------------------------------------------------------------------------
@@ -148,12 +149,26 @@ void vtkInheritRepresentationProperties(vtkSMRepresentationProxy* repr, vtkSMSou
     }
   }
 
+  // always copy over ospray material name
+  vtkSMPropertyIterator* iter = inputRepr->NewPropertyIterator();
+  for (iter->Begin(); !iter->IsAtEnd(); iter->Next())
+  {
+    const char* pname = iter->GetKey();
+    vtkSMProperty* dest = repr->GetProperty(pname);
+    vtkSMProperty* source = iter->GetProperty();
+    if (dest && source && strcmp("OSPRayMaterial", pname) == 0)
+    {
+      dest->Copy(source);
+    }
+  }
+  iter->Delete();
+
   if (!vtkSMParaViewPipelineControllerWithRendering::GetInheritRepresentationProperties())
   {
     return;
   }
   // copy properties from inputRepr to repr is they weren't modified.
-  vtkSMPropertyIterator* iter = inputRepr->NewPropertyIterator();
+  iter = inputRepr->NewPropertyIterator();
   for (iter->Begin(); !iter->IsAtEnd(); iter->Next())
   {
     const char* pname = iter->GetKey();
@@ -202,14 +217,16 @@ void vtkPickRepresentationType(vtkSMRepresentationProxy* repr, vtkSMSourceProxy*
   (void)outputPort;
 
   // Check if there's a hint for the producer. If so, use that.
-  if (const char* reprtype = vtkFindTypeFromHints(
-        producer->GetHints(), outputPort, "RepresentationType", "view", view->GetXMLName()))
+  vtkPVXMLElement* hint = vtkFindChildFromHints(
+    producer->GetHints(), outputPort, "RepresentationType", "view", view->GetXMLName());
+  if (const char* reprtype = hint ? hint->GetAttribute("type") : nullptr)
   {
     if (repr->SetRepresentationType(reprtype))
     {
       return;
     }
   }
+
   // currently, this just ensures that the "Representation" type chosen has
   // proper color type etc. setup. At some point, we could deprecate
   // vtkSMRepresentationTypeDomain and let this logic pick the default
@@ -327,6 +344,7 @@ bool vtkSMParaViewPipelineControllerWithRendering::RegisterRepresentationProxy(v
 vtkSMProxy* vtkSMParaViewPipelineControllerWithRendering::Show(
   vtkSMSourceProxy* producer, int outputPort, vtkSMViewProxy* view)
 {
+  vtkTimerLogScope scopeTimer("ParaViewPipelineControllerWithRendering::Show");
   if (producer == NULL || static_cast<int>(producer->GetNumberOfOutputPorts()) <= outputPort)
   {
     vtkErrorMacro("Invalid producer (" << producer << ") or outputPort (" << outputPort << ")");
@@ -361,6 +379,8 @@ vtkSMProxy* vtkSMParaViewPipelineControllerWithRendering::Show(
   // Since no repr exists, create a new one if possible.
   if (vtkSMRepresentationProxy* repr = view->CreateDefaultRepresentation(producer, outputPort))
   {
+    vtkTimerLogScope scopeTimer2(
+      "ParaViewPipelineControllerWithRendering::Show::CreatingRepresentation");
     SM_SCOPED_TRACE(Show)
       .arg("producer", producer)
       .arg("port", outputPort)
@@ -484,10 +504,10 @@ bool vtkSMParaViewPipelineControllerWithRendering::GetVisibility(
 vtkSMViewProxy* vtkSMParaViewPipelineControllerWithRendering::ShowInPreferredView(
   vtkSMSourceProxy* producer, int outputPort, vtkSMViewProxy* view)
 {
-  if (producer == NULL || static_cast<int>(producer->GetNumberOfOutputPorts()) <= outputPort)
+  if (producer == nullptr || static_cast<int>(producer->GetNumberOfOutputPorts()) <= outputPort)
   {
     vtkErrorMacro("Invalid producer (" << producer << ") or outputPort (" << outputPort << ")");
-    return NULL;
+    return nullptr;
   }
 
   if (strcmp(producer->GetXMLGroup(), "insitu_writer_parameters") == 0)
@@ -495,87 +515,87 @@ vtkSMViewProxy* vtkSMParaViewPipelineControllerWithRendering::ShowInPreferredVie
     // This is a proxy for the Catalyst writers which isn't a real filter
     // but a placeholder for a writer during the Catalyst script export
     // process. We don't need to do anything with the views.
-    return NULL;
+    return nullptr;
   }
 
   this->UpdatePipelineBeforeDisplay(producer, outputPort, view);
 
   vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
-  if (const char* preferredViewType = this->GetPreferredViewType(producer, outputPort))
+
+  std::string preferredViewType;
+  if (const char* xmlPreferredViewType = this->GetPreferredViewType(producer, outputPort))
   {
-    if ( // no view is specified.
-      view == NULL ||
-      // the "view" is not of the preferred type.
-      strcmp(preferredViewType, view->GetXMLName()) != 0)
+    // allow user to prevent automatic display of the representation using "None" view type
+    if (strcmp(xmlPreferredViewType, "None") == 0)
     {
-      vtkSmartPointer<vtkSMProxy> targetView;
-      targetView.TakeReference(pxm->NewProxy("views", preferredViewType));
-      if (vtkSMViewProxy* preferredView = vtkSMViewProxy::SafeDownCast(targetView))
-      {
-        this->InitializeProxy(preferredView);
-        this->RegisterViewProxy(preferredView);
-        if (this->Show(producer, outputPort, preferredView) == NULL)
-        {
-          vtkErrorMacro("Data cannot be shown in the preferred view!!");
-          return NULL;
-        }
-        return preferredView;
-      }
-      else
-      {
-        vtkErrorMacro("Failed to create preferred view (" << preferredViewType << ")");
-        return NULL;
-      }
+      return nullptr;
     }
-    else
-    {
-      assert(view);
-      if (!this->Show(producer, outputPort, view))
-      {
-        vtkErrorMacro("Data cannot be shown in the preferred view!!");
-        return NULL;
-      }
-      return view;
-    }
+
+    // let's use the preferred view from XML hints, if available.
+    preferredViewType = xmlPreferredViewType;
   }
-  else if (view)
+  else if (view && view->CanDisplayData(producer, outputPort))
   {
-    // If there's no preferred view, check if active view can show the data. If
-    // so, show it in that view.
-    if (view->CanDisplayData(producer, outputPort))
+    // when not, the active is used if it can show the data.
+    preferredViewType = view->GetXMLName();
+  }
+  else if (view == nullptr || strcmp(view->GetXMLName(), "RenderView") == 0)
+  {
+    // if no view was provided, or it cannot show the data
+    // we create render view by default (unless of course, the current view was
+    // render view itself).
+    preferredViewType = "RenderView";
+  }
+  else
+  {
+    return nullptr;
+  }
+
+  if (view != nullptr)
+  {
+    if (preferredViewType == view->GetXMLName())
     {
-      if (this->Show(producer, outputPort, view))
+      if (view->CanDisplayData(producer, outputPort) &&
+        this->Show(producer, outputPort, view) != nullptr)
       {
         return view;
       }
-
-      vtkErrorMacro("View should have been able to show the data, "
-                    "but it failed to do so. This may point to a development bug.");
-      return NULL;
+      return nullptr;
     }
-  }
-
-  // No preferred view is found and "view" is NULL or cannot show the data.
-  // ParaView's default behavior is to create a render view, in that case, if the
-  // render view can show the data.
-  if (view == NULL || strcmp(view->GetXMLName(), "RenderView") != 0)
-  {
-    vtkSmartPointer<vtkSMProxy> renderView;
-    renderView.TakeReference(pxm->NewProxy("views", "RenderView"));
-    if (vtkSMViewProxy* preferredView = vtkSMViewProxy::SafeDownCast(renderView))
+    else if (this->AlsoShowInCurrentView(producer, outputPort, view))
     {
-      this->InitializeProxy(preferredView);
-      this->RegisterViewProxy(preferredView);
-      if (this->Show(producer, outputPort, preferredView) == NULL)
+      // The current view is non-null and the preferred view type is not the
+      // current view,  in that case, let's see if we should still show the result
+      // in the current view (see paraview/paraview#17146).
+      if (view->CanDisplayData(producer, outputPort))
       {
-        vtkErrorMacro("Data cannot be shown in the defaulted render view!!");
-        return NULL;
+        this->Show(producer, outputPort, view);
       }
-      return preferredView;
     }
   }
 
-  return NULL;
+  // create the preferred view.
+  assert(!preferredViewType.empty());
+
+  vtkSmartPointer<vtkSMProxy> targetView;
+  targetView.TakeReference(pxm->NewProxy("views", preferredViewType.c_str()));
+  if (vtkSMViewProxy* preferredView = vtkSMViewProxy::SafeDownCast(targetView))
+  {
+    this->InitializeProxy(preferredView);
+    this->RegisterViewProxy(preferredView);
+    if (this->Show(producer, outputPort, preferredView) == nullptr)
+    {
+      vtkErrorMacro("Data cannot be shown in the preferred view!!");
+      return nullptr;
+    }
+    return preferredView;
+  }
+  else
+  {
+    vtkErrorMacro("Failed to create preferred view (" << preferredViewType.c_str() << ")");
+    return nullptr;
+  }
+  return nullptr;
 }
 
 //----------------------------------------------------------------------------
@@ -583,9 +603,10 @@ const char* vtkSMParaViewPipelineControllerWithRendering::GetPreferredViewType(
   vtkSMSourceProxy* producer, int outputPort)
 {
   // 1. Check if there's a hint for the producer. If so, use that.
-  if (const char* viewType = vtkFindTypeFromHints(producer->GetHints(), outputPort, "View"))
+  vtkPVXMLElement* hint = vtkFindChildFromHints(producer->GetHints(), outputPort, "View");
+  if (hint && hint->GetAttribute("type"))
   {
-    return viewType;
+    return hint->GetAttribute("type");
   }
 
   vtkPVDataInformation* dataInfo = producer->GetDataInformation(outputPort);
@@ -599,6 +620,20 @@ const char* vtkSMParaViewPipelineControllerWithRendering::GetPreferredViewType(
 }
 
 //----------------------------------------------------------------------------
+bool vtkSMParaViewPipelineControllerWithRendering::AlsoShowInCurrentView(
+  vtkSMSourceProxy* producer, int outputPort, vtkSMViewProxy* vtkNotUsed(currentView))
+{
+  vtkPVXMLElement* hint = vtkFindChildFromHints(producer->GetHints(), outputPort, "View");
+  int also_show_in_current_view = 0;
+  if (hint && hint->GetScalarAttribute("also_show_in_current_view", &also_show_in_current_view))
+  {
+    return also_show_in_current_view != 0;
+  }
+
+  return false;
+}
+
+//----------------------------------------------------------------------------
 void vtkSMParaViewPipelineControllerWithRendering::UpdatePipelineBeforeDisplay(
   vtkSMSourceProxy* producer, int outputPort, vtkSMViewProxy* view)
 {
@@ -609,51 +644,12 @@ void vtkSMParaViewPipelineControllerWithRendering::UpdatePipelineBeforeDisplay(
   }
 
   // Update using view time, or timekeeper time.
+  vtkTimerLogScope scopeTimer(
+    "ParaViewPipelineControllerWithRendering::UpdatePipelineBeforeDisplay");
   double time = view
     ? vtkSMPropertyHelper(view, "ViewTime").GetAsDouble()
     : vtkSMPropertyHelper(this->FindTimeKeeper(producer->GetSession()), "Time").GetAsDouble();
   producer->UpdatePipeline(time);
-}
-
-//----------------------------------------------------------------------------
-template <class T>
-bool vtkWriteImage(T* viewOrLayout, const char* filename, int magnification, int quality)
-{
-  if (!viewOrLayout)
-  {
-    return false;
-  }
-  SM_SCOPED_TRACE(SaveCameras).arg("proxy", viewOrLayout);
-
-  SM_SCOPED_TRACE(CallFunction)
-    .arg("SaveScreenshot")
-    .arg(filename)
-    .arg((vtkSMViewProxy::SafeDownCast(viewOrLayout) ? "view" : "layout"), viewOrLayout)
-    .arg("magnification", magnification)
-    .arg("quality", quality)
-    .arg("comment", "save screenshot");
-
-  vtkSmartPointer<vtkImageData> img;
-  img.TakeReference(viewOrLayout->CaptureWindow(magnification));
-  if (img && vtkProcessModule::GetProcessModule()->GetPartitionId() == 0)
-  {
-    return vtkSMUtilities::SaveImage(img.GetPointer(), filename, quality) == vtkErrorCode::NoError;
-  }
-  return false;
-}
-
-//----------------------------------------------------------------------------
-bool vtkSMParaViewPipelineControllerWithRendering::WriteImage(
-  vtkSMViewProxy* view, const char* filename, int magnification, int quality)
-{
-  return vtkWriteImage<vtkSMViewProxy>(view, filename, magnification, quality);
-}
-
-//----------------------------------------------------------------------------
-bool vtkSMParaViewPipelineControllerWithRendering::WriteImage(
-  vtkSMViewLayoutProxy* layout, const char* filename, int magnification, int quality)
-{
-  return vtkWriteImage<vtkSMViewLayoutProxy>(layout, filename, magnification, quality);
 }
 
 //----------------------------------------------------------------------------
@@ -723,4 +719,12 @@ bool vtkSMParaViewPipelineControllerWithRendering::RegisterLayoutProxy(
 void vtkSMParaViewPipelineControllerWithRendering::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
+}
+
+//----------------------------------------------------------------------------
+void vtkSMParaViewPipelineControllerWithRendering::DoMaterialSetup(vtkSMProxy* prox)
+{
+  vtkSMMaterialLibraryProxy* mlp = vtkSMMaterialLibraryProxy::SafeDownCast(prox);
+  mlp->LoadDefaultMaterials();
+  mlp->Synchronize();
 }

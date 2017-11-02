@@ -29,7 +29,7 @@ class VTKPVCATALYSTTESTDRIVER_EXPORT vtkCPTensorFieldFunction : public vtkObject
 {
 public:
   vtkTypeMacro(vtkCPTensorFieldFunction, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Get the NumberOfComponents.  This is abstract to make sure
@@ -48,8 +48,8 @@ protected:
   ~vtkCPTensorFieldFunction();
 
 private:
-  vtkCPTensorFieldFunction(const vtkCPTensorFieldFunction&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCPTensorFieldFunction&) VTK_DELETE_FUNCTION;
+  vtkCPTensorFieldFunction(const vtkCPTensorFieldFunction&) = delete;
+  void operator=(const vtkCPTensorFieldFunction&) = delete;
 };
 
 #endif

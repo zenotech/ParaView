@@ -32,7 +32,7 @@ class vtkLagrangianHelperBase : public vtkDataObjectAlgorithm
 {
 public:
   vtkTypeMacro(vtkLagrangianHelperBase, vtkDataObjectAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -60,7 +60,7 @@ public:
 
 protected:
   vtkLagrangianHelperBase();
-  ~vtkLagrangianHelperBase();
+  ~vtkLagrangianHelperBase() override;
 
   /**
    * Parse string array and extract double components from it.
@@ -73,8 +73,8 @@ protected:
   vtkInternals* Internals;
 
 private:
-  vtkLagrangianHelperBase(const vtkLagrangianHelperBase&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkLagrangianHelperBase&) VTK_DELETE_FUNCTION;
+  vtkLagrangianHelperBase(const vtkLagrangianHelperBase&) = delete;
+  void operator=(const vtkLagrangianHelperBase&) = delete;
 };
 
 #endif

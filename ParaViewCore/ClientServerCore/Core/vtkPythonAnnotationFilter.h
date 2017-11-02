@@ -45,7 +45,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPythonAnnotationFilter : public vtkTab
 public:
   static vtkPythonAnnotationFilter* New();
   vtkTypeMacro(vtkPythonAnnotationFilter, vtkTableAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -98,11 +98,11 @@ public:
 
 protected:
   vtkPythonAnnotationFilter();
-  ~vtkPythonAnnotationFilter();
+  ~vtkPythonAnnotationFilter() override;
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   virtual void EvaluateExpression();
 
@@ -111,8 +111,8 @@ protected:
   int ArrayAssociation;
 
 private:
-  vtkPythonAnnotationFilter(const vtkPythonAnnotationFilter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPythonAnnotationFilter&) VTK_DELETE_FUNCTION;
+  vtkPythonAnnotationFilter(const vtkPythonAnnotationFilter&) = delete;
+  void operator=(const vtkPythonAnnotationFilter&) = delete;
 
   bool DataTimeValid;
   double DataTime;

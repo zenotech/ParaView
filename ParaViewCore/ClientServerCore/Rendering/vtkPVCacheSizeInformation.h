@@ -31,24 +31,24 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVCacheSizeInformation : public v
 public:
   static vtkPVCacheSizeInformation* New();
   vtkTypeMacro(vtkPVCacheSizeInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Transfer information about a single object into this object.
    */
-  virtual void CopyFromObject(vtkObject*);
+  void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
   /**
    * Merge another information object.
    */
-  virtual void AddInformation(vtkPVInformation*);
+  void AddInformation(vtkPVInformation*) VTK_OVERRIDE;
 
   //@{
   /**
    * Manage a serialized version of the information.
    */
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
+  void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
   //@}
 
   vtkGetMacro(CacheSize, unsigned long);
@@ -56,13 +56,13 @@ public:
 
 protected:
   vtkPVCacheSizeInformation();
-  ~vtkPVCacheSizeInformation();
+  ~vtkPVCacheSizeInformation() override;
 
   unsigned long CacheSize;
 
 private:
-  vtkPVCacheSizeInformation(const vtkPVCacheSizeInformation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVCacheSizeInformation&) VTK_DELETE_FUNCTION;
+  vtkPVCacheSizeInformation(const vtkPVCacheSizeInformation&) = delete;
+  void operator=(const vtkPVCacheSizeInformation&) = delete;
 };
 
 #endif

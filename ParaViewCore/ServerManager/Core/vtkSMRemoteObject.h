@@ -42,7 +42,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMRemoteObject : public vtkSMSessionObjec
 
 public:
   vtkTypeMacro(vtkSMRemoteObject, vtkSMSessionObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -57,7 +57,7 @@ public:
    * Override the SetSession so if the object already have an ID
    * we automatically register it to the associated session
    */
-  virtual void SetSession(vtkSMSession*);
+  void SetSession(vtkSMSession*) VTK_OVERRIDE;
 
   //@{
   /**
@@ -137,7 +137,7 @@ protected:
   /**
    * Destructor.
    */
-  virtual ~vtkSMRemoteObject();
+  ~vtkSMRemoteObject() override;
 
   /**
    * Subclasses can call this method to send a message to its state
@@ -180,8 +180,8 @@ protected:
   vtkTypeUInt32 GetFilteredLocation();
 
 private:
-  vtkSMRemoteObject(const vtkSMRemoteObject&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMRemoteObject&) VTK_DELETE_FUNCTION;
+  vtkSMRemoteObject(const vtkSMRemoteObject&) = delete;
+  void operator=(const vtkSMRemoteObject&) = delete;
 
   char* GlobalIDString;
 };

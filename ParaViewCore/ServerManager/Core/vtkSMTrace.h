@@ -72,7 +72,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMTrace : public vtkSMObject
 public:
   static vtkSMTrace* New();
   vtkTypeMacro(vtkSMTrace, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Provides access to the "active" tracer. There can only be one active tracer
@@ -200,7 +200,7 @@ public:
 
 protected:
   vtkSMTrace();
-  virtual ~vtkSMTrace();
+  ~vtkSMTrace() override;
 
   /**
    * Returns true of there's an error. Otherwise, returns false.
@@ -213,8 +213,8 @@ protected:
   bool FullyTraceSupplementalProxies;
 
 private:
-  vtkSMTrace(const vtkSMTrace&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMTrace&) VTK_DELETE_FUNCTION;
+  vtkSMTrace(const vtkSMTrace&) = delete;
+  void operator=(const vtkSMTrace&) = delete;
 
   static vtkSmartPointer<vtkSMTrace> ActiveTracer;
   class vtkInternals;

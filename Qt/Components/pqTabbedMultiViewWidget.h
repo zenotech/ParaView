@@ -33,10 +33,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define pqTabbedMultiViewWidget_h
 
 #include "pqComponentsModule.h"
-#include "vtkType.h"  // needed for vtkIdType
-#include <QStyle>     // needed for QStyle:StandardPixmap
-#include <QTabBar>    // needed for QTabBar::ButtonPosition
-#include <QTabWidget> // needed for QTabWidget.
+#include "vtkSetGet.h" // needed for VTK_LEGACY
+#include "vtkType.h"   // needed for vtkIdType
+#include <QStyle>      // needed for QStyle:StandardPixmap
+#include <QTabBar>     // needed for QTabBar::ButtonPosition
+#include <QTabWidget>  // needed for QTabWidget.
 
 class pqMultiViewWidget;
 class pqProxy;
@@ -59,7 +60,7 @@ class PQCOMPONENTS_EXPORT pqTabbedMultiViewWidget : public QWidget
   Q_PROPERTY(bool readOnly READ readOnly WRITE setReadOnly)
 public:
   pqTabbedMultiViewWidget(QWidget* parent = 0);
-  virtual ~pqTabbedMultiViewWidget();
+  ~pqTabbedMultiViewWidget() override;
 
   /**
   * Returns the size for the tabs in the widget.
@@ -67,33 +68,18 @@ public:
   virtual QSize clientSize() const;
 
   /**
-  * Captures an image for the views in the layout. Note that there must be
-  * at least one valid view in the widget, otherwise returns NULL.
-  */
-  virtual vtkImageData* captureImage(int width, int height);
-
-  /**
-  * setups up the environment for capture. Returns the magnification that can
-  * be used to capture the image for required size.
-  */
-  virtual int prepareForCapture(int width, int height);
-
-  /**
-  * cleans up the environment after image capture.
-  */
-  virtual void cleanupAfterCapture();
-
-  /**
-  * Capture an image and saves it out to a file.
-  */
-  virtual bool writeImage(const QString& filename, int width, int height, int quality = -1);
-
-  /**
   * When set to true (off by default), the widget will not allow
   * adding/removing tabs trough user interactions.
   */
   void setReadOnly(bool val);
   bool readOnly() const;
+
+  /**
+  * Set the tab visibility. To save some screen space when only one tab is
+  * needed, this can be set to false. True by default.
+  */
+  void setTabVisibility(bool visible);
+  bool tabVisibility() const;
 
 signals:
   /**
@@ -127,6 +113,26 @@ public slots:
   * cleans up the layout.
   */
   virtual void reset();
+
+  /**
+   * Enter (or exit) preview mode.
+   *
+   * Preview mode is a mode were various widget's decorations
+   * are hidden and the widget is locked to the specified size. If the widget's
+   * current size is less than the size specified, then the widget is locked to
+   * a size with similar aspect ratio as requested. Pass in invalid (or empty)
+   * size to exit preview mode.
+   *
+   * Preview mode is preferred over `toggleWidgetDecoration` and `lockViewSize`
+   * and is mutually exclusive with either. Mixing them can have unintended
+   * consequences.
+   *
+   * @returns `true` if preview mode was exited, or if preview mode was entered
+   *          at exactly the requested size. `false` is preview mode was
+   *          entered, but only respecting the aspect ratio for the size
+   *          specified.
+   */
+  virtual bool preview(const QSize& previewSize = QSize());
 
 protected slots:
   /**
@@ -170,7 +176,7 @@ protected slots:
   void onLayoutNameChanged(pqServerManagerModelItem*);
 
 protected:
-  virtual bool eventFilter(QObject* obj, QEvent* event);
+  bool eventFilter(QObject* obj, QEvent* event) override;
 
   /**
   * assigns a frame to the view.
@@ -186,7 +192,7 @@ protected:
 
   public:
     pqTabWidget(QWidget* parentWdg = NULL);
-    virtual ~pqTabWidget();
+    ~pqTabWidget() override;
 
     /**
     * Set a button to use on the tab bar.
@@ -225,9 +231,25 @@ protected:
     void setReadOnly(bool val);
     bool readOnly() const { return this->ReadOnly; }
 
+    /**
+     * Enter/exit preview mode
+     */
+    bool preview(const QSize&);
+
+    //@{
+    /**
+     * Get/Set tab bar visibility. Use this instead of directly calling
+     * `this->tabBar()->setVisible()` as that avoid interactions with preview
+     * mode.
+     */
+    void setTabBarVisibility(bool);
+    bool tabBarVisibility() const { return this->TabBarVisibility; }
+    //@}
   private:
     Q_DISABLE_COPY(pqTabWidget)
     bool ReadOnly;
+    bool InPreviewMode;
+    bool TabBarVisibility;
     friend class pqTabbedMultiViewWidget;
   };
 

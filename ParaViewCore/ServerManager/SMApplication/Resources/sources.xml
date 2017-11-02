@@ -195,7 +195,7 @@
       <!-- End 3DText -->
     </SourceProxy>
     <!-- ==================================================================== -->
-    <SourceProxy class="vtkPVArrowSource"
+    <SourceProxy class="vtkArrowSource"
                  label="Arrow"
                  name="ArrowSource">
       <Documentation long_help="3D arrow with a long cylindrical shaft and a cone for the tip"
@@ -749,6 +749,134 @@
           <Property function="Point2WorldPosition" name="Point2" />
       </PropertyGroup>
       <!-- End Line -->
+    </SourceProxy>
+    <!-- ==================================================================== -->
+    <SourceProxy class="vtkCellTypeSource"
+                 label="Unstructured Cell Types"
+                 name="UnstructuredCellTypes">
+      <Documentation long_help="Generates cells of the specified type."
+                     short_help="Generate cells of the specified type">
+        Generate cells of the specified type. If a 1D cell type is chosen then
+        only the first value of BlocksDimension is used. If a 2D cell type is chosen
+        then only the first and second value of BlocksDimension is used. A cell block
+        may be divided into multiple cells (e.g. 6 pyramids will be in a cell block).
+
+        Note that not all meshes generated for Lagrange cells (particularly tetrahedra)
+        will be conformal; their boundaries will not meet exactly at block boundaries.
+      </Documentation>
+      <IntVectorProperty command="SetCellType"
+                         default_values="12"
+                         name="CellType"
+                         number_of_elements="1">
+        <Documentation>This property specifies the type of cells to generate.
+        </Documentation>
+        <EnumerationDomain name="enum">
+          <Entry text="Line"
+                 value="3" />
+          <Entry text="Quadratic Line"
+                 value="21" />
+          <Entry text="Cubic Line"
+                 value="35" />
+          <Entry text="Triangle"
+                 value="5" />
+          <Entry text="Quad"
+                 value="9" />
+          <Entry text="Quadratic Triangle"
+                 value="22" />
+          <Entry text="Quadratic Quad"
+                 value="23" />
+          <Entry text="Tet"
+                 value="10" />
+          <Entry text="Hex"
+                 value="12" />
+          <Entry text="Wedge"
+                 value="13" />
+          <Entry text="Pyramid"
+                 value="14" />
+          <Entry text="Quadratic Tet"
+                 value="24" />
+          <Entry text="Quadratic Hex"
+                 value="25" />
+          <Entry text="Quadratic Wedge"
+                 value="26" />
+          <Entry text="Quadratic Pyramid"
+                 value="27" />
+          <Entry text="Lagrange Curve"
+                 value="68" />
+          <Entry text="Lagrange Triangle"
+                 value="69" />
+          <Entry text="Lagrange Quadrilateral"
+                 value="70" />
+          <Entry text="Lagrange Tetrahedron"
+                 value="71" />
+          <Entry text="Lagrange Hexahedron"
+                 value="72" />
+          <Entry text="Lagrange Wedge"
+                 value="73" />
+        </EnumerationDomain>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetOutputPrecision"
+                         default_values="0"
+                         name="OutputPrecision"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <Documentation>This property specifies the precision of point locations and fields.
+        </Documentation>
+        <EnumerationDomain name="enum">
+          <Entry text="Single"
+                 value="0" />
+          <Entry text="Double"
+                 value="1" />
+        </EnumerationDomain>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetPolynomialFieldOrder"
+                         default_values="1"
+                         name="PolynomialFieldOrder"
+                         number_of_elements="1">
+        <Documentation>This property specifies the order for the "Polynomial" point data field.
+        </Documentation>
+        <IntRangeDomain min="0"
+                        name="range" />
+      </IntVectorProperty>
+      <IntVectorProperty command="SetBlocksDimensions"
+                         default_values="10 10 10"
+                         name="BlocksDimensions"
+                         number_of_elements="3">
+        <IntRangeDomain min="1 1 1"
+                        name="range" />
+        <Documentation>Sets the number of blocks of cells in each direction.
+        A cell block may be divided into multiple cells (e.g. there will be
+        6 pyramid cells in a cell block). If a 1D cell type is chosen only
+        the first blocks dimension will be used. If a 2D cell type is chosen the
+        first and second blocks dimensinos will be used.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetCellOrder"
+                         default_values="3"
+                         name="CellOrder"
+                         number_of_elements="1">
+        <Documentation>This property specifies the interpolation order for Lagrange cell types.
+        </Documentation>
+        <IntRangeDomain min="1" max="10" name="range" />
+      </IntVectorProperty>
+      <IntVectorProperty command="SetCompleteQuadraticSimplicialElements"
+                         default_values="0"
+                         name="CompleteQuadraticSimplicialElements"
+                         label="Add nodes to complete polynomial basis"
+                         number_of_elements="1">
+        <Documentation>When true, some quadratic Lagrange cell types will have additional nodes.
+
+        Specifically,
+        triangles will have 7 points instead of 6;
+        tetrahedra will have 15 points instead of 10; and
+        wedges will have 21 points instead of 18.
+        These additional points increase the number of polynomial terms
+        in each element so that the shape functions can span a larger
+        space of polynomial functions.
+        </Documentation>
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <!-- End of CellTypeSource -->
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkLineSource"

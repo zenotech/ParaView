@@ -32,20 +32,20 @@ class VTKPVCLIENTSERVERCOREDEFAULT_EXPORT vtkPVEnvironmentInformation : public v
 public:
   static vtkPVEnvironmentInformation* New();
   vtkTypeMacro(vtkPVEnvironmentInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Transfer information about a single object into this object.
    * The object must be a vtkPVEnvironmentInformationHelper.
    */
-  virtual void CopyFromObject(vtkObject* object);
+  void CopyFromObject(vtkObject* object) VTK_OVERRIDE;
 
   //@{
   /**
    * Manage a serialized version of the information.
    */
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
+  void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
   //@}
 
   //@{
@@ -57,15 +57,15 @@ public:
 
 protected:
   vtkPVEnvironmentInformation();
-  ~vtkPVEnvironmentInformation();
+  ~vtkPVEnvironmentInformation() override;
 
   char* Variable; // value of an environment variable
 
   vtkSetStringMacro(Variable);
 
 private:
-  vtkPVEnvironmentInformation(const vtkPVEnvironmentInformation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVEnvironmentInformation&) VTK_DELETE_FUNCTION;
+  vtkPVEnvironmentInformation(const vtkPVEnvironmentInformation&) = delete;
+  void operator=(const vtkPVEnvironmentInformation&) = delete;
 };
 
 #endif

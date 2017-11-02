@@ -25,7 +25,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkProcessModuleAutoMPI : public vtkObjec
 public:
   static vtkProcessModuleAutoMPI* New();
   vtkTypeMacro(vtkProcessModuleAutoMPI, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   static bool EnableAutoMPI;
   static int NumberOfCores;
@@ -33,7 +33,7 @@ public:
   static void SetNumberOfCores(int val);
 
   vtkProcessModuleAutoMPI();
-  ~vtkProcessModuleAutoMPI();
+  ~vtkProcessModuleAutoMPI() override;
 
   // Description:
   // To determine if it is possible to use multi-core on the system.
@@ -50,8 +50,8 @@ public:
   int ConnectToRemoteBuiltInSelf();
 
 private:
-  vtkProcessModuleAutoMPI(const vtkProcessModuleAutoMPI&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkProcessModuleAutoMPI&) VTK_DELETE_FUNCTION;
+  vtkProcessModuleAutoMPI(const vtkProcessModuleAutoMPI&) = delete;
+  void operator=(const vtkProcessModuleAutoMPI&) = delete;
   vtkProcessModuleAutoMPIInternals* Internals;
 };
 

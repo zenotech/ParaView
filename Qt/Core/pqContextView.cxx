@@ -59,11 +59,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSelection.h"
 #include "vtkSelectionNode.h"
 #include "vtkVariant.h"
+#include <vtksys/SystemTools.hxx>
 
 #include <QDebug>
 #include <QList>
 #include <QPointer>
 #include <QVariant>
+
+#if QT_VERSION >= 0x050000
+#include <QSurfaceFormat>
+#endif
 
 // Command implementation
 class pqContextView::command : public vtkCommand
@@ -76,7 +81,7 @@ public:
   {
   }
 
-  virtual void Execute(vtkObject*, unsigned long, void*) { Target.selectionChanged(); }
+  void Execute(vtkObject*, unsigned long, void*) override { Target.selectionChanged(); }
 
   pqContextView& Target;
 
@@ -128,9 +133,21 @@ pqContextView::~pqContextView()
 QWidget* pqContextView::createWidget()
 {
   pqQVTKWidget* vtkwidget = new pqQVTKWidget();
+#if QT_VERSION >= 0x050000
+  if (!vtksys::SystemTools::HasEnv("DASHBOARD_TEST_FROM_CTEST"))
+  {
+    // Enable multisample for chart views when not running tests. Multisamples
+    // is disabled for testing to avoid failures due to antialiasing
+    // differences.
+    QSurfaceFormat fmt = QSurfaceFormat::defaultFormat();
+    fmt.setSamples(8);
+    vtkwidget->setFormat(fmt);
+  }
+#else
   // don't use caching for charts since the charts don't seem to render
   // correctly when an overlapping window is present, unlike 3D views.
   vtkwidget->setAutomaticImageCacheEnabled(false);
+#endif
   vtkwidget->setViewProxy(this->getProxy());
   vtkwidget->setContextMenuPolicy(Qt::NoContextMenu);
   vtkwidget->installEventFilter(this);

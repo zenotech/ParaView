@@ -250,11 +250,19 @@ void vtkSMBoundsDomain::SetDomainValues(double bounds[6])
   else if (this->Mode == vtkSMBoundsDomain::ARRAY_SCALED_EXTENT)
   {
     this->ArrayRangeDomain->Update(NULL);
-    double arrayScaleFactor =
-      this->ArrayRangeDomain->GetMaximum(this->ArrayRangeDomain->GetNumberOfEntries() - 1);
+    double arrayScaleFactor = 0;
+    for (unsigned int i = 0; i < this->ArrayRangeDomain->GetNumberOfEntries(); i++)
+    {
+      arrayScaleFactor +=
+        (this->ArrayRangeDomain->GetMaximum(i) - this->ArrayRangeDomain->GetMinimum(i)) / 2;
+    }
     if (arrayScaleFactor == 0)
     {
       arrayScaleFactor = 1;
+    }
+    else
+    {
+      arrayScaleFactor /= this->ArrayRangeDomain->GetNumberOfEntries();
     }
     vtkBoundingBox box(bounds);
     double maxbounds = box.GetMaxLength();
@@ -276,6 +284,7 @@ void vtkSMBoundsDomain::SetDomainValues(double bounds[6])
       (bounds[5] - bounds[4]) * (bounds[5] - bounds[4]));
     std::vector<vtkEntry> entries;
     entries.push_back(vtkEntry(0, diameter));
+    this->SetEntries(entries);
   }
 }
 
@@ -299,7 +308,8 @@ int vtkSMBoundsDomain::SetDefaultValues(vtkSMProperty* property, bool use_unchec
         int numCells = dataInfo->GetNumberOfCells();
         double linearNumCells = pow((double)numCells, (1.0 / 3.0));
         unitDistance = diameter;
-        if (linearNumCells != 0.0)
+        if (linearNumCells != 0.0 && !vtkMath::IsNan(linearNumCells) &&
+          !vtkMath::IsInf(linearNumCells))
         {
           unitDistance = diameter / linearNumCells;
         }

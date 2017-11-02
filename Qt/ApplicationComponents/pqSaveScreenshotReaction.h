@@ -55,7 +55,11 @@ public:
   * having to create a reaction instance.
   */
   static void saveScreenshot();
-  static void saveScreenshot(
+
+  /**
+  * Save a screenshot given the filename and image properties.
+  */
+  static bool saveScreenshot(
     const QString& filename, const QSize& size, int quality, bool all_views = false);
 
 public slots:
@@ -63,13 +67,17 @@ public slots:
   * Updates the enabled state. Applications need not explicitly call
   * this.
   */
-  void updateEnableState();
+  void updateEnableState() override;
 
 protected:
   /**
   * Called when the action is triggered.
   */
-  virtual void onTriggered() { pqSaveScreenshotReaction::saveScreenshot(); }
+  void onTriggered() override { pqSaveScreenshotReaction::saveScreenshot(); }
+
+  /// Prompt for a filename. Will return empty string if user cancelled the
+  /// operation.
+  static QString promptFileName();
 
 private:
   Q_DISABLE_COPY(pqSaveScreenshotReaction)

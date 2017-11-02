@@ -73,6 +73,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMSourceProxy.h"
 #include "vtkSMStringListDomain.h"
 #include "vtkSMStringVectorProperty.h"
+#include "vtkSMSubsetInclusionLatticeDomain.h"
 #include "vtkSMUncheckedPropertyHelper.h"
 #include "vtkSMVectorProperty.h"
 
@@ -151,6 +152,7 @@ pqSMAdaptor::PropertyType pqSMAdaptor::getPropertyType(vtkSMProperty* Property)
     vtkSMStringListDomain* stringListDomain = NULL;
     vtkSMCompositeTreeDomain* compositeTreeDomain = NULL;
     vtkSMSILDomain* silDomain = NULL;
+    vtkSMSubsetInclusionLatticeDomain* silDomain2 = NULL;
     vtkSMChartSeriesSelectionDomain* chartSeriesSelectionDomain = NULL;
 
     vtkSMDomainIterator* iter = Property->NewDomainIterator();
@@ -159,6 +161,10 @@ pqSMAdaptor::PropertyType pqSMAdaptor::getPropertyType(vtkSMProperty* Property)
       if (!silDomain)
       {
         silDomain = vtkSMSILDomain::SafeDownCast(iter->GetDomain());
+      }
+      if (!silDomain2)
+      {
+        silDomain2 = vtkSMSubsetInclusionLatticeDomain::SafeDownCast(iter->GetDomain());
       }
       if (!booleanDomain)
       {
@@ -200,7 +206,7 @@ pqSMAdaptor::PropertyType pqSMAdaptor::getPropertyType(vtkSMProperty* Property)
     {
       type = pqSMAdaptor::COMPOSITE_TREE;
     }
-    else if (silDomain)
+    else if (silDomain || silDomain2)
     {
       type = pqSMAdaptor::SIL;
     }
@@ -208,7 +214,7 @@ pqSMAdaptor::PropertyType pqSMAdaptor::getPropertyType(vtkSMProperty* Property)
     {
       type = pqSMAdaptor::MULTIPLE_ELEMENTS;
     }
-    else if (!silDomain && ((VectorProperty && VectorProperty->GetRepeatCommand() &&
+    else if (!silDomain && ((VectorProperty && VectorProperty->GetRepeatable() &&
                              (stringListDomain || enumerationDomain))))
     {
       type = pqSMAdaptor::SELECTION;
@@ -220,7 +226,7 @@ pqSMAdaptor::PropertyType pqSMAdaptor::getPropertyType(vtkSMProperty* Property)
     else
     {
       if (VectorProperty &&
-        (VectorProperty->GetNumberOfElements() > 1 || VectorProperty->GetRepeatCommand()))
+        (VectorProperty->GetNumberOfElements() > 1 || VectorProperty->GetRepeatable()))
       {
         type = pqSMAdaptor::MULTIPLE_ELEMENTS;
       }
@@ -709,14 +715,14 @@ void pqSMAdaptor::setSelectionProperty(
     int status = value[1].toInt();
     if (StringDomain)
     {
-      smValueStrings->AddString(name.toLatin1().data());
-      smValueStrings->AddString(QString::number(status).toLatin1().data());
+      smValueStrings->AddString(name.toUtf8().data());
+      smValueStrings->AddString(QString::number(status).toUtf8().data());
     }
     else if (EnumerationDomain)
     {
-      if (status && EnumerationDomain->HasEntryText(name.toLatin1().data()))
+      if (status && EnumerationDomain->HasEntryText(name.toUtf8().data()))
       {
-        int entryValue = EnumerationDomain->GetEntryValueForText(name.toLatin1().data());
+        int entryValue = EnumerationDomain->GetEntryValueForText(name.toUtf8().data());
         smValueInts.push_back(entryValue);
       }
     }
@@ -724,7 +730,7 @@ void pqSMAdaptor::setSelectionProperty(
     {
       if (status)
       {
-        smValueStrings->AddString(name.toLatin1().data());
+        smValueStrings->AddString(name.toUtf8().data());
       }
     }
   }
@@ -788,7 +794,7 @@ QList<QVariant> pqSMAdaptor::getSelectionPropertyDomain(vtkSMProperty* Property)
   }
   iter->Delete();
 
-  if (EnumerationDomain && VProperty->GetRepeatCommand())
+  if (EnumerationDomain && VProperty->GetRepeatable())
   {
     unsigned int numEntries = EnumerationDomain->GetNumberOfEntries();
     for (unsigned int i = 0; i < numEntries; i++)
@@ -796,7 +802,7 @@ QList<QVariant> pqSMAdaptor::getSelectionPropertyDomain(vtkSMProperty* Property)
       ret.append(EnumerationDomain->GetEntryText(i));
     }
   }
-  else if (StringListDomain && VProperty->GetRepeatCommand())
+  else if (StringListDomain && VProperty->GetRepeatable())
   {
     unsigned int numEntries = StringListDomain->GetNumberOfStrings();
     for (unsigned int i = 0; i < numEntries; i++)
@@ -1049,7 +1055,7 @@ void pqSMAdaptor::setEnumerationProperty(
   else if (ProxyGroupDomain && pp)
   {
     QString str = Value.toString();
-    vtkSMProxy* toadd = ProxyGroupDomain->GetProxy(str.toLatin1().data());
+    vtkSMProxy* toadd = ProxyGroupDomain->GetProxy(str.toUtf8().data());
     if (pp->GetNumberOfProxies() < 1)
     {
       if (Type == CHECKED)
@@ -1673,7 +1679,7 @@ void pqSMAdaptor::setFileListProperty(
       elementCount = svp->GetNumberOfUncheckedElements();
     }
 
-    if (!svp->GetRepeatCommand() && i >= elementCount)
+    if (!svp->GetRepeatable() && i >= elementCount)
     {
       break;
     }

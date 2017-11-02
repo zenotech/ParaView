@@ -32,7 +32,7 @@
  * client is connected to 1 and only 1 server. This ID is
  * insignificant. However, it provides the ground work to enable a client
  * to connect with multiple servers.  ConnectionID must be set immediately
- * after instantiating the proxy (if at all).  Chanding the ConnectionID
+ * after instantiating the proxy (if at all).  Changing the ConnectionID
  * after that can be dangerous.
  *
  * Once a proxy has been defined, it can be listed in another secondary group
@@ -43,7 +43,7 @@
  * \endcode
  *
  * When defining a proxy in the XML configuration file,
- * to derrive the property interface from another proxy definition,
+ * to derive the property interface from another proxy definition,
  * we can use attributes "base_proxygroup" and "base_proxyname" which
  * identify the proxy group and proxy name of another proxy. Base interfaces
  * can be defined recursively, however care must be taken to avoid cycles.
@@ -154,7 +154,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMProxy : public vtkSMRemoteObject
 public:
   static vtkSMProxy* New();
   vtkTypeMacro(vtkSMProxy, vtkSMRemoteObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Descritpion:
   // Set or override a key/value pair as annotation to that proxy.
@@ -196,7 +196,7 @@ public:
    * Get/Set the location where the underlying VTK-objects are created. The
    * value can be contructed by or-ing vtkSMSession::ServerFlags
    */
-  virtual void SetLocation(vtkTypeUInt32);
+  void SetLocation(vtkTypeUInt32) VTK_OVERRIDE;
 
   /**
    * Return the property with the given name. If no property is found
@@ -439,7 +439,7 @@ public:
 
   //@{
   /**
-   * The server manager configuration XML may define <Hints /> element for a
+   * The server manager configuration XML may define \p \<Hints/\> element for a
    * proxy. Hints are metadata associated with the proxy. The Server Manager
    * does not (and should not) interpret the hints. Hints provide a mechanism
    * to add GUI pertinant information to the server manager XML.
@@ -517,9 +517,9 @@ public:
    * action. By default, any remote object is Undoable.
    * This override the RemoteObject ones to propagate the flag to the sub-proxy
    */
-  virtual void PrototypeOn();
-  virtual void PrototypeOff();
-  virtual void SetPrototype(bool undo);
+  void PrototypeOn() VTK_OVERRIDE;
+  void PrototypeOff() VTK_OVERRIDE;
+  void SetPrototype(bool undo) VTK_OVERRIDE;
   //@}
 
   /**
@@ -555,13 +555,13 @@ public:
    * particular case, the server is already aware of that new state, so we keep
    * those changes local.
    */
-  virtual void EnableLocalPushOnly();
+  void EnableLocalPushOnly() VTK_OVERRIDE;
 
   /**
    * Enable the given remote object to communicate its state normaly to the
    * server location.
    */
-  virtual void DisableLocalPushOnly();
+  void DisableLocalPushOnly() VTK_OVERRIDE;
 
   /**
    * This method return the full object state that can be used to create that
@@ -569,7 +569,7 @@ public:
    * This method will be used to fill the undo stack.
    * If not overriden this will return NULL.
    */
-  virtual const vtkSMMessage* GetFullState();
+  const vtkSMMessage* GetFullState() VTK_OVERRIDE;
 
   /**
    * This method is used to initialise the object to the given state
@@ -578,7 +578,7 @@ public:
    * globalID set. This allow to split the load process in 2 step to prevent
    * invalid state when property refere to a sub-proxy that does not exist yet.
    */
-  virtual void LoadState(const vtkSMMessage* msg, vtkSMProxyLocator* locator);
+  void LoadState(const vtkSMMessage* msg, vtkSMProxyLocator* locator) VTK_OVERRIDE;
 
   /**
    * Returns the property group at \p index for the proxy.
@@ -592,7 +592,7 @@ public:
 
 protected:
   vtkSMProxy();
-  ~vtkSMProxy();
+  ~vtkSMProxy() override;
 
   /**
    * Invoke that takes a vtkClientServerStream as the argument.
@@ -837,7 +837,7 @@ protected:
 
   /**
    * Parses the XML to create a new property group. This can handle
-   * <PropertyGroup /> elements defined in both regular Proxy section or when
+   * \c \<PropertyGroup/\> elements defined in both regular Proxy section or when
    * exposing properties from sub-proxies.
    */
   vtkSMPropertyGroup* NewPropertyGroup(vtkPVXMLElement* propElement);
@@ -943,8 +943,8 @@ protected:
 protected:
   vtkSMProxyInternals* Internals;
   vtkSMProxyObserver* SubProxyObserver;
-  vtkSMProxy(const vtkSMProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMProxy&) VTK_DELETE_FUNCTION;
+  vtkSMProxy(const vtkSMProxy&) = delete;
+  void operator=(const vtkSMProxy&) = delete;
 
 private:
   vtkSMProperty* SetupExposedProperty(vtkPVXMLElement* propertyElement, const char* subproxy_name);

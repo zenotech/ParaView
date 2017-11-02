@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqPropertyLinks.h"
 #include "pqScalarsToColors.h"
 #include "pqUndoStack.h"
+#include "pqView.h"
 #include "vtkDataObject.h"
 #include "vtkEventQtSlotConnect.h"
 #include "vtkNew.h"
@@ -97,7 +98,7 @@ public:
         use_unchecked_modified_event, parentObject)
   {
   }
-  virtual ~PropertyLinksConnection() {}
+  ~PropertyLinksConnection() override {}
 
   // Methods to convert between ValueType and QVariant. Since QVariant doesn't
   // support == operations of non-default Qt types, we are forced to convert the
@@ -127,7 +128,7 @@ public:
 
 protected:
   /// Called to update the ServerManager Property due to UI change.
-  virtual void setServerManagerValue(bool use_unchecked, const QVariant& value)
+  void setServerManagerValue(bool use_unchecked, const QVariant& value) override
   {
     Q_ASSERT(use_unchecked == false);
     Q_UNUSED(use_unchecked);
@@ -144,7 +145,7 @@ protected:
     vtkSMProxy* oldLutProxy = vtkSMPropertyHelper(reprProxy, "LookupTable", true).GetAsProxy();
 
     vtkSMPVRepresentationProxy::SetScalarColoring(
-      reprProxy, arrayName.toLatin1().data(), association);
+      reprProxy, arrayName.toLocal8Bit().data(), association);
 
     vtkNew<vtkSMTransferFunctionManager> tmgr;
     pqDisplayColorWidget* widget = qobject_cast<pqDisplayColorWidget*>(this->objectQt());
@@ -183,7 +184,7 @@ protected:
   }
 
   /// called to get the current value for the ServerManager Property.
-  virtual QVariant currentServerManagerValue(bool use_unchecked) const
+  QVariant currentServerManagerValue(bool use_unchecked) const override
   {
     Q_ASSERT(use_unchecked == false);
     Q_UNUSED(use_unchecked);
@@ -199,14 +200,14 @@ protected:
   }
 
   /// called to set the UI due to a ServerManager Property change.
-  virtual void setQtValue(const QVariant& value)
+  void setQtValue(const QVariant& value) override
   {
     ValueType val = this->convert(value);
     qobject_cast<pqDisplayColorWidget*>(this->objectQt())->setArraySelection(val);
   }
 
   /// called to get the UI value.
-  virtual QVariant currentQtValue() const
+  QVariant currentQtValue() const override
   {
     ValueType curVal = qobject_cast<pqDisplayColorWidget*>(this->objectQt())->arraySelection();
     return this->convert(curVal);
@@ -550,16 +551,17 @@ void pqDisplayColorWidget::componentNumberChanged()
     QPair<int, QString> val = this->arraySelection();
     int association = val.first;
     const QString& arrayName = val.second;
-    SM_SCOPED_TRACE(SetScalarColoring)
-      .arg("display", this->Representation->getProxy())
-      .arg("arrayname", arrayName.toLatin1().data())
-      .arg("attribute_type", association)
-      .arg("component", this->Components->itemText(number + 1).toLatin1().data())
-      .arg("lut", this->ColorTransferFunction->getProxy());
-
     this->ColorTransferFunction->setVectorMode(
       number < 0 ? pqScalarsToColors::MAGNITUDE : pqScalarsToColors::COMPONENT,
       number < 0 ? 0 : number);
+    { // To make sure the trace is done before other calls.
+      SM_SCOPED_TRACE(SetScalarColoring)
+        .arg("display", this->Representation->getProxy())
+        .arg("arrayname", arrayName.toLatin1().data())
+        .arg("attribute_type", association)
+        .arg("component", this->Components->itemText(number + 1).toLatin1().data())
+        .arg("lut", this->ColorTransferFunction->getProxy());
+    }
 
     // we could now respect some application setting to determine if the LUT is
     // to be reset.
@@ -568,9 +570,9 @@ void pqDisplayColorWidget::componentNumberChanged()
       reprProxy, /*extend*/ false, /*force*/ false);
 
     // Update scalar bars.
-    vtkSMTransferFunctionProxy::UpdateScalarBarsComponentTitle(
-      this->ColorTransferFunction->getProxy(),
-      vtkSMPVRepresentationProxy::GetArrayInformationForColorArray(reprProxy));
+    vtkNew<vtkSMTransferFunctionManager> tmgr;
+    tmgr->UpdateScalarBarsComponentTitle(this->ColorTransferFunction->getProxy(), reprProxy);
+
     END_UNDO_SET();
 
     // render all views since this could affect multiple views.
@@ -594,12 +596,12 @@ void pqDisplayColorWidget::refreshComponents()
 
   vtkPVDataInformation* dataInfo = this->Representation->getInputDataInformation();
   vtkPVArrayInformation* arrayInfo =
-    dataInfo ? dataInfo->GetArrayInformation(arrayName.toLatin1().data(), association) : NULL;
+    dataInfo ? dataInfo->GetArrayInformation(arrayName.toLocal8Bit().data(), association) : NULL;
   if (!arrayInfo)
   {
     vtkPVDataInformation* reprInfo = this->Representation->getRepresentedDataInformation();
     arrayInfo =
-      reprInfo ? reprInfo->GetArrayInformation(arrayName.toLatin1().data(), association) : NULL;
+      reprInfo ? reprInfo->GetArrayInformation(arrayName.toLocal8Bit().data(), association) : NULL;
   }
 
   if (!arrayInfo || arrayInfo->GetNumberOfComponents() <= 1)

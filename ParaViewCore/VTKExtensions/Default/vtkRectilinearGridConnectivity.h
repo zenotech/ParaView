@@ -96,7 +96,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkRectilinearGridConnectivity
 public:
   vtkTypeMacro(vtkRectilinearGridConnectivity, vtkMultiBlockDataSetAlgorithm);
   static vtkRectilinearGridConnectivity* New();
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -148,7 +148,7 @@ public:
 
 protected:
   vtkRectilinearGridConnectivity();
-  ~vtkRectilinearGridConnectivity();
+  ~vtkRectilinearGridConnectivity() override;
 
   int DualGridsReady;
   int NumberOfBlocks;
@@ -162,10 +162,10 @@ protected:
   vtkRectilinearGridConnectivityFaceHash* FaceHash;
   vtkRectilinearGridConnectivityInternal* Internal;
 
-  virtual vtkExecutive* CreateDefaultExecutive();
-  virtual int FillInputPortInformation(int, vtkInformation*);
-  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  vtkExecutive* CreateDefaultExecutive() VTK_OVERRIDE;
+  int FillInputPortInformation(int, vtkInformation*) VTK_OVERRIDE;
+  int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   // ---------------------------------------------------------------------- //
   // --------------------------- Volume  arrays --------------------------- //
@@ -443,8 +443,8 @@ protected:
     vtkPolyData** procPlys, int numProcs, unsigned char partIndx, vtkPolyData* polyData);
 
 private:
-  vtkRectilinearGridConnectivity(const vtkRectilinearGridConnectivity&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkRectilinearGridConnectivity&) VTK_DELETE_FUNCTION;
+  vtkRectilinearGridConnectivity(const vtkRectilinearGridConnectivity&) = delete;
+  void operator=(const vtkRectilinearGridConnectivity&) = delete;
 };
 
 #endif

@@ -30,6 +30,8 @@
 #include "vtkPVClientServerCoreDefaultModule.h" //needed for exports
 #include "vtkPVInformation.h"
 
+#include <string> // Needed for std::string
+
 class vtkCollection;
 class vtkPVFileInformationSet;
 class vtkFileSequenceParser;
@@ -39,20 +41,20 @@ class VTKPVCLIENTSERVERCOREDEFAULT_EXPORT vtkPVFileInformation : public vtkPVInf
 public:
   static vtkPVFileInformation* New();
   vtkTypeMacro(vtkPVFileInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Transfer information about a single object into this object.
    * The object must be a vtkPVFileInformationHelper.
    */
-  virtual void CopyFromObject(vtkObject* object);
+  void CopyFromObject(vtkObject* object) VTK_OVERRIDE;
 
   //@{
   /**
    * Manage a serialized version of the information.
    */
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
+  void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
   //@}
 
   enum FileTypes
@@ -127,7 +129,7 @@ public:
 
 protected:
   vtkPVFileInformation();
-  ~vtkPVFileInformation();
+  ~vtkPVFileInformation() override;
 
   vtkCollection* Contents;
   vtkFileSequenceParser* SequenceParser;
@@ -155,10 +157,11 @@ protected:
   void GetSpecialDirectories();
   void SetHiddenFlag();
   int FastFileTypeDetection;
+  bool ReadDetailedFileInformation;
 
 private:
-  vtkPVFileInformation(const vtkPVFileInformation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVFileInformation&) VTK_DELETE_FUNCTION;
+  vtkPVFileInformation(const vtkPVFileInformation&) = delete;
+  void operator=(const vtkPVFileInformation&) = delete;
 
   struct vtkInfo;
 };

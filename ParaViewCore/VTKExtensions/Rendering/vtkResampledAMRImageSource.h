@@ -49,7 +49,7 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkResampledAMRImageSource : public vtk
 public:
   static vtkResampledAMRImageSource* New();
   vtkTypeMacro(vtkResampledAMRImageSource, vtkTrivialProducer);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -90,7 +90,7 @@ public:
 
 protected:
   vtkResampledAMRImageSource();
-  ~vtkResampledAMRImageSource();
+  ~vtkResampledAMRImageSource() override;
 
   bool Initialize(vtkOverlappingAMR* amr);
   bool UpdateResampledVolume(
@@ -105,8 +105,8 @@ protected:
   vtkSmartPointer<vtkIntArray> DonorLevel;
 
 private:
-  vtkResampledAMRImageSource(const vtkResampledAMRImageSource&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkResampledAMRImageSource&) VTK_DELETE_FUNCTION;
+  vtkResampledAMRImageSource(const vtkResampledAMRImageSource&) = delete;
+  void operator=(const vtkResampledAMRImageSource&) = delete;
 
   vtkTimeStamp InitializationTime;
 };

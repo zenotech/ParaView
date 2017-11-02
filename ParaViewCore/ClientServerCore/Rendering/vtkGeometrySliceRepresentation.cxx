@@ -41,9 +41,6 @@
 #include "vtkThreeSliceFilter.h"
 #include "vtkVector.h"
 
-#ifndef VTKGL2
-#include "vtkHardwareSelectionPolyDataPainter.h"
-#endif
 #include <cassert>
 #include <vector>
 namespace
@@ -123,8 +120,8 @@ public:
   static vtkGSRGeometryFilter* New();
   vtkTypeMacro(vtkGSRGeometryFilter, vtkPVGeometryFilter);
 
-  virtual int RequestData(
-    vtkInformation* req, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
+  int RequestData(vtkInformation* req, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE
   {
     vtkSmartPointer<vtkDataObject> inputDO = vtkDataObject::GetData(inputVector[0]);
     vtkSmartPointer<vtkMatrix4x4> changeOfBasisMatrix =
@@ -180,7 +177,7 @@ public:
 protected:
   vtkGSRGeometryFilter() {}
 
-  virtual ~vtkGSRGeometryFilter() {}
+  ~vtkGSRGeometryFilter() override {}
 
 private:
   vtkGSRGeometryFilter(const vtkGSRGeometryFilter&);
@@ -223,18 +220,9 @@ void vtkGeometrySliceRepresentation::SetupDefaults()
   vtkMath::UninitializeBounds(this->Internals->OriginalDataBounds);
   this->Superclass::SetupDefaults();
   vtkCompositePolyDataMapper2* mapper = vtkCompositePolyDataMapper2::SafeDownCast(this->Mapper);
-#ifdef VTKGL2
   mapper->SetPointIdArrayName("-");
   mapper->SetCellIdArrayName("vtkSliceOriginalCellIds");
   mapper->SetCompositeIdArrayName("vtkSliceCompositeIndex");
-#else
-  vtkHardwareSelectionPolyDataPainter* selPainter =
-    vtkHardwareSelectionPolyDataPainter::SafeDownCast(
-      mapper->GetSelectionPainter()->GetDelegatePainter());
-  selPainter->SetPointIdArrayName("-");
-  selPainter->SetCellIdArrayName("vtkSliceOriginalCellIds");
-  selPainter->SetCompositeIdArrayName("vtkSliceCompositeIndex");
-#endif
 
   this->Internals->OutlineMapper->SetInputConnection(
     this->Internals->OutlineSource->GetOutputPort());

@@ -52,6 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSession.h"
 #include "vtkSMSourceProxy.h"
+#include "vtkSMTrace.h"
 #include "vtkSMTransferFunctionManager.h"
 #include "vtkSMViewProxy.h"
 #include "vtkWeakPointer.h"
@@ -181,6 +182,10 @@ void pqApplyBehavior::applied(pqPropertiesPanel*)
   // properties like color transfer functions before the actual render.
   foreach (pqView* view, dirty_views)
   {
+    SM_SCOPED_TRACE(CallMethod)
+      .arg(view->getViewProxy())
+      .arg("Update")
+      .arg("comment", "update the view to ensure updated data information");
     view->getViewProxy()->Update();
   }
 
@@ -212,23 +217,8 @@ void pqApplyBehavior::applied(pqPropertiesPanel*)
   // If user chose it, update all transfer function data range.
   // FIXME: This should happen for all servers available.
   vtkNew<vtkSMTransferFunctionManager> tmgr;
-  int mode = gsettings->GetTransferFunctionResetMode();
-  switch (mode)
-  {
-    case vtkPVGeneralSettings::RESET_ON_APPLY:
-    case vtkPVGeneralSettings::RESET_ON_APPLY_AND_TIMESTEP:
-      tmgr->ResetAllTransferFunctionRangesUsingCurrentData(
-        pqActiveObjects::instance().activeServer()->proxyManager(), false);
-      break;
-
-    case vtkPVGeneralSettings::GROW_ON_APPLY:
-    case vtkPVGeneralSettings::GROW_ON_APPLY_AND_TIMESTEP:
-    default:
-      tmgr->ResetAllTransferFunctionRangesUsingCurrentData(
-        pqActiveObjects::instance().activeServer()->proxyManager(),
-        /*extend*/ true);
-      break;
-  }
+  tmgr->ResetAllTransferFunctionRangesUsingCurrentData(
+    pqActiveObjects::instance().activeServer()->proxyManager(), false /*animating*/);
 
   //---------------------------------------------------------------------------
   // Perform the render on visible views.

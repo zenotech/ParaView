@@ -103,7 +103,10 @@ vtkPVProgressHandler::vtkPVProgressHandler()
   this->LastProgress = 0;
   this->LastProgressText = NULL;
   this->LastMessage = NULL;
-  this->ProgressFrequency = 1.0; // seconds
+
+  // use higher frequency for client while lower for server (or batch).
+  this->ProgressInterval =
+    vtkProcessModule::GetProcessType() == vtkProcessModule::PROCESS_CLIENT ? 0.1 : 1.0;
   this->AddedHandlers = false;
 
   // Add observer to MessageEvents.
@@ -123,7 +126,8 @@ vtkPVProgressHandler::~vtkPVProgressHandler()
 //----------------------------------------------------------------------------
 void vtkPVProgressHandler::RegisterProgressEvent(vtkObject* object, int id)
 {
-  if (object && (object->IsA("vtkAlgorithm") || object->IsA("vtkKdTree")))
+  if (object && (object->IsA("vtkAlgorithm") || object->IsA("vtkKdTree") ||
+                  object->IsA("vtkExporter") || object->IsA("vtkSMAnimationSceneWriter")))
   {
     this->Internals->RegisteredObjects[object] = id;
     object->AddObserver(vtkCommand::ProgressEvent, this, &vtkPVProgressHandler::OnProgressEvent);
@@ -245,7 +249,7 @@ void vtkPVProgressHandler::OnProgressEvent(vtkObject* caller, unsigned long even
   this->Internals->ProgressTimer->StopTimer();
   // cout <<"Elapsed: " << this->Internals->ProgressTimer->GetElapsedTime() <<
   //  endl;
-  if (this->Internals->ProgressTimer->GetElapsedTime() < this->ProgressFrequency)
+  if (this->Internals->ProgressTimer->GetElapsedTime() < this->ProgressInterval)
   {
     return;
   }
@@ -370,6 +374,8 @@ void vtkPVProgressHandler::OnMessageEvent(
 //----------------------------------------------------------------------------
 void vtkPVProgressHandler::RefreshMessage(const char* message)
 {
+  SKIP_IF_DISABLED();
+
   // On server-root-nodes, send the message to the client.
   vtkMultiProcessController* client_controller = this->Session->GetController(vtkPVSession::CLIENT);
   if (client_controller != NULL && message != NULL)

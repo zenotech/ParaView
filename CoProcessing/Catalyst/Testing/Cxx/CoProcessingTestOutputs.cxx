@@ -13,13 +13,13 @@ public:
   vtkTypeMacro(vtkCPTestPipeline, vtkCPPipeline);
   static vtkCPTestPipeline* New();
 
-  virtual int RequestDataDescription(vtkCPDataDescription* dataDescription)
+  virtual int RequestDataDescription(vtkCPDataDescription* dataDescription) VTK_OVERRIDE
   {
     return this->ShouldOutput(dataDescription, false);
   }
 
   /// Execute the pipeline. Returns 1 for success and 0 for failure.
-  virtual int CoProcess(vtkCPDataDescription* dataDescription)
+  virtual int CoProcess(vtkCPDataDescription* dataDescription) VTK_OVERRIDE
   {
     this->OutputCounter++;
     if (this->ShouldOutput(dataDescription, true) == 0)
@@ -96,8 +96,8 @@ protected:
   }
 
 private:
-  vtkCPTestPipeline(const vtkCPTestPipeline&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCPTestPipeline&) VTK_DELETE_FUNCTION;
+  vtkCPTestPipeline(const vtkCPTestPipeline&) = delete;
+  void operator=(const vtkCPTestPipeline&) = delete;
 };
 
 vtkStandardNewMacro(vtkCPTestPipeline);

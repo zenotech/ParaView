@@ -32,7 +32,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkSessionIterator : public vtkObject
 public:
   static vtkSessionIterator* New();
   vtkTypeMacro(vtkSessionIterator, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Begin iterating over the composite dataset structure.
@@ -64,14 +64,14 @@ public:
 
 protected:
   vtkSessionIterator();
-  ~vtkSessionIterator();
+  ~vtkSessionIterator() override;
 
   class vtkInternals;
   vtkInternals* Internals;
 
 private:
-  vtkSessionIterator(const vtkSessionIterator&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSessionIterator&) VTK_DELETE_FUNCTION;
+  vtkSessionIterator(const vtkSessionIterator&) = delete;
+  void operator=(const vtkSessionIterator&) = delete;
 };
 
 #endif

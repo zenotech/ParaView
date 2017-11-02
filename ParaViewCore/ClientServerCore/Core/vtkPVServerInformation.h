@@ -35,7 +35,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVServerInformation : public vtkPVInfo
 public:
   static vtkPVServerInformation* New();
   vtkTypeMacro(vtkPVServerInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -53,19 +53,19 @@ public:
   /**
    * Transfer information about a single object into this object.
    */
-  virtual void CopyFromObject(vtkObject*);
+  void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
   /**
    * Merge another information object.
    */
-  virtual void AddInformation(vtkPVInformation*);
+  void AddInformation(vtkPVInformation*) VTK_OVERRIDE;
 
   //@{
   /**
    * Manage a serialized version of the information.
    */
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
+  void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
   //@}
 
   //@{
@@ -76,14 +76,6 @@ public:
   vtkGetVector2Macro(TileDimensions, int);
   vtkSetVector2Macro(TileMullions, int);
   vtkGetVector2Macro(TileMullions, int);
-  //@}
-
-  //@{
-  /**
-   * Variable (command line argument) to use offscreen rendering.
-   */
-  vtkSetMacro(UseOffscreenRendering, int);
-  vtkGetMacro(UseOffscreenRendering, int);
   //@}
 
   //@{
@@ -109,6 +101,14 @@ public:
   vtkSetMacro(AVISupport, int);
   vtkGetMacro(AVISupport, int);
   //@}
+
+  //@{
+  /**
+   * if the server supports compressing images via NVPipe
+   */
+  //@}
+  vtkSetMacro(NVPipeSupport, bool);
+  vtkGetMacro(NVPipeSupport, bool);
 
   //@{
   /**
@@ -227,27 +227,36 @@ public:
   vtkGetMacro(ClientId, int);
   //@}
 
+  //@{
+  /**
+   * Set/Get vtkIdType size, which can be 32 or 64
+   */
+  vtkSetMacro(IdTypeSize, int);
+  vtkGetMacro(IdTypeSize, int);
+  //@}
+
 protected:
   vtkPVServerInformation();
-  ~vtkPVServerInformation();
+  ~vtkPVServerInformation() override;
 
   int NumberOfProcesses;
   bool MPIInitialized;
   int OGVSupport;
   int AVISupport;
+  bool NVPipeSupport;
   int RemoteRendering;
   int TileDimensions[2];
   int TileMullions[2];
   int Timeout;
   int UseIceT;
-  int UseOffscreenRendering;
   int MultiClientsEnable;
   int ClientId;
+  int IdTypeSize;
 
   vtkPVServerOptionsInternals* MachinesInternals;
 
-  vtkPVServerInformation(const vtkPVServerInformation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVServerInformation&) VTK_DELETE_FUNCTION;
+  vtkPVServerInformation(const vtkPVServerInformation&) = delete;
+  void operator=(const vtkPVServerInformation&) = delete;
 };
 
 #endif

@@ -54,7 +54,7 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSIProxyDefinitionManager : public 
 public:
   static vtkSIProxyDefinitionManager* New();
   vtkTypeMacro(vtkSIProxyDefinitionManager, vtkSIObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Returns the ID reserved for the proxy definition manager.
@@ -211,14 +211,14 @@ public:
    * The provided implementation just store the message
    * and return it at the Pull one.
    */
-  virtual void Push(vtkSMMessage* msg);
+  void Push(vtkSMMessage* msg) VTK_OVERRIDE;
 
   /**
    * Pull the current state of the underneath implementation
    * The provided implementation update the given message with the one
    * that has been previously pushed
    */
-  virtual void Pull(vtkSMMessage* msg);
+  void Pull(vtkSMMessage* msg) VTK_OVERRIDE;
 
   //@{
   /**
@@ -241,7 +241,7 @@ public:
 
 protected:
   vtkSIProxyDefinitionManager();
-  ~vtkSIProxyDefinitionManager();
+  ~vtkSIProxyDefinitionManager() override;
 
   /**
    * Helper method that add a ShowInMenu Hint for a proxy definition.
@@ -253,7 +253,7 @@ protected:
   /**
    * Helper method that add a ShowInMenu Hint for any proxy definition that lie
    * in a sources or filters group.
-   * @See method AttachShowInMenuHintsToProxy
+   * @see method AttachShowInMenuHintsToProxy
    */
   void AttachShowInMenuHintsToProxyFromProxyGroups(vtkPVXMLElement* root);
 
@@ -322,8 +322,8 @@ protected:
   void InvokeCustomDefitionsUpdated();
 
 private:
-  vtkSIProxyDefinitionManager(const vtkSIProxyDefinitionManager&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSIProxyDefinitionManager&) VTK_DELETE_FUNCTION;
+  vtkSIProxyDefinitionManager(const vtkSIProxyDefinitionManager&) = delete;
+  void operator=(const vtkSIProxyDefinitionManager&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

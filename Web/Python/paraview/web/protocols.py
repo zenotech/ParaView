@@ -3,14 +3,15 @@ protocols that can be combined together to provide a flexible way to define
 very specific web application.
 """
 
-import os, sys, logging, types, inspect, traceback, logging, re, json, fnmatch
-from time import time
+from __future__ import absolute_import, division, print_function
+
+import os, sys, types, inspect, traceback, logging, re, json, fnmatch, time
 
 # import Twisted reactor for later callback
 from twisted.internet import reactor
 
 # import RPC annotation
-from autobahn.wamp import register as exportRpc
+from wslink import register as exportRpc
 
 # import paraview modules.
 import paraview
@@ -19,27 +20,19 @@ from paraview import simple, servermanager
 from paraview.servermanager import ProxyProperty, InputProperty
 from paraview.web import helper
 from vtk.web import protocols as vtk_protocols
-from decorators import *
+from vtk.web import iteritems
+from vtk.web.render_window_serializer import SynchronizationContext, initializeSerializers, serializeInstance, getReferenceId
+from paraview.web.decorators import *
 
-from vtk.vtkWebCore import vtkWebInteractionEvent
+from paraview.vtk.vtkCommonDataModel          import vtkImageData
+from paraview.vtk.vtkCommonCore               import vtkUnsignedCharArray, vtkCollection
+from paraview.vtk.vtkWebCore                  import vtkDataEncoder, vtkWebInteractionEvent
+from paraview.vtk.vtkPVServerManagerRendering import vtkSMPVRepresentationProxy, vtkSMTransferFunctionProxy, vtkSMTransferFunctionManager
+from paraview.vtk.vtkPVServerManagerCore      import vtkSMProxyManager
+from paraview.vtk.vtkCommonDataModel          import vtkDataObject
 
-from vtk import vtkImageData
-from vtk import vtkUnsignedCharArray
-from vtk import vtkDataEncoder
-
-# Needed for:
-#    vtkSMPVRepresentationProxy
-#    vtkSMTransferFunctionProxy
-#    vtkSMTransferFunctionManager
-from vtk.vtkPVServerManagerRendering import *
-
-# Needed for:
-#    vtkSMProxyManager
-from vtk.vtkPVServerManagerCore import *
-
-# Needed for:
-#    vtkDataObject
-from vtk.vtkCommonDataModel import *
+if sys.version_info >= (3,):
+    xrange = range
 
 # =============================================================================
 # Helper methods
@@ -67,7 +60,7 @@ def alphanum_key(s):
 class ParaViewWebProtocol(vtk_protocols.vtkWebProtocol):
 
     def __init__(self):
-        self.Application = None
+        # self.Application = None
         self.coreServer = None
         self.multiRoot = False
         self.baseDirectory = ''
@@ -122,17 +115,18 @@ class ParaViewWebProtocol(vtk_protocols.vtkWebProtocol):
                     self.overrideDataDirKey = basePair[0]
             else:
                 self.baseDirectory = basePath
+            self.baseDirectory = os.path.normpath(self.baseDirectory)
         else:
             baseDirs = basePath.split('|')
             for baseDir in baseDirs:
                 basePair = baseDir.split('=')
                 if os.path.exists(basePair[1]):
-                    self.baseDirectoryMap[basePair[0]] = basePair[1]
+                    self.baseDirectoryMap[basePair[0]] = os.path.normpath(basePair[1])
 
             # Check if we ended up with just a single directory
-            bdKeys = self.baseDirectoryMap.keys()
+            bdKeys = list(self.baseDirectoryMap)
             if len(bdKeys) == 1:
-                self.baseDirectory = self.baseDirectoryMap[bdKeys[0]]
+                self.baseDirectory = os.path.normpath(self.baseDirectoryMap[bdKeys[0]])
                 self.overrideDataDirKey = bdKeys[0]
                 self.baseDirectoryMap = {}
             elif len(bdKeys) > 1:
@@ -152,7 +146,7 @@ class ParaViewWebProtocol(vtk_protocols.vtkWebProtocol):
 
         # Make sure the cleanedPath is part of the allowed ones
         if self.multiRoot:
-            for key, value in self.baseDirectoryMap.iteritems():
+            for key, value in iteritems(self.baseDirectoryMap):
                 if cleanedPath.startswith(value):
                     return cleanedPath
         elif cleanedPath.startswith(self.baseDirectory):
@@ -241,6 +235,12 @@ class ParaViewWebMouseHandler(ParaViewWebProtocol):
 
 class ParaViewWebViewPort(ParaViewWebProtocol):
 
+    def __init__(self, scale=1.0, maxWidth=2560, maxHeight=1440):
+        super(ParaViewWebViewPort, self).__init__()
+        self.scale = scale
+        self.maxWidth = maxWidth
+        self.maxHeight = maxHeight
+
     # RpcName: resetCamera => viewport.camera.reset
     @exportRpc("viewport.camera.reset")
     def resetCamera(self, viewId):
@@ -311,7 +311,17 @@ class ParaViewWebViewPort(ParaViewWebProtocol):
     @exportRpc("viewport.size.update")
     def updateSize(self, view_id, width, height):
         view = self.getView(view_id)
-        view.ViewSize = [ width, height ]
+        w = width * self.scale
+        h = height * self.scale
+        if w > self.maxWidth:
+            s = float(self.maxWidth) / float(w)
+            w *= s
+            h *= s
+        elif h > self.maxHeight:
+            s = float(self.maxHeight) / float(h)
+            w *= s
+            h *= s
+        view.ViewSize = [ int(w), int(h) ]
         self.getApplication().InvokeEvent('PushRender')
 
 # =============================================================================
@@ -328,21 +338,21 @@ class ParaViewWebViewPortImageDelivery(ParaViewWebProtocol):
         """
         RPC Callback to render a view and obtain the rendered image.
         """
-        beginTime = int(round(time() * 1000))
+        beginTime = int(round(time.time() * 1000))
         view = self.getView(options["view"])
-        size = [view.ViewSize[0], view.ViewSize[1]]
+        size = view.ViewSize[0:2]
         resize = size != options.get("size", size)
         if resize:
             size = options["size"]
             view.ViewSize = size
         t = 0
-        if options and options.has_key("mtime"):
+        if options and "mtime" in options:
             t = options["mtime"]
         quality = 100
-        if options and options.has_key("quality"):
+        if options and "quality" in options:
             quality = options["quality"]
         localTime = 0
-        if options and options.has_key("localTime"):
+        if options and "localTime" in options:
             localTime = options["localTime"]
         reply = {}
         app = self.getApplication()
@@ -357,18 +367,91 @@ class ParaViewWebViewPortImageDelivery(ParaViewWebProtocol):
             reply["image"] = app.StillRenderToString(view.SMProxy, t, quality)
             tries -= 1
 
-        if not resize and options and options.has_key("clearCache") and options["clearCache"]:
+        if not resize and options and ("clearCache" in options) and options["clearCache"]:
             app.InvalidateCache(view.SMProxy)
             reply["image"] = app.StillRenderToString(view.SMProxy, t, quality)
 
         reply["stale"] = app.GetHasImagesBeingProcessed(view.SMProxy)
-        reply["mtime"] = app.GetLastStillRenderToStringMTime()
-        reply["size"] = [view.ViewSize[0], view.ViewSize[1]]
+        reply["mtime"] = app.GetLastStillRenderToMTime()
+        reply["size"] = view.ViewSize[0:2]
         reply["format"] = "jpeg;base64"
         reply["global_id"] = view.GetGlobalIDAsString()
         reply["localTime"] = localTime
 
-        endTime = int(round(time() * 1000))
+        endTime = int(round(time.time() * 1000))
+        reply["workTime"] = (endTime - beginTime)
+
+        return reply
+
+# =============================================================================
+#
+# Provide Image publish-based delivery mechanism
+#
+# =============================================================================
+
+class ParaViewWebPublishImageDelivery(ParaViewWebProtocol, vtk_protocols.vtkWebPublishImageDelivery):
+    def __init__(self, decode=True):
+        # multiple inheritance - ParaViewWebProtocol methods take priority, i.e. stillRender()
+        # PVW init called second so Application is initialized properly.
+        vtk_protocols.vtkWebPublishImageDelivery.__init__(self, decode)
+        ParaViewWebProtocol.__init__(self)
+
+    @exportRpc("viewport.image.push")
+    def stillRender(self, options):
+        """
+        RPC Callback to render a view and obtain the rendered image.
+        """
+        beginTime = int(round(time.time() * 1000))
+        view = self.getView(options["view"])
+        size = view.ViewSize[0:2]
+        resize = size != options.get("size", size)
+        if resize:
+            size = options["size"]
+            view.ViewSize = size
+        t = 0
+        if options and "mtime" in options:
+            t = options["mtime"]
+        quality = 100
+        if options and "quality" in options:
+            quality = options["quality"]
+        localTime = 0
+        if options and "localTime" in options:
+            localTime = options["localTime"]
+        reply = {}
+        app = self.getApplication()
+        if self.decode:
+            stillRender = app.StillRenderToString
+        else:
+            stillRender = app.StillRenderToBuffer
+        reply_image = stillRender(view.SMProxy, t, quality)
+
+        # Check that we are getting image size we have set if not wait until we
+        # do.
+        tries = 10;
+        while resize and list(app.GetLastStillRenderImageSize()) != size \
+              and size != [0, 0] and tries > 0:
+            app.InvalidateCache(view.SMProxy)
+            reply_image = stillRender(view.SMProxy, t, quality)
+            tries -= 1
+
+        if not resize and options and ("clearCache" in options) and options["clearCache"]:
+            app.InvalidateCache(view.SMProxy)
+            reply_image = stillRender(view.SMProxy, t, quality)
+
+        reply["stale"] = app.GetHasImagesBeingProcessed(view.SMProxy)
+        reply["mtime"] = app.GetLastStillRenderToMTime()
+        reply["size"] = view.ViewSize[0:2]
+        reply["memsize"] = reply_image.GetDataSize() if reply_image else 0
+        reply["format"] = "jpeg;base64" if self.decode else "jpeg"
+        reply["global_id"] = view.GetGlobalIDAsString()
+        reply["localTime"] = localTime
+        if self.decode:
+            reply["image"] = reply_image
+        else:
+            # Convert the vtkUnsignedCharArray into a bytes object, required by Autobahn websockets
+            reply["image"] = memoryview(reply_image).tobytes() if reply_image else None
+
+        endTime = int(round(time.time() * 1000))
         reply["workTime"] = (endTime - beginTime)
 
         return reply
@@ -471,6 +554,104 @@ class ParaViewWebViewPortGeometryDelivery(ParaViewWebProtocol):
 
         return { 'success': True, 'metaDataList': returnToClient }
 
+# =============================================================================
+#
+# Provide an updated geometry delivery mechanism which better matches the
+# client-side rendering capability we have in vtk.js
+#
+# =============================================================================
+
+class ParaViewWebLocalRendering(ParaViewWebProtocol):
+    def __init__(self):
+        super(ParaViewWebLocalRendering, self).__init__()
+        self.context = SynchronizationContext()
+        self.trackingViews = {}
+        self.mtime = 0
+
+        initializeSerializers()
+
+    # RpcName: getArray => viewport.geometry.array.get
+    @exportRpc("viewport.geometry.array.get")
+    def getArray(self, dataHash):
+        return self.context.getCachedDataArray(dataHash)
+
+    # RpcName: addViewObserver => viewport.geometry.view.observer.add
+    @exportRpc("viewport.geometry.view.observer.add")
+    def addViewObserver(self, viewId):
+        sView = self.getView(viewId)
+        if not sView:
+            return { 'error': 'Unable to get view with id %s' % viewId }
+
+        realViewId = sView.GetGlobalIDAsString()
+
+        def pushGeometry(newSubscription=False):
+            simple.Render(sView)
+            stateToReturn = self.getViewState(realViewId, newSubscription)
+            stateToReturn['mtime'] = 0 if newSubscription else self.mtime
+            self.mtime += 1
+            return stateToReturn
+
+        if not realViewId in self.trackingViews:
+            observerCallback = lambda *args, **kwargs: self.publish('viewport.geometry.view.subscription', pushGeometry())
+            tag = self.getApplication().AddObserver('PushRender', observerCallback)
+            self.trackingViews[realViewId] = { 'tag': tag, 'observerCount': 1 }
+        else:
+            # There is an observer on this view already
+            self.trackingViews[realViewId]['observerCount'] += 1
+
+        self.publish('viewport.geometry.view.subscription', pushGeometry(True))
+        return { 'success': True, 'viewId': realViewId }
+
+    # RpcName: removeViewObserver => viewport.geometry.view.observer.remove
+    @exportRpc("viewport.geometry.view.observer.remove")
+    def removeViewObserver(self, viewId):
+        sView = self.getView(viewId)
+        if not sView:
+            return { 'error': 'Unable to get view with id %s' % viewId }
+
+        realViewId = sView.GetGlobalIDAsString()
+
+        observerInfo = None
+        if realViewId in self.trackingViews:
+            observerInfo = self.trackingViews[realViewId]
+
+        if not observerInfo:
+            return { 'error': 'Unable to find subscription for view %s' % realViewId }
+
+        observerInfo['observerCount'] -= 1
+
+        if observerInfo['observerCount'] <= 0:
+            self.getApplication().RemoveObserver(observerInfo['tag'])
+            del self.trackingViews[realViewId]
+
+        return { 'result': 'success' }
+
+    # RpcName: getViewState => viewport.geometry.view.get.state
+    @exportRpc("viewport.geometry.view.get.state")
+    def getViewState(self, viewId, newSubscription=False):
+        sView = self.getView(viewId)
+        if not sView:
+            return { 'error': 'Unable to get view with id %s' % viewId }
+
+        self.context.setIgnoreLastDependencies(newSubscription)
+
+        # Get the active view and render window, use it to iterate over renderers
+        renderWindow = sView.GetRenderWindow()
+        renderWindowId = sView.GetGlobalIDAsString()
+        viewInstance = serializeInstance(None, renderWindow, renderWindowId, self.context, 1)
+        viewInstance['extra'] = {
+            'vtkRefId': getReferenceId(renderWindow),
+            'centerOfRotation': sView.CenterOfRotation.GetData(),
+            'camera': getReferenceId(sView.GetActiveCamera())
+        }
+
+        self.context.setIgnoreLastDependencies(False)
+        self.context.checkForArraysToRelease()
+
+        if viewInstance:
+            return viewInstance
+
+        return None
 
 # =============================================================================
 #
@@ -533,7 +714,10 @@ class ParaViewWebTimeHandler(ParaViewWebProtocol):
     @exportRpc("pv.time.index.get")
     def getTimeStep(self):
         anim = simple.GetAnimationScene()
-        return list(anim.TimeKeeper.TimestepValues).index(anim.TimeKeeper.Time)
+        try:
+            return list(anim.TimeKeeper.TimestepValues).index(anim.TimeKeeper.Time)
+        except:
+            return 0
 
     @exportRpc("pv.time.value.set")
     def setTimeValue(self, t):
@@ -713,7 +897,7 @@ class ParaViewWebColorManager(ParaViewWebProtocol):
 
     # RpcName: setOpacityFunctionPoints => pv.color.manager.opacity.points.set
     @exportRpc("pv.color.manager.opacity.points.set")
-    def setOpacityFunctionPoints(self, arrayName, pointArray):
+    def setOpacityFunctionPoints(self, arrayName, pointArray, enableOpacityMapping=False):
         lutProxy = simple.GetColorTransferFunction(arrayName)
         pwfProxy = simple.GetOpacityTransferFunction(arrayName)
 
@@ -723,13 +907,15 @@ class ParaViewWebColorManager(ParaViewWebProtocol):
 
         # Scale and bias the x values, which come in between 0.0 and 1.0, to the
         # current scalar range
-        for i in range(len(pointArray) / 4):
+        for i in range(len(pointArray) // 4):
             idx = i * 4
             x = pointArray[idx]
             pointArray[idx] = (x * (cMax - cMin)) + cMin
 
         # Set the Points property to scaled and biased points array
         pwfProxy.Points = pointArray
+
+        lutProxy.EnableOpacityMapping = enableOpacityMapping
 
         simple.Render()
         self.getApplication().InvokeEvent('PushRender')
@@ -748,7 +934,7 @@ class ParaViewWebColorManager(ParaViewWebProtocol):
 
         # Scale and bias the x values, which come in between 0.0 and 1.0, to the
         # current scalar range
-        for i in range(len(pointArray) / 4):
+        for i in range(len(pointArray) // 4):
             idx = i * 4
             result.append({
                 'x': (pointArray[idx] - cMin) / (cMax - cMin),
@@ -761,20 +947,6 @@ class ParaViewWebColorManager(ParaViewWebProtocol):
     # RpcName: getRgbPoints => pv.color.manager.rgb.points.get
     @exportRpc("pv.color.manager.rgb.points.get")
     def getRgbPoints(self, arrayName):
-        """
-            return {
-                "mode": "categorical" | "continuous",
-                "categorical": {
-                    "scalars": [ "1", "2", "3", ... ],
-                    "annotations": [ "a1", "a2", "a3", ... ],
-                    "colors": [ [r1, g1, b1], [r2, g2, b2], [r3, g3, b3], ... ]
-                },
-                "continuous": {
-                    "scalars": [ 1.203, 17.976 ],
-                    "color": [ [r1, g1, b1], [r2, g2, b2] ]
-                }
-            }
-        """
 
         lutProxy = simple.GetColorTransferFunction(arrayName)
 
@@ -950,6 +1122,8 @@ class ParaViewWebColorManager(ParaViewWebProtocol):
 
         # Use the vtk data encoder to base-64 encode the image as png, using no compression
         encoder = vtkDataEncoder()
+        # two calls in a row crash on Windows - bald timing hack to avoid the crash.
+        time.sleep(0.01);
         b64Str = encoder.EncodeAsBase64Png(imgData, 0)
 
         return { 'range': dataRange, 'image': b64Str }
@@ -1013,6 +1187,22 @@ class ParaViewWebColorManager(ParaViewWebProtocol):
 
         return lutProxy.EnableOpacityMapping
 
+    # RpcName: setSurfaceOpacityByArray => pv.color.manager.surface.opacity.by.array.set
+    @exportRpc("pv.color.manager.surface.opacity.by.array.set")
+    def setSurfaceOpacityByArray(self, arrayName, enabled):
+        lutProxy = simple.GetColorTransferFunction(arrayName)
+
+        lutProxy.EnableOpacityMapping = enabled
+
+        simple.Render()
+        self.getApplication().InvokeEvent('PushRender')
+
+    # RpcName: getSurfaceOpacityByArray => pv.color.manager.surface.opacity.by.array.get
+    @exportRpc("pv.color.manager.surface.opacity.by.array.get")
+    def getSurfaceOpacityByArray(self, arrayName):
+        lutProxy = simple.GetColorTransferFunction(arrayName)
+        return lutProxy.EnableOpacityMapping
+
     # RpcName: selectColorMap => pv.color.manager.select.preset
     @exportRpc("pv.color.manager.select.preset")
     def selectColorMap(self, representation, paletteName):
@@ -1066,15 +1256,18 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
                        'unspecified',     # 14
                        'signed_char' ]    # 15
 
-    def __init__(self, allowedProxiesFile=None, baseDir=None, fileToLoad=None, allowUnconfiguredReaders=True):
+    def __init__(self, allowedProxiesFile=None, baseDir=None, fileToLoad=None, allowUnconfiguredReaders=True, groupProxyEditorWidgets=True, respectPropertyGroups=True):
         """
-        - basePath: specify the base directory (or directories) that we should start with, if this
-         parameter takes the form: "name1=path1|name2=path2|...", then we will treat this as the
-         case where multiple data directories are required.  In this case, each top-level directory
-         will be given the name associated with the directory in the argument.
+        basePath: specify the base directory (or directories) that we should start with, if this
+        parameter takes the form: "name1=path1|name2=path2|...", then we will treat this as the
+        case where multiple data directories are required.  In this case, each top-level directory
+        will be given the name associated with the directory in the argument.
         """
         super(ParaViewWebProxyManager, self).__init__()
         self.debugMode = False
+        self.groupProxyEditorPropertyWidget = groupProxyEditorWidgets
+        self.respectPropertyGroups = respectPropertyGroups
+        self.proxyDefinitionCache = {}
         self.domainFunctionMap = { "vtkSMBooleanDomain": booleanDomainDecorator,
                                    "vtkSMProxyListDomain": proxyListDomainDecorator,
                                    "vtkSMIntRangeDomain": numberRangeDomainDecorator,
@@ -1086,7 +1279,7 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
                                    "vtkSMArraySelectionDomain": arraySelectionDomainDecorator,
                                    "vtkSMEnumerationDomain": enumerationDomainDecorator,
                                    "vtkSMCompositeTreeDomain": treeDomainDecorator }
-        self.alwaysIncludeProperties = [ 'CubeAxesVisibility' ]
+        self.alwaysIncludeProperties = [ 'GridAxesVisibility' ]
         self.alwaysExcludeProperties = [ 'LookupTable', 'Texture', 'ColorArrayName',
                                          'Representations', 'HiddenRepresentations',
                                          'HiddenProps', 'UseTexturedBackground',
@@ -1097,11 +1290,13 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
                                  'vtkSMDoubleVectorProperty': 'float',
                                  'vtkSMStringVectorProperty': 'str',
                                  'vtkSMProxyProperty': 'proxy',
-                                 'vtkSMInputProperty': 'proxy' }
+                                 'vtkSMInputProperty': 'proxy',
+                                 'vtkSMDoubleMapProperty': 'map' }
         self.allowedProxies = {}
         self.hintsMap = { 'PropertyWidgetDecorator': { 'ClipScalarsDecorator': clipScalarDecorator,
                                                        'GenericDecorator': genericDecorator },
-                          'Widget': { 'multi_line': multiLineDecorator } }
+                          'Widget': { 'multi_line': multiLineDecorator },
+                          'ProxyEditorPropertyWidget': { 'default': proxyEditorPropertyWidgetDecorator } }
 
         self.setBaseDirectory(baseDir)
         self.allowUnconfiguredReaders = allowUnconfiguredReaders
@@ -1169,14 +1364,33 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
         for config in rlist:
             readerName = config['name']
             readerMethod = 'FileName'
+            useDirectory = False
             if 'method' in config:
                 readerMethod = config['method']
+            if 'useDirectory' in config:
+                useDirectory = config['useDirectory']
             for ext in config['extensions']:
-                self.readerFactoryMap[ext] = [ readerName, readerMethod ]
+                self.readerFactoryMap[ext] = [ readerName, readerMethod, useDirectory ]
+
+    #--------------------------------------------------------------------------
+    # Convenience method to get proxy defs, cached if available
+    #--------------------------------------------------------------------------
+    def getProxyDefinition(self, group, name):
+        cacheKey = '%s:%s' % (group, name)
+        if cacheKey in self.proxyDefinitionCache:
+            return self.proxyDefinitionCache[cacheKey]
+
+        xmlElement = servermanager.ActiveConnection.Session.GetProxyDefinitionManager().GetCollapsedProxyDefinition(group, name, None)
+        # print('\n\n\n (%s, %s): \n\n' % (group, name))
+        # xmlElement.PrintXML()
+        self.proxyDefinitionCache[cacheKey] = xmlElement
+        return xmlElement
 
     #--------------------------------------------------------------------------
     # Look higher up in XML heirarchy for attributes on a property (useful if
-    # a property is an exposed property).
+    # a property is an exposed property).  From the documentation of vtkSMProperty,
+    # the GetParent method will access the sub-proxy to which the property
+    # actually belongs, if that is the case.
     #--------------------------------------------------------------------------
     def extractParentAttributes(self, property, attributes):
         proxy = None
@@ -1192,7 +1406,7 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
                 print ('ERROR: unable to get property parent for property ' + property.Name)
                 return {}
 
-        xmlElement = servermanager.ActiveConnection.Session.GetProxyDefinitionManager().GetCollapsedProxyDefinition(proxy.GetXMLGroup(), proxy.GetXMLName(), None)
+        xmlElement = self.getProxyDefinition(proxy.GetXMLGroup(), proxy.GetXMLName())
         attrMap = {}
 
         nbChildren = xmlElement.GetNumberOfNestedElements()
@@ -1205,35 +1419,129 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
                     for attrName in attributes:
                         if xmlChild.GetAttribute(attrName):
                             attrMap[attrName] = xmlChild.GetAttribute(attrName)
+
         return attrMap
 
     #--------------------------------------------------------------------------
     # If we have a proxy property, gather up the xml information from the
     # possible proxy values it can take on.
     #--------------------------------------------------------------------------
-    def getProxyListFromProperty(self, proxy, proxyPropElement):
+    def getProxyListFromProperty(self, proxy, proxyPropElement, inPropGroup, group, parentGroup, detailsKey):
         propPropName = proxyPropElement.GetAttribute('name')
+        propVisibility = proxyPropElement.GetAttribute('panel_visibility')
         propInstance = proxy.GetProperty(propPropName)
         nbChildren = proxyPropElement.GetNumberOfNestedElements()
         foundPLDChild = False
-        proxyDefMgr = servermanager.ActiveConnection.Session.GetProxyDefinitionManager()
-        for i in range(nbChildren):
-            child = proxyPropElement.GetNestedElement(i)
-            if child.GetName() == 'ProxyListDomain':
-                domain = propInstance.GetDomain(child.GetAttribute('name'))
-                foundPLDChild = True
-                for j in range(domain.GetNumberOfProxies()):
-                    subProxy = domain.GetProxy(j)
-                    pelt = proxyDefMgr.GetCollapsedProxyDefinition(subProxy.GetXMLGroup(),
-                                                                   subProxy.GetXMLName(),
-                                                                   None)
-                    self.processXmlElement(subProxy, pelt)
+        subProxiesToProcess = []
+
+        pldChild = proxyPropElement.FindNestedElementByName('ProxyListDomain')
+
+        if pldChild:
+            domain = propInstance.GetDomain(pldChild.GetAttribute('name'))
+            foundPLDChild = True
+            for j in range(domain.GetNumberOfProxies()):
+                subProxy = domain.GetProxy(j)
+                pelt = self.getProxyDefinition(subProxy.GetXMLGroup(), subProxy.GetXMLName())
+                subProxiesToProcess.append([subProxy, pelt])
+
+        if len(subProxiesToProcess) > 0:
+            newGroup = group
+            newParentGroup = parentGroup
+            if self.groupProxyEditorPropertyWidget:
+                hintChild = proxyPropElement.FindNestedElementByName('Hints')
+                if hintChild:
+                    pepwChild = hintChild.FindNestedElementByName('ProxyEditorPropertyWidget')
+                    if pepwChild:
+                        newGroup = '%s:%s' % (proxy.GetGlobalIDAsString(), propPropName)
+                        self.groupDetailsMap[newGroup] = {
+                            'groupName': propPropName,
+                            'groupWidget': 'ProxyEditorPropertyWidget',
+                            'groupVisibilityProperty': pepwChild.GetAttribute('property'),
+                            'groupVisibility': propVisibility if propVisibility is not None else 'default',
+                            'groupType': 'ProxyEditorPropertyWidget'
+                        }
+                        newParentGroup = group
+                        self.propertyDetailsMap[detailsKey]['group'] = newGroup
+                        self.propertyDetailsMap[detailsKey]['parentGroup'] = newParentGroup
+            for sub in subProxiesToProcess:
+                self.processXmlElement(sub[0], sub[1], inPropGroup, newGroup, newParentGroup, detailsKey)
+
         return foundPLDChild
+
+    #--------------------------------------------------------------------------
+    # Decide whether to update our internal map of property details, or just the
+    # ordered list of properties, or both.
+    #
+    # detailsKey  => uniquely identifies a property via concatenation of proxy
+    #                id and property name, e.g. '476:Opacity'
+    # name        => property name
+    # panelVis    => value of 'panel_visibilty' attribute on element
+    # size        => number of elements to set for this property
+    # inPropGroup => whether or not this property is inside a 'PropertyGroup' element
+    # group       => name of group this property belongs to (could be other than 'root',
+    #                even if 'inPropGroup' is false, due to the grouping we impose
+    #                when we encounter a ProxyProperty with Hints: 'ProxyEditorPropertyWidget')
+    # parentGroup => name of parent group (could be None for root level property)
+    #--------------------------------------------------------------------------
+    def trackProperty(self, detailsKey, name, panelVis, panelVisQualifier, size, inPropGroup, group, parentGroup, belongsToProxyProperty=None):
+        if detailsKey not in self.propertyDetailsMap:
+            self.propertyDetailsMap[detailsKey] = {
+                'type': name,
+                'panelVis': panelVis,
+                'panelVisQualifier': panelVisQualifier,
+                'size': size,
+                'group': group,
+                'parentGroup': parentGroup
+            }
+
+        if belongsToProxyProperty:
+            if belongsToProxyProperty not in self.proxyPropertyDependents:
+                self.proxyPropertyDependents[belongsToProxyProperty] = []
+            self.proxyPropertyDependents[belongsToProxyProperty].append(detailsKey)
+
+            # If this property belongs to a proxy property, and if that property is marked
+            # as advanced, then this property should be marked advanced too.
+            if self.propertyDetailsMap[belongsToProxyProperty]['panelVis'] == 'advanced':
+                self.propertyDetailsMap[detailsKey]['panelVis'] = 'advanced'
+
+
+        if inPropGroup:
+            self.propertyDetailsMap[detailsKey]['group'] = group
+            self.propertyDetailsMap[detailsKey]['parentGroup'] = parentGroup
+            if panelVis is not None:
+                self.propertyDetailsMap[detailsKey]['panelVis'] = panelVis
+            if panelVisQualifier is not None:
+                self.propertyDetailsMap[detailsKey]['panelVisQualifier'] = panelVisQualifier
+        else:
+            if panelVis is not None and self.propertyDetailsMap[detailsKey]['panelVis'] is None:
+                self.propertyDetailsMap[detailsKey]['panelVis'] = panelVis
+            if panelVisQualifier is not None and self.propertyDetailsMap[detailsKey]['panelVisQualifier'] is None:
+                self.propertyDetailsMap[detailsKey]['panelVisQualifier'] = panelVisQualifier
+
+        if detailsKey not in self.orderedNameList:
+            self.orderedNameList.append(detailsKey)
+        else:
+            # Do already have property in ordered list, but because we're in a
+            # PropertyGroup, we want to override the previous order
+            if inPropGroup:
+                idx = self.orderedNameList.index(detailsKey)
+                self.orderedNameList.pop(idx)
+                self.orderedNameList.append(detailsKey)
+
+                # Additionally, if the property we are now re-ordering is a ProxyProperty, then
+                # we also need to grab any properties of the sub proxies of it's proxy list domain
+                # and move all of those down as well
+                if detailsKey in self.proxyPropertyDependents:
+                    subProxiesProps = self.proxyPropertyDependents[detailsKey]
+                    for subProxyPropKey in subProxiesProps:
+                        idx = self.orderedNameList.index(subProxyPropKey)
+                        self.orderedNameList.pop(idx)
+                        self.orderedNameList.append(subProxyPropKey)
 
     #--------------------------------------------------------------------------
     # Gather information from the xml associated with a proxy and properties.
     #--------------------------------------------------------------------------
-    def processXmlElement(self, proxy, xmlElement):
+    def processXmlElement(self, proxy, xmlElement, inPropGroup, group, parentGroup, belongsToProxyProperty=None):
         proxyId = proxy.GetGlobalIDAsString()
         nbChildren = xmlElement.GetNumberOfNestedElements()
         for i in range(nbChildren):
@@ -1247,28 +1555,40 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
             panelVis = xmlChild.GetAttribute('panel_visibility')
             numElts = xmlChild.GetAttribute('number_of_elements')
 
+            panelVisQualifier = None
+            if self.proxyIsRepresentation:
+                panelVisQualifier = xmlChild.GetAttribute('panel_visibility_default_for_representation')
+
             size = -1
             informationOnly = 0
             internal = 0
 
             # Check for attributes that might only exist on parent xml
             parentQueryList = []
-            if not numElts:
+            if numElts is None:
                 parentQueryList.append('number_of_elements')
             else:
                 size = int(numElts)
 
-            if not infoOnly:
+            if infoOnly is None:
                 parentQueryList.append('information_only')
             else:
                 informationOnly = int(infoOnly)
 
-            if not isInternal:
+            if isInternal is None:
                 parentQueryList.append('is_internal')
             else:
                 internal = int(isInternal)
 
-            # Try to retrieve those attributes from parent xml
+            if panelVis is None:
+                parentQueryList.append('panel_visibility')
+
+            if self.proxyIsRepresentation:
+                if panelVisQualifier is None:
+                    parentQueryList.append('panel_visibility_default_for_representation')
+
+            # Try to retrieve those attributes from parent xml (implicit assumption is this is a property
+            # which actually belongs to a subproxy)
             parentAttrs = {}
             if len(parentQueryList) > 0:
                 propInstance = proxy.GetProperty(nameAttr)
@@ -1282,9 +1602,13 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
                 informationOnly = int(parentAttrs['information_only'])
             if 'is_internal' in parentAttrs and parentAttrs['is_internal']:
                 internal = int(parentAttrs['is_internal'])
+            if 'panel_visibility' in parentAttrs:
+                panelVis = parentAttrs['panel_visibility']
+            if 'panel_visibility_default_for_representation' in parentAttrs:
+                panelVisQualifier = parentAttrs['panel_visibility_default_for_representation']
 
             # Now decide whether we should filter out this property
-            if ((panelVis == 'never' or informationOnly == 1 or internal == 1) and nameAttr not in self.alwaysIncludeProperties) or nameAttr in self.alwaysExcludeProperties:
+            if (((name.endswith('Property') and panelVis == 'never') or informationOnly == 1 or internal == 1) and nameAttr not in self.alwaysIncludeProperties) or nameAttr in self.alwaysExcludeProperties:
                 self.debug('Filtering out property ' + str(nameAttr) + ' because panelVis is never, infoOnly is 1, isInternal is 1, or ' + str(nameAttr) + ' is an ALWAYS EXCLUDE property')
                 continue
 
@@ -1299,26 +1623,38 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
                             self.debug("          Replace input value: " + str(replaceInputAttr))
             elif name == 'ProxyProperty' or name == 'InputProperty':
                 self.debug(str(nameAttr) + ' is a proxy property')
-                if detailsKey not in self.propertyDetailsMap:
-                    self.propertyDetailsMap[detailsKey] = {'type': name, 'panelVis': panelVis, 'size': size}
-                    self.orderedNameList.append(detailsKey)
-                foundProxyListDomain = self.getProxyListFromProperty(proxy, xmlChild)
+                self.trackProperty(detailsKey, name, panelVis, panelVisQualifier, size, inPropGroup, group, parentGroup, belongsToProxyProperty)
+                foundProxyListDomain = self.getProxyListFromProperty(proxy, xmlChild, inPropGroup, group, parentGroup, detailsKey)
                 if foundProxyListDomain == True:
                     self.propertyDetailsMap[detailsKey]['size'] = 1
             elif name.endswith('Property'):
-                # Add this property to the list that will be used both to
-                # order as well as to filter the properties retrieved earlier.
-                if detailsKey not in self.propertyDetailsMap:
-                    self.propertyDetailsMap[detailsKey] = {'type': name, 'panelVis': panelVis, 'size': size}
-                    self.orderedNameList.append(detailsKey)
+                self.trackProperty(detailsKey, name, panelVis, panelVisQualifier, size, inPropGroup, group, parentGroup, belongsToProxyProperty)
             else:
-                # Don't recurse on properties that might be within a
-                # PropertyGroup unless the PropertyGroup is itself within an
-                # ExposedProperties. Later we might want to make a note in the
-                # ui properties that the properties listed within here should be
-                # grouped
-                if name != 'PropertyGroup' or xmlChild.GetParent().GetName() == "ExposedProperties":
-                    self.processXmlElement(proxy, xmlChild)
+                # Anything else, we recursively process the element, with special handling
+                # in the case that the element is a PropertyGroup
+                if name == 'PropertyGroup':
+                    newGroup = group
+                    newParentGroup = parentGroup
+                    if self.respectPropertyGroups:
+                        typeAttr = xmlChild.GetAttribute('type')
+                        labelAttr = xmlChild.GetAttribute('label')
+                        panelWidgetAttr = None
+                        if not labelAttr:
+                            panelWidgetAttr = xmlChild.GetAttribute('panel_widget')
+                            labelAttr = panelWidgetAttr
+                            if not labelAttr:
+                                labelAttr = 'Unlabeled Property Group (%s)' % proxyId
+                        newGroup = '%s:%s' % (proxyId, labelAttr)
+                        self.groupDetailsMap[newGroup] = {
+                            'groupName': labelAttr,
+                            'groupWidget': 'PropertyGroup',
+                            'groupVisibility': panelVis,
+                            'groupType': typeAttr
+                        }
+                        newParentGroup = group
+                    self.processXmlElement(proxy, xmlChild, True, newGroup, newParentGroup, belongsToProxyProperty)
+                else:
+                    self.processXmlElement(proxy, xmlChild, inPropGroup, group, parentGroup, belongsToProxyProperty)
 
     #--------------------------------------------------------------------------
     # Entry point for the xml processing methods.
@@ -1326,12 +1662,15 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
     def getProxyXmlDefinitions(self, proxy):
         self.orderedNameList = []
         self.propertyDetailsMap = {}
-        self.propertyDetailsList = []
-        proxyDefMgr = servermanager.ActiveConnection.Session.GetProxyDefinitionManager()
-        xmlElement = proxyDefMgr.GetCollapsedProxyDefinition(proxy.GetXMLGroup(),
-                                                             proxy.GetXMLName(),
-                                                             None)
-        self.processXmlElement(proxy, xmlElement)
+        self.groupDetailsMap = {}
+        self.proxyPropertyDependents = {}
+        self.proxyIsRepresentation = proxy.GetXMLGroup() == 'representations'
+        self.groupDetailsMap['root'] = {
+            'groupName': 'root'
+        }
+
+        xmlElement = self.getProxyDefinition(proxy.GetXMLGroup(), proxy.GetXMLName())
+        self.processXmlElement(proxy, xmlElement, False, 'root', None)
 
         self.debug('Length of final ordered property list: ' + str(len(self.orderedNameList)))
         for propName in self.orderedNameList:
@@ -1346,12 +1685,12 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
         proxy = self.mapIdToProxy(proxy_id)
         if proxy:
             for property in proxy.ListProperties():
-                propertyName = proxy.GetProperty(property).Name
-                displayName = proxy.GetProperty(property).GetXMLLabel()
+                prop = proxy.GetProperty(property)
+                propertyName = prop.Name
+                displayName = prop.GetXMLLabel()
                 if propertyName in ["Refresh", "Input"] or propertyName.__contains__("Info"):
                     continue
 
-                prop = proxy.GetProperty(property)
                 pythonProp = servermanager._wrap_property(proxy, prop)
 
                 propJson = { 'name': propertyName,
@@ -1363,6 +1702,7 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
 
                 if type(prop) == ProxyProperty or type(prop) == InputProperty:
                     proxyListDomain = prop.FindDomain('vtkSMProxyListDomain')
+
                     if proxyListDomain:
                         # Set the value of this ProxyProperty
                         propJson['value'] = prop.GetProxy(0).GetXMLLabel()
@@ -1383,10 +1723,19 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
                 else:
                     # For everything but ProxyProperty, we should just be able to call GetData()
                     try:
-                        propJson['value'] = proxy.GetProperty(property).GetData()
+                        propJson['value'] = prop.GetData()
                     except AttributeError as attrErr:
-                        print ('Property ' + propertyName + ' has no GetData() method, skipping')
+                        self.debug('Property ' + propertyName + ' has no GetData() method, skipping')
                         continue
+
+                    # One exception is properties which have enumeration domain, in which case we substitute
+                    # the numeric value for the enum text value.
+                    enumDomain = prop.FindDomain('vtkSMEnumerationDomain')
+                    if enumDomain:
+                        for entryNum in range(enumDomain.GetNumberOfEntries()):
+                            if enumDomain.GetEntryText(entryNum) == propJson['value']:
+                                propJson['value'] = enumDomain.GetEntryValue(entryNum)
+                                break
 
                 self.debug('Adding a property to the pre-sorted list: ' + str(propJson))
                 propertyList.append(propJson)
@@ -1403,11 +1752,14 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
             propMap[prop['id'] + ':' + prop['name']] = prop
 
         orderedList = []
+        groupsInfo = []
         for name in self.orderedNameList:
             if name in propMap:
                 orderedList.append(propMap[name])
+                xmlDetails = self.propertyDetailsMap[name]
+                groupsInfo.append({ 'group': xmlDetails['group'], 'parentGroup': xmlDetails['parentGroup'] })
 
-        return orderedList
+        return orderedList, groupsInfo
 
     #--------------------------------------------------------------------------
     # Convenience function to set a property value.  Can be extended with other
@@ -1449,6 +1801,7 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
             if prop_name == 'Input':
                 continue
             try:
+                skipReset = False
                 prop = proxy.GetProperty(prop_name)
                 iter = prop.NewDomainIterator()
                 iter.Begin()
@@ -1460,10 +1813,12 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
                         if domain.IsA('vtkSMBoundsDomain'):
                             domain.SetDomainValues(parentProxy.GetDataInformation().GetBounds())
                     except AttributeError as attrErr:
+                        skipReset = True
                         print ('Caught exception setting domain values in apply_domains:')
                         print (attrErr)
 
-                prop.ResetToDefault()
+                if not skipReset:
+                    prop.ResetToDefault()
 
                 # Need to UnRegister to handle the ref count from the NewDomainIterator
                 iter.UnRegister(None)
@@ -1555,7 +1910,7 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
             arrayData.append(data)
 
         # Time data
-        timeKeeper = servermanager.ProxyManager().GetProxiesInGroup("timekeeper").values()[0]
+        timeKeeper = next(iter(servermanager.ProxyManager().GetProxiesInGroup("timekeeper").values()))
         tsVals = timeKeeper.TimestepValues
         if tsVals:
             if isinstance(tsVals, float):
@@ -1637,18 +1992,24 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
                }, ...
              ]
         """
+
+        if self.proxyIsRepresentation:
+            reprProxy = self.mapIdToProxy(proxyId)
+            reprProp = reprProxy.GetProperty('Representation')
+            reprValue = reprProp.GetData()
+
         uiProps = []
 
         for proxyProp in proxyProperties:
             uiElt = {}
 
-            proxyId = proxyProp['id']
+            pid = proxyProp['id']
             propertyName = proxyProp['name']
-            proxy = self.mapIdToProxy(proxyId)
+            proxy = self.mapIdToProxy(pid)
             prop = proxy.GetProperty(propertyName)
 
             # Get the xml details we already parsed out for this property
-            xmlProps = self.propertyDetailsMap[proxyId + ':' + propertyName]
+            xmlProps = self.propertyDetailsMap[pid + ':' + propertyName]
 
             # Set a few defaults for the ui elements, which may be overridden
             uiElt['size'] = xmlProps['size']
@@ -1667,6 +2028,8 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
                 proxyProp.pop('dependency', None)
             if xmlProps['panelVis'] == 'advanced':
                 uiElt['advanced'] = 1
+                if self.proxyIsRepresentation and 'panelVisQualifier' in xmlProps and xmlProps['panelVisQualifier'] and xmlProps['panelVisQualifier'].lower() == reprValue.lower():
+                    uiElt['advanced'] = 0
             else:
                 uiElt['advanced'] = 0
 
@@ -1697,14 +2060,98 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
                     if hint.GetName() in self.hintsMap:
                         hmap = self.hintsMap[hint.GetName()]
                         hintType = hint.GetAttribute('type')
+                        hmapKey = None
                         if hintType and hintType in hmap:
+                            hmapKey = hintType
+                        elif 'default' in hmap:
+                            hmapKey = 'default'
+
+                        if hmapKey:
                             # We're intereseted in decorating based on this hint
-                            hintFunction = hmap[hintType]
+                            hintFunction = hmap[hmapKey]
                             hintFunction(prop, uiElt, hint)
 
             uiProps.append(uiElt)
 
         return uiProps
+
+    #--------------------------------------------------------------------------
+    # Helper function to restructure the properties so they reflect the grouping
+    # encountered when processing the xml.
+    #--------------------------------------------------------------------------
+    def restructureProperties(self, groupList, propList, uiList):
+        props = []
+        uis = [] if uiList else None
+        groupMap = { 'root': { 'proxy': props, 'ui': uis } }
+
+        for idx in range(len(groupList)):
+            groupInfo = groupList[idx]
+            group = groupInfo['group']
+            parentGroup = groupInfo['parentGroup']
+            if group is not 'root' and self.groupDetailsMap[group]['groupVisibility'] == 'never':
+                self.debug('Culling property (%s) in group (%s) because group has visibility never' % (propList[idx]['name'], group))
+                continue
+            if not group in groupMap:
+                groupMap[group] = { 'proxy': [], 'ui': [] if uiList else None }
+                groupMap[parentGroup]['proxy'].append({
+                    'id': group,
+                    'name': self.groupDetailsMap[group]['groupName'],
+                    'value': False,
+                    'children': groupMap[group]['proxy']
+                })
+                if uiList:
+                    groupMap[parentGroup]['ui'].append({
+                        'widget': self.groupDetailsMap[group]['groupWidget'],
+                        'name': self.groupDetailsMap[group]['groupName'],
+                        'type': self.groupDetailsMap[group]['groupType'],
+                        'advanced': 1 if self.groupDetailsMap[group]['groupVisibility'] == 'advanced' else 0,
+                        'children': groupMap[group]['ui']
+                    })
+                    # Make sure we can find the group ui item we just appended
+                    groupMap[group]['groupItem'] = groupMap[parentGroup]['ui'][-1]
+
+            pushToFront = False
+            if uiList:
+                if 'groupVisibilityProperty' in self.groupDetailsMap[group] and propList[idx]['name'] == self.groupDetailsMap[group]['groupVisibilityProperty']:
+                    # If a proxy property claimed this property as its visibilty property, we should not
+                    # allow it to remain marked as 'advanced'.
+                    uiList[idx]['advanced'] = 0
+                    pushToFront = True
+
+                if pushToFront:
+                    groupMap[group]['ui'].insert(0, uiList[idx])
+                else:
+                    groupMap[group]['ui'].append(uiList[idx])
+
+            if pushToFront:
+                groupMap[group]['proxy'].insert(0, propList[idx])
+            else:
+                groupMap[group]['proxy'].append(propList[idx])
+
+        # Before we're done we need to check for groups of properties where every
+        # property in the group has a panel_visibilty of 'advanced', in which
+        # case, the group should be marked the same.
+        for groupName in groupMap:
+            if groupName is not 'root' and 'ui' in groupMap[groupName]:
+                groupUiList = groupMap[groupName]['ui']
+                firstUiElt = groupUiList[0]
+                groupDependency = False
+                if 'depends' in firstUiElt and firstUiElt['depends']:
+                    groupDependency = True
+                advancedGroup = True
+                for uiProp in groupUiList:
+                    if uiProp['advanced'] == 0:
+                        advancedGroup = False
+                    if groupDependency and ('depends' not in uiProp or uiProp['depends'] != firstUiElt['depends']):
+                        groupDependency = False
+
+                if advancedGroup:
+                    groupMap[groupName]['groupItem']['advanced'] = 1
+
+                if groupDependency:
+                    groupMap[groupName]['groupItem']['depends'] = firstUiElt['depends']
+
+        return { 'proxy': props, 'ui': uis }
 
     #--------------------------------------------------------------------------
     # Helper function validates the string we get from the client to make sure
@@ -1771,7 +2218,7 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
                 fileToLoad.append(validPath)
 
         if len(fileToLoad) == 0:
-            return { 'success': False, 'reason': 'No valid path name' }
+            return { 'success': False, 'reason': 'No valid path name ' + str(relativePath) }
 
         # Get file extension and look for configured reader
         idx = fileToLoad[0].rfind('.')
@@ -1782,7 +2229,6 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
             simple.LoadState(fileToLoad[0])
             newView = simple.Render()
             simple.SetActiveView(newView)
-            simple.ResetCamera()
             if self.getApplication():
                 self.getApplication().InvokeEvent('ResetActiveView')
                 self.getApplication().InvokeEvent('PushRender')
@@ -1793,11 +2239,15 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
         if extension in self.readerFactoryMap:
             readerName = self.readerFactoryMap[extension][0]
             customMethod = self.readerFactoryMap[extension][1]
+            useDirectory = self.readerFactoryMap[extension][2]
 
         # Open the file(s)
         reader = None
         if readerName:
-            kw = { customMethod: fileToLoad }
+            if useDirectory:
+                kw = { customMethod: os.path.dirname(fileToLoad[0]) }
+            else:
+                kw = { customMethod: fileToLoad }
             reader = paraview.simple.__dict__[readerName](**kw)
         else:
             if self.allowUnconfiguredReaders:
@@ -1807,7 +2257,7 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
                          'reason': 'No configured reader found for ' + extension + ' files, and unconfigured readers are not enabled.' }
 
         # Rename the reader proxy
-        name = fileToLoad[0].split("/")[-1]
+        name = fileToLoad[0].split(os.path.sep)[-1]
         if len(name) > 15:
             name = name[:15] + '*'
         simple.RenameSource(name, reader)
@@ -1829,12 +2279,21 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
         proxyProperties = []
         proxyId = str(proxyId)
         self.fillPropertyList(proxyId, proxyProperties)
-        proxyProperties = self.reorderProperties(proxyId, proxyProperties)
-        proxyJson = { 'id': proxyId, 'properties': proxyProperties }
+
+        proxyProperties, groupsInfo = self.reorderProperties(proxyId, proxyProperties)
+        proxyJson = { 'id': proxyId }
 
         # Perform costly request only when needed
+        uiProperties = None
         if ui:
-            proxyJson['ui'] = self.getUiProperties(proxyId, proxyProperties)
+            uiProperties = self.getUiProperties(proxyId, proxyProperties)
+
+        # Now restructure the flat, ordered lists to reflect grouping
+        restructuredProperties = self.restructureProperties(groupsInfo, proxyProperties, uiProperties)
+
+        proxyJson['properties'] = restructuredProperties['proxy']
+        if ui:
+            proxyJson['ui'] = restructuredProperties['ui']
 
         if 'specialHints' in self.propertyDetailsMap:
             proxyJson['hints'] = self.propertyDetailsMap['specialHints']
@@ -1908,20 +2367,9 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
 
     @exportRpc("pv.proxy.manager.list")
     def list(self, viewId=None):
-        """
-        Returns the current proxy list, specifying for each proxy it's
+        """Returns the current proxy list, specifying for each proxy it's
         name, id, and parent (input) proxy id.  A 'parent' of '0' means
         the proxy has no input.
-
-            { 'view': '376',
-              'sources': [
-                {'name': 'disk_out_ref', 'id': '350', 'parent': '0', 'rep': '352', 'visible': 1 },
-                {'name': 'Contour0', 'id': '455', 'parent': '350', 'rep': '319', 'visible': 0 },
-                {'name': 'Clip0', 'id': '471', 'parent': '455', 'rep': '327', 'visible': 1 },
-                {'name': 'Calc0', 'id': '221', 'multiparent': 2,
-                 'parent': '471', 'parent_1': '455', 'rep': '756', 'visible': 1 }
-              ]
-            }
         """
         proxies = servermanager.ProxyManager().GetProxiesInGroup("sources")
         viewProxy = self.getView(viewId)
@@ -1961,8 +2409,7 @@ class ParaViewWebProxyManager(ParaViewWebProtocol):
 
     @exportRpc("pv.proxy.manager.available")
     def available(self, typeOfProxy):
-        """
-        Returns a list of the available sources or filters, depending on the
+        """Returns a list of the available sources or filters, depending on the
         argument typeOfProxy, which can be either 'filters' or 'sources'.  If
         typeOfProxy is anything other than 'filter' or 'source', the empty
         list will be returned.
@@ -2125,13 +2572,13 @@ class ParaViewWebRemoteConnection(ParaViewWebProtocol):
 
 
         if options:
-            if options.has_key("host"):
+            if "host" in options:
                 ds_host = options["host"]
-            if options.has_key("port"):
+            if "port" in options:
                 ds_port = options["port"]
-            if options.has_key("rs_host"):
+            if "rs_host" in options:
                 rs_host = options["rs_host"]
-            if options.has_key("rs_port"):
+            if "rs_port" in options:
                 rs_host = options["rs_port"]
 
         simple.Connect(ds_host, ds_port, rs_host, rs_port)
@@ -2264,6 +2711,7 @@ class ParaViewWebFileListing(ParaViewWebProtocol):
             currentPath = normBase
 
         self.directory_proxy.List(currentPath)
+        self.directory_proxy.UpdatePropertyInformation()
 
         # build file/dir lists
         files = []
@@ -2286,8 +2734,8 @@ class ParaViewWebFileListing(ParaViewWebProtocol):
         if relativeDir == '.':
             result['label'] = self.rootName
 
-        # Filter files to create groups
-        files.sort()
+        # Filter files to create groups. Dicts are not orderable in Py3 - supply a key function.
+        files.sort(key=lambda x: x["label"])
         groups = result['groups']
         groupIdx = {}
         filesToRemove = []
@@ -2296,7 +2744,7 @@ class ParaViewWebFileListing(ParaViewWebProtocol):
             if len(fileSplit) == 2:
                 filesToRemove.append(file)
                 gName = '*.'.join(fileSplit)
-                if groupIdx.has_key(gName):
+                if gName in groupIdx:
                     groupIdx[gName]['files'].append(file['label'])
                 else:
                     groupIdx[gName] = { 'files' : [file['label']], 'label': gName }
@@ -2312,7 +2760,7 @@ class ParaViewWebFileListing(ParaViewWebProtocol):
 
     def handleMultiRoot(self, relativeDir):
         if relativeDir == '.':
-            return { 'label': self.rootName, 'files': [], 'dirs': self.baseDirectoryMap.keys(), 'groups': [], 'path': [ self.rootName ] }
+            return { 'label': self.rootName, 'files': [], 'dirs': list(self.baseDirectoryMap), 'groups': [], 'path': [ self.rootName ] }
 
         pathList = relativeDir.replace('\\', '/').split('/')
         currentBaseDir = self.baseDirectoryMap[pathList[1]]

@@ -32,7 +32,7 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkAllToNRedistributeCompositePolyData
 public:
   static vtkAllToNRedistributeCompositePolyData* New();
   vtkTypeMacro(vtkAllToNRedistributeCompositePolyData, vtkDataObjectAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -55,20 +55,20 @@ protected:
    * in CreateDefaultExecutive() using NewInstance().
    * Otherwise, vtkStreamingDemandDrivenPipeline is created.
    */
-  virtual vtkExecutive* CreateDefaultExecutive();
+  virtual vtkExecutive* CreateDefaultExecutive() VTK_OVERRIDE;
 
-  virtual int RequestDataObject(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  virtual int RequestDataObject(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
   virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
+  virtual int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   int NumberOfProcesses;
   vtkMultiProcessController* Controller;
 
 private:
-  vtkAllToNRedistributeCompositePolyData(
-    const vtkAllToNRedistributeCompositePolyData&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkAllToNRedistributeCompositePolyData&) VTK_DELETE_FUNCTION;
+  vtkAllToNRedistributeCompositePolyData(const vtkAllToNRedistributeCompositePolyData&) = delete;
+  void operator=(const vtkAllToNRedistributeCompositePolyData&) = delete;
 };
 
 #endif

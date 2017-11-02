@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.3)
 
 IF (NOT ParaView_BINARY_DIR)
   FIND_PACKAGE(ParaView REQUIRED)
@@ -10,4 +10,4 @@ add_paraview_plugin(LagrangianIntegrationModelExample "1.0"
   SERVER_MANAGER_SOURCES vtkLagrangianIntegrationModelExample.cxx
   )
 
-target_link_libraries(LagrangianIntegrationModelExample ${ParaView_LIBRARIES})
+target_link_libraries(LagrangianIntegrationModelExample LINK_PRIVATE vtkFiltersFlowPaths)

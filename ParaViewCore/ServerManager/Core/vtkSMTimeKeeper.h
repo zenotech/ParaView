@@ -53,7 +53,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMTimeKeeper : public vtkObject
 public:
   static vtkSMTimeKeeper* New();
   vtkTypeMacro(vtkSMTimeKeeper, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -93,7 +93,7 @@ public:
 
 protected:
   vtkSMTimeKeeper();
-  ~vtkSMTimeKeeper();
+  ~vtkSMTimeKeeper() override;
 
   friend class vtkSMTimeKeeperProxy;
   void SetTimestepValuesProperty(vtkSMProperty*);
@@ -108,8 +108,8 @@ protected:
   double Time;
 
 private:
-  vtkSMTimeKeeper(const vtkSMTimeKeeper&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMTimeKeeper&) VTK_DELETE_FUNCTION;
+  vtkSMTimeKeeper(const vtkSMTimeKeeper&) = delete;
+  void operator=(const vtkSMTimeKeeper&) = delete;
 
   class vtkInternal;
   vtkInternal* Internal;

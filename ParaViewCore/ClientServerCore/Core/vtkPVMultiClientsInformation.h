@@ -33,26 +33,26 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVMultiClientsInformation : public vtk
 public:
   static vtkPVMultiClientsInformation* New();
   vtkTypeMacro(vtkPVMultiClientsInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   void DeepCopy(vtkPVMultiClientsInformation* info);
 
   /**
    * Transfer information about a single object into this object.
    */
-  virtual void CopyFromObject(vtkObject*);
+  void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
   /**
    * Merge another information object.
    */
-  virtual void AddInformation(vtkPVInformation*);
+  void AddInformation(vtkPVInformation*) VTK_OVERRIDE;
 
   //@{
   /**
    * Manage a serialized version of the information.
    */
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
+  void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
   //@}
 
   //@{
@@ -91,7 +91,7 @@ public:
 
 protected:
   vtkPVMultiClientsInformation();
-  ~vtkPVMultiClientsInformation();
+  ~vtkPVMultiClientsInformation() override;
 
   int ClientId;
   int* ClientIds;
@@ -99,8 +99,8 @@ protected:
   int MultiClientEnable;
   int MasterId;
 
-  vtkPVMultiClientsInformation(const vtkPVMultiClientsInformation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVMultiClientsInformation&) VTK_DELETE_FUNCTION;
+  vtkPVMultiClientsInformation(const vtkPVMultiClientsInformation&) = delete;
+  void operator=(const vtkPVMultiClientsInformation&) = delete;
 };
 
 #endif

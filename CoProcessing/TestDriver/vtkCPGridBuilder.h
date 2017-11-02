@@ -32,14 +32,15 @@ class VTKPVCATALYSTTESTDRIVER_EXPORT vtkCPGridBuilder : public vtkCPBaseGridBuil
 {
 public:
   vtkTypeMacro(vtkCPGridBuilder, vtkCPBaseGridBuilder);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Return a grid.  BuiltNewGrid is set to 0 if the grids
    * that were returned were already built before.
    * vtkCPGridBuilder will also delete the grid.
    */
-  virtual vtkDataObject* GetGrid(unsigned long timeStep, double time, int& builtNewGrid) = 0;
+  virtual vtkDataObject* GetGrid(
+    unsigned long timeStep, double time, int& builtNewGrid) VTK_OVERRIDE = 0;
 
   //@{
   /**
@@ -54,9 +55,9 @@ protected:
   ~vtkCPGridBuilder();
 
 private:
-  vtkCPGridBuilder(const vtkCPGridBuilder&) VTK_DELETE_FUNCTION;
+  vtkCPGridBuilder(const vtkCPGridBuilder&) = delete;
 
-  void operator=(const vtkCPGridBuilder&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkCPGridBuilder&) = delete;
   //@{
   /**
    * The field builder for creating the input fields to the coprocessing

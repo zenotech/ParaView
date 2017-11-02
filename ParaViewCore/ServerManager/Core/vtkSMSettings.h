@@ -80,11 +80,7 @@
 #include "vtkPVServerManagerCoreModule.h" //needed for exports
 #include "vtkStdString.h"                 // needed for vtkStdString.
 #include <vector>                         // needed for vector.
-
-namespace Json
-{
-class Value;
-}
+#include <vtk_jsoncpp_fwd.h>              // for forward declarations
 
 class vtkSMProperty;
 class vtkSMProxy;
@@ -94,7 +90,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMSettings : public vtkObject
 public:
   static vtkSMSettings* New();
   vtkTypeMacro(vtkSMSettings, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Get singleton instance.
@@ -281,11 +277,11 @@ public:
 
 protected:
   vtkSMSettings();
-  virtual ~vtkSMSettings();
+  ~vtkSMSettings() override;
 
 private:
-  vtkSMSettings(const vtkSMSettings&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMSettings&) VTK_DELETE_FUNCTION;
+  vtkSMSettings(const vtkSMSettings&) = delete;
+  void operator=(const vtkSMSettings&) = delete;
 
   class vtkSMSettingsInternal;
   vtkSMSettingsInternal* Internal;

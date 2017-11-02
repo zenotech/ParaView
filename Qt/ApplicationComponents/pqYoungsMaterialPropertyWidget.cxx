@@ -56,15 +56,15 @@ public:
         use_unchecked_modified_event, parentObject)
   {
   }
-  virtual ~pqYoungsMaterialPropertyLinksConnection() {}
+  ~pqYoungsMaterialPropertyLinksConnection() override {}
 
 protected:
-  virtual QVariant currentServerManagerValue(bool use_unchecked) const
+  QVariant currentServerManagerValue(bool use_unchecked) const override
   {
     return pqSMAdaptor::getMultipleElementProperty(
       this->propertySM(), (use_unchecked ? pqSMAdaptor::UNCHECKED : pqSMAdaptor::CHECKED));
   }
-  virtual void setServerManagerValue(bool use_unchecked, const QVariant& value)
+  void setServerManagerValue(bool use_unchecked, const QVariant& value) override
   {
     pqSMAdaptor::setMultipleElementProperty(this->propertySM(), value.value<QList<QVariant> >(),
       (use_unchecked ? pqSMAdaptor::UNCHECKED : pqSMAdaptor::CHECKED));
@@ -246,10 +246,10 @@ void pqYoungsMaterialPropertyWidget::updateComboBoxes()
   // check if there's a normal and ordering array already defined for this
   // volume-fraction array. If so, show it.
   const char* ordering_array = vtkSMUncheckedPropertyHelper(this->proxy(), "OrderingArrays")
-                                 .GetStatus(label.toLatin1().data(), "");
+                                 .GetStatus(label.toLocal8Bit().data(), "");
 
   const char* normal_array = vtkSMUncheckedPropertyHelper(this->proxy(), "NormalArrays")
-                               .GetStatus(label.toLatin1().data(), "");
+                               .GetStatus(label.toLocal8Bit().data(), "");
 
   if (ordering_array == NULL || strlen(ordering_array) == 0)
   {

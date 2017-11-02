@@ -74,10 +74,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqView.h"
 #include "vtkSMAnimationSceneProxy.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 namespace pqObjectBuilderNS
 {
-vtkNew<vtkSMParaViewPipelineController> Controller;
-
 static bool ContinueWaiting = true;
 static bool processEvents()
 {
@@ -86,24 +88,24 @@ static bool processEvents()
 }
 
 //-----------------------------------------------------------------------------
-bool preCreatePipelineProxy(vtkSMProxy* proxy)
+bool preCreatePipelineProxy(vtkSMParaViewPipelineController* controller, vtkSMProxy* proxy)
 {
-  return Controller->PreInitializeProxy(proxy);
+  return controller->PreInitializeProxy(proxy);
 }
 
 //-----------------------------------------------------------------------------
-pqPipelineSource* postCreatePipelineProxy(
+pqPipelineSource* postCreatePipelineProxy(vtkSMParaViewPipelineController* controller,
   vtkSMProxy* proxy, pqServer* server, const QString& regName = QString())
 {
   // since there are no properties to set, nothing to do here.
-  Controller->PostInitializeProxy(proxy);
+  controller->PostInitializeProxy(proxy);
   if (regName.isEmpty())
   {
-    Controller->RegisterPipelineProxy(proxy);
+    controller->RegisterPipelineProxy(proxy);
   }
   else
   {
-    Controller->RegisterPipelineProxy(proxy, regName.toLatin1().data());
+    controller->RegisterPipelineProxy(proxy, regName.toUtf8().data());
   }
 
   pqPipelineSource* source =
@@ -122,7 +124,7 @@ pqPipelineSource* postCreatePipelineProxy(
 
   // Update animation scene.
   vtkSMAnimationSceneProxy::UpdateAnimationUsingDataTimeSteps(
-    Controller->GetAnimationScene(server->session()));
+    controller->GetAnimationScene(server->session()));
 
   return source;
 }
@@ -131,6 +133,7 @@ pqPipelineSource* postCreatePipelineProxy(
 //-----------------------------------------------------------------------------
 pqObjectBuilder::pqObjectBuilder(QObject* _parent /*=0*/)
   : QObject(_parent)
+  , ForceWaitingForConnection(false)
   , WaitingForConnection(false)
 {
 }
@@ -144,15 +147,16 @@ pqObjectBuilder::~pqObjectBuilder()
 pqPipelineSource* pqObjectBuilder::createSource(
   const QString& sm_group, const QString& sm_name, pqServer* server)
 {
+  vtkNew<vtkSMParaViewPipelineController> controller;
   vtkSMSessionProxyManager* pxm = server->proxyManager();
   vtkSmartPointer<vtkSMProxy> proxy;
-  proxy.TakeReference(pxm->NewProxy(sm_group.toLatin1().data(), sm_name.toLatin1().data()));
-  if (!pqObjectBuilderNS::preCreatePipelineProxy(proxy))
+  proxy.TakeReference(pxm->NewProxy(sm_group.toLocal8Bit().data(), sm_name.toLocal8Bit().data()));
+  if (!pqObjectBuilderNS::preCreatePipelineProxy(controller, proxy))
   {
     return NULL;
   }
 
-  pqPipelineSource* source = pqObjectBuilderNS::postCreatePipelineProxy(proxy, server);
+  pqPipelineSource* source = pqObjectBuilderNS::postCreatePipelineProxy(controller, proxy, server);
   emit this->sourceCreated(source);
   emit this->proxyCreated(source);
   return source;
@@ -162,10 +166,11 @@ pqPipelineSource* pqObjectBuilder::createSource(
 pqPipelineSource* pqObjectBuilder::createFilter(const QString& sm_group, const QString& sm_name,
   QMap<QString, QList<pqOutputPort*> > namedInputs, pqServer* server)
 {
+  vtkNew<vtkSMParaViewPipelineController> controller;
   vtkSMSessionProxyManager* pxm = server->proxyManager();
   vtkSmartPointer<vtkSMProxy> proxy;
-  proxy.TakeReference(pxm->NewProxy(sm_group.toLatin1().data(), sm_name.toLatin1().data()));
-  if (!pqObjectBuilderNS::preCreatePipelineProxy(proxy))
+  proxy.TakeReference(pxm->NewProxy(sm_group.toLocal8Bit().data(), sm_name.toLocal8Bit().data()));
+  if (!pqObjectBuilderNS::preCreatePipelineProxy(controller, proxy))
   {
     return NULL;
   }
@@ -177,7 +182,7 @@ pqPipelineSource* pqObjectBuilder::createFilter(const QString& sm_group, const Q
     QString input_port_name = mapIter.key();
     QList<pqOutputPort*>& inputs = mapIter.value();
 
-    vtkSMProperty* prop = proxy->GetProperty(input_port_name.toLatin1().data());
+    vtkSMProperty* prop = proxy->GetProperty(input_port_name.toLocal8Bit().data());
     if (!prop)
     {
       qCritical() << "Failed to locate input property " << input_port_name;
@@ -191,7 +196,7 @@ pqPipelineSource* pqObjectBuilder::createFilter(const QString& sm_group, const Q
     }
   }
 
-  pqPipelineSource* filter = pqObjectBuilderNS::postCreatePipelineProxy(proxy, server);
+  pqPipelineSource* filter = pqObjectBuilderNS::postCreatePipelineProxy(controller, proxy, server);
   emit this->filterCreated(filter);
   emit this->proxyCreated(filter);
   return filter;
@@ -253,10 +258,11 @@ pqPipelineSource* pqObjectBuilder::createReader(
     reg_name += '*';
   }
 
+  vtkNew<vtkSMParaViewPipelineController> controller;
   vtkSMSessionProxyManager* pxm = server->proxyManager();
   vtkSmartPointer<vtkSMProxy> proxy;
-  proxy.TakeReference(pxm->NewProxy(sm_group.toLatin1().data(), sm_name.toLatin1().data()));
-  if (!pqObjectBuilderNS::preCreatePipelineProxy(proxy))
+  proxy.TakeReference(pxm->NewProxy(sm_group.toUtf8().data(), sm_name.toUtf8().data()));
+  if (!pqObjectBuilderNS::preCreatePipelineProxy(controller, proxy))
   {
     return NULL;
   }
@@ -265,7 +271,7 @@ pqPipelineSource* pqObjectBuilder::createReader(
   if (!pname.isEmpty())
   {
     vtkSMStringVectorProperty* prop =
-      vtkSMStringVectorProperty::SafeDownCast(proxy->GetProperty(pname.toLatin1().data()));
+      vtkSMStringVectorProperty::SafeDownCast(proxy->GetProperty(pname.toUtf8().data()));
     if (!prop)
     {
       return 0;
@@ -295,7 +301,8 @@ pqPipelineSource* pqObjectBuilder::createReader(
     proxy->UpdateVTKObjects();
   }
 
-  pqPipelineSource* reader = pqObjectBuilderNS::postCreatePipelineProxy(proxy, server, reg_name);
+  pqPipelineSource* reader =
+    pqObjectBuilderNS::postCreatePipelineProxy(controller, proxy, server, reg_name);
   emit this->readerCreated(reader, files[0]);
   emit this->readerCreated(reader, files);
   emit this->sourceCreated(reader);
@@ -318,7 +325,9 @@ void pqObjectBuilder::destroy(pqPipelineSource* source)
   }
 
   emit this->destroying(source);
-  pqObjectBuilderNS::Controller->UnRegisterProxy(source->getProxy());
+
+  vtkNew<vtkSMParaViewPipelineController> controller;
+  controller->UnRegisterProxy(source->getProxy());
 }
 
 //-----------------------------------------------------------------------------
@@ -332,7 +341,7 @@ pqView* pqObjectBuilder::createView(const QString& type, pqServer* server, bool 
 
   vtkSMSessionProxyManager* pxm = server->proxyManager();
   vtkSmartPointer<vtkSMProxy> proxy;
-  proxy.TakeReference(pxm->NewProxy("views", type.toLatin1().data()));
+  proxy.TakeReference(pxm->NewProxy("views", type.toLocal8Bit().data()));
   if (!proxy)
   {
     qDebug() << "Failed to create a proxy for the requested view type:" << type;
@@ -347,9 +356,10 @@ pqView* pqObjectBuilder::createView(const QString& type, pqServer* server, bool 
   // this by setting up layouts, etc.
   emit this->aboutToCreateView(server);
 
-  pqObjectBuilderNS::Controller->PreInitializeProxy(proxy);
-  pqObjectBuilderNS::Controller->PostInitializeProxy(proxy);
-  pqObjectBuilderNS::Controller->RegisterViewProxy(proxy);
+  vtkNew<vtkSMParaViewPipelineController> controller;
+  controller->PreInitializeProxy(proxy);
+  controller->PostInitializeProxy(proxy);
+  controller->RegisterViewProxy(proxy);
 
   pqServerManagerModel* model = pqApplicationCore::instance()->getServerManagerModel();
   pqView* view = model->findItem<pqView*>(proxy);
@@ -374,7 +384,8 @@ void pqObjectBuilder::destroy(pqView* view)
   }
 
   emit this->destroying(view);
-  pqObjectBuilderNS::Controller->UnRegisterProxy(view->getProxy());
+  vtkNew<vtkSMParaViewPipelineController> controller;
+  controller->UnRegisterProxy(view->getProxy());
 }
 
 //-----------------------------------------------------------------------------
@@ -402,7 +413,8 @@ pqDataRepresentation* pqObjectBuilder::createDataRepresentation(
   QString srcProxyName = source->getProxy()->GetXMLName();
   if (representationType != "")
   {
-    reprProxy.TakeReference(pxm->NewProxy("representations", representationType.toLatin1().data()));
+    reprProxy.TakeReference(
+      pxm->NewProxy("representations", representationType.toLocal8Bit().data()));
   }
   else
   {
@@ -416,13 +428,14 @@ pqDataRepresentation* pqObjectBuilder::createDataRepresentation(
     return NULL;
   }
 
-  pqObjectBuilderNS::Controller->PreInitializeProxy(reprProxy);
+  vtkNew<vtkSMParaViewPipelineController> controller;
+  controller->PreInitializeProxy(reprProxy);
 
   // Set the reprProxy's input.
   pqSMAdaptor::setInputProperty(
     reprProxy->GetProperty("Input"), source->getProxy(), opPort->getPortNumber());
-  pqObjectBuilderNS::Controller->PostInitializeProxy(reprProxy);
-  pqObjectBuilderNS::Controller->RegisterRepresentationProxy(reprProxy);
+  controller->PostInitializeProxy(reprProxy);
+  controller->RegisterRepresentationProxy(reprProxy);
 
   // Add the reprProxy to render module.
   vtkSMProxy* viewModuleProxy = view->getProxy();
@@ -457,7 +470,7 @@ vtkSMProxy* pqObjectBuilder::createProxy(
 
   vtkSMSessionProxyManager* pxm = server->proxyManager();
   vtkSmartPointer<vtkSMProxy> proxy;
-  proxy.TakeReference(pxm->NewProxy(sm_group.toLatin1().data(), sm_name.toLatin1().data()));
+  proxy.TakeReference(pxm->NewProxy(sm_group.toLocal8Bit().data(), sm_name.toLocal8Bit().data()));
   if (!proxy.GetPointer())
   {
     qCritical() << "Failed to create proxy: " << sm_group << ", " << sm_name;
@@ -470,7 +483,7 @@ vtkSMProxy* pqObjectBuilder::createProxy(
     proxy->SetPrototype(true);
   }
 
-  pxm->RegisterProxy(reg_group.toLatin1().data(), proxy);
+  pxm->RegisterProxy(reg_group.toLocal8Bit().data(), proxy);
   return proxy;
 }
 
@@ -587,8 +600,8 @@ void pqObjectBuilder::destroyProxyInternal(pqProxy* proxy)
   if (proxy)
   {
     vtkSMSessionProxyManager* pxm = proxy->proxyManager();
-    pxm->UnRegisterProxy(proxy->getSMGroup().toLatin1().data(),
-      proxy->getSMName().toLatin1().data(), proxy->getProxy());
+    pxm->UnRegisterProxy(proxy->getSMGroup().toLocal8Bit().data(),
+      proxy->getSMName().toLocal8Bit().data(), proxy->getProxy());
   }
 }
 
@@ -597,6 +610,13 @@ QString pqObjectBuilder::getFileNamePropertyName(vtkSMProxy* proxy)
 {
   const char* fname = vtkSMCoreUtilities::GetFileNameProperty(proxy);
   return fname ? QString(fname) : QString::Null();
+}
+
+//-----------------------------------------------------------------------------
+bool pqObjectBuilder::forceWaitingForConnection(bool force)
+{
+  std::swap(force, this->ForceWaitingForConnection);
+  return force;
 }
 
 //-----------------------------------------------------------------------------
@@ -652,7 +672,7 @@ pqServer* pqObjectBuilder::createServer(const pqServerResource& resource)
   }
   else if (server_resource.scheme() == "cs")
   {
-    id = vtkSMSession::ConnectToRemote(resource.host().toLatin1().data(), resource.port(11111));
+    id = vtkSMSession::ConnectToRemote(resource.host().toLocal8Bit().data(), resource.port(11111));
   }
   else if (server_resource.scheme() == "csrc")
   {
@@ -662,8 +682,9 @@ pqServer* pqObjectBuilder::createServer(const pqServerResource& resource)
   }
   else if (server_resource.scheme() == "cdsrs")
   {
-    id = vtkSMSession::ConnectToRemote(server_resource.dataServerHost().toLatin1().data(),
-      server_resource.dataServerPort(11111), server_resource.renderServerHost().toLatin1().data(),
+    id = vtkSMSession::ConnectToRemote(server_resource.dataServerHost().toLocal8Bit().data(),
+      server_resource.dataServerPort(11111),
+      server_resource.renderServerHost().toLocal8Bit().data(),
       server_resource.renderServerPort(22221));
   }
   else if (server_resource.scheme() == "cdsrsrc")

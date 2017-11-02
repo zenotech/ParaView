@@ -31,8 +31,8 @@
  * on all linked properties.
  *
  * vtkSMParaViewPipelineController uses the property level hint
- * <GlobalPropertyLink /> to define such links e.g.
- *    \code
+ * \c \<GlobalPropertyLink/\> to define such links e.g.
+ *    \code{.xml}
  *    <DoubleVectorProperty name="Background" ... >
  *         ...
  *      <Hints>
@@ -57,7 +57,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMGlobalPropertiesProxy : public vtkSMPro
 public:
   static vtkSMGlobalPropertiesProxy* New();
   vtkTypeMacro(vtkSMGlobalPropertiesProxy, vtkSMProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Set up a property link with the given property on the proxy with the
@@ -87,23 +87,23 @@ public:
   /**
    * Overridden to save link state.
    */
-  virtual vtkPVXMLElement* SaveXMLState(vtkPVXMLElement* root, vtkSMPropertyIterator* iter);
+  vtkPVXMLElement* SaveXMLState(vtkPVXMLElement* root, vtkSMPropertyIterator* iter) VTK_OVERRIDE;
   using Superclass::SaveXMLState;
   //@}
 
   /**
    * Overridden to load links state.
    */
-  virtual int LoadXMLState(vtkPVXMLElement* element, vtkSMProxyLocator* locator);
+  int LoadXMLState(vtkPVXMLElement* element, vtkSMProxyLocator* locator) VTK_OVERRIDE;
 
 protected:
   vtkSMGlobalPropertiesProxy();
-  ~vtkSMGlobalPropertiesProxy();
+  ~vtkSMGlobalPropertiesProxy() override;
 
   /**
    * Overridden to propagate the modification to the linked properties.
    */
-  virtual void SetPropertyModifiedFlag(const char* name, int flag);
+  void SetPropertyModifiedFlag(const char* name, int flag) VTK_OVERRIDE;
 
   /**
    * Called when a target properties is modified.
@@ -111,8 +111,8 @@ protected:
   void TargetPropertyModified(vtkObject*, unsigned long, void*);
 
 private:
-  vtkSMGlobalPropertiesProxy(const vtkSMGlobalPropertiesProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMGlobalPropertiesProxy&) VTK_DELETE_FUNCTION;
+  vtkSMGlobalPropertiesProxy(const vtkSMGlobalPropertiesProxy&) = delete;
+  void operator=(const vtkSMGlobalPropertiesProxy&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

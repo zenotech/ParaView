@@ -25,8 +25,8 @@
  * what is requested.
 */
 
-#ifndef vtkPointAccumulator_hxx
-#define vtkPointAccumulator_hxx
+#ifndef vtkPointAccumulator_h
+#define vtkPointAccumulator_h
 
 #include "vtkPoints.h"
 #include <exception>
@@ -185,10 +185,11 @@ public:
   //@}
 
 private:
-  vtkPointAccumulator(const vtkPointAccumulator&) VTK_DELETE_FUNCTION;
-  vtkPointAccumulator& operator=(const vtkPointAccumulator&) VTK_DELETE_FUNCTION;
+  vtkPointAccumulator(const vtkPointAccumulator&) = delete;
+  vtkPointAccumulator& operator=(const vtkPointAccumulator&) = delete;
 
   T_CPP* PtStore;
   vtkIdType NPts;
 };
 #endif
+// VTK-HeaderTest-Exclude: vtkPointAccumulator.h

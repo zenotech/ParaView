@@ -32,7 +32,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVLegacyGlyphFilter : public vtkGlyph3
 {
 public:
   vtkTypeMacro(vtkPVLegacyGlyphFilter, vtkGlyph3D);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   static vtkPVLegacyGlyphFilter* New();
 
@@ -72,23 +72,23 @@ public:
    * is visible as long as the dataset being process if a
    * vtkUniformGrid.
    */
-  virtual int IsPointVisible(vtkDataSet* ds, vtkIdType ptId);
+  int IsPointVisible(vtkDataSet* ds, vtkIdType ptId) VTK_OVERRIDE;
 
   void SetKeepRandomPoints(int keepRandomPoints);
   vtkGetMacro(KeepRandomPoints, int);
 
 protected:
   vtkPVLegacyGlyphFilter();
-  ~vtkPVLegacyGlyphFilter();
+  ~vtkPVLegacyGlyphFilter() override;
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
   virtual int RequestCompositeData(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector);
 
-  virtual int FillInputPortInformation(int, vtkInformation*);
+  int FillInputPortInformation(int, vtkInformation*) VTK_OVERRIDE;
 
   // Create a default executive.
-  virtual vtkExecutive* CreateDefaultExecutive();
+  vtkExecutive* CreateDefaultExecutive() VTK_OVERRIDE;
 
   vtkIdType GatherTotalNumberOfPoints(vtkIdType localNumPts);
 
@@ -116,14 +116,14 @@ protected:
 
   int RandomMode;
 
-  virtual void ReportReferences(vtkGarbageCollector*);
+  void ReportReferences(vtkGarbageCollector*) VTK_OVERRIDE;
 
   int KeepRandomPoints;
   vtkIdType MaximumNumberOfPointsOld;
 
 private:
-  vtkPVLegacyGlyphFilter(const vtkPVLegacyGlyphFilter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVLegacyGlyphFilter&) VTK_DELETE_FUNCTION;
+  vtkPVLegacyGlyphFilter(const vtkPVLegacyGlyphFilter&) = delete;
+  void operator=(const vtkPVLegacyGlyphFilter&) = delete;
 
 public:
   enum CommunicationIds

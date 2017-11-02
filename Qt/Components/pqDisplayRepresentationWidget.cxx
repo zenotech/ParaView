@@ -58,18 +58,19 @@ public:
         use_unchecked_modified_event, parentObject)
   {
   }
-  virtual ~PropertyLinksConnection() {}
+  ~PropertyLinksConnection() override {}
 
 protected:
   /// Called to update the ServerManager Property due to UI change.
-  virtual void setServerManagerValue(bool use_unchecked, const QVariant& value)
+  void setServerManagerValue(bool use_unchecked, const QVariant& value) override
   {
     Q_ASSERT(use_unchecked == false);
     Q_UNUSED(use_unchecked);
 
     BEGIN_UNDO_SET("Change representation type");
     vtkSMProxy* reprProxy = this->proxySM();
-    vtkSMRepresentationProxy::SetRepresentationType(reprProxy, value.toString().toLatin1().data());
+    vtkSMRepresentationProxy::SetRepresentationType(
+      reprProxy, value.toString().toLocal8Bit().data());
     END_UNDO_SET();
   }
 

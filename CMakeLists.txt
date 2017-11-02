@@ -63,8 +63,16 @@ if (NOT BUILD_SHARED_LIBS)
 endif ()
 
 #-------------------------------------------------------------------------------
+set (ParaView_CMAKE_BINARY_DIR "${ParaView_BINARY_DIR}/CMake")
 set (ParaView_CMAKE_DIR "${ParaView_SOURCE_DIR}/CMake")
-set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ParaView_CMAKE_DIR})
+
+#-------------------------------------------------------------------------------
+# Set up CMAKE_MODULE_PATH
+set (CMAKE_MODULE_PATH
+  ${CMAKE_MODULE_PATH}
+  ${ParaView_CMAKE_BINARY_DIR}
+  ${ParaView_CMAKE_DIR}
+)
 
 # Use the new version of the variable names for output of build process.
 # Make sure these are consistent with what VTK sets.
@@ -145,13 +153,6 @@ if (NOT DEFINED VTK_CUSTOM_LIBRARY_SUFFIX)
   set (VTK_CUSTOM_LIBRARY_SUFFIX "-pv${PARAVIEW_VERSION}")
 endif()
 
-# Handle the target export file, this is used if building against a build tree.
-if(NOT VTK_EXPORTS_FILE)
-  set(VTK_EXPORTS_FILE "${ParaView_BINARY_DIR}/VTK/${VTK_INSTALL_EXPORT_NAME}.cmake")
-endif()
-file(REMOVE "${VTK_EXPORTS_FILE}")
-
-
 if(NOT PV_INSTALL_PLUGIN_DIR)
   if (WIN32)
     set (PV_INSTALL_PLUGIN_DIR ${VTK_INSTALL_RUNTIME_DIR})
@@ -186,26 +187,28 @@ endif()
 #------------------------------------------------------------------------------
 # Define ParaView specific options.
 #------------------------------------------------------------------------------
-set(default_testing ON)
-if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.ExternalData/README.rst")
-  # Source tarball without the data, so turn off testing.
-  set(default_testing OFF)
-endif ()
-option(BUILD_TESTING "Build ParaView Testing" ${default_testing})
+option(BUILD_TESTING "Build ParaView Testing" OFF)
 option(BUILD_EXAMPLES "Build ParaView examples" OFF)
 option(BUILD_SHARED_LIBS "Build ParaView using shared libraries" ON)
 option(PARAVIEW_BUILD_QT_GUI "Enable ParaView Qt-based client" ON)
-option(PARAVIEW_USE_DAX "Build ParaView with Dax many-core filters" OFF)
+cmake_dependent_option(PARAVIEW_USE_VTKM "Build ParaView with VTKm many-core filters" OFF "NOT APPLE" OFF)
 option(PARAVIEW_USE_MPI "Enable MPI support for parallel computing" OFF)
-option(PARAVIEW_USE_PISTON "Build ParaView with Piston GPGPU filters" OFF)
 option(PARAVIEW_USE_OSPRAY "Build ParaView with OSPRay Ray Traced rendering" OFF)
+set(VTK_OPENVR_OBJECT_FACTORY OFF
+    CACHE INTERNAL "ParaView requires the OpenVR factory be disabled" FORCE)
 option(PARAVIEW_USE_VISITBRIDGE "Build ParaView with VisIt readers." OFF)
+option(PARAVIEW_USE_OPENTURNS "Build ParaView with OpenTURNS filters and density maps" OFF)
 
-# Xdmf3 is not ON by default since it depends on Boost.
-option(PARAVIEW_ENABLE_XDMF3 "Enable Xdmf3 support (requires Boost)." OFF)
+# NvPipe requires an NVIDIA GPU.
+option(PARAVIEW_ENABLE_NVPIPE
+       "Build ParaView with NvPipe remoting. Requires CUDA and an NVIDIA GPU" OFF)
 
-# Enable CGNS support
-option(PARAVIEW_ENABLE_CGNS "Enable the CGNS file reader" OFF)
+option(PARAVIEW_ENABLE_XDMF2 "Enable Xdmf2 support." ON)
+mark_as_advanced(PARAVIEW_ENABLE_XDMF2)
+option(PARAVIEW_ENABLE_XDMF3 "Enable Xdmf3 support." OFF)
+option(PARAVIEW_ENABLE_LAS "Enable LAS support." OFF)
+mark_as_advanced(PARAVIEW_ENABLE_LAS)
+
 
 if (UNIX)
   option(PARAVIEW_ENABLE_FFMPEG "Enable FFMPEG Support." OFF)
@@ -225,8 +228,7 @@ cmake_dependent_option(PARAVIEW_USE_ICE_T
   "Enable IceT (needed for parallel rendering)" ON
   "PARAVIEW_USE_MPI" OFF)
 cmake_dependent_option(PARAVIEW_INITIALIZE_MPI_ON_CLIENT
-  "Initialize MPI on client-processes by default. Can be overridden using command line arguments"
-  OFF
+  "Initialize MPI on client-processes by default. Can be overridden using command line arguments" ON
   "PARAVIEW_USE_MPI" OFF)
 
 mark_as_advanced(PARAVIEW_USE_ICE_T
@@ -400,6 +402,10 @@ cmake_dependent_option(PARAVIEW_ENABLE_WEB "Enable/Disable web support" "${parav
 mark_as_advanced(PARAVIEW_ENABLE_WEB)
 
 if (PARAVIEW_ENABLE_WEB)
+  configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/package.json.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/package.json"
+    @ONLY)
   # Request vtkParaViewWeb module
   list(APPEND vtkParaViewWeb_REQUEST_BY "Option PARAVIEW_ENABLE_WEB")
 endif()
@@ -436,7 +442,7 @@ endif()
 # Add ability to freeze Python modules.
 cmake_dependent_option(PARAVIEW_FREEZE_PYTHON
   "Freeze Python packages/modules into the application." OFF
-  "PARAVIEW_ENABLE_PYTHON;NOT WIN32" OFF)
+  "PARAVIEW_ENABLE_PYTHON;NOT WIN32;NOT APPLE" OFF)
 mark_as_advanced(PARAVIEW_FREEZE_PYTHON)
 
 #------------------------------------------------------------------------------
@@ -453,8 +459,7 @@ endif()
 # Setup Qt state. We just do a quick top level check for Qt's exisiting here.
 # We let individual modules find_package(Qt..) as needed.
 if(PARAVIEW_ENABLE_QT_SUPPORT)
-  set(PARAVIEW_QT_VERSION "4" CACHE STRING  "Select Qt verision to use 4 or 5")
-  set_property(CACHE PARAVIEW_QT_VERSION PROPERTY STRINGS 4 5)
+  set(PARAVIEW_QT_VERSION "5" CACHE INTERNAL "Select Qt version to 5")
   # Force VTK to use the same Qt version as ParaView.
   set(VTK_QT_VERSION "${PARAVIEW_QT_VERSION}" CACHE INTERNAL "")
   set(VTK_BUILD_QT_DESIGNER_PLUGIN OFF CACHE INTERNAL "")
@@ -481,6 +486,20 @@ endif()
 if (PARAVIEW_BUILD_QT_GUI)
   # Request the pqApplicationComponents module.
   list (APPEND pqApplicationComponents_REQUEST_BY "Option PARAVIEW_BUILD_QT_GUI")
+
+  if (APPLE)
+    # Enable high resolution when using Qt5
+    # This configuring of MacOSXBundleInfo may no longer be needed, but I am
+    # leaving it in since in future we could build the supported extensions list
+    # more exhaustively here.
+    set(MAC_HIGH_RESOLUTION_CAPABLE "true")
+    file(MAKE_DIRECTORY ${ParaView_CMAKE_BINARY_DIR})
+    configure_file(
+      "${ParaView_CMAKE_DIR}/MacOSXBundleInfo.plist.in.in"
+      "${ParaView_CMAKE_BINARY_DIR}/MacOSXBundleInfo.plist.in"
+      @ONLY
+    )
+  endif()
 endif()
 
 #------------------------------------------------------------------------------
@@ -601,6 +620,13 @@ set(PARAVIEW_EXTERNAL_MODULE_ROOTS "" CACHE STRING
   "Semicolon separated absolute paths to external directories containing extra VTK/ParaView modules.")
 mark_as_advanced(PARAVIEW_EXTERNAL_MODULE_ROOTS)
 include(ParaViewModuleTop)
+
+#----------------------------------------------------------------------------------
+# Sanity check: OpenGL backend is no longer supported
+if (VTK_RENDERING_BACKEND STREQUAL "OpenGL")
+  message(SEND_ERROR
+    "ParaView no longer supports the 'OpenGL' rendering backend.")
+endif()
 
 #----------------------------------------------------------------------------------
 # keep VTK cmake variables from polluting the non-advanced space.

@@ -66,22 +66,23 @@ set (Module_SRCS
   vtkPVDataDeliveryManager.cxx
   vtkPVDataRepresentation.cxx
   vtkPVDataRepresentationPipeline.cxx
-  vtkPVDisplayInformation.cxx
+  vtkPVGridAxes3DRepresentation.cxx
   vtkPVHardwareSelector.cxx
   vtkPVHistogramChartRepresentation.cxx
   vtkPVImageSliceMapper.cxx
-  vtkPVImplicitPlaneRepresentation.cxx
   vtkPVImplicitCylinderRepresentation.cxx
+  vtkPVImplicitPlaneRepresentation.cxx
   vtkPVLastSelectionInformation.cxx
+  vtkPVLight.cxx
   vtkPVMultiSliceView.cxx
   vtkPVOpenGLInformation.cxx
-  vtkPVOpenGLExtensionsInformation.cxx
   vtkPVOrthographicSliceView.cxx
   vtkPVParallelCoordinatesRepresentation.cxx
   vtkPVPlotMatrixRepresentation.cxx
   vtkPVPlotMatrixView.cxx
   vtkPVProminentValuesInformation.cxx
   vtkPVRayCastPickingHelper.cxx
+  vtkPVRenderingCapabilitiesInformation.cxx
   vtkPVRenderView.cxx
   vtkPVRenderViewSettings.cxx
   vtkPVRepresentedDataInformation.cxx
@@ -105,11 +106,8 @@ set (Module_SRCS
   vtkXYChartRepresentation.cxx
 )
 
-if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL2")
-  add_definitions(-DVTKGL2)
-  list(APPEND Module_SRCS
-    vtkPointGaussianRepresentation.cxx)
-endif()
+list(APPEND Module_SRCS
+  vtkPointGaussianRepresentation.cxx)
 
 if (PARAVIEW_ENABLE_PYTHON)
   list(APPEND Module_SRCS
@@ -117,10 +115,20 @@ if (PARAVIEW_ENABLE_PYTHON)
     vtkPythonView.cxx)
 endif()
 
-
 if (PARAVIEW_USE_ICE_T)
   list(APPEND Module_SRCS
     vtkIceTSynchronizedRenderers.cxx)
+endif()
+
+if (PARAVIEW_USE_OSPRAY)
+  list(APPEND Module_SRCS
+    vtkPVOSPRayMaterialLibrary.cxx)
+endif()
+
+if(NOT VTK_LEGACY_REMOVE)
+  list(APPEND Module_SRCS
+    vtkPVDisplayInformation.cxx
+    vtkPVOpenGLExtensionsInformation.cxx)
 endif()
 
 set_source_files_properties(

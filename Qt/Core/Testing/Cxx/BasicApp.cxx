@@ -5,11 +5,11 @@
 #include <QApplication>
 #include <QTimer>
 
-#include "QVTKWidget.h"
 #include "pqApplicationCore.h"
 #include "pqCoreTestUtility.h"
 #include "pqObjectBuilder.h"
 #include "pqOptions.h"
+#include "pqQVTKWidget.h"
 #include "pqRenderView.h"
 #include "pqServer.h"
 #include "pqServerManagerModel.h"
@@ -96,30 +96,14 @@ bool MainWindow::compareView(
   const QString& referenceImage, double threshold, ostream& output, const QString& tempDirectory)
 {
   pqRenderView* renModule = this->RenderView;
-
   if (!renModule)
   {
     output << "ERROR: Could not locate the render module." << endl;
     return false;
   }
 
-  QVTKWidget* const widget = qobject_cast<QVTKWidget*>(renModule->widget());
-  if (!widget)
-  {
-    output << "ERROR: Not a QVTKWidget." << endl;
-    return false;
-  }
-
-  vtkRenderWindow* const render_window = widget->GetRenderWindow();
-
-  if (!render_window)
-  {
-    output << "ERROR: Could not locate the Render Window." << endl;
-    return false;
-  }
-
-  bool ret = pqCoreTestUtility::CompareImage(
-    render_window, referenceImage, threshold, output, tempDirectory);
+  bool ret = pqCoreTestUtility::CompareView(
+    renModule, referenceImage, threshold, tempDirectory, QSize(200, 150));
   renModule->render();
   return ret;
 }

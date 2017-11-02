@@ -41,8 +41,8 @@ public:
   // Subclasses can override this method to assign a role for a specific data
   // array in the input dataset. This is useful when multiple plots are to be
   // created for a single series.
-  virtual std::string GetSeriesRole(
-    const std::string& vtkNotUsed(tableName), const std::string& columnName)
+  std::string GetSeriesRole(
+    const std::string& vtkNotUsed(tableName), const std::string& columnName) override
   {
     if (StatsArrayRe.find(columnName))
     {
@@ -60,8 +60,8 @@ public:
     return std::string();
   }
 
-  virtual vtkPlot* NewPlot(vtkXYChartRepresentation* self, const std::string& tableName,
-    const std::string& columnName, const std::string& role)
+  vtkPlot* NewPlot(vtkXYChartRepresentation* self, const std::string& tableName,
+    const std::string& columnName, const std::string& role) override
   {
     if (role == "minmax" || role == "q1q3")
     {
@@ -84,8 +84,8 @@ public:
   }
 
   //---------------------------------------------------------------------------
-  virtual int GetInputArrayIndex(
-    const std::string& tableName, const std::string& columnName, const std::string& role)
+  int GetInputArrayIndex(
+    const std::string& tableName, const std::string& columnName, const std::string& role) override
   {
     if (role == "minmax")
     {
@@ -106,16 +106,80 @@ public:
     return this->Superclass::GetInputArrayIndex(tableName, columnName, role);
   }
 
+  //---------------------------------------------------------------------------
+  // Export visible plots to a CSV file.
+  bool Export(vtkXYChartRepresentation* self, vtkCSVExporter* exporter) override
+  {
+    for (PlotsMap::iterator iter1 = this->SeriesPlots.begin(); iter1 != this->SeriesPlots.end();
+         ++iter1)
+    {
+      for (PlotsMapItem::const_iterator iter2 = iter1->second.begin(); iter2 != iter1->second.end();
+           ++iter2)
+      {
+        const PlotInfo& plotInfo = iter2->second;
+        vtkPlot* plot = plotInfo.Plot;
+        if (!plot->GetVisible())
+        {
+          continue;
+        }
+        std::string columnName = plotInfo.ColumnName;
+        vtkTable* table = plot->GetInput();
+        vtkDataArray* xarray = self->GetUseIndexForXAxis()
+          ? NULL
+          : vtkDataArray::SafeDownCast(table->GetColumnByName(self->GetXAxisSeriesName()));
+        if (StatsArrayRe.find(columnName))
+        {
+          std::string fn = StatsArrayRe.match(1);
+          if (fn == "max" || fn == "q3")
+          {
+            const std::string& tableName = plotInfo.TableName;
+            const std::string role = this->GetSeriesRole(tableName, columnName);
+            std::string default_label = self->GetDefaultSeriesLabel(tableName, columnName);
+            std::string label = this->GetSeriesParameter(
+              self, tableName, columnName, role, this->Labels, default_label);
+
+            std::vector<std::pair<std::string, std::string> > yNames;
+            yNames.push_back(std::make_pair(columnName, fn + " " + label));
+            if (fn == "max")
+            {
+              yNames.push_back(std::make_pair(columnName.replace(0, 3, "min"), "min " + label));
+            }
+            else
+            {
+              yNames.push_back(std::make_pair(columnName.replace(0, 2, "q1"), "q1 " + label));
+            }
+
+            for (auto iter3 = yNames.rbegin(); iter3 != yNames.rend(); ++iter3)
+            {
+              vtkAbstractArray* yarray = table->GetColumnByName(iter3->first.c_str());
+              if (yarray != NULL)
+              {
+                exporter->AddColumn(yarray, iter3->second.c_str(), xarray);
+              }
+            }
+            continue;
+          }
+        }
+
+        vtkAbstractArray* yarray = table->GetColumnByName(columnName.c_str());
+        if (yarray != NULL)
+        {
+          exporter->AddColumn(yarray, plot->GetLabel().c_str(), xarray);
+        }
+      }
+    }
+    return true;
+  }
+
 protected:
-  virtual bool UpdateSinglePlotProperties(vtkXYChartRepresentation* self,
-    const std::string& tableName, const std::string& columnName, const std::string& role,
-    vtkPlot* plot)
+  bool UpdateSinglePlotProperties(vtkXYChartRepresentation* self, const std::string& tableName,
+    const std::string& columnName, const std::string& role, vtkPlot* plot) override
   {
     vtkQuartileChartRepresentation* qcr = vtkQuartileChartRepresentation::SafeDownCast(self);
-    if ((role == "minmax" && qcr->GetRangeVisibility() == false) ||
-      (role == "q1q3" && qcr->GetQuartileVisibility() == false) ||
+    if ((role == "minmax" && (qcr->GetRangeVisibility() == false || qcr->HasOnlyOnePoint)) ||
+      (role == "q1q3" && (qcr->GetQuartileVisibility() == false || qcr->HasOnlyOnePoint)) ||
       (role == "avg" && qcr->GetAverageVisibility() == false) ||
-      (role == "med" && qcr->GetMedianVisibility() == false))
+      (role == "med" && (qcr->GetMedianVisibility() == false || qcr->HasOnlyOnePoint)))
     {
       plot->SetVisible(false);
       return false;
@@ -143,7 +207,10 @@ protected:
         plot->GetBrush()->SetOpacityF(0.3);
         plot->GetPen()->SetOpacityF(0.3);
       }
-      plot->SetLabel(role + " " + plot->GetLabel());
+      if (!qcr->HasOnlyOnePoint)
+      {
+        plot->SetLabel(role + " " + plot->GetLabel());
+      }
     }
     return true;
   }
@@ -156,6 +223,7 @@ vtkQuartileChartRepresentation::vtkQuartileChartRepresentation()
   , RangeVisibility(true)
   , AverageVisibility(true)
   , MedianVisibility(true)
+  , HasOnlyOnePoint(false)
 {
   delete this->Internals;
   this->Internals = new vtkQCRInternals();
@@ -176,6 +244,36 @@ vtkStdString vtkQuartileChartRepresentation::GetDefaultSeriesLabel(
     return this->Superclass::GetDefaultSeriesLabel(tableName, StatsArrayRe.match(2));
   }
   return this->Superclass::GetDefaultSeriesLabel(tableName, columnName);
+}
+
+//----------------------------------------------------------------------------
+void vtkQuartileChartRepresentation::PrepareForRendering()
+{
+  vtkChartRepresentation::MapOfTables tables;
+  if (!this->GetLocalOutput(tables))
+  {
+    this->Internals->HideAllPlots();
+    return;
+  }
+
+  this->HasOnlyOnePoint = false;
+  for (auto itr = tables.begin(); itr != tables.end(); ++itr)
+  {
+    vtkTable* table = itr->second;
+    vtkAbstractArray* column = table->GetColumnByName("N");
+    if (column)
+    {
+      vtkDataArray* narray = vtkDataArray::SafeDownCast(column);
+      double range[2];
+      narray->GetRange(range);
+      if (range[0] == range[1] && range[0] == 1)
+      {
+        this->HasOnlyOnePoint = true;
+      }
+    }
+  }
+
+  this->Superclass::PrepareForRendering();
 }
 
 //----------------------------------------------------------------------------

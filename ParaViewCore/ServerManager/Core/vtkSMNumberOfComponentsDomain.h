@@ -39,7 +39,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMNumberOfComponentsDomain : public vtkSM
 public:
   static vtkSMNumberOfComponentsDomain* New();
   vtkTypeMacro(vtkSMNumberOfComponentsDomain, vtkSMEnumerationDomain);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Updates the range based on the scalar range of the currently selected
@@ -47,11 +47,16 @@ public:
    * (vtkSMStringVectorProperty) properties. Currently, this uses
    * only the first component of the array.
    */
-  virtual void Update(vtkSMProperty* prop);
+  void Update(vtkSMProperty* prop) VTK_OVERRIDE;
 
 protected:
   vtkSMNumberOfComponentsDomain();
-  ~vtkSMNumberOfComponentsDomain();
+  ~vtkSMNumberOfComponentsDomain() override;
+
+  /**
+   * Set the appropriate ivars from the xml element.
+   */
+  virtual int ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement* element) VTK_OVERRIDE;
 
   /**
    * Internal update method doing the actual work.
@@ -60,8 +65,10 @@ protected:
     const char* arrayname, vtkSMSourceProxy* sp, vtkSMInputArrayDomain* iad, int outputport);
 
 private:
-  vtkSMNumberOfComponentsDomain(const vtkSMNumberOfComponentsDomain&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMNumberOfComponentsDomain&) VTK_DELETE_FUNCTION;
+  vtkSMNumberOfComponentsDomain(const vtkSMNumberOfComponentsDomain&) = delete;
+  void operator=(const vtkSMNumberOfComponentsDomain&) = delete;
+
+  bool EnableMagnitude;
 };
 
 #endif

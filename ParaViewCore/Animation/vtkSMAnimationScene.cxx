@@ -50,6 +50,11 @@ public:
 
   void UpdateAllViews()
   {
+    if (this->ViewModules.size() == 0)
+    {
+      return;
+    }
+
     vtkSMSessionProxyManager* pxm = NULL;
     for (VectorOfViews::iterator iter = this->ViewModules.begin(); iter != this->ViewModules.end();
          ++iter)
@@ -66,25 +71,8 @@ public:
       iter->GetPointer()->Update();
     }
 
-    // To ensure that LUTs are reset using proper ranges, we need to update all
-    // views first, then reset/grow the LUTs and subsequently render all the views.
-    switch (vtkPVGeneralSettings::GetInstance()->GetTransferFunctionResetMode())
-    {
-      case vtkPVGeneralSettings::GROW_ON_APPLY_AND_TIMESTEP:
-        this->TransferFunctionManager->ResetAllTransferFunctionRangesUsingCurrentData(pxm, true);
-        break;
-
-      case vtkPVGeneralSettings::RESET_ON_APPLY_AND_TIMESTEP:
-        this->TransferFunctionManager->ResetAllTransferFunctionRangesUsingCurrentData(pxm, false);
-        // FIXME: Maybe we should warn the user if animation caching is ON and
-        // RESET_ON_APPLY_AND_TIMESTEP is enabled since the ranges will definitely
-        // be wrong if caching gets used.
-        break;
-
-      default:
-        // nothing to do.
-        break;
-    }
+    this->TransferFunctionManager->ResetAllTransferFunctionRangesUsingCurrentData(
+      pxm, true /*animating*/);
   }
 
   void StillRenderAllViews()
@@ -150,7 +138,7 @@ public:
   {
   }
   virtual ~vtkTickOnGenericCue() {}
-  void operator()(vtkAnimationCue* cue) const
+  virtual void operator()(vtkAnimationCue* cue) const
   {
     if (!this->IsAcceptable(cue))
     {
@@ -175,23 +163,40 @@ public:
 class vtkTickOnCameraCue : public vtkTickOnGenericCue
 {
 protected:
-  virtual bool IsAcceptable(vtkAnimationCue* cue) const
+  bool IsAcceptable(vtkAnimationCue* cue) const override
   {
     return (vtkPVCameraAnimationCue::SafeDownCast(cue) != NULL);
   }
 
+  vtkSMProxy* TimeKeeper;
+
 public:
-  vtkTickOnCameraCue(
-    double starttime, double endtime, double currenttime, double deltatime, double clocktime)
+  vtkTickOnCameraCue(double starttime, double endtime, double currenttime, double deltatime,
+    double clocktime, vtkSMProxy* timeKeeper)
     : vtkTickOnGenericCue(starttime, endtime, currenttime, deltatime, clocktime)
+    , TimeKeeper(timeKeeper)
   {
+  }
+
+  void operator()(vtkAnimationCue* cue) const override
+  {
+    vtkPVCameraAnimationCue* cameraCue = vtkPVCameraAnimationCue::SafeDownCast(cue);
+    if (cameraCue)
+    {
+      cameraCue->SetTimeKeeper(this->TimeKeeper);
+    }
+    vtkTickOnGenericCue::operator()(cue);
+    if (cameraCue)
+    {
+      cameraCue->SetTimeKeeper(nullptr);
+    }
   }
 };
 
 class vtkTickOnPythonCue : public vtkTickOnGenericCue
 {
 protected:
-  virtual bool IsAcceptable(vtkAnimationCue* cue) const
+  bool IsAcceptable(vtkAnimationCue* cue) const override
   {
     (void)cue;
     return (false
@@ -469,8 +474,8 @@ void vtkSMAnimationScene::TickInternal(double currenttime, double deltatime, dou
 
   this->Internals->UpdateAllViews();
 
-  std::for_each(cues.begin(), cues.end(),
-    vtkTickOnCameraCue(this->StartTime, this->EndTime, currenttime, deltatime, clocktime));
+  std::for_each(cues.begin(), cues.end(), vtkTickOnCameraCue(this->StartTime, this->EndTime,
+                                            currenttime, deltatime, clocktime, this->TimeKeeper));
 
   this->Superclass::TickInternal(currenttime, deltatime, clocktime);
 

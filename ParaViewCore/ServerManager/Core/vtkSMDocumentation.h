@@ -35,7 +35,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMDocumentation : public vtkSMObject
 public:
   static vtkSMDocumentation* New();
   vtkTypeMacro(vtkSMDocumentation, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Returns the text for long help, if any. NULL otherwise.
@@ -61,14 +61,14 @@ public:
 
 protected:
   vtkSMDocumentation();
-  ~vtkSMDocumentation();
+  ~vtkSMDocumentation() override;
   //@}
 
   vtkPVXMLElement* DocumentationElement;
 
 private:
-  vtkSMDocumentation(const vtkSMDocumentation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMDocumentation&) VTK_DELETE_FUNCTION;
+  vtkSMDocumentation(const vtkSMDocumentation&) = delete;
+  void operator=(const vtkSMDocumentation&) = delete;
 };
 
 #endif

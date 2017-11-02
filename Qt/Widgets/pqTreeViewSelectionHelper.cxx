@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Qt Includes.
 #include <QItemSelection>
 #include <QMenu>
+#include <QSortFilterProxyModel>
 #include <QtDebug>
 
 // ParaView Includes.
@@ -134,8 +135,17 @@ void pqTreeViewSelectionHelper::showContextMenu(const QPoint& pos)
     menu.setObjectName("TreeViewCheckMenu");
     QAction* check = new QAction("Check", &menu);
     QAction* uncheck = new QAction("Uncheck", &menu);
+    QAction* sort = new QAction("Sort", &menu);
+    QAction* unsort = new QAction("Clear Sorting", &menu);
     menu.addAction(check);
     menu.addAction(uncheck);
+    QSortFilterProxyModel* sortModel =
+      qobject_cast<QSortFilterProxyModel*>(this->TreeView->model());
+    if (sortModel)
+    {
+      menu.addAction(sort);
+      menu.addAction(unsort);
+    }
     QAction* result = menu.exec(this->TreeView->mapToGlobal(pos));
     if (result == check)
     {
@@ -144,6 +154,14 @@ void pqTreeViewSelectionHelper::showContextMenu(const QPoint& pos)
     else if (result == uncheck)
     {
       this->setSelectedItemsCheckState(Qt::Unchecked);
+    }
+    else if (result == sort)
+    {
+      sortModel->sort(this->TreeView->columnAt(pos.x()), Qt::AscendingOrder);
+    }
+    else if (result == unsort)
+    {
+      sortModel->sort(-1);
     }
   }
 }

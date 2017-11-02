@@ -34,7 +34,7 @@ class VTKPVANIMATION_EXPORT vtkTimestepsAnimationPlayer : public vtkAnimationPla
 public:
   static vtkTimestepsAnimationPlayer* New();
   vtkTypeMacro(vtkTimestepsAnimationPlayer, vtkAnimationPlayer);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -77,23 +77,23 @@ public:
 
 protected:
   vtkTimestepsAnimationPlayer();
-  ~vtkTimestepsAnimationPlayer();
+  ~vtkTimestepsAnimationPlayer() override;
   //@}
 
-  virtual void StartLoop(double, double, double*);
-  virtual void EndLoop(){};
+  void StartLoop(double, double, double*) VTK_OVERRIDE;
+  void EndLoop() VTK_OVERRIDE{};
 
   /**
    * Return the next time given the current time.
    */
-  virtual double GetNextTime(double currentime);
+  double GetNextTime(double currentime) VTK_OVERRIDE;
 
-  virtual double GoToNext(double, double, double currenttime)
+  double GoToNext(double, double, double currenttime) VTK_OVERRIDE
   {
     return this->GetNextTimeStep(currenttime);
   }
 
-  virtual double GoToPrevious(double, double, double currenttime)
+  double GoToPrevious(double, double, double currenttime) VTK_OVERRIDE
   {
     return this->GetPreviousTimeStep(currenttime);
   }
@@ -103,8 +103,8 @@ protected:
   unsigned long Count;
 
 private:
-  vtkTimestepsAnimationPlayer(const vtkTimestepsAnimationPlayer&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkTimestepsAnimationPlayer&) VTK_DELETE_FUNCTION;
+  vtkTimestepsAnimationPlayer(const vtkTimestepsAnimationPlayer&) = delete;
+  void operator=(const vtkTimestepsAnimationPlayer&) = delete;
 
   vtkTimestepsAnimationPlayerSetOfDouble* TimeSteps;
 };

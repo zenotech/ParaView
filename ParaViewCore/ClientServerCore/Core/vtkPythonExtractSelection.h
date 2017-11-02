@@ -32,7 +32,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPythonExtractSelection : public vtkExt
 public:
   static vtkPythonExtractSelection* New();
   vtkTypeMacro(vtkPythonExtractSelection, vtkExtractSelectionBase);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -46,12 +46,12 @@ public:
 
 protected:
   vtkPythonExtractSelection();
-  ~vtkPythonExtractSelection();
+  ~vtkPythonExtractSelection() override;
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   /**
    * Method used to initialize the output data object in request data.
@@ -61,8 +61,8 @@ protected:
   void InitializeOutput(vtkDataObject* output, vtkDataObject* input);
 
 private:
-  vtkPythonExtractSelection(const vtkPythonExtractSelection&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPythonExtractSelection&) VTK_DELETE_FUNCTION;
+  vtkPythonExtractSelection(const vtkPythonExtractSelection&) = delete;
+  void operator=(const vtkPythonExtractSelection&) = delete;
 };
 
 #endif

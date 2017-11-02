@@ -42,7 +42,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVPluginLoader : public vtkObject
 public:
   static vtkPVPluginLoader* New();
   vtkTypeMacro(vtkPVPluginLoader, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Tries to the load the plugin given the path to the plugin file.
@@ -68,11 +68,14 @@ public:
    * sperated by env separator.
    * It allow user to fine pick which plugins to load, instead of using PV_PLUGIN_PATH
    * the format a xml plugin file should be the following :
+   *
+   * \code{.xml}
    * <?xml version="1.0"?>
    * <Plugins>
    * <Plugin name="MyPlugin" filename="absolute/path/to/libMyPlugin.so"/>
    * ...
    * </Plugins>
+   * \endcode
    */
   void LoadPluginsFromPluginConfigFile();
 
@@ -143,7 +146,7 @@ public:
 
 protected:
   vtkPVPluginLoader();
-  ~vtkPVPluginLoader();
+  ~vtkPVPluginLoader() override;
 
   bool LoadPluginInternal(const char* filename, bool no_errors);
 
@@ -168,8 +171,8 @@ protected:
   bool Loaded;
 
 private:
-  vtkPVPluginLoader(const vtkPVPluginLoader&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVPluginLoader&) VTK_DELETE_FUNCTION;
+  vtkPVPluginLoader(const vtkPVPluginLoader&) = delete;
+  void operator=(const vtkPVPluginLoader&) = delete;
 
   static vtkPluginLoadFunction StaticPluginLoadFunction;
 };

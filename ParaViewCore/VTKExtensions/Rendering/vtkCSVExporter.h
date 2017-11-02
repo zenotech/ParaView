@@ -51,7 +51,7 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkCSVExporter : public vtkObject
 public:
   static vtkCSVExporter* New();
   vtkTypeMacro(vtkCSVExporter, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -122,7 +122,7 @@ public:
 
 protected:
   vtkCSVExporter();
-  ~vtkCSVExporter();
+  ~vtkCSVExporter() override;
 
   char* FileName;
   char* FieldDelimiter;
@@ -131,8 +131,8 @@ protected:
   ExporterModes Mode;
 
 private:
-  vtkCSVExporter(const vtkCSVExporter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCSVExporter&) VTK_DELETE_FUNCTION;
+  vtkCSVExporter(const vtkCSVExporter&) = delete;
+  void operator=(const vtkCSVExporter&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

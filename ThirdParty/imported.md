@@ -1,4 +1,4 @@
 # Converted projects
 
-  * [lz4](lz4/update.sh)
+  * [cgns](cgns/update.sh)
   * [pygments](pygments/update.sh)

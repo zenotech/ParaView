@@ -32,25 +32,25 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMBoxRepresentationProxy
 public:
   static vtkSMBoxRepresentationProxy* New();
   vtkTypeMacro(vtkSMBoxRepresentationProxy, vtkSMWidgetRepresentationProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  virtual void UpdateVTKObjects();
-  virtual void UpdatePropertyInformation();
-  virtual void UpdatePropertyInformation(vtkSMProperty* prop)
+  void UpdateVTKObjects() VTK_OVERRIDE;
+  void UpdatePropertyInformation() VTK_OVERRIDE;
+  void UpdatePropertyInformation(vtkSMProperty* prop) VTK_OVERRIDE
   {
     this->Superclass::UpdatePropertyInformation(prop);
   }
 
 protected:
   vtkSMBoxRepresentationProxy();
-  ~vtkSMBoxRepresentationProxy();
+  ~vtkSMBoxRepresentationProxy() override;
 
   // This method is overridden to set the transform on the vtkWidgetRepresentation.
-  virtual void CreateVTKObjects();
+  void CreateVTKObjects() VTK_OVERRIDE;
 
 private:
-  vtkSMBoxRepresentationProxy(const vtkSMBoxRepresentationProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMBoxRepresentationProxy&) VTK_DELETE_FUNCTION;
+  vtkSMBoxRepresentationProxy(const vtkSMBoxRepresentationProxy&) = delete;
+  void operator=(const vtkSMBoxRepresentationProxy&) = delete;
 };
 
 #endif

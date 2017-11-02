@@ -42,7 +42,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVExtractVOI : public vtkDataSetAlgori
 public:
   static vtkPVExtractVOI* New();
   vtkTypeMacro(vtkPVExtractVOI, vtkDataSetAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -93,11 +93,13 @@ public:
 
 protected:
   vtkPVExtractVOI();
-  ~vtkPVExtractVOI();
+  ~vtkPVExtractVOI() override;
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
-  virtual int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
-  virtual int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
+  int RequestInformation(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
+  int RequestUpdateExtent(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   int VOI[6];
   int SampleRate[3];
@@ -107,11 +109,11 @@ protected:
   vtkExtractGrid* ExtractGrid;
   vtkExtractRectilinearGrid* ExtractRG;
 
-  virtual void ReportReferences(vtkGarbageCollector*);
+  void ReportReferences(vtkGarbageCollector*) VTK_OVERRIDE;
 
 private:
-  vtkPVExtractVOI(const vtkPVExtractVOI&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVExtractVOI&) VTK_DELETE_FUNCTION;
+  vtkPVExtractVOI(const vtkPVExtractVOI&) = delete;
+  void operator=(const vtkPVExtractVOI&) = delete;
 };
 
 #endif

@@ -37,24 +37,24 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVContourFilter : public vtkContourFil
 public:
   vtkTypeMacro(vtkPVContourFilter, vtkContourFilter);
 
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   static vtkPVContourFilter* New();
 
-  virtual int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
 protected:
   vtkPVContourFilter();
-  ~vtkPVContourFilter();
+  ~vtkPVContourFilter() override;
 
-  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   virtual int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector);
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int FillOutputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  int FillOutputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   /**
    * Class superclass request data. Also handles iterating over
@@ -64,8 +64,8 @@ protected:
     vtkInformationVector* outputVector);
 
 private:
-  vtkPVContourFilter(const vtkPVContourFilter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVContourFilter&) VTK_DELETE_FUNCTION;
+  vtkPVContourFilter(const vtkPVContourFilter&) = delete;
+  void operator=(const vtkPVContourFilter&) = delete;
 };
 
 #endif // vtkPVContourFilter_h

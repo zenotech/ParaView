@@ -38,7 +38,7 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkMarkSelectedRows : public vtkDataObj
 public:
   static vtkMarkSelectedRows* New();
   vtkTypeMacro(vtkMarkSelectedRows, vtkDataObjectAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -60,16 +60,17 @@ public:
 
 protected:
   vtkMarkSelectedRows();
-  ~vtkMarkSelectedRows();
+  ~vtkMarkSelectedRows() override;
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   /**
    * Overridden to create a vtkTable or vtkMultiBlockDataSet as the output based
    * on  the input type.
    */
-  virtual int RequestDataObject(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestDataObject(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   /**
    * Operates on vtkTable instances. RequestData() handles composite datasets
@@ -80,8 +81,8 @@ protected:
   int FieldAssociation;
 
 private:
-  vtkMarkSelectedRows(const vtkMarkSelectedRows&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkMarkSelectedRows&) VTK_DELETE_FUNCTION;
+  vtkMarkSelectedRows(const vtkMarkSelectedRows&) = delete;
+  void operator=(const vtkMarkSelectedRows&) = delete;
 };
 
 #endif

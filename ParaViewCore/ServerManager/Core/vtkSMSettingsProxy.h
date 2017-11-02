@@ -35,22 +35,22 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMSettingsProxy : public vtkSMProxy
 public:
   static vtkSMSettingsProxy* New();
   vtkTypeMacro(vtkSMSettingsProxy, vtkSMProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Overridden to link information properties with their corresponding
    * "setter" properties.
    */
-  int ReadXMLAttributes(vtkSMSessionProxyManager* pm, vtkPVXMLElement* element);
+  int ReadXMLAttributes(vtkSMSessionProxyManager* pm, vtkPVXMLElement* element) VTK_OVERRIDE;
 
 protected:
   vtkSMSettingsProxy();
-  ~vtkSMSettingsProxy();
+  ~vtkSMSettingsProxy() override;
 
   /**
    * Overridden from vtkSMProxy to install an observer on the VTK object
    */
-  virtual void CreateVTKObjects();
+  void CreateVTKObjects() VTK_OVERRIDE;
 
   friend class vtkSMSettingsObserver;
 
@@ -62,8 +62,8 @@ protected:
   vtkSMSettingsObserver* Observer;
 
 private:
-  vtkSMSettingsProxy(const vtkSMSettingsProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMSettingsProxy&) VTK_DELETE_FUNCTION;
+  vtkSMSettingsProxy(const vtkSMSettingsProxy&) = delete;
+  void operator=(const vtkSMSettingsProxy&) = delete;
 };
 
 #endif

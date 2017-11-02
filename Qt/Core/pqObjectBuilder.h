@@ -72,7 +72,7 @@ class PQCORE_EXPORT pqObjectBuilder : public QObject
 
 public:
   pqObjectBuilder(QObject* parent = 0);
-  virtual ~pqObjectBuilder();
+  ~pqObjectBuilder() override;
 
   /**
   * Create a server connection give a server resource.
@@ -214,7 +214,7 @@ public:
   * If no such property exists, this retruns a null string.
   * If there are more than 1 properties with FileListDomain, then it looks at
   * the Hints for the proxy for the XML of the form
-  * <DefaultFileNameProperty name="<propertyname>" /> and uses that property
+  * `<DefaultFileNameProperty name="<propertyname>" />` and uses that property
   * otherwise simply returns the first one encountered.
   */
   static QString getFileNamePropertyName(vtkSMProxy*);
@@ -222,7 +222,18 @@ public:
   /**
   * Returns true while pqObjectBuilder is in createServer() call.
   */
-  bool waitingForConnection() const { return this->WaitingForConnection; }
+  bool waitingForConnection() const
+  {
+    return this->ForceWaitingForConnection ? true : this->WaitingForConnection;
+  }
+
+  /**
+  * Set ForceWaitingForConnection
+  * When set to true, WaitingForConnection() will always return true
+  * When set to false, no effect.
+  * Returns the previous state
+  */
+  bool forceWaitingForConnection(bool force);
 
 public slots:
   /**
@@ -344,6 +355,7 @@ protected:
 private:
   Q_DISABLE_COPY(pqObjectBuilder)
 
+  bool ForceWaitingForConnection;
   bool WaitingForConnection;
 };
 

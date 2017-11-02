@@ -40,20 +40,20 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkPVMergeTables : public vtkTableAlgor
 public:
   static vtkPVMergeTables* New();
   vtkTypeMacro(vtkPVMergeTables, vtkTableAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkPVMergeTables();
-  ~vtkPVMergeTables();
+  ~vtkPVMergeTables() override;
 
-  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual vtkExecutive* CreateDefaultExecutive();
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  vtkExecutive* CreateDefaultExecutive() VTK_OVERRIDE;
 
 private:
-  vtkPVMergeTables(const vtkPVMergeTables&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVMergeTables&) VTK_DELETE_FUNCTION;
+  vtkPVMergeTables(const vtkPVMergeTables&) = delete;
+  void operator=(const vtkPVMergeTables&) = delete;
 };
 
 #endif

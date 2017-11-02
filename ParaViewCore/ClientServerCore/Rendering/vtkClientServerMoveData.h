@@ -40,7 +40,7 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkClientServerMoveData : public vtk
 public:
   static vtkClientServerMoveData* New();
   vtkTypeMacro(vtkClientServerMoveData, vtkDataObjectAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -97,23 +97,23 @@ public:
 
 protected:
   vtkClientServerMoveData();
-  ~vtkClientServerMoveData();
+  ~vtkClientServerMoveData() override;
 
   // Overridden to mark input as optional, since input data may
   // not be available on all processes that this filter is instantiated.
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
-  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   // Create an output of the type defined by OutputDataType
-  virtual int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   // If there is an input call superclass' RequestInformation
   // otherwise set the output WHOLE_EXTENT() to be WholeExtent
-  virtual int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   virtual int SendData(vtkDataObject*, vtkMultiProcessController*);
   virtual vtkDataObject* ReceiveData(vtkMultiProcessController*);
@@ -129,8 +129,8 @@ protected:
   vtkMultiProcessController* Controller;
 
 private:
-  vtkClientServerMoveData(const vtkClientServerMoveData&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkClientServerMoveData&) VTK_DELETE_FUNCTION;
+  vtkClientServerMoveData(const vtkClientServerMoveData&) = delete;
+  void operator=(const vtkClientServerMoveData&) = delete;
 };
 
 #endif

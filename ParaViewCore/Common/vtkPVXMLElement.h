@@ -35,13 +35,13 @@ class VTKPVCOMMON_EXPORT vtkPVXMLElement : public vtkObject
 {
 public:
   vtkTypeMacro(vtkPVXMLElement, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
   static vtkPVXMLElement* New();
 
   //@{
   /**
    * Set/Get the name of the element.  This is its XML tag.
-   * (<Name />).
+   * (\c \<Name/\>).
    */
   vtkSetStringMacro(Name);
   vtkGetStringMacro(Name);
@@ -259,7 +259,7 @@ public:
 
 protected:
   vtkPVXMLElement();
-  ~vtkPVXMLElement();
+  ~vtkPVXMLElement() override;
 
   vtkPVXMLElementInternals* Internal;
 
@@ -282,8 +282,8 @@ protected:
   friend class vtkPVXMLParser;
 
 private:
-  vtkPVXMLElement(const vtkPVXMLElement&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVXMLElement&) VTK_DELETE_FUNCTION;
+  vtkPVXMLElement(const vtkPVXMLElement&) = delete;
+  void operator=(const vtkPVXMLElement&) = delete;
 };
 
 #endif

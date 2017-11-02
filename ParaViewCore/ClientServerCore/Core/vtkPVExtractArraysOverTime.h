@@ -36,15 +36,15 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVExtractArraysOverTime : public vtkPE
 public:
   static vtkPVExtractArraysOverTime* New();
   vtkTypeMacro(vtkPVExtractArraysOverTime, vtkPExtractArraysOverTime);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkPVExtractArraysOverTime();
-  ~vtkPVExtractArraysOverTime();
+  ~vtkPVExtractArraysOverTime() override;
 
 private:
-  vtkPVExtractArraysOverTime(const vtkPVExtractArraysOverTime&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVExtractArraysOverTime&) VTK_DELETE_FUNCTION;
+  vtkPVExtractArraysOverTime(const vtkPVExtractArraysOverTime&) = delete;
+  void operator=(const vtkPVExtractArraysOverTime&) = delete;
 };
 
 #endif // vtkPVExtractArraysOverTime_h

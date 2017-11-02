@@ -42,7 +42,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMStateLoader : public vtkSMDeserializerX
 public:
   static vtkSMStateLoader* New();
   vtkTypeMacro(vtkSMStateLoader, vtkSMDeserializerXML);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Load the state from the given root element.
@@ -79,13 +79,13 @@ public:
 
 protected:
   vtkSMStateLoader();
-  ~vtkSMStateLoader();
+  ~vtkSMStateLoader() override;
   //@}
 
   /**
-   * The rootElement must be the <ServerManagerState /> xml element.
-   * If rootElement is not a <ServerManagerState /> element, then we try to
-   * locate the first <ServerManagerState /> nested element and load that.
+   * The rootElement must be the \c \<ServerManagerState/\> xml element.
+   * If rootElement is not a \c \<ServerManagerState/\> element, then we try to
+   * locate the first \c \<ServerManagerState/\> nested element and load that.
    * Load the state from the given root element.
    */
   virtual int LoadStateInternal(vtkPVXMLElement* rootElement);
@@ -101,14 +101,14 @@ protected:
    * This order is a dependency order too and hence helps us register proxies in
    * order of dependencies.
    */
-  virtual void CreatedNewProxy(vtkTypeUInt32 id, vtkSMProxy* proxy);
+  void CreatedNewProxy(vtkTypeUInt32 id, vtkSMProxy* proxy) VTK_OVERRIDE;
 
   /**
    * Overridden so that when new views are to be created, we create views
    * suitable for the connection.
    */
-  virtual vtkSMProxy* CreateProxy(
-    const char* xmlgroup, const char* xmlname, const char* subProxyName = NULL);
+  vtkSMProxy* CreateProxy(
+    const char* xmlgroup, const char* xmlname, const char* subProxyName = NULL) VTK_OVERRIDE;
 
   virtual int HandleProxyCollection(vtkPVXMLElement* collectionElement);
   virtual void HandleCustomProxyDefinitions(vtkPVXMLElement* element);
@@ -143,7 +143,7 @@ protected:
    * This is used by NewProxy() when the proxy with the given id
    * is not located in the internal CreatedProxies map.
    */
-  virtual vtkPVXMLElement* LocateProxyElement(vtkTypeUInt32 id);
+  vtkPVXMLElement* LocateProxyElement(vtkTypeUInt32 id) VTK_OVERRIDE;
 
   /**
    * Used by LocateProxyElement(). Recursively tries to locate the
@@ -167,8 +167,8 @@ protected:
   int KeepIdMapping;
 
 private:
-  vtkSMStateLoader(const vtkSMStateLoader&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMStateLoader&) VTK_DELETE_FUNCTION;
+  vtkSMStateLoader(const vtkSMStateLoader&) = delete;
+  void operator=(const vtkSMStateLoader&) = delete;
 
   vtkSMStateLoaderInternals* Internal;
 };

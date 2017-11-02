@@ -36,7 +36,7 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkPVRepresentedArrayListSettings : pub
 public:
   static vtkPVRepresentedArrayListSettings* New();
   vtkTypeMacro(vtkPVRepresentedArrayListSettings, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Access the singleton.
@@ -62,11 +62,11 @@ public:
 
 protected:
   vtkPVRepresentedArrayListSettings();
-  ~vtkPVRepresentedArrayListSettings();
+  ~vtkPVRepresentedArrayListSettings() override;
 
 private:
-  vtkPVRepresentedArrayListSettings(const vtkPVRepresentedArrayListSettings&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVRepresentedArrayListSettings&) VTK_DELETE_FUNCTION;
+  vtkPVRepresentedArrayListSettings(const vtkPVRepresentedArrayListSettings&) = delete;
+  void operator=(const vtkPVRepresentedArrayListSettings&) = delete;
 
   static vtkSmartPointer<vtkPVRepresentedArrayListSettings> Instance;
 

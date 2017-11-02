@@ -30,15 +30,15 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMFileListDomain : public vtkSMStringList
 public:
   static vtkSMFileListDomain* New();
   vtkTypeMacro(vtkSMFileListDomain, vtkSMStringListDomain);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkSMFileListDomain();
-  ~vtkSMFileListDomain();
+  ~vtkSMFileListDomain() override;
 
 private:
-  vtkSMFileListDomain(const vtkSMFileListDomain&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMFileListDomain&) VTK_DELETE_FUNCTION;
+  vtkSMFileListDomain(const vtkSMFileListDomain&) = delete;
+  void operator=(const vtkSMFileListDomain&) = delete;
 };
 
 #endif

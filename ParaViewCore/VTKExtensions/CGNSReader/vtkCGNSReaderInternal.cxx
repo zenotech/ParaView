@@ -18,6 +18,8 @@
 
 #include "cgio_helpers.h"
 #include "vtkCellType.h"
+#include "vtkMultiProcessStream.h"
+
 #include <algorithm>
 
 namespace CGNSRead
@@ -54,11 +56,13 @@ int setUpRind(const int cgioNum, const double rindId, int* rind)
 }
 
 //------------------------------------------------------------------------------
-int getFirstNodeId(const int cgioNum, const double parentId, const char* label, double* id)
+int getFirstNodeId(
+  const int cgioNum, const double parentId, const char* label, double* id, const char* name)
 {
   int nId, n, nChildren, len;
   int ier = 0;
   char nodeLabel[CGIO_MAX_NAME_LENGTH + 1];
+  char nodeName[CGIO_MAX_NAME_LENGTH + 1];
 
   if (cgio_number_children(cgioNum, parentId, &nChildren) != CG_OK)
   {
@@ -81,11 +85,18 @@ int getFirstNodeId(const int cgioNum, const double parentId, const char* label, 
   nId = 0;
   for (n = 0; n < nChildren; n++)
   {
+
     if (cgio_get_label(cgioNum, idList[n], nodeLabel))
     {
       return 1;
     }
-    if (0 == strcmp(nodeLabel, label))
+
+    if (name != NULL && cgio_get_name(cgioNum, idList[n], nodeName))
+    {
+      return 1;
+    }
+
+    if (0 == strcmp(nodeLabel, label) && (name == NULL || 0 == strcmp(nodeName, name)))
     {
       *id = idList[n];
       nId = 1;
@@ -306,40 +317,40 @@ int GetVTKElemType(
 //                                  16,17,18,19,20,21,22,23,24,25,26};
 
 // CGNS --> VTK ordering of Elements
-static const int NODE_ToVTK[1] = { 0 };
-
-static const int BAR_2_ToVTK[2] = { 0, 1 };
-
-static const int BAR_3_ToVTK[3] = { 0, 1, 2 };
-
-static const int BAR_4_ToVTK[4] = { 0, 1, 2, 3 };
-
-static const int TRI_3_ToVTK[3] = { 0, 1, 2 };
-
-static const int TRI_6_ToVTK[6] = { 0, 1, 2, 3, 4, 5 };
-
-static const int QUAD_4_ToVTK[4] = { 0, 1, 2, 3 };
-
-static const int QUAD_8_ToVTK[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
-
-static const int QUAD_9_ToVTK[9] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
-
-static const int TETRA_4_ToVTK[4] = { 0, 1, 2, 3 };
-
-static const int TETRA_10_ToVTK[10] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-
-static const int PYRA_5_ToVTK[5] = { 0, 1, 2, 3, 4 };
-
-static const int PYRA_14_ToVTK[14] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 };
-
-static const int PENTA_6_ToVTK[6] = { 0, 1, 2, 3, 4, 5 };
+// static const int NODE_ToVTK[1] = { 0 };
+//
+// static const int BAR_2_ToVTK[2] = { 0, 1 };
+//
+// static const int BAR_3_ToVTK[3] = { 0, 1, 2 };
+//
+// static const int BAR_4_ToVTK[4] = { 0, 1, 2, 3 };
+//
+// static const int TRI_3_ToVTK[3] = { 0, 1, 2 };
+//
+// static const int TRI_6_ToVTK[6] = { 0, 1, 2, 3, 4, 5 };
+//
+// static const int QUAD_4_ToVTK[4] = { 0, 1, 2, 3 };
+//
+// static const int QUAD_8_ToVTK[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+//
+// static const int QUAD_9_ToVTK[9] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
+//
+// static const int TETRA_4_ToVTK[4] = { 0, 1, 2, 3 };
+//
+// static const int TETRA_10_ToVTK[10] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+//
+// static const int PYRA_5_ToVTK[5] = { 0, 1, 2, 3, 4 };
+//
+// static const int PYRA_14_ToVTK[14] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 };
+//
+// static const int PENTA_6_ToVTK[6] = { 0, 1, 2, 3, 4, 5 };
 
 static const int PENTA_15_ToVTK[15] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 13, 14, 9, 10, 11 };
 
 static const int PENTA_18_ToVTK[18] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 13, 14, 9, 10, 11, 15, 16,
   17 };
 
-static const int HEXA_8_ToVTK[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+// static const int HEXA_8_ToVTK[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
 static const int HEXA_20_ToVTK[20] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 16, 17, 18, 19, 12, 13,
   14, 15 };
@@ -586,7 +597,7 @@ bool vtkCGNSMetaData::Parse(const char* cgnsFileName)
   char nodeLabel[CGIO_MAX_NAME_LENGTH + 1];
 
   // use cgio routine to open the file
-  if (cgio_open_file(cgnsFileName, CGIO_MODE_READ, 0, &cgioNum) != CG_OK)
+  if (cgio_open_file(cgnsFileName, CGIO_MODE_READ, CG_FILE_NONE, &cgioNum) != CG_OK)
   {
     cgio_error_exit("cgio_file_open");
   }
@@ -634,6 +645,12 @@ bool vtkCGNSMetaData::Parse(const char* cgnsFileName)
           baseChildId[nzones] = baseChildId[nn];
         }
         nzones++;
+
+        this->baseList[numBase].zones.push_back(CGNSRead::ZoneInformation());
+        if (readZoneInfo(cgioNum, baseChildId[nn], this->baseList[numBase].zones.back()) != CG_OK)
+        {
+          this->baseList[numBase].zones.pop_back();
+        }
       }
       else if (strcmp(nodeLabel, "Family_t") == 0)
       {
@@ -696,17 +713,116 @@ bool vtkCGNSMetaData::Parse(const char* cgnsFileName)
 
   this->LastReadFilename = cgnsFileName;
   cgio_close_file(cgioNum);
+
+  if (this->SkipSILUpdates == false)
+  {
+    this->UpdateSIL();
+  }
+
   return true;
 }
 
 //------------------------------------------------------------------------------
-vtkCGNSMetaData::vtkCGNSMetaData()
+void vtkCGNSMetaData::UpdateSIL()
 {
+  // initialize the SIL.
+  const auto selection = this->SIL->GetSelection();
+  this->SIL->Initialize();
+
+  // build the SIL.
+  auto silHierarchy = this->SIL->AddNode("Hierarchy");
+  auto silFamilies = this->SIL->AddNode("Families");
+
+  // these are provided to make it easier to support legacy API.
+  // Can be dropped entirely if not found useful.
+  auto silGrids = this->SIL->AddNode("Grids");
+  auto silPatches = this->SIL->AddNode("Patches");
+
+  // first add families.
+  std::map<std::string, int> silFamilyIds;
+  for (const CGNSRead::BaseInformation& baseInfo : this->baseList)
+  {
+    for (const CGNSRead::FamilyInformation& familyInfo : baseInfo.family)
+    {
+      if (silFamilyIds.find(familyInfo.name) == silFamilyIds.end())
+      {
+        silFamilyIds[familyInfo.name] = this->SIL->AddNode(familyInfo.name, silFamilies);
+      }
+    }
+  }
+
+  bool firstGridSelected = false;
+
+  // now handles bases/zones/zone_bcs
+  for (const CGNSRead::BaseInformation& baseInfo : this->baseList)
+  {
+    auto silBase = this->SIL->AddNode(baseInfo.name, silHierarchy);
+    auto silBaseGrids = this->SIL->AddNode(baseInfo.name, silGrids);
+    auto silBasePatches = this->SIL->AddNode(baseInfo.name, silPatches);
+
+    for (const CGNSRead::ZoneInformation& zoneInfo : baseInfo.zones)
+    {
+      auto silZone = this->SIL->AddZoneNode(zoneInfo.name, silBase);
+      auto silZoneGrid = this->SIL->AddNode("Grid", silZone);
+      if (!firstGridSelected)
+      {
+        firstGridSelected = true;
+        this->SIL->Select(silZoneGrid);
+      }
+
+      this->SIL->AddCrossLink(this->SIL->AddZoneNode(zoneInfo.name, silBaseGrids), silZoneGrid);
+      if (zoneInfo.family[0])
+      {
+        auto fiter = silFamilyIds.find(zoneInfo.family);
+        if (fiter == silFamilyIds.end())
+        {
+          fiter = silFamilyIds
+                    .insert(std::pair<std::string, int>(
+                      zoneInfo.family, this->SIL->AddNode(zoneInfo.family, silFamilies)))
+                    .first;
+        }
+        this->SIL->AddCrossLink(fiter->second, silZoneGrid);
+      }
+
+      auto silZonePatches = this->SIL->AddZoneNode(zoneInfo.name, silBasePatches);
+      for (const CGNSRead::ZoneBCInformation& bcInfo : zoneInfo.bcs)
+      {
+        auto silBC = this->SIL->AddNode(bcInfo.name, silZone);
+        this->SIL->AddCrossLink(silZonePatches, silBC);
+        if (bcInfo.family[0])
+        {
+          auto fiter = silFamilyIds.find(bcInfo.family);
+          if (fiter == silFamilyIds.end())
+          {
+            fiter = silFamilyIds
+                      .insert(std::pair<std::string, int>(
+                        bcInfo.family, this->SIL->AddNode(bcInfo.family, silFamilies)))
+                      .first;
+          }
+          this->SIL->AddCrossLink(fiter->second, silBC);
+        }
+      }
+    }
+  }
+  if (!selection.empty())
+  {
+    this->SIL->SetSelection(selection);
+  }
 }
+
+//------------------------------------------------------------------------------
+vtkCGNSMetaData::vtkCGNSMetaData()
+  : SIL(nullptr)
+  , SkipSILUpdates(false)
+{
+  this->SIL = vtkSmartPointer<vtkCGNSSubsetInclusionLattice>::New();
+}
+
 //------------------------------------------------------------------------------
 vtkCGNSMetaData::~vtkCGNSMetaData()
 {
 }
+
 //------------------------------------------------------------------------------
 void vtkCGNSMetaData::PrintSelf(std::ostream& os)
 {
@@ -844,7 +960,7 @@ static void BroadcastSelection(
       CGNSRead::BroadcastString(controller, key, rank);
       selection[key] = false;
       controller->Broadcast(&tmp, 1, 0);
-      selection[key] = (bool)tmp;
+      selection[key] = (tmp != 0);
     }
   }
 }
@@ -918,6 +1034,53 @@ static void BroadcastFamilies(vtkMultiProcessController* controller,
 }
 
 //------------------------------------------------------------------------------
+static void BroadcastZones(
+  vtkMultiProcessController* controller, std::vector<CGNSRead::ZoneInformation>& zoneInfo, int rank)
+{
+  vtkMultiProcessStream stream;
+  if (rank == 0)
+  {
+    stream << static_cast<unsigned int>(zoneInfo.size());
+    for (auto& zinfo : zoneInfo)
+    {
+      stream.Push(zinfo.name, 33);
+      stream.Push(zinfo.family, 33);
+      stream << static_cast<unsigned int>(zinfo.bcs.size());
+      for (auto& bcinfo : zinfo.bcs)
+      {
+        stream.Push(bcinfo.name, 33);
+        stream.Push(bcinfo.family, 33);
+      }
+    }
+  }
+  controller->Broadcast(stream, 0);
+  if (rank != 0)
+  {
+    unsigned int count;
+    stream >> count;
+    zoneInfo.resize(count);
+
+    for (auto& zinfo : zoneInfo)
+    {
+      unsigned int size = 33;
+      char* cref = zinfo.name;
+      stream.Pop(cref, size);
+      cref = zinfo.family;
+      stream.Pop(cref, size);
+      stream >> count;
+      zinfo.bcs.resize(count);
+      for (auto& bcinfo : zinfo.bcs)
+      {
+        cref = bcinfo.name;
+        stream.Pop(cref, size);
+        cref = bcinfo.family;
+        stream.Pop(cref, size);
+      }
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
 void vtkCGNSMetaData::Broadcast(vtkMultiProcessController* controller, int rank)
 {
   unsigned long len = static_cast<unsigned long>(this->baseList.size());
@@ -963,6 +1126,7 @@ void vtkCGNSMetaData::Broadcast(vtkMultiProcessController* controller, int rank)
 
     CGNSRead::BroadcastRefState(controller, ite->referenceState, rank);
     CGNSRead::BroadcastFamilies(controller, ite->family, rank);
+    CGNSRead::BroadcastZones(controller, ite->zones, rank);
 
     CGNSRead::BroadcastSelection(controller, ite->PointDataArraySelection, rank);
     CGNSRead::BroadcastSelection(controller, ite->CellDataArraySelection, rank);

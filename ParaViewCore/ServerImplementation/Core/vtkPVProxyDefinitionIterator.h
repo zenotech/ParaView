@@ -39,7 +39,7 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkPVProxyDefinitionIterator : public
 {
 public:
   vtkTypeMacro(vtkPVProxyDefinitionIterator, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // ********* Iterator Commom methods **********
 
@@ -90,11 +90,11 @@ public:
 
 protected:
   vtkPVProxyDefinitionIterator();
-  virtual ~vtkPVProxyDefinitionIterator();
+  ~vtkPVProxyDefinitionIterator() override;
 
 private:
-  vtkPVProxyDefinitionIterator(const vtkPVProxyDefinitionIterator&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVProxyDefinitionIterator&) VTK_DELETE_FUNCTION;
+  vtkPVProxyDefinitionIterator(const vtkPVProxyDefinitionIterator&) = delete;
+  void operator=(const vtkPVProxyDefinitionIterator&) = delete;
 };
 
 #endif

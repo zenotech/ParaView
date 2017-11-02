@@ -43,7 +43,7 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkKdTreeManager : public vtkObject
 public:
   static vtkKdTreeManager* New();
   vtkTypeMacro(vtkKdTreeManager, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -85,7 +85,7 @@ public:
 
 protected:
   vtkKdTreeManager();
-  ~vtkKdTreeManager();
+  ~vtkKdTreeManager() override;
 
   void AddDataObjectToKdTree(vtkDataObject* data);
   void AddDataSetToKdTree(vtkDataSet* data);
@@ -104,8 +104,8 @@ protected:
   vtkSetVector6Macro(WholeExtent, int);
 
 private:
-  vtkKdTreeManager(const vtkKdTreeManager&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkKdTreeManager&) VTK_DELETE_FUNCTION;
+  vtkKdTreeManager(const vtkKdTreeManager&) = delete;
+  void operator=(const vtkKdTreeManager&) = delete;
 
   class vtkDataObjectSet;
   vtkDataObjectSet* DataObjects;

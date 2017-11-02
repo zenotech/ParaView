@@ -1,12 +1,7 @@
 #------------------------------------------------------------------------------
 # Add extra library containing custom code for the client.
 include(ParaViewQt)
-set(qt5_comps Widgets)
-set(qt4_comps QtGui)
-
-pv_find_package_qt(qt_targets REQUIRED QUIET
-                QT4_COMPONENTS ${qt4_comps}
-                QT5_COMPONENTS ${qt5_comps})
+pv_find_package_qt(qt_targets REQUIRED QUIET QT5_COMPONENTS Widgets)
 pv_qt_wrap_cpp(MOC_BUILT_SOURCES ParaViewMainWindow.h)
 pv_qt_wrap_ui(UI_BUILT_SOURCES ParaViewMainWindow.ui)
 include_directories(
@@ -62,9 +57,6 @@ endif()
 set(SUPPORT_STATIC_PLUGINS TRUE)
 
 set(title "ParaView ${PARAVIEW_VERSION_FULL} ${PARAVIEW_BUILD_ARCHITECTURE}-bit")
-if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL")
-  set(title "${title} (Legacy Rendering Backend)")
-endif()
 #------------------------------------------------------------------------------
 # Build the client
 build_paraview_client(paraview
@@ -74,7 +66,6 @@ build_paraview_client(paraview
     VERSION_MAJOR ${PARAVIEW_VERSION_MAJOR}
     VERSION_MINOR ${PARAVIEW_VERSION_MINOR}
     VERSION_PATCH ${PARAVIEW_VERSION_PATCH}
-    SPLASH_IMAGE "${CMAKE_CURRENT_SOURCE_DIR}/PVSplashScreen.png"
     PVMAIN_WINDOW ParaViewMainWindow
     PVMAIN_WINDOW_INCLUDE ParaViewMainWindow.h
     BUNDLE_ICON   "${CMAKE_CURRENT_SOURCE_DIR}/pvIcon.icns"
@@ -87,7 +78,8 @@ build_paraview_client(paraview
     INSTALL_ARCHIVE_DIR "${VTK_INSTALL_ARCHIVE_DIR}"
     )
 
-target_link_libraries(paraview LINK_PRIVATE ${qt_targets})
+target_link_libraries(paraview
+  LINK_PRIVATE ${qt_targets} vtkPVServerManagerDefault)
 
 if (PARAVIEW_ENABLE_EMBEDDED_DOCUMENTATION)
   # Link against the documentation module.

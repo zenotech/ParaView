@@ -69,8 +69,6 @@ public:
     , FinalRender(false)
     , Rendering(false)
     , LinkedWindowRendered(false)
-    , DisplayUsedCache(false)
-    , LinkedUsedCache(false)
     , HideLinkedViewBackground(false)
   {
     this->ViewLinkRepresentation->ProportionalResizeOff();
@@ -114,8 +112,6 @@ public:
   bool FinalRender;
   bool Rendering;
   bool LinkedWindowRendered;
-  bool DisplayUsedCache;
-  bool LinkedUsedCache;
   bool HideLinkedViewBackground;
 };
 
@@ -146,12 +142,6 @@ pqInteractiveViewLink::pqInteractiveViewLink(pqRenderView* displayView, pqRender
     qCritical() << "Cannot Create pqInteractiveViewLink without view widgets";
     return;
   }
-
-  // Disable cache on widgets
-  this->Internal->DisplayUsedCache = this->Internal->DisplayWidget->isAutomaticImageCacheEnabled();
-  this->Internal->DisplayWidget->setAutomaticImageCacheEnabled(false);
-  this->Internal->LinkedUsedCache = this->Internal->LinkedWidget->isAutomaticImageCacheEnabled();
-  this->Internal->LinkedWidget->setAutomaticImageCacheEnabled(false);
 
   // Initialize link widget interactor and renderer
   this->Internal->LinkWidget->SetInteractor(
@@ -196,16 +186,6 @@ pqInteractiveViewLink::~pqInteractiveViewLink()
     this->Internal->DisplayWindow->RemoveObserver(this->Internal->ObserverTag);
     this->Internal->DisplayWindow->RemoveObserver(this->Internal->RenderedTag);
   }
-
-  if (this->Internal->DisplayWidget)
-  {
-    this->Internal->DisplayWidget->setAutomaticImageCacheEnabled(this->Internal->DisplayUsedCache);
-  }
-  if (this->Internal->LinkedWidget)
-  {
-    this->Internal->LinkedWidget->setAutomaticImageCacheEnabled(this->Internal->LinkedUsedCache);
-  }
-
   if (this->Internal->DisplayView)
   {
     this->Internal->DisplayView->render();
@@ -380,11 +360,13 @@ void pqInteractiveViewLink::drawViewLink(int setFront)
     return;
   }
 
+#if QT_VERSION < 0x050000
   // Switch to offscreen buffer if rendering
   if (render)
   {
     this->Internal->LinkedWindow->SetUseOffScreenBuffers(true);
   }
+#endif
 
   // Compute adapted position and size of the pixel needed on the
   // linked window
@@ -441,11 +423,13 @@ void pqInteractiveViewLink::drawViewLink(int setFront)
     displayPos[0] + displayPos2[0] - 1, displayPos[1] + displayPos2[1] - 1,
     this->Internal->DisplayPixels.Get(), setFront, 1);
 
+#if QT_VERSION < 0x050000
   // Set offscreen buffers back
   if (render)
   {
     this->Internal->LinkedWindow->SetUseOffScreenBuffers(false);
   }
+#endif
 }
 
 //-----------------------------------------------------------------------------

@@ -21,37 +21,35 @@
 
 #include "pqSLACManager.h"
 
-#include "pqSLACDataLoadManager.h"
-#include "vtkTemporalRanges.h"
-
-#include "vtkAlgorithm.h"
-#include "vtkTable.h"
-
-#include "vtkPVArrayInformation.h"
-#include "vtkPVDataInformation.h"
-#include "vtkPVDataSetAttributesInformation.h"
-#include "vtkSMChartSeriesSelectionDomain.h"
-#include "vtkSMPVRepresentationProxy.h"
-#include "vtkSMProperty.h"
-#include "vtkSMPropertyHelper.h"
-#include "vtkSMProxyManager.h"
-#include "vtkSMSourceProxy.h"
-
 #include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
-#include "pqDisplayPolicy.h"
 #include "pqObjectBuilder.h"
 #include "pqOutputPort.h"
 #include "pqPipelineFilter.h"
 #include "pqPipelineRepresentation.h"
 #include "pqPipelineSource.h"
 #include "pqRenderView.h"
+#include "pqSLACDataLoadManager.h"
 #include "pqSMAdaptor.h"
 #include "pqScalarsToColors.h"
 #include "pqServer.h"
 #include "pqServerManagerModel.h"
 #include "pqUndoStack.h"
 #include "pqXYChartView.h"
+#include "vtkAlgorithm.h"
+#include "vtkNew.h"
+#include "vtkPVArrayInformation.h"
+#include "vtkPVDataInformation.h"
+#include "vtkPVDataSetAttributesInformation.h"
+#include "vtkSMChartSeriesSelectionDomain.h"
+#include "vtkSMPVRepresentationProxy.h"
+#include "vtkSMParaViewPipelineControllerWithRendering.h"
+#include "vtkSMProperty.h"
+#include "vtkSMPropertyHelper.h"
+#include "vtkSMProxyManager.h"
+#include "vtkSMSourceProxy.h"
+#include "vtkTable.h"
+#include "vtkTemporalRanges.h"
 
 #include <QMainWindow>
 #include <QPointer>
@@ -380,7 +378,7 @@ void pqSLACManager::checkActionEnabled()
 //-----------------------------------------------------------------------------
 void pqSLACManager::showField(QString name)
 {
-  this->showField(name.toLatin1().data());
+  this->showField(name.toLocal8Bit().data());
 }
 
 void pqSLACManager::showField(const char* name)
@@ -462,7 +460,7 @@ void pqSLACManager::showField(const char* name)
     if (!rangeData)
     {
       QString magName = QString("%1_M").arg(name);
-      rangeData = ranges->GetColumnByName(magName.toLatin1().data());
+      rangeData = ranges->GetColumnByName(magName.toLocal8Bit().data());
     }
 
     this->CurrentFieldRangeKnown = true;
@@ -556,12 +554,13 @@ void pqSLACManager::updatePlotField()
 
       double color[3] = { 0.0, 0.0, 0.0 };
       vtkSMPropertyHelper(reprProxy, "SeriesColor")
-        .SetStatus(seriesName.toLatin1().data(), color, 3);
+        .SetStatus(seriesName.toLocal8Bit().data(), color, 3);
 
       vtkSMPropertyHelper(reprProxy, "SeriesLineThickness")
-        .SetStatus(seriesName.toLatin1().data(), 1);
+        .SetStatus(seriesName.toLocal8Bit().data(), 1);
 
-      vtkSMPropertyHelper(reprProxy, "SeriesLineStyle").SetStatus(seriesName.toLatin1().data(), 1);
+      vtkSMPropertyHelper(reprProxy, "SeriesLineStyle")
+        .SetStatus(seriesName.toLocal8Bit().data(), 1);
     }
     else
     {
@@ -723,7 +722,7 @@ void pqSLACManager::createPlotOverZ()
 {
   pqApplicationCore* core = pqApplicationCore::instance();
   pqObjectBuilder* builder = core->getObjectBuilder();
-  pqDisplayPolicy* displayPolicy = core->getDisplayPolicy();
+  vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
   pqPipelineSource* meshReader = this->getMeshReader();
   if (!meshReader)
@@ -780,7 +779,7 @@ void pqSLACManager::createPlotOverZ()
   plotFilter->updatePipeline();
 
   // Make representation
-  displayPolicy->setRepresentationVisibility(plotFilter->getOutputPort(0), plotView, true);
+  controller->Show(plotFilter->getSourceProxy(), 0, plotView ? plotView->getViewProxy() : nullptr);
 
   this->updatePlotField();
 

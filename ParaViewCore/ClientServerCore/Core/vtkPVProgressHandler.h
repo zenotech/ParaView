@@ -52,7 +52,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVProgressHandler : public vtkObject
 public:
   static vtkPVProgressHandler* New();
   vtkTypeMacro(vtkPVProgressHandler, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -81,10 +81,12 @@ public:
 
   //@{
   /**
-   * Get/Set the progress frequency in seconds. Default is 0.5 seconds.
-   */
-  vtkSetClampMacro(ProgressFrequency, double, 0.01, 30.0);
-  vtkGetMacro(ProgressFrequency, double);
+    * Get/Set the progress interval in seconds. Progress events
+    * occurring more frequently than this interval are skipped.
+    * Default is 0.1 seconds on client and 1 second on server and batch processes.
+    */
+  vtkSetClampMacro(ProgressInterval, double, 0.01, 30.0);
+  vtkGetMacro(ProgressInterval, double);
   //@}
 
   //@{
@@ -104,7 +106,7 @@ public:
 
 protected:
   vtkPVProgressHandler();
-  ~vtkPVProgressHandler();
+  ~vtkPVProgressHandler() override;
 
   enum eTAGS
   {
@@ -119,11 +121,11 @@ protected:
   //@}
 
   vtkPVSession* Session;
-  double ProgressFrequency;
+  double ProgressInterval;
 
 private:
-  vtkPVProgressHandler(const vtkPVProgressHandler&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVProgressHandler&) VTK_DELETE_FUNCTION;
+  vtkPVProgressHandler(const vtkPVProgressHandler&) = delete;
+  void operator=(const vtkPVProgressHandler&) = delete;
 
   /**
    * Callback called when vtkCommand::ProgressEvent is received.

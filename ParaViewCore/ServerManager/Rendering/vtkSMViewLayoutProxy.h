@@ -42,6 +42,7 @@
 
 #include "vtkPVServerManagerRenderingModule.h" //needed for exports
 #include "vtkSMProxy.h"
+#include <vector> // needed for std::vector.
 
 class vtkSMViewProxy;
 class vtkImageData;
@@ -51,7 +52,7 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMViewLayoutProxy : public vtkSMProx
 public:
   static vtkSMViewLayoutProxy* New();
   vtkTypeMacro(vtkSMViewLayoutProxy, vtkSMProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   enum Direction
   {
@@ -189,6 +190,14 @@ public:
    */
   int GetViewLocation(vtkSMViewProxy*);
 
+  //@{
+  /**
+   * Returns if a view is contained in this layout.
+   */
+  bool ContainsView(vtkSMViewProxy* view) { return this->GetViewLocation(view) != -1; }
+  bool ContainsView(vtkSMProxy* view);
+  //@}
+
   /**
    * Updates positions for all views using the layout and current sizes.
    * This method is called automatically when the layout changes or the
@@ -203,24 +212,30 @@ public:
    */
   void ShowViewsOnTileDisplay();
 
+  //@{
   /**
    * Captures an image from the layout (including all the views in the layout.
    */
-  vtkImageData* CaptureWindow(int magnification);
+  vtkImageData* CaptureWindow(int magnification)
+  {
+    return this->CaptureWindow(magnification, magnification);
+  }
+  vtkImageData* CaptureWindow(int magnificationX, int magnificationY);
+  //@}
 
   /**
    * Overridden to save custom XML state.
    */
-  virtual vtkPVXMLElement* SaveXMLState(vtkPVXMLElement* root)
+  vtkPVXMLElement* SaveXMLState(vtkPVXMLElement* root) VTK_OVERRIDE
   {
     return this->Superclass::SaveXMLState(root);
   }
-  virtual vtkPVXMLElement* SaveXMLState(vtkPVXMLElement* root, vtkSMPropertyIterator* iter);
+  vtkPVXMLElement* SaveXMLState(vtkPVXMLElement* root, vtkSMPropertyIterator* iter) VTK_OVERRIDE;
 
   /**
    * Overridden to load custom XML state.
    */
-  virtual int LoadXMLState(vtkPVXMLElement* element, vtkSMProxyLocator* locator);
+  int LoadXMLState(vtkPVXMLElement* element, vtkSMProxyLocator* locator) VTK_OVERRIDE;
 
   /**
    * Resets the layout.
@@ -228,31 +243,64 @@ public:
   void Reset();
 
   /**
+   * Returns the extents for all views in the layout.
+   */
+  void GetLayoutExtent(int extent[4]);
+
+  /**
+   * Update the size for all the views in the layout assuming the new size
+   * provided for the whole layout.
+   */
+  void SetSize(const int size[2]);
+
+  /**
    * Helper method to locate a layout, if any that contains the specified view
    * proxy.
    */
   static vtkSMViewLayoutProxy* FindLayout(vtkSMViewProxy*, const char* reggroup = "layouts");
 
+  /**
+   * Returns a vector of the view proxies added to his layout.
+   */
+  std::vector<vtkSMViewProxy*> GetViews();
+
+  /**
+   * Set the color to use for separator between views in multi-view
+   * configurations when saving images.
+   * @param[in] r Red component value in range (0, 255);
+   * @param[in] g Green component value in range (0, 255);
+   * @param[in] b Blue component value in range (0, 255);
+   */
+  void SetSeparatorColor(unsigned char r, unsigned char g, unsigned char b);
+
   //@{
   /**
-   * Set border size/color to use when capturing multiview images.
+   * Set the color to use for separator between views in multi-view
+   * configurations when saving images.
+   *
+   * The arguments are the components of the red, green, and blue channels from 0.0 to 1.0.
    */
-  static void SetMultiViewImageBorderColor(double r, double g, double b);
-  static void SetMultiViewImageBorderWidth(int width);
-  static const double* GetMultiViewImageBorderColor();
-  static void GetMultiViewImageBorderColor(unsigned char rgb[3]);
-  static void GetMultiViewImageBorderColor(double rgb[3]);
-  static int GetMultiViewImageBorderWidth();
+  vtkSetVector3Macro(SeparatorColor, double);
+  vtkGetVector3Macro(SeparatorColor, double);
+  //@}
+
+  //@{
+  /**
+   * Get/Set the separator width (in pixels) to use for separator between views
+   * in multi-view configurations.
+   */
+  vtkSetClampMacro(SeparatorWidth, int, 0, VTK_INT_MAX);
+  vtkGetMacro(SeparatorWidth, int);
   //@}
 
 protected:
   vtkSMViewLayoutProxy();
-  ~vtkSMViewLayoutProxy();
+  ~vtkSMViewLayoutProxy() override;
 
   /**
    * Called to load state from protobuf message.
    */
-  virtual void LoadState(const vtkSMMessage* message, vtkSMProxyLocator* locator);
+  void LoadState(const vtkSMMessage* message, vtkSMProxyLocator* locator) VTK_OVERRIDE;
 
   /**
    * Although this class is a proxy, it's not really a proxy in the traditional
@@ -275,9 +323,12 @@ protected:
 
   int MaximizedCell;
 
+  double SeparatorColor[3];
+  int SeparatorWidth;
+
 private:
-  vtkSMViewLayoutProxy(const vtkSMViewLayoutProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMViewLayoutProxy&) VTK_DELETE_FUNCTION;
+  vtkSMViewLayoutProxy(const vtkSMViewLayoutProxy&) = delete;
+  void operator=(const vtkSMViewLayoutProxy&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;
@@ -291,8 +342,13 @@ private:
 
   bool BlockUpdate;
 
-  static double MultiViewImageBorderColor[3];
-  static int MultiViewImageBorderWidth;
+  bool SetBlockUpdateViewPositions(bool val)
+  {
+    bool temp = this->BlockUpdateViewPositions;
+    this->BlockUpdateViewPositions = val;
+    return temp;
+  }
+  bool BlockUpdateViewPositions;
 };
 
 #endif

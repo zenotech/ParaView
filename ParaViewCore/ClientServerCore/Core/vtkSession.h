@@ -30,7 +30,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkSession : public vtkObject
 {
 public:
   vtkTypeMacro(vtkSession, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Returns true is this session is active/alive/valid.
@@ -39,12 +39,12 @@ public:
 
 protected:
   vtkSession();
-  ~vtkSession();
+  ~vtkSession() override;
 
   // Needed when TileDisplay are retreived
   friend class vtkSMRenderViewProxy;
   // Need to manually active the session
-  friend class vtkPVServerSideAnimationPlayer;
+  friend class vtkPVServerSideAnimationPlayerObserver;
 
   /**
    * Subclasses must call this to mark the session active. This sets the active
@@ -61,8 +61,8 @@ protected:
   virtual void DeActivate();
 
 private:
-  vtkSession(const vtkSession&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSession&) VTK_DELETE_FUNCTION;
+  vtkSession(const vtkSession&) = delete;
+  void operator=(const vtkSession&) = delete;
 };
 
 #endif

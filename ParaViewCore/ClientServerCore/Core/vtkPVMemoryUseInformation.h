@@ -34,24 +34,24 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVMemoryUseInformation : public vtkPVI
 public:
   static vtkPVMemoryUseInformation* New();
   vtkTypeMacro(vtkPVMemoryUseInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Transfer information about a single object into this object.
    */
-  virtual void CopyFromObject(vtkObject*);
+  void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
   /**
    * Merge another information object.
    */
-  virtual void AddInformation(vtkPVInformation*);
+  void AddInformation(vtkPVInformation*) VTK_OVERRIDE;
 
   //@{
   /**
    * Manage a serialized version of the information.
    */
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
+  void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
   //@}
 
   /**
@@ -65,7 +65,7 @@ public:
 
 protected:
   vtkPVMemoryUseInformation();
-  ~vtkPVMemoryUseInformation();
+  ~vtkPVMemoryUseInformation() override;
 
 private:
   class MemInfo
@@ -89,8 +89,8 @@ private:
   vector<MemInfo> MemInfos;
 
 private:
-  vtkPVMemoryUseInformation(const vtkPVMemoryUseInformation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVMemoryUseInformation&) VTK_DELETE_FUNCTION;
+  vtkPVMemoryUseInformation(const vtkPVMemoryUseInformation&) = delete;
+  void operator=(const vtkPVMemoryUseInformation&) = delete;
 };
 
 #endif

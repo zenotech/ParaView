@@ -32,15 +32,15 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVLinearExtrusionFilter : public vtkPL
 public:
   static vtkPVLinearExtrusionFilter* New();
   vtkTypeMacro(vtkPVLinearExtrusionFilter, vtkPLinearExtrusionFilter);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkPVLinearExtrusionFilter();
-  ~vtkPVLinearExtrusionFilter(){};
+  ~vtkPVLinearExtrusionFilter() override{};
 
 private:
-  vtkPVLinearExtrusionFilter(const vtkPVLinearExtrusionFilter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVLinearExtrusionFilter&) VTK_DELETE_FUNCTION;
+  vtkPVLinearExtrusionFilter(const vtkPVLinearExtrusionFilter&) = delete;
+  void operator=(const vtkPVLinearExtrusionFilter&) = delete;
 };
 
 #endif

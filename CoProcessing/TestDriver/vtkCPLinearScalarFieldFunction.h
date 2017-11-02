@@ -32,13 +32,13 @@ class VTKPVCATALYSTTESTDRIVER_EXPORT vtkCPLinearScalarFieldFunction
 public:
   static vtkCPLinearScalarFieldFunction* New();
   vtkTypeMacro(vtkCPLinearScalarFieldFunction, vtkCPScalarFieldFunction);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Compute the field value at Point.
    */
   virtual double ComputeComponenentAtPoint(
-    unsigned int component, double point[3], unsigned long timeStep, double time);
+    unsigned int component, double point[3], unsigned long timeStep, double time) VTK_OVERRIDE;
 
   //@{
   /**
@@ -85,8 +85,8 @@ protected:
   ~vtkCPLinearScalarFieldFunction();
 
 private:
-  vtkCPLinearScalarFieldFunction(const vtkCPLinearScalarFieldFunction&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCPLinearScalarFieldFunction&) VTK_DELETE_FUNCTION;
+  vtkCPLinearScalarFieldFunction(const vtkCPLinearScalarFieldFunction&) = delete;
+  void operator=(const vtkCPLinearScalarFieldFunction&) = delete;
 
   /**
    * The constant value for the scalar field.

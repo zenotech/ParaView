@@ -40,7 +40,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkGridAxesHelper : public vtkObject
 public:
   static vtkGridAxesHelper* New();
   vtkTypeMacro(vtkGridAxesHelper, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -181,7 +181,7 @@ public:
 
 protected:
   vtkGridAxesHelper();
-  ~vtkGridAxesHelper();
+  ~vtkGridAxesHelper() override;
 
   /**
    * Get/Set label visibility overrides. This is more of a hack. We needed a
@@ -219,8 +219,8 @@ protected:
   vtkMTimeType GetTransformedPointsMTime;
 
 private:
-  vtkGridAxesHelper(const vtkGridAxesHelper&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkGridAxesHelper&) VTK_DELETE_FUNCTION;
+  vtkGridAxesHelper(const vtkGridAxesHelper&) = delete;
+  void operator=(const vtkGridAxesHelper&) = delete;
 };
 
 #endif

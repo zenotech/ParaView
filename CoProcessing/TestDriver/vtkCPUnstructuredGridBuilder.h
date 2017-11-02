@@ -36,14 +36,15 @@ class VTKPVCATALYSTTESTDRIVER_EXPORT vtkCPUnstructuredGridBuilder : public vtkCP
 public:
   static vtkCPUnstructuredGridBuilder* New();
   vtkTypeMacro(vtkCPUnstructuredGridBuilder, vtkCPGridBuilder);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Return a grid.  BuiltNewGrid is set to 0 if the grids
    * that were returned were already built before.
    * vtkCPUnstructuredGridBuilder will also delete the grid.
    */
-  virtual vtkDataObject* GetGrid(unsigned long timeStep, double time, int& builtNewGrid);
+  virtual vtkDataObject* GetGrid(
+    unsigned long timeStep, double time, int& builtNewGrid) VTK_OVERRIDE;
 
   /**
    * Get the UnstructuredGrid.
@@ -86,8 +87,8 @@ protected:
   void SetUnstructuredGrid(vtkUnstructuredGrid* grid);
 
 private:
-  vtkCPUnstructuredGridBuilder(const vtkCPUnstructuredGridBuilder&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCPUnstructuredGridBuilder&) VTK_DELETE_FUNCTION;
+  vtkCPUnstructuredGridBuilder(const vtkCPUnstructuredGridBuilder&) = delete;
+  void operator=(const vtkCPUnstructuredGridBuilder&) = delete;
 
   //@{
   /**

@@ -40,7 +40,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVDataSetAttributesInformation : publi
 public:
   static vtkPVDataSetAttributesInformation* New();
   vtkTypeMacro(vtkPVDataSetAttributesInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -75,7 +75,7 @@ public:
    * (same name and number of components)to be in final.
    */
   void AddInformation(vtkPVDataSetAttributesInformation* info);
-  virtual void AddInformation(vtkPVInformation* info);
+  void AddInformation(vtkPVInformation* info) VTK_OVERRIDE;
   //@}
 
   /**
@@ -109,20 +109,20 @@ public:
   /**
    * Manage a serialized version of the information.
    */
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
+  void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
   //@}
 
 protected:
   vtkPVDataSetAttributesInformation();
-  ~vtkPVDataSetAttributesInformation();
+  ~vtkPVDataSetAttributesInformation() override;
 
   // Standard cell attributes.
   int FieldAssociation;
 
 private:
-  vtkPVDataSetAttributesInformation(const vtkPVDataSetAttributesInformation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVDataSetAttributesInformation&) VTK_DELETE_FUNCTION;
+  vtkPVDataSetAttributesInformation(const vtkPVDataSetAttributesInformation&) = delete;
+  void operator=(const vtkPVDataSetAttributesInformation&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

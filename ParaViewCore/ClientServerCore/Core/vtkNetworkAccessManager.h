@@ -33,7 +33,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkNetworkAccessManager : public vtkObjec
 {
 public:
   vtkTypeMacro(vtkNetworkAccessManager, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Creates a new connection given the url.
@@ -51,14 +51,14 @@ public:
    * Returns the new connection instance on success, otherwise NULL.
 
    * URLs are of the following form:
-   * <transport>://<address>
-   * * tcp://<hostname>:<port>
-   * * tcp://localhost:<port>/listen -- listen for connection on port.
-   * * tcp://localhost:<port>/listenmultiple -- listen for multiple
+   * \p \<transport\>://\<address\>
+   * * \p tcp://\<hostname\>:\<port\>
+   * * \p tcp://localhost:\<port\>/listen -- listen for connection on port.
+   * * \p tcp://localhost:\<port\>/listenmultiple -- listen for multiple
    * Examples:
-   * * tcp://medea:12345
-   * * tcp://localhost:12345/listen
-   * * ssh://utkarsh@medea
+   * * \p tcp://medea:12345
+   * * \p tcp://localhost:12345/listen
+   * * \p ssh://utkarsh\@medea
    * * http://kitware-server/session?id=12322&authorization=12
    */
   virtual vtkMultiProcessController* NewConnection(const char* url) = 0;
@@ -86,13 +86,23 @@ public:
    */
   virtual bool GetPendingConnectionsPresent() = 0;
 
+  /**
+   * Enable/disable further connections for given port.
+   */
+  virtual void DisableFurtherConnections(int port, bool disable) = 0;
+
+  /**
+   * Returns true if the last check of connect ids was wrong.
+   */
+  virtual bool GetWrongConnectID() = 0;
+
 protected:
   vtkNetworkAccessManager();
-  ~vtkNetworkAccessManager();
+  ~vtkNetworkAccessManager() override;
 
 private:
-  vtkNetworkAccessManager(const vtkNetworkAccessManager&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkNetworkAccessManager&) VTK_DELETE_FUNCTION;
+  vtkNetworkAccessManager(const vtkNetworkAccessManager&) = delete;
+  void operator=(const vtkNetworkAccessManager&) = delete;
 };
 
 #endif

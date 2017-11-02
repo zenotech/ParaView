@@ -55,7 +55,7 @@ public:
   static vtkPVSynchronizedRenderWindows* New(vtkPVSession* session = NULL);
 
   vtkTypeMacro(vtkPVSynchronizedRenderWindows, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Returns a render window for use (possibly new).
@@ -212,9 +212,17 @@ public:
   bool GetTileDisplayParameters(int tile_dims[2], int tile_mullions[2]);
 
   /**
+   * Returns true if in tile display mode.
+   */
+  bool GetIsInTileDisplay()
+  {
+    int not_used[2];
+    return this->GetTileDisplayParameters(not_used, not_used);
+  }
+  /**
    * Returns the z-buffer value at the given location. \c id is the view id
    * used in AddRenderWindow()/AddRenderer() etc.
-   * @CallOnClientOnly
+   * \note CallOnClientOnly
    */
   double GetZbufferDataAtPoint(int x, int y, unsigned int id);
 
@@ -239,9 +247,18 @@ public:
    */
   vtkPVSession* GetSession();
 
+  //@{
+  /**
+   * Use this to indicate that the process should use
+   * vtkGenericOpenGLRenderWindow rather than vtkRenderWindow in
+   * NewRenderWindow.
+   */
+  static void SetUseGenericOpenGLRenderWindow(bool val);
+  static bool GetUseGenericOpenGLRenderWindow();
+  //@}
 protected:
   vtkPVSynchronizedRenderWindows(vtkPVSession*);
-  ~vtkPVSynchronizedRenderWindows();
+  ~vtkPVSynchronizedRenderWindows() override;
 
   /**
    * Set/Get the controller used for communication among parallel processes.
@@ -314,8 +331,8 @@ protected:
   vtkWeakPointer<vtkPVSession> Session;
 
 private:
-  vtkPVSynchronizedRenderWindows(const vtkPVSynchronizedRenderWindows&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVSynchronizedRenderWindows&) VTK_DELETE_FUNCTION;
+  vtkPVSynchronizedRenderWindows(const vtkPVSynchronizedRenderWindows&) = delete;
+  void operator=(const vtkPVSynchronizedRenderWindows&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;
@@ -325,6 +342,9 @@ private:
 
   template <class T>
   bool ReduceTemplate(T& size, StandardOperations operation);
+
+  static bool UseGenericOpenGLRenderWindow;
+  vtkRenderWindow* NewRenderWindowInternal();
 };
 
 #endif

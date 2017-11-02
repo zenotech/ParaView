@@ -30,12 +30,12 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMTimeKeeperProxy : public vtkSMProxy
 public:
   static vtkSMTimeKeeperProxy* New();
   vtkTypeMacro(vtkSMTimeKeeperProxy, vtkSMProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
    * Track timesteps provided by a source. If \c suppress_input is true, before
-   * adding the proxy, if the \r proxy has producers those will be removed from
+   * adding the proxy, if the \c proxy has producers those will be removed from
    * the time sources i.e. we'll ignore timesteps from the input.
    */
   virtual bool AddTimeSource(vtkSMProxy* proxy, bool suppress_input);
@@ -113,13 +113,13 @@ public:
 
 protected:
   vtkSMTimeKeeperProxy();
-  ~vtkSMTimeKeeperProxy();
+  ~vtkSMTimeKeeperProxy() override;
 
-  virtual void CreateVTKObjects();
+  void CreateVTKObjects() VTK_OVERRIDE;
 
 private:
-  vtkSMTimeKeeperProxy(const vtkSMTimeKeeperProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMTimeKeeperProxy&) VTK_DELETE_FUNCTION;
+  vtkSMTimeKeeperProxy(const vtkSMTimeKeeperProxy&) = delete;
+  void operator=(const vtkSMTimeKeeperProxy&) = delete;
 };
 
 #endif

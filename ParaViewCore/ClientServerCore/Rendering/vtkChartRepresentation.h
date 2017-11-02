@@ -49,7 +49,7 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkChartRepresentation : public vtkP
 public:
   static vtkChartRepresentation* New();
   vtkTypeMacro(vtkChartRepresentation, vtkPVDataRepresentation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * These must only be set during initialization before adding the
@@ -60,7 +60,7 @@ public:
   /**
    * Set visibility of the representation.
    */
-  virtual void SetVisibility(bool visible);
+  void SetVisibility(bool visible) VTK_OVERRIDE;
 
   /**
    * This needs to be called on all instances of vtkGeometryRepresentation when
@@ -68,7 +68,7 @@ public:
    * have any real-input on the client side which messes with the Update
    * requests.
    */
-  virtual void MarkModified();
+  void MarkModified() VTK_OVERRIDE;
 
   // *************************************************************************
 
@@ -91,7 +91,7 @@ public:
    * Override because of internal selection representations that need to be
    * initialized as well.
    */
-  virtual unsigned int Initialize(unsigned int minIdAvailable, unsigned int maxIdAvailable);
+  unsigned int Initialize(unsigned int minIdAvailable, unsigned int maxIdAvailable) VTK_OVERRIDE;
 
   /**
    * vtkAlgorithm::ProcessRequest() equivalent for rendering passes. This is
@@ -100,8 +100,8 @@ public:
    * PrepareForRendering.
    * Overridden to handle REQUEST_RENDER() to call PrepareForRendering.
    */
-  virtual int ProcessViewRequest(
-    vtkInformationRequestKey* request_type, vtkInformation* inInfo, vtkInformation* outInfo);
+  int ProcessViewRequest(vtkInformationRequestKey* request_type, vtkInformation* inInfo,
+    vtkInformation* outInfo) VTK_OVERRIDE;
 
   /**
    * Method to provide the default name given the name of a table and a column
@@ -158,12 +158,12 @@ public:
 
 protected:
   vtkChartRepresentation();
-  ~vtkChartRepresentation();
+  ~vtkChartRepresentation() override;
 
   /**
    * Fill input port information.
    */
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   /**
    * This method is called before actual render if this->MTime was modified
@@ -187,26 +187,26 @@ protected:
    * GetInternalSelectionOutputPort should be used to obtain a selection or
    * annotation port whose selections are localized for a particular input data object.
    */
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   /**
    * Adds the representation to the view.  This is called from
    * vtkView::AddRepresentation().  Subclasses should override this method.
    * Returns true if the addition succeeds.
    */
-  virtual bool AddToView(vtkView* view);
+  bool AddToView(vtkView* view) VTK_OVERRIDE;
 
   /**
    * Removes the representation to the view.  This is called from
    * vtkView::RemoveRepresentation().  Subclasses should override this method.
    * Returns true if the removal succeeds.
    */
-  virtual bool RemoveFromView(vtkView* view);
+  bool RemoveFromView(vtkView* view) VTK_OVERRIDE;
 
   /**
    * Overridden to check with the vtkPVCacheKeeper to see if the key is cached.
    */
-  virtual bool IsCached(double cache_key);
+  bool IsCached(double cache_key) VTK_OVERRIDE;
 
   /**
    * Convenience method to get the first vtkTable from LocalOutput, if any.
@@ -219,6 +219,14 @@ protected:
    */
   virtual vtkDataObject* TransformInputData(
     vtkInformationVector** inputVector, vtkDataObject* data);
+
+  /**
+   * Method to be overridden to apply an operation of the table after it is
+   * gathered to the first rank for rendering the chart.  This allows subclasses
+   * to operate on the final table.  The default implementation just returns the
+   * input.
+   */
+  virtual vtkSmartPointer<vtkDataObject> TransformTable(vtkSmartPointer<vtkDataObject> table);
 
   typedef std::map<std::string, vtkSmartPointer<vtkTable> > MapOfTables;
   /**
@@ -239,8 +247,8 @@ protected:
   vtkWeakPointer<vtkChartSelectionRepresentation> SelectionRepresentation;
 
 private:
-  vtkChartRepresentation(const vtkChartRepresentation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkChartRepresentation&) VTK_DELETE_FUNCTION;
+  vtkChartRepresentation(const vtkChartRepresentation&) = delete;
+  void operator=(const vtkChartRepresentation&) = delete;
 
   vtkTimeStamp PrepareForRenderingTime;
   vtkSmartPointer<vtkChartSelectionRepresentation> DummyRepresentation;

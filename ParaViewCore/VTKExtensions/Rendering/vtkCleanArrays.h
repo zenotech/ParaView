@@ -36,7 +36,7 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkCleanArrays : public vtkPassInputTyp
 public:
   static vtkCleanArrays* New();
   vtkTypeMacro(vtkCleanArrays, vtkPassInputTypeAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -59,18 +59,18 @@ public:
 
 protected:
   vtkCleanArrays();
-  ~vtkCleanArrays();
+  ~vtkCleanArrays() override;
 
-  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   vtkMultiProcessController* Controller;
 
   bool FillPartialArrays;
 
 private:
-  vtkCleanArrays(const vtkCleanArrays&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCleanArrays&) VTK_DELETE_FUNCTION;
+  vtkCleanArrays(const vtkCleanArrays&) = delete;
+  void operator=(const vtkCleanArrays&) = delete;
 
 public:
   class vtkArrayData;

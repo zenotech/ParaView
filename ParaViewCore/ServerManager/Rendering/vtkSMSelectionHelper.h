@@ -38,7 +38,7 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMSelectionHelper : public vtkSMObje
 public:
   static vtkSMSelectionHelper* New();
   vtkTypeMacro(vtkSMSelectionHelper, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Given a selection, returns a proxy for a selection source that has
@@ -94,14 +94,14 @@ public:
 
 protected:
   vtkSMSelectionHelper(){};
-  ~vtkSMSelectionHelper(){};
+  ~vtkSMSelectionHelper() override{};
 
   static void ConvertSurfaceSelectionToVolumeSelectionInternal(
     vtkIdType connectionID, vtkSelection* input, vtkSelection* output, int global_ids);
 
 private:
-  vtkSMSelectionHelper(const vtkSMSelectionHelper&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMSelectionHelper&) VTK_DELETE_FUNCTION;
+  vtkSMSelectionHelper(const vtkSMSelectionHelper&) = delete;
+  void operator=(const vtkSMSelectionHelper&) = delete;
 
   static vtkSMProxy* NewSelectionSourceFromSelectionInternal(
     vtkSMSession*, vtkSelectionNode* selection, vtkSMProxy* selSource, bool ignore_composite_keys);

@@ -34,30 +34,30 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSICompoundSourceProxy : public vtk
 public:
   static vtkSICompoundSourceProxy* New();
   vtkTypeMacro(vtkSICompoundSourceProxy, vtkSISourceProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Returns the vtkAlgorithmOutput for an output port, if valid.
    */
-  virtual vtkAlgorithmOutput* GetOutputPort(int port);
+  vtkAlgorithmOutput* GetOutputPort(int port) VTK_OVERRIDE;
 
 protected:
   vtkSICompoundSourceProxy();
-  ~vtkSICompoundSourceProxy();
+  ~vtkSICompoundSourceProxy() override;
 
   /**
    * Read xml-attributes.
    */
-  virtual bool ReadXMLAttributes(vtkPVXMLElement* element);
+  bool ReadXMLAttributes(vtkPVXMLElement* element) VTK_OVERRIDE;
 
   /**
    * Create the output ports and add post filters for each output port.
    */
-  virtual bool CreateOutputPorts();
+  bool CreateOutputPorts() VTK_OVERRIDE;
 
 private:
-  vtkSICompoundSourceProxy(const vtkSICompoundSourceProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSICompoundSourceProxy&) VTK_DELETE_FUNCTION;
+  vtkSICompoundSourceProxy(const vtkSICompoundSourceProxy&) = delete;
+  void operator=(const vtkSICompoundSourceProxy&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

@@ -31,8 +31,8 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkPVGL2PSExporter : public vtkOpenGLGL
 {
 public:
   static vtkPVGL2PSExporter* New();
-  vtkTypeMacro(vtkPVGL2PSExporter, vtkOpenGLGL2PSExporter) void PrintSelf(
-    ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkPVGL2PSExporter, vtkOpenGLGL2PSExporter);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -52,16 +52,16 @@ public:
     //@}
 
     protected : vtkPVGL2PSExporter();
-  ~vtkPVGL2PSExporter();
+  ~vtkPVGL2PSExporter() override;
 
-  void WriteData();
+  void WriteData() VTK_OVERRIDE;
 
   vtkStdString FileName;
   int ExcludeCubeAxesActorsFromRasterization;
 
 private:
-  vtkPVGL2PSExporter(const vtkPVGL2PSExporter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVGL2PSExporter&) VTK_DELETE_FUNCTION;
+  vtkPVGL2PSExporter(const vtkPVGL2PSExporter&) = delete;
+  void operator=(const vtkPVGL2PSExporter&) = delete;
 };
 
 #endif

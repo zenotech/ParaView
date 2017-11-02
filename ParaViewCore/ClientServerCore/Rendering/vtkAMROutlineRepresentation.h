@@ -41,50 +41,50 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkAMROutlineRepresentation
 public:
   static vtkAMROutlineRepresentation* New();
   vtkTypeMacro(vtkAMROutlineRepresentation, vtkPVDataRepresentation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Overridden to handle various view passes.
    */
-  virtual int ProcessViewRequest(
-    vtkInformationRequestKey* request_type, vtkInformation* inInfo, vtkInformation* outInfo);
+  int ProcessViewRequest(vtkInformationRequestKey* request_type, vtkInformation* inInfo,
+    vtkInformation* outInfo) VTK_OVERRIDE;
 
   /**
    * Get/Set the visibility for this representation. When the visibility of
    * representation of false, all view passes are ignored.
    */
-  virtual void SetVisibility(bool val);
+  void SetVisibility(bool val) VTK_OVERRIDE;
 
 protected:
   vtkAMROutlineRepresentation();
-  ~vtkAMROutlineRepresentation();
+  ~vtkAMROutlineRepresentation() override;
 
   /**
    * Adds the representation to the view.  This is called from
    * vtkView::AddRepresentation().  Subclasses should override this method.
    * Returns true if the addition succeeds.
    */
-  virtual bool AddToView(vtkView* view);
+  bool AddToView(vtkView* view) VTK_OVERRIDE;
 
   /**
    * Removes the representation to the view.  This is called from
    * vtkView::RemoveRepresentation().  Subclasses should override this method.
    * Returns true if the removal succeeds.
    */
-  virtual bool RemoveFromView(vtkView* view);
+  bool RemoveFromView(vtkView* view) VTK_OVERRIDE;
 
   /**
    * Fill input port information.
    */
-  int FillInputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   /**
    * Overridden to check if the input pipeline is streaming capable. This method
    * should check if streaming is enabled i.e. vtkPVView::GetEnableStreaming()
    * and the input pipeline provides necessary AMR meta-data.
    */
-  virtual int RequestInformation(
-    vtkInformation* rqst, vtkInformationVector** inputVector, vtkInformationVector* outputVector);
+  int RequestInformation(vtkInformation* rqst, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   /**
    * Setup the block request. During StreamingUpdate, this will request the
@@ -93,16 +93,16 @@ protected:
    * absence of specific block request to mean various things. It's expected
    * that read only the root block (or a few more) in that case.
    */
-  virtual int RequestUpdateExtent(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestUpdateExtent(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   /**
    * Generate the outline for the current input.
    * When not in StreamingUpdate, this also initializes the priority queue since
    * the input AMR may have totally changed, including its structure.
    */
-  virtual int RequestData(
-    vtkInformation* rqst, vtkInformationVector** inputVector, vtkInformationVector* outputVector);
+  int RequestData(vtkInformation* rqst, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   //@{
   /**
@@ -168,8 +168,8 @@ protected:
   vtkBoundingBox DataBounds;
 
 private:
-  vtkAMROutlineRepresentation(const vtkAMROutlineRepresentation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkAMROutlineRepresentation&) VTK_DELETE_FUNCTION;
+  vtkAMROutlineRepresentation(const vtkAMROutlineRepresentation&) = delete;
+  void operator=(const vtkAMROutlineRepresentation&) = delete;
 
   /**
    * This flag is set to true if the input pipeline is streaming capable in

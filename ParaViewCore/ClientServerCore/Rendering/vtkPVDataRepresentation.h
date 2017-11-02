@@ -33,7 +33,7 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVDataRepresentation : public vtk
 {
 public:
   vtkTypeMacro(vtkPVDataRepresentation, vtkDataRepresentation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * vtkAlgorithm::ProcessRequest() equivalent for rendering passes. This is
@@ -75,7 +75,7 @@ public:
    * ids where expected so the number of reserved ids could be easily adjust.
    * Unless noted otherwise, this method must be called before calling any
    * other methods on this class.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    * Internally you can pick an id that follow that condition
    * minIdAvailable <= id <= maxIdAvailable
    * Return the minIdAvailable after initialization so that new range could be used
@@ -118,15 +118,6 @@ public:
   vtkGetMacro(UpdateTimeValid, bool);
   //@}
 
-  //@{
-  /**
-   * @deprecated No longer needed. Simply remove these methods from your
-   * subclass implementation.
-   */
-  VTK_LEGACY(virtual void SetUseCache(bool));
-  VTK_LEGACY(virtual void SetCacheKey(double val));
-  //@}
-
   /**
    * Typically a representation decides whether to use cache based on the view's
    * values for UseCache and CacheKey.
@@ -162,8 +153,8 @@ public:
    * Making these methods public. When constructing composite representations,
    * we need to call these methods directly on internal representations.
    */
-  virtual bool AddToView(vtkView* view);
-  virtual bool RemoveFromView(vtkView* view);
+  bool AddToView(vtkView* view) VTK_OVERRIDE;
+  bool RemoveFromView(vtkView* view) VTK_OVERRIDE;
   //@}
 
   /**
@@ -172,12 +163,15 @@ public:
    * internal pipeline.
    * Overridden to use vtkPVTrivialProducer instead of vtkTrivialProducer
    */
-  virtual vtkAlgorithmOutput* GetInternalOutputPort() { return this->GetInternalOutputPort(0); }
-  virtual vtkAlgorithmOutput* GetInternalOutputPort(int port)
+  vtkAlgorithmOutput* GetInternalOutputPort() VTK_OVERRIDE
+  {
+    return this->GetInternalOutputPort(0);
+  }
+  vtkAlgorithmOutput* GetInternalOutputPort(int port) VTK_OVERRIDE
   {
     return this->GetInternalOutputPort(port, 0);
   }
-  virtual vtkAlgorithmOutput* GetInternalOutputPort(int port, int conn);
+  vtkAlgorithmOutput* GetInternalOutputPort(int port, int conn) VTK_OVERRIDE;
 
   /**
    * Provides access to the view.
@@ -186,7 +180,7 @@ public:
 
 protected:
   vtkPVDataRepresentation();
-  ~vtkPVDataRepresentation();
+  ~vtkPVDataRepresentation() override;
 
   /**
    * Subclasses should override this method when they support caching to
@@ -201,25 +195,26 @@ protected:
   /**
    * Create a default executive.
    */
-  virtual vtkExecutive* CreateDefaultExecutive();
+  vtkExecutive* CreateDefaultExecutive() VTK_OVERRIDE;
 
   /**
    * Overridden to invoke vtkCommand::UpdateDataEvent.
    */
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
-  virtual int RequestUpdateExtent(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestUpdateExtent(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
-  virtual int RequestUpdateTime(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestUpdateTime(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   double UpdateTime;
   bool UpdateTimeValid;
   unsigned int UniqueIdentifier;
 
 private:
-  vtkPVDataRepresentation(const vtkPVDataRepresentation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVDataRepresentation&) VTK_DELETE_FUNCTION;
+  vtkPVDataRepresentation(const vtkPVDataRepresentation&) = delete;
+  void operator=(const vtkPVDataRepresentation&) = delete;
 
   bool Visibility;
   bool ForceUseCache;

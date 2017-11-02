@@ -37,24 +37,25 @@ class VTKPVVTKEXTENSIONSCORE_EXPORT vtkPVPostFilter : public vtkDataObjectAlgori
 public:
   static vtkPVPostFilter* New();
   vtkTypeMacro(vtkPVPostFilter, vtkDataObjectAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * We need to override this method because the composite data pipeline
    * is not what we want. Instead we need the PVCompositeDataPipeline
    * so that we can figure out what we conversion(s) we need to do
    */
-  vtkExecutive* CreateDefaultExecutive();
+  vtkExecutive* CreateDefaultExecutive() VTK_OVERRIDE;
 
   static vtkStdString DefaultComponentName(int componentNumber, int componentCount);
 
 protected:
   vtkPVPostFilter();
-  ~vtkPVPostFilter();
+  ~vtkPVPostFilter() override;
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int RequestDataObject(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  int RequestDataObject(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   int DoAnyNeededConversions(vtkDataObject* output);
   int DoAnyNeededConversions(vtkDataSet* output, const char* requested_name, int fieldAssociation,
@@ -65,8 +66,8 @@ protected:
     const char* demangled_name, const char* demagled_component_name);
 
 private:
-  vtkPVPostFilter(const vtkPVPostFilter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVPostFilter&) VTK_DELETE_FUNCTION;
+  vtkPVPostFilter(const vtkPVPostFilter&) = delete;
+  void operator=(const vtkPVPostFilter&) = delete;
 };
 
 #endif

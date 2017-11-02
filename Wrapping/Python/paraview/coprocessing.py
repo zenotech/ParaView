@@ -5,6 +5,8 @@ pipeline. Additionally, this module has several other utility functions that are
 approriate for co-processing.
 """
 
+# for Python2 print statmements to output like Python3 print statements
+from __future__ import print_function
 from paraview import simple, servermanager
 from vtk.vtkPVVTKExtensionsCore import *
 import math
@@ -27,24 +29,29 @@ def IsInModulo(timestep, frequencyArray):
     return False
 
 class CoProcessor(object):
-    """Base class for co-processing Pipelines. paraview.cpstate Module can
-       be used to dump out ParaView states as co-processing pipelines. Those are
-       typically subclasses of this. The subclasses must provide an
-       implementation for the CreatePipeline() method.
+    """Base class for co-processing Pipelines.
 
-	   Cinema Tracks
-	   =============
-	   CoProcessor maintains user-defined information for the Cinema generation in
-       __CinemaTracks. This information includes track parameter values, data array
-       names, etc. __CinemaTracks holds this information in the following structure:
+    paraview.cpstate Module can be used to dump out ParaView states as
+    co-processing pipelines. Those are typically subclasses of this. The
+    subclasses must provide an implementation for the CreatePipeline() method.
 
-        { proxy_reference : { 'ControlName' : [value_1, value_2, ..., value_n],
-                              'arraySelection' : ['ArrayName_1', ..., 'ArrayName_n'] } }
+    **Cinema Tracks**
 
-		__CinemaTracks is populated when defining the co-processing pipline through
-		paraview.cpstate. paraview.cpstate uses accessor instances to set values and
-		array names through the RegisterCinemaTrack and AddArraysToCinemaTrack methods
-        of this class.
+    CoProcessor maintains user-defined information for the Cinema generation in
+    __CinemaTracks. This information includes track parameter values, data array
+    names, etc. __CinemaTracks holds this information in the following structure::
+
+        {
+          proxy_reference : {
+          'ControlName' : [value_1, value_2, ..., value_n],
+          'arraySelection' : ['ArrayName_1', ..., 'ArrayName_n']
+          }
+        }
+
+    __CinemaTracks is populated when defining the co-processing pipline through
+    paraview.cpstate. paraview.cpstate uses accessor instances to set values and
+    array names through the RegisterCinemaTrack and AddArraysToCinemaTrack
+    methods of this class.
     """
 
     def __init__(self):
@@ -60,6 +67,13 @@ class CoProcessor(object):
         self.__CinemaTracksList = []
         self.__CinemaTracks = {}
         self.__InitialFrequencies = {}
+        self.__PrintEnsightFormatString = False
+
+    def SetPrintEnsightFormatString(self, enable):
+        """If outputting ExodusII files with the purpose of reading them into
+           Ensight, print a message on process 0 on what to use for the 'Set string'
+           input to properly read the generated files into Ensight."""
+        self.__PrintEnsightFormatString = enable
 
     def SetUpdateFrequencies(self, frequencies):
         """Set the frequencies at which the pipeline needs to be updated.
@@ -130,7 +144,7 @@ class CoProcessor(object):
         else:
             # the catalyst pipeline may have been changed by a live connection
             # so we need to regenerate the frequencies
-            import cpstate
+            from paraview import cpstate
             frequencies = {}
             for writer in self.__WritersList:
                 frequency = writer.parameters.GetProperty(
@@ -181,12 +195,47 @@ class CoProcessor(object):
             if (timestep % frequency) == 0 or \
                     datadescription.GetForceOutput() == True:
                 fileName = writer.parameters.GetProperty("FileName").GetElement(0)
-                writer.FileName = fileName.replace("%t", str(timestep))
+                paddingamount = writer.parameters.GetProperty("PaddingAmount").GetElement(0)
+                helperName = writer.GetXMLName()
+                if helperName == "ExodusIIWriter":
+                    ts = "."+str(timestep).rjust(paddingamount, '0')
+                    writer.FileName = fileName + ts
+                else:
+                    ts = str(timestep).rjust(paddingamount, '0')
+                    writer.FileName = fileName.replace("%t", ts)
                 writer.UpdatePipeline(datadescription.GetTime())
 
-    def WriteImages(self, datadescription, rescale_lookuptable=False):
+    def WriteImages(self, datadescription, rescale_lookuptable=False,
+                    image_quality=None, padding_amount=0):
         """This method will update all views, if present and write output
-            images, as needed."""
+        images, as needed.
+
+        **Parameters**
+
+            datadescription
+              Catalyst data-description object
+
+            rescale_lookuptable (bool, optional)
+              If True, when all lookup tables
+              are rescaled using current data ranges before saving the images.
+              Defaults to False.
+
+            image_quality (int, optional)
+              If specified, should be a value in
+              the range (0, 100) that specifies the image quality. For JPEG, 0
+              is low quality i.e. max compression, 100 is best quality i.e.
+              least compression. For legacy reasons, this is inverted for PNG
+              (which uses lossless compression). For PNG, 0 is no compression
+              i.e maximum image size, while 100 is most compressed and hence
+              least image size.
+
+              If not specified, for saving PNGs 0 is assumed to minimize
+              preformance impact.
+
+            padding_amount (int, optional)
+              Amount to pad the time index by.
+
+        """
         timestep = datadescription.GetTimeStep()
 
         cinema_dirs = []
@@ -194,7 +243,8 @@ class CoProcessor(object):
             if (view.cpFrequency and timestep % view.cpFrequency == 0) or \
                datadescription.GetForceOutput() == True:
                 fname = view.cpFileName
-                fname = fname.replace("%t", str(timestep))
+                ts = str(timestep).rjust(padding_amount, '0')
+                fname = fname.replace("%t", ts)
                 if view.cpFitToScreen != 0:
                     if view.IsA("vtkSMRenderViewProxy") == True:
                         view.ResetCamera()
@@ -216,15 +266,21 @@ class CoProcessor(object):
                     if dirname:
                         cinema_dirs.append(dirname)
                 else:
-                    # for png quality = 0 means no compression. compression can be a potentially
-                    # very costly serial operation on process 0
-                    if fname.endswith('png'):
-                        simple.SaveScreenshot(fname, view, magnification=view.cpMagnification, quality=0)
+                    if image_quality is None and fname.endswith('png'):
+                        # for png quality = 0 means no compression. compression can be a potentially
+                        # very costly serial operation on process 0
+                        quality = 0
+                    elif image_quality is not None:
+                        quality = int(image_quality)
                     else:
-                        simple.SaveScreenshot(fname, view, magnification=view.cpMagnification)
+                        # let simple.SaveScreenshot pick a default.
+                        quality = None
+
+                    simple.SaveScreenshot(fname, view,
+                            magnification=view.cpMagnification, quality=quality)
 
         if len(cinema_dirs) > 1:
-            import paraview.cinemaIO.pv_introspect as pv_introspect
+            import cinema_python.adaptors.paraview.pv_introspect as pv_introspect
             pv_introspect.make_workspace_file("cinema", cinema_dirs)
 
 
@@ -313,20 +369,45 @@ class CoProcessor(object):
         producer.UpdatePipeline(datadescription.GetTime())
         return producer
 
-    def RegisterWriter(self, writer, filename, freq):
+    def ProcessExodusIIWriter(self, writer):
+        """Extra work for the ExodusII writer to avoid undesired warnings
+           and print out a message on how to read the files into Ensight."""
+        # Disable the warning about not having meta data available since we can
+        # use this writer for vtkDataSets
+        writer.IgnoreMetaDataWarning = 1
+
+        # optionally print message so that people know what file string to use to open in Ensight
+        if self.__PrintEnsightFormatString:
+            import paraview.servermanager as pvsm
+            pm = pvsm.vtkProcessModule.GetProcessModule()
+            pid = pm.GetGlobalController().GetLocalProcessId()
+            if pid == 0:
+                nump = pm.GetGlobalController().GetNumberOfProcesses()
+                if nump == 1:
+                    print("Ensight 'Set string' input is '", writer.FileName, ".*'", sep="")
+                else:
+                    print("Ensight 'Set string' input is '", writer.FileName, ".*."+str(nump)+ \
+                          ".<"+str(nump)+":%0."+str(len(str(nump-1)))+"d>'", sep="")
+
+    def RegisterWriter(self, writer, filename, freq, paddingamount=0):
         """Registers a writer proxy. This method is generally used in
            CreatePipeline() to register writers. All writes created as such will
            write the output files appropriately in WriteData() is called."""
         writerParametersProxy = self.WriterParametersProxy(
-            writer, filename, freq)
+            writer, filename, freq, paddingamount)
 
         writer.FileName = filename
         writer.add_attribute("parameters", writerParametersProxy)
+
         self.__WritersList.append(writer)
+
+        helperName = writer.GetXMLName()
+        if helperName == "ExodusIIWriter":
+            self.ProcessExodusIIWriter(writer)
 
         return writer
 
-    def WriterParametersProxy(self, writer, filename, freq):
+    def WriterParametersProxy(self, writer, filename, freq, paddingamount):
         """Creates a client only proxy that will be synchronized with ParaView
         Live, allowing a user to set the filename and frequency.
         """
@@ -346,7 +427,7 @@ class CoProcessor(object):
         if writerIsProxy:
             # it's possible that the writer can take in multiple input connections
             # so we need to go through all of them. the try/except block seems
-            # to be the best way to figure out if there are multipel input connections
+            # to be the best way to figure out if there are multiple input connections
             try:
                 length = len(writer.Input)
                 for i in range(length):
@@ -357,6 +438,8 @@ class CoProcessor(object):
                     0, writer.Input.SMProxy, 0)
         proxy.GetProperty("FileName").SetElement(0, filename)
         proxy.GetProperty("WriteFrequency").SetElement(0, freq)
+
+        proxy.GetProperty("PaddingAmount").SetElement(0, paddingamount)
         controller.PostInitializeProxy(proxy)
         controller.RegisterPipelineProxy(proxy)
         return proxy
@@ -383,14 +466,14 @@ class CoProcessor(object):
         self.__CinemaTracks[proxy] = proxyDefinitions
         return proxy
 
-    def RegisterView(self, view, filename, freq, fittoscreen, magnification, width, height, cinema=None):
+    def RegisterView(self, view, filename, freq, fittoscreen, magnification, width, height,
+                     cinema=None):
         """Register a view for image capture with extra meta-data such
         as magnification, size and frequency."""
         if not isinstance(view, servermanager.Proxy):
             raise RuntimeError ("Invalid 'view' argument passed to RegisterView.")
         view.add_attribute("cpFileName", filename)
         view.add_attribute("cpFrequency", freq)
-        view.add_attribute("cpFileName", filename)
         view.add_attribute("cpFitToScreen", fittoscreen)
         view.add_attribute("cpMagnification", magnification)
         view.add_attribute("cpCinemaOptions", cinema)
@@ -399,17 +482,19 @@ class CoProcessor(object):
         return view
 
     def CreateWriter(self, proxy_ctor, filename, freq):
-        """ **** DEPRECATED!!! Use RegisterWriter instead ****
-           Creates a writer proxy. This method is generally used in
-           CreatePipeline() to create writers. All writes created as such will
-           write the output files appropriately in WriteData() is called."""
+        """**DEPRECATED!!! Use RegisterWriter instead**
+        Creates a writer proxy. This method is generally used in
+        reatePipeline() to create writers. All writes created as such will
+        write the output files appropriately in WriteData() is called.
+        """
         writer = proxy_ctor()
         return self.RegisterWriter(writer, filename, freq)
 
     def CreateView(self, proxy_ctor, filename, freq, fittoscreen, magnification, width, height):
-        """ **** DEPRECATED!!! Use RegisterView instead ****
-           Create a CoProcessing view for image capture with extra meta-data
-           such as magnification, size and frequency."""
+        """**DEPRECATED!!! Use RegisterView instead**
+        Create a CoProcessing view for image capture with extra meta-data
+        such as magnification, size and frequency.
+        """
         view = proxy_ctor()
         return self.RegisterView(view, filename, freq, fittoscreen, magnification, width, height, None)
 
@@ -440,14 +525,15 @@ class CoProcessor(object):
 
             colorArrayInfo = rep.GetArrayInformationForColorArray()
             if not colorArrayInfo:
-                continue
-
-            if lut.VectorMode != 'Magnitude' or \
-               colorArrayInfo.GetNumberOfComponents() == 1:
-                datarange = colorArrayInfo.GetComponentRange(lut.VectorComponent)
+                import sys
+                datarange = [sys.float_info.max, -sys.float_info.max]
             else:
-                # -1 corresponds to the magnitude.
-                datarange = colorArrayInfo.GetComponentRange(-1)
+                if lut.VectorMode != 'Magnitude' or \
+                   colorArrayInfo.GetNumberOfComponents() == 1:
+                    datarange = colorArrayInfo.GetComponentRange(lut.VectorComponent)
+                else:
+                    # -1 corresponds to the magnitude.
+                    datarange = colorArrayInfo.GetComponentRange(-1)
 
             import vtkParallelCorePython
             import paraview.vtk as vtk
@@ -490,20 +576,20 @@ class CoProcessor(object):
             return
 
         try:
-            import paraview.cinemaIO.cinema_store as CS
-            import paraview.cinemaIO.explorers as explorers
-            import paraview.cinemaIO.pv_explorers as pv_explorers
-            import paraview.cinemaIO.pv_introspect as pv_introspect
+            import cinema_python.adaptors.explorers as explorers
+            import cinema_python.adaptors.paraview.pv_explorers as pv_explorers
+            import cinema_python.adaptors.paraview.pv_introspect as pv_introspect
             import paraview.simple as simple
         except ImportError as e:
+            import paraview
             paraview.print_error("Cannot import cinema")
             paraview.print_error(e)
             return
 
-
         #figure out where to put this store
         import os.path
         vfname = view.cpFileName
+        extension = os.path.splitext(vfname)[1]
         vfname = vfname[0:vfname.rfind("_")] #strip _num.ext
         fname = os.path.join(os.path.dirname(vfname),
                              "cinema",
@@ -547,6 +633,8 @@ class CoProcessor(object):
         view.MaxClipBounds = [minbds, maxbds, minbds, maxbds, minbds, maxbds]
         view.LockBounds = 1
 
+        disableValues = False if 'noValues' not in co else co['noValues']
+
         if specLevel=="B":
             p = pv_introspect.inspect(skip_invisible=True)
         else:
@@ -555,7 +643,9 @@ class CoProcessor(object):
                                              forcetime = formatted_time,
                                              userDefined = self.__CinemaTracks,
                                              specLevel = specLevel,
-                                             camType = camType)
+                                             camType = camType,
+                                             extension = extension,
+                                             disableValues = disableValues)
 
         #all nodes participate, but only root can writes out the files
         pm = servermanager.vtkProcessModule.GetProcessModule()
@@ -563,11 +653,14 @@ class CoProcessor(object):
 
         enableFloatVal = False if 'floatValues' not in co else co['floatValues']
 
-        pv_introspect.explore(fs, p, iSave = (pid == 0), currentTime = {'time':formatted_time},
+        pv_introspect.explore(fs, p, iSave = (pid == 0),
+                              currentTime = {'time':formatted_time},
                               userDefined = self.__CinemaTracks,
                               specLevel = specLevel,
                               camType = camType,
-                              tracking = tracking_def, floatValues = enableFloatVal)
+                              tracking = tracking_def,
+                              floatValues = enableFloatVal,
+                              disableValues = disableValues)
         if pid == 0:
             fs.save()
 

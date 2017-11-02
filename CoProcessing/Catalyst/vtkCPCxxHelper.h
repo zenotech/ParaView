@@ -34,15 +34,15 @@ class VTKPVCATALYST_EXPORT vtkCPCxxHelper : public vtkObject
 public:
   static vtkCPCxxHelper* New();
   vtkTypeMacro(vtkCPCxxHelper, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkCPCxxHelper();
   virtual ~vtkCPCxxHelper();
 
 private:
-  vtkCPCxxHelper(const vtkCPCxxHelper&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCPCxxHelper&) VTK_DELETE_FUNCTION;
+  vtkCPCxxHelper(const vtkCPCxxHelper&) = delete;
+  void operator=(const vtkCPCxxHelper&) = delete;
 
   vtkPVOptions* Options;
 

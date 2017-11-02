@@ -48,7 +48,7 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkUnstructuredGridVolumeRepresentat
 public:
   static vtkUnstructuredGridVolumeRepresentation* New();
   vtkTypeMacro(vtkUnstructuredGridVolumeRepresentation, vtkPVDataRepresentation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Register a volume mapper with the representation.
@@ -69,8 +69,8 @@ public:
    * representations or ask them to perform certain tasks e.g.
    * PrepareForRendering.
    */
-  virtual int ProcessViewRequest(
-    vtkInformationRequestKey* request_type, vtkInformation* inInfo, vtkInformation* outInfo);
+  int ProcessViewRequest(vtkInformationRequestKey* request_type, vtkInformation* inInfo,
+    vtkInformation* outInfo) VTK_OVERRIDE;
 
   /**
    * This needs to be called on all instances of vtkGeometryRepresentation when
@@ -78,14 +78,14 @@ public:
    * have any real-input on the client side which messes with the Update
    * requests.
    */
-  virtual void MarkModified();
+  void MarkModified() VTK_OVERRIDE;
 
   /**
    * Get/Set the visibility for this representation. When the visibility of
    * representation of false, all view passes are ignored.
    * Overridden to propagate to the active representation.
    */
-  virtual void SetVisibility(bool val);
+  void SetVisibility(bool val) VTK_OVERRIDE;
 
   //***************************************************************************
   // Forwarded to vtkVolumeRepresentationPreprocessor
@@ -98,7 +98,6 @@ public:
     this->SetSamplingDimensions(dims[0], dims[1], dims[2]);
   }
   void SetSamplingDimensions(int xdim, int ydim, int zdim);
-
 
   //***************************************************************************
   // Forwarded to Actor.
@@ -127,49 +126,49 @@ public:
    * Can set to true if all rendered data sets are based on the same
    * data partitioning in order to save on the data redistribution.
    */
-  vtkSetMacro(UseDataPartitions, bool);
+  virtual void SetUseDataPartitions(bool);
   vtkGetMacro(UseDataPartitions, bool);
   //@}
 
 protected:
   vtkUnstructuredGridVolumeRepresentation();
-  ~vtkUnstructuredGridVolumeRepresentation();
+  ~vtkUnstructuredGridVolumeRepresentation() override;
 
   /**
    * Fill input port information.
    */
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   /**
    * Adds the representation to the view.  This is called from
    * vtkView::AddRepresentation().  Subclasses should override this method.
    * Returns true if the addition succeeds.
    */
-  virtual bool AddToView(vtkView* view);
+  bool AddToView(vtkView* view) VTK_OVERRIDE;
 
   /**
    * Removes the representation to the view.  This is called from
    * vtkView::RemoveRepresentation().  Subclasses should override this method.
    * Returns true if the removal succeeds.
    */
-  virtual bool RemoveFromView(vtkView* view);
+  bool RemoveFromView(vtkView* view) VTK_OVERRIDE;
 
   /**
    * Overridden to check with the vtkPVCacheKeeper to see if the key is cached.
    */
-  virtual bool IsCached(double cache_key);
+  bool IsCached(double cache_key) VTK_OVERRIDE;
 
   /**
    * Passes on parameters to the active volume mapper
    */
   virtual void UpdateMapperParameters();
 
-  int ProcessViewRequestResampleToImage(vtkInformationRequestKey* request_type,
-    vtkInformation* inInfo, vtkInformation* outInfo);
-  int RequestDataResampleToImage(vtkInformation* request,
-    vtkInformationVector** inputVector, vtkInformationVector* outputVector);
+  int ProcessViewRequestResampleToImage(
+    vtkInformationRequestKey* request_type, vtkInformation* inInfo, vtkInformation* outInfo);
+  int RequestDataResampleToImage(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector);
 
   vtkVolumeRepresentationPreprocessor* Preprocessor;
   vtkPVCacheKeeper* CacheKeeper;
@@ -177,9 +176,9 @@ protected:
   vtkVolumeProperty* Property;
   vtkPVLODVolume* Actor;
 
-  vtkResampleToImage *ResampleToImageFilter;
+  vtkResampleToImage* ResampleToImageFilter;
   unsigned long DataSize;
-  vtkPExtentTranslator *PExtentTranslator;
+  vtkPExtentTranslator* PExtentTranslator;
   double Origin[3];
   double Spacing[3];
   int WholeExtent[6];
@@ -192,9 +191,8 @@ protected:
   bool UseDataPartitions;
 
 private:
-  vtkUnstructuredGridVolumeRepresentation(
-    const vtkUnstructuredGridVolumeRepresentation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkUnstructuredGridVolumeRepresentation&) VTK_DELETE_FUNCTION;
+  vtkUnstructuredGridVolumeRepresentation(const vtkUnstructuredGridVolumeRepresentation&) = delete;
+  void operator=(const vtkUnstructuredGridVolumeRepresentation&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

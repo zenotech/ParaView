@@ -38,7 +38,7 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVHistogramChartRepresentation
 public:
   static vtkPVHistogramChartRepresentation* New();
   vtkTypeMacro(vtkPVHistogramChartRepresentation, vtkXYChartRepresentation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -55,6 +55,16 @@ public:
    */
   void SetBinCount(int);
   int GetBinCount();
+  //@}
+
+  //@{
+  /**
+   * Get/Set if first and last bins must be centered around the min and max
+   * data. This is only used when UseCustomBinRanges is set to false.
+   * Default is false.
+   */
+  void SetCenterBinsAroundMinAndMax(bool);
+  bool GetCenterBinsAroundMinAndMax();
   //@}
 
   //@{
@@ -98,15 +108,15 @@ public:
   /**
    * Method to be overrided to transform input data to a vtkTable.
    */
-  virtual vtkDataObject* TransformInputData(
-    vtkInformationVector** inputVector, vtkDataObject* data);
+  vtkDataObject* TransformInputData(
+    vtkInformationVector** inputVector, vtkDataObject* data) VTK_OVERRIDE;
 
   //@{
   /**
    * Overload the vtkAlgorithm method to update after the change
    */
-  virtual void SetInputArrayToProcess(
-    int idx, int port, int connection, int fieldAssociation, const char* name);
+  void SetInputArrayToProcess(
+    int idx, int port, int connection, int fieldAssociation, const char* name) VTK_OVERRIDE;
   using Superclass::SetInputArrayToProcess;
   //@}
 
@@ -114,24 +124,24 @@ public:
    * Overridden to transform id-based selection produced by the histogram view
    * to a threshold-based selection.
    */
-  virtual bool MapSelectionToInput(vtkSelection*);
+  bool MapSelectionToInput(vtkSelection*) VTK_OVERRIDE;
 
   /**
    * Inverse of MapSelectionToInput().
    */
-  virtual bool MapSelectionToView(vtkSelection* sel);
+  bool MapSelectionToView(vtkSelection* sel) VTK_OVERRIDE;
 
 protected:
   vtkPVHistogramChartRepresentation();
-  ~vtkPVHistogramChartRepresentation();
+  ~vtkPVHistogramChartRepresentation() override;
 
-  virtual void PrepareForRendering();
+  void PrepareForRendering() VTK_OVERRIDE;
 
   vtkPExtractHistogram* ExtractHistogram;
 
 private:
-  vtkPVHistogramChartRepresentation(const vtkPVHistogramChartRepresentation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVHistogramChartRepresentation&) VTK_DELETE_FUNCTION;
+  vtkPVHistogramChartRepresentation(const vtkPVHistogramChartRepresentation&) = delete;
+  void operator=(const vtkPVHistogramChartRepresentation&) = delete;
 
   std::string ArrayName;
   int AttributeType;

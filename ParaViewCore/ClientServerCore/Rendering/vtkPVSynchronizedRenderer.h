@@ -26,7 +26,6 @@
 #include "vtkObject.h"
 #include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 
-class vtkFXAAOptions;
 class vtkIceTSynchronizedRenderers;
 class vtkImageProcessingPass;
 class vtkPartitionOrderingInterface;
@@ -41,7 +40,7 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVSynchronizedRenderer : public v
 public:
   static vtkPVSynchronizedRenderer* New();
   vtkTypeMacro(vtkPVSynchronizedRenderer, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -144,14 +143,9 @@ public:
   void SetRenderEmptyImages(bool);
 
   /**
-   * Enable/Disable FXAA antialiasing.
+   * Enable/Disable NVPipe
    */
-  void SetUseFXAA(bool enable);
-
-  /**
-   * Set the FXAA configuration.
-   */
-  void SetFXAAOptions(vtkFXAAOptions* opts);
+  void SetNVPipeSupport(bool);
 
   //@{
   /**
@@ -171,7 +165,7 @@ public:
 
 protected:
   vtkPVSynchronizedRenderer();
-  ~vtkPVSynchronizedRenderer();
+  ~vtkPVSynchronizedRenderer() override;
 
   /**
    * Sets up the render passes on the renderer. This won't get called on
@@ -205,8 +199,8 @@ protected:
   bool DataReplicatedOnAllProcesses;
 
 private:
-  vtkPVSynchronizedRenderer(const vtkPVSynchronizedRenderer&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVSynchronizedRenderer&) VTK_DELETE_FUNCTION;
+  vtkPVSynchronizedRenderer(const vtkPVSynchronizedRenderer&) = delete;
+  void operator=(const vtkPVSynchronizedRenderer&) = delete;
 };
 
 #endif

@@ -40,7 +40,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkEnvironmentAnnotationFilter : public v
 public:
   static vtkEnvironmentAnnotationFilter* New();
   vtkTypeMacro(vtkEnvironmentAnnotationFilter, vtkTableAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   vtkSetMacro(FileName, std::string);
   vtkGetMacro(FileName, std::string);
@@ -62,18 +62,18 @@ public:
 
 protected:
   vtkEnvironmentAnnotationFilter();
-  ~vtkEnvironmentAnnotationFilter();
+  ~vtkEnvironmentAnnotationFilter() override;
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   std::string AnnotationValue;
   std::string FileName;
 
 private:
-  vtkEnvironmentAnnotationFilter(const vtkEnvironmentAnnotationFilter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkEnvironmentAnnotationFilter&) VTK_DELETE_FUNCTION;
+  vtkEnvironmentAnnotationFilter(const vtkEnvironmentAnnotationFilter&) = delete;
+  void operator=(const vtkEnvironmentAnnotationFilter&) = delete;
 
   void UpdateAnnotationValue();
 

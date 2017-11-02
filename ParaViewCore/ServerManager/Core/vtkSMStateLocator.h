@@ -37,7 +37,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMStateLocator : public vtkSMObject
 public:
   static vtkSMStateLocator* New();
   vtkTypeMacro(vtkSMStateLocator, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -101,15 +101,15 @@ public:
 
 protected:
   vtkSMStateLocator();
-  ~vtkSMStateLocator();
+  ~vtkSMStateLocator() override;
 
   vtkSMStateLocator* ParentLocator;
   vtkWeakPointer<vtkSMSession> Session;
   vtkWeakPointer<vtkUndoStack> UndoStack;
 
 private:
-  vtkSMStateLocator(const vtkSMStateLocator&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMStateLocator&) VTK_DELETE_FUNCTION;
+  vtkSMStateLocator(const vtkSMStateLocator&) = delete;
+  void operator=(const vtkSMStateLocator&) = delete;
 
   class vtkInternal;
   vtkInternal* Internals;

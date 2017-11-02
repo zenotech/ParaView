@@ -31,7 +31,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVDReader : public vtkXMLCollectionRea
 public:
   static vtkPVDReader* New();
   vtkTypeMacro(vtkPVDReader, vtkXMLCollectionReader);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -40,36 +40,25 @@ public:
    * value will be read.  An out-of-range index will remove the
    * restriction.
    */
-  void SetTimeStep(int index);
-  int GetTimeStep();
-  //@}
-
-  //@{
-  /**
-   * Get the range of index values valid for the TimestepAsIndex
-   * setting.
-   */
-  vtkGetVector2Macro(TimeStepRange, int);
+  void SetTimeStep(int index) VTK_OVERRIDE;
+  int GetTimeStep() VTK_OVERRIDE;
   //@}
 
 protected:
   vtkPVDReader();
-  ~vtkPVDReader();
+  ~vtkPVDReader() override;
 
-  void ReadXMLData();
+  void ReadXMLData() VTK_OVERRIDE;
 
-  virtual int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   // Set TimeStepRange
-  virtual void SetupOutputInformation(vtkInformation* outInfo);
-
-  // Save the range of valid timestep index values.
-  int TimeStepRange[2];
+  void SetupOutputInformation(vtkInformation* outInfo) VTK_OVERRIDE;
 
 private:
-  vtkPVDReader(const vtkPVDReader&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVDReader&) VTK_DELETE_FUNCTION;
+  vtkPVDReader(const vtkPVDReader&) = delete;
+  void operator=(const vtkPVDReader&) = delete;
 };
 
 #endif

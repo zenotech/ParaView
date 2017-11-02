@@ -22,8 +22,10 @@
  * the volume of each particle from the volume fraction.
  *
  * This will turn on validation and debug i/o of the filter.
- *#define vtkAMRDualContourDEBUG
- *#define vtkAMRDualContourPROFILE
+ * \code{.cpp}
+ * #define vtkAMRDualContourDEBUG
+ * #define vtkAMRDualContourPROFILE
+ * \endcode
 */
 
 #ifndef vtkAMRDualContour_h
@@ -58,7 +60,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkAMRDualContour : public vtkMultiBlockD
 public:
   static vtkAMRDualContour* New();
   vtkTypeMacro(vtkAMRDualContour, vtkMultiBlockDataSetAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   vtkSetMacro(IsoValue, double);
   vtkGetMacro(IsoValue, double);
@@ -117,7 +119,7 @@ public:
 
 protected:
   vtkAMRDualContour();
-  virtual ~vtkAMRDualContour();
+  ~vtkAMRDualContour() override;
 
   double IsoValue;
 
@@ -129,7 +131,7 @@ protected:
   int TriangulateCap;
   int SkipGhostCopy;
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   /**
    * This should be called before any number of calls to DoRequestData
@@ -147,8 +149,8 @@ protected:
    */
   vtkMultiBlockDataSet* DoRequestData(vtkNonOverlappingAMR* input, const char* arrayNameToProcess);
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int FillOutputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  int FillOutputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   void ShareBlockLocatorWithNeighbors(vtkAMRDualGridHelperBlock* block);
 
@@ -204,8 +206,8 @@ protected:
   void FinalizeCopyAttributes(vtkDataSet* mesh);
 
 private:
-  vtkAMRDualContour(const vtkAMRDualContour&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkAMRDualContour&) VTK_DELETE_FUNCTION;
+  vtkAMRDualContour(const vtkAMRDualContour&) = delete;
+  void operator=(const vtkAMRDualContour&) = delete;
 };
 
 #endif

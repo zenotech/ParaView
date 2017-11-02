@@ -39,7 +39,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVArrayInformation : public vtkPVInfor
 public:
   static vtkPVArrayInformation* New();
   vtkTypeMacro(vtkPVArrayInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -101,6 +101,21 @@ public:
   void GetComponentRange(int comp, double* range);
   //@}
 
+  //@{
+  /**
+   * There is a range for each component.
+   * Range for component -1 is the range of the vector magnitude.
+   * The number of components should be set before these ranges.
+   */
+  void SetComponentFiniteRange(int comp, double min, double max);
+  void SetComponentFiniteRange(int comp, double* range)
+  {
+    this->SetComponentFiniteRange(comp, range[0], range[1]);
+  }
+  double* GetComponentFiniteRange(int component);
+  void GetComponentFiniteRange(int comp, double* range);
+  //@}
+
   /**
    * This method return the Min and Max possible range of the native
    * data type. For example if a vtkScalars consists of unsigned char
@@ -119,25 +134,26 @@ public:
    * Merge (union) ranges into this object.
    */
   void AddRanges(vtkPVArrayInformation* info);
+  void AddFiniteRanges(vtkPVArrayInformation* info);
 
   void DeepCopy(vtkPVArrayInformation* info);
 
   /**
    * Transfer information about a single object into this object.
    */
-  virtual void CopyFromObject(vtkObject*);
+  void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
   /**
    * Merge another information object.
    */
-  virtual void AddInformation(vtkPVInformation*);
+  void AddInformation(vtkPVInformation*) VTK_OVERRIDE;
 
   //@{
   /**
    * Manage a serialized version of the information.
    */
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
+  void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
   //@}
 
   //@{
@@ -176,7 +192,7 @@ public:
 
 protected:
   vtkPVArrayInformation();
-  ~vtkPVArrayInformation();
+  ~vtkPVArrayInformation() override;
 
   int IsPartial;
   int DataType;
@@ -184,6 +200,7 @@ protected:
   vtkTypeInt64 NumberOfTuples;
   char* Name;
   double* Ranges;
+  double* FiniteRanges;
 
   // this array is used to store existing information keys (location/name pairs)
 
@@ -200,8 +217,8 @@ protected:
   class vtkInternalComponentNames;
   vtkInternalComponentNames* ComponentNames;
 
-  vtkPVArrayInformation(const vtkPVArrayInformation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVArrayInformation&) VTK_DELETE_FUNCTION;
+  vtkPVArrayInformation(const vtkPVArrayInformation&) = delete;
+  void operator=(const vtkPVArrayInformation&) = delete;
 };
 
 #endif

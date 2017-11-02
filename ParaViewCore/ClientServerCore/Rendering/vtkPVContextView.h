@@ -42,20 +42,20 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVContextView : public vtkPVView
 {
 public:
   vtkTypeMacro(vtkPVContextView, vtkPVView);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Triggers a high-resolution render.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
-  virtual void StillRender();
+  void StillRender() VTK_OVERRIDE;
 
   /**
    * Triggers a interactive render. Based on the settings on the view, this may
    * result in a low-resolution rendering or a simplified geometry rendering.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
-  virtual void InteractiveRender();
+  void InteractiveRender() VTK_OVERRIDE;
 
   //@{
   /**
@@ -70,7 +70,7 @@ public:
   virtual vtkAbstractContextItem* GetContextItem() = 0;
 
   //@{
-  vtkGetObjectMacro(RenderWindow, vtkRenderWindow);
+  vtkRenderWindow* GetRenderWindow() VTK_OVERRIDE { return this->RenderWindow; }
   //@}
 
   //@{
@@ -86,39 +86,15 @@ public:
   /**
    * Initialize the view with an identifier. Unless noted otherwise, this method
    * must be called before calling any other methods on this class.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
-  virtual void Initialize(unsigned int id);
+  void Initialize(unsigned int id) VTK_OVERRIDE;
 
   /**
    * Overridden to ensure that in multi-client configurations, same set of
    * representations are "dirty" on all processes to avoid race conditions.
    */
-  virtual void Update();
-
-  //@{
-  /**
-   * Set or get whether offscreen rendering should be used during
-   * CaptureWindow calls. On Apple machines, this flag has no effect.
-   */
-  vtkSetMacro(UseOffscreenRenderingForScreenshots, bool);
-  vtkBooleanMacro(UseOffscreenRenderingForScreenshots, bool);
-  vtkGetMacro(UseOffscreenRenderingForScreenshots, bool);
-  //@}
-
-  //@{
-  /**
-   * Get/Set whether to use offscreen rendering for all rendering. This is
-   * merely a suggestion. If --use-offscreen-rendering command line option is
-   * specified, then setting this flag to 0 on that process has no effect.
-   * Setting it to true, however, will ensure that even is
-   * --use-offscreen-rendering is not specified, it will use offscreen
-   * rendering.
-   */
-  virtual void SetUseOffscreenRendering(bool);
-  vtkBooleanMacro(UseOffscreenRendering, bool);
-  vtkGetMacro(UseOffscreenRendering, bool);
-  //@}
+  void Update() VTK_OVERRIDE;
 
   /**
    * Representations can use this method to set the selection for a particular
@@ -147,7 +123,7 @@ public:
 
 protected:
   vtkPVContextView();
-  ~vtkPVContextView();
+  ~vtkPVContextView() override;
 
   /**
    * Actual rendering implementation.
@@ -180,12 +156,9 @@ protected:
   vtkContextView* ContextView;
   vtkRenderWindow* RenderWindow;
 
-  bool UseOffscreenRenderingForScreenshots;
-  bool UseOffscreenRendering;
-
 private:
-  vtkPVContextView(const vtkPVContextView&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVContextView&) VTK_DELETE_FUNCTION;
+  vtkPVContextView(const vtkPVContextView&) = delete;
+  void operator=(const vtkPVContextView&) = delete;
 
   // Used in GetSelection to avoid modifying the selection obtained from the
   // annotation link.

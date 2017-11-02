@@ -51,12 +51,12 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMSourceProxy : public vtkSMProxy
 public:
   static vtkSMSourceProxy* New();
   vtkTypeMacro(vtkSMSourceProxy, vtkSMProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Calls UpdateInformation() on all sources.
    */
-  virtual void UpdatePipelineInformation();
+  void UpdatePipelineInformation() VTK_OVERRIDE;
 
   /**
    * Calls Update() on all sources. It also creates output ports if
@@ -210,7 +210,7 @@ public:
   /**
    * Overridden to reserve additional IDs for use by "ExtractSelection" proxies.
    */
-  virtual vtkTypeUInt32 GetGlobalID();
+  vtkTypeUInt32 GetGlobalID() VTK_OVERRIDE;
 
   enum ProcessSupportType
   {
@@ -222,11 +222,11 @@ public:
   /**
    * Marks the selection proxies dirty as well as chain to superclass.
    */
-  virtual void MarkDirty(vtkSMProxy* modifiedProxy);
+  void MarkDirty(vtkSMProxy* modifiedProxy) VTK_OVERRIDE;
 
 protected:
   vtkSMSourceProxy();
-  ~vtkSMSourceProxy();
+  ~vtkSMSourceProxy() override;
 
   friend class vtkSMInputProperty;
   friend class vtkSMOutputPort;
@@ -245,7 +245,7 @@ protected:
    * Call superclass' and then assigns a new executive
    * (vtkCompositeDataPipeline)
    */
-  virtual void CreateVTKObjects();
+  void CreateVTKObjects() VTK_OVERRIDE;
 
   char* ExecutiveName;
   vtkSetStringMacro(ExecutiveName);
@@ -253,7 +253,7 @@ protected:
   /**
    * Read attributes from an XML element.
    */
-  virtual int ReadXMLAttributes(vtkSMSessionProxyManager* pm, vtkPVXMLElement* element);
+  int ReadXMLAttributes(vtkSMSessionProxyManager* pm, vtkPVXMLElement* element) VTK_OVERRIDE;
 
   /**
    * Internal method which creates the output port proxies using the proxy specified.
@@ -276,7 +276,7 @@ protected:
   /**
    * Overwritten from superclass to invoke
    */
-  virtual void PostUpdateData();
+  void PostUpdateData() VTK_OVERRIDE;
 
   // flag used to avoid creation of extract selection proxies for this source
   // proxy.
@@ -291,8 +291,8 @@ private:
   unsigned int NumberOfAlgorithmOutputPorts;
   unsigned int NumberOfAlgorithmRequiredInputPorts;
 
-  vtkSMSourceProxy(const vtkSMSourceProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMSourceProxy&) VTK_DELETE_FUNCTION;
+  vtkSMSourceProxy(const vtkSMSourceProxy&) = delete;
+  void operator=(const vtkSMSourceProxy&) = delete;
 };
 
 #endif

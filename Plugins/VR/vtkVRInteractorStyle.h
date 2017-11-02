@@ -49,7 +49,8 @@ class vtkVRInteractorStyle : public vtkObject
 {
 public:
   static vtkVRInteractorStyle* New();
-  vtkTypeMacro(vtkVRInteractorStyle, vtkObject) void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkVRInteractorStyle, vtkObject);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Description:
   // Get the vector size of the controlled property this style expects, e.g. a
@@ -132,8 +133,8 @@ protected:
   vtkStdString GetKeyInMap(const StringMap& map_, const vtkStdString& value);
 
 private:
-  vtkVRInteractorStyle(const vtkVRInteractorStyle&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkVRInteractorStyle&) VTK_DELETE_FUNCTION;
+  vtkVRInteractorStyle(const vtkVRInteractorStyle&) = delete;
+  void operator=(const vtkVRInteractorStyle&) = delete;
 };
 
 #endif

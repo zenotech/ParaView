@@ -38,7 +38,7 @@ class VTKPVSERVERMANAGERDEFAULT_EXPORT vtkSMInteractionUndoStackBuilder : public
 public:
   static vtkSMInteractionUndoStackBuilder* New();
   vtkTypeMacro(vtkSMInteractionUndoStackBuilder, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -83,7 +83,7 @@ public:
 
 protected:
   vtkSMInteractionUndoStackBuilder();
-  ~vtkSMInteractionUndoStackBuilder();
+  ~vtkSMInteractionUndoStackBuilder() override;
 
   vtkSMRenderViewProxy* RenderView;
   vtkSMUndoStack* UndoStack;
@@ -99,8 +99,8 @@ protected:
   friend class vtkSMInteractionUndoStackBuilderObserver;
 
 private:
-  vtkSMInteractionUndoStackBuilder(const vtkSMInteractionUndoStackBuilder&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMInteractionUndoStackBuilder&) VTK_DELETE_FUNCTION;
+  vtkSMInteractionUndoStackBuilder(const vtkSMInteractionUndoStackBuilder&) = delete;
+  void operator=(const vtkSMInteractionUndoStackBuilder&) = delete;
 
   vtkSMInteractionUndoStackBuilderObserver* Observer;
 };

@@ -32,7 +32,7 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVRayCastPickingHelper : public v
 public:
   static vtkPVRayCastPickingHelper* New();
   vtkTypeMacro(vtkPVRayCastPickingHelper, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Set input on which the selection apply
@@ -79,7 +79,7 @@ public:
 
 protected:
   vtkPVRayCastPickingHelper();
-  ~vtkPVRayCastPickingHelper();
+  ~vtkPVRayCastPickingHelper() override;
 
   /**
    * Compute the intersection using provided dataset
@@ -94,8 +94,8 @@ protected:
   vtkAlgorithm* Selection;
 
 private:
-  vtkPVRayCastPickingHelper(const vtkPVRayCastPickingHelper&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVRayCastPickingHelper&) VTK_DELETE_FUNCTION;
+  vtkPVRayCastPickingHelper(const vtkPVRayCastPickingHelper&) = delete;
+  void operator=(const vtkPVRayCastPickingHelper&) = delete;
 };
 
 #endif

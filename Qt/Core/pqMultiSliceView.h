@@ -24,6 +24,7 @@
 #include <QtGui>
 
 class pqMultiSliceAxisWidget;
+class pqQVTKWidget;
 
 class PQCORE_EXPORT pqMultiSliceView : public pqRenderView
 {
@@ -39,7 +40,7 @@ public:
   */
   pqMultiSliceView(const QString& viewtype, const QString& group, const QString& name,
     vtkSMViewProxy* viewmodule, pqServer* server, QObject* p);
-  virtual ~pqMultiSliceView();
+  ~pqMultiSliceView() override;
 
   /**
   * Provide access to visible slices positions for any axis.
@@ -77,7 +78,7 @@ public:
   /**
   * Override for custom management
   */
-  virtual void setCursor(const QCursor&);
+  void setCursor(const QCursor&) override;
 
   /**
   * Update Outline visibility
@@ -111,21 +112,21 @@ protected:
   void updateViewModelCallBack(vtkObject*, unsigned long, void*);
 
   /**
-  * Override to decorate the QVTKWidget
+  * Override to decorate the pqQVTKWidgetBase
   */
-  virtual QWidget* createWidget();
+  QWidget* createWidget() override;
 
   /**
   * Helper method to get the concreate 3D widget
   */
-  QVTKWidget* getInternalWidget();
+  pqQVTKWidget* getInternalWidget();
 
   /**
   * Get axis index.
   */
   int getAxisIndex(QObject*);
 
-  QPointer<QVTKWidget> InternalWidget;
+  QPointer<pqQVTKWidget> InternalWidget;
   bool UserIsInteracting;
   QPointer<pqMultiSliceAxisWidget> AxisX;
   QPointer<pqMultiSliceAxisWidget> AxisY;

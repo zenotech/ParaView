@@ -38,16 +38,16 @@ class VTKPVSERVERMANAGERDEFAULT_EXPORT vtkSMInteractiveSelectionPipeline
 public:
   static vtkSMInteractiveSelectionPipeline* New();
   vtkTypeMacro(vtkSMInteractiveSelectionPipeline, vtkSMPreselectionPipeline);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
   static vtkSMInteractiveSelectionPipeline* GetInstance();
 
 protected:
   vtkSMInteractiveSelectionPipeline();
-  ~vtkSMInteractiveSelectionPipeline();
+  ~vtkSMInteractiveSelectionPipeline() override;
 
 private:
-  vtkSMInteractiveSelectionPipeline(const vtkSMInteractiveSelectionPipeline&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMInteractiveSelectionPipeline&) VTK_DELETE_FUNCTION;
+  vtkSMInteractiveSelectionPipeline(const vtkSMInteractiveSelectionPipeline&) = delete;
+  void operator=(const vtkSMInteractiveSelectionPipeline&) = delete;
 };
 
 #endif

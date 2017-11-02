@@ -96,7 +96,7 @@ public:
   // a placeholder for whatever operation is actually performed) and store the
   // result in B.  The operation is assumed to be associative.  Commutativity
   // is specified by the Commutative method.
-  virtual void Function(const void* A, void* B, vtkIdType length, int datatype)
+  void Function(const void* A, void* B, vtkIdType length, int datatype) override
   {
     assert((datatype == VTK_DOUBLE) && (length == 6));
     (void)datatype;
@@ -132,7 +132,7 @@ public:
   // Description:
   // Subclasses override this method to specify whether their operation
   // is commutative.  It should return 1 if commutative or 0 if not.
-  virtual int Commutative() { return 1; }
+  int Commutative() override { return 1; }
 };
 
 //----------------------------------------------------------------------------
@@ -142,15 +142,11 @@ vtkPVGeometryFilter::vtkPVGeometryFilter()
   this->UseOutline = 1;
   this->BlockColorsDistinctValues = 7;
   this->UseStrips = 0;
-#ifdef VTKGL2
   // generating cell normals by default really slows down paraview
   // it is especially noticable with the OpenGL2 backend.  Leaving
   // it on for the old backend as some tests rely on the cell normals
   // to be there as they use them for other purposes/etc.
   this->GenerateCellNormals = 0;
-#else
-  this->GenerateCellNormals = 1;
-#endif
   this->Triangulate = false;
   this->NonlinearSubdivisionLevel = 1;
 
@@ -160,10 +156,14 @@ vtkPVGeometryFilter::vtkPVGeometryFilter()
   this->RecoverWireframeFilter = vtkPVRecoverGeometryWireframe::New();
 
   // Setup a callback for the internal readers to report progress.
-  this->InternalProgressObserver = vtkCallbackCommand::New();
-  this->InternalProgressObserver->SetCallback(
-    &vtkPVGeometryFilter::InternalProgressCallbackFunction);
-  this->InternalProgressObserver->SetClientData(this);
+  this->DataSetSurfaceFilter->AddObserver(
+    vtkCommand::ProgressEvent, this, &vtkPVGeometryFilter::HandleGeometryFilterProgress);
+  this->GenericGeometryFilter->AddObserver(
+    vtkCommand::ProgressEvent, this, &vtkPVGeometryFilter::HandleGeometryFilterProgress);
+  this->UnstructuredGridGeometryFilter->AddObserver(
+    vtkCommand::ProgressEvent, this, &vtkPVGeometryFilter::HandleGeometryFilterProgress);
+  this->RecoverWireframeFilter->AddObserver(
+    vtkCommand::ProgressEvent, this, &vtkPVGeometryFilter::HandleGeometryFilterProgress);
 
   this->Controller = 0;
   this->SetController(vtkMultiProcessController::GetGlobalController());
@@ -210,25 +210,17 @@ vtkPVGeometryFilter::~vtkPVGeometryFilter()
     tmp->Delete();
   }
   this->OutlineSource->Delete();
-  this->InternalProgressObserver->Delete();
   this->SetController(0);
 }
 
 //----------------------------------------------------------------------------
 void vtkPVGeometryFilter::SetTriangulate(int val)
 {
-#ifndef VTKGL2
   if (this->Triangulate != val)
   {
     this->Triangulate = val;
     this->Modified();
   }
-#else
-  // OpenGL2 doesn't need to triangulate in the geometry filter. The mapper does
-  // it.
-  (void)val;
-  this->Triangulate = 0;
-#endif
 }
 
 //----------------------------------------------------------------------------
@@ -281,25 +273,21 @@ vtkExecutive* vtkPVGeometryFilter::CreateDefaultExecutive()
 }
 
 //----------------------------------------------------------------------------
-void vtkPVGeometryFilter::InternalProgressCallbackFunction(
-  vtkObject* arg, unsigned long, void* clientdata, void*)
+void vtkPVGeometryFilter::HandleGeometryFilterProgress(vtkObject* caller, unsigned long, void*)
 {
-  reinterpret_cast<vtkPVGeometryFilter*>(clientdata)
-    ->InternalProgressCallback(static_cast<vtkAlgorithm*>(arg));
-}
-
-//----------------------------------------------------------------------------
-void vtkPVGeometryFilter::InternalProgressCallback(vtkAlgorithm* algorithm)
-{
+  vtkAlgorithm* algorithm = vtkAlgorithm::SafeDownCast(caller);
   // This limits progress for only the DataSetSurfaceFilter.
-  float progress = algorithm->GetProgress();
-  if (progress > 0 && progress < 1)
+  if (algorithm)
   {
-    this->UpdateProgress(progress);
-  }
-  if (this->AbortExecute)
-  {
-    algorithm->SetAbortExecute(1);
+    double progress = algorithm->GetProgress();
+    if (progress > 0.0 && progress < 1.0)
+    {
+      this->UpdateProgress(progress);
+    }
+    if (this->AbortExecute)
+    {
+      algorithm->SetAbortExecute(1);
+    }
   }
 }
 
@@ -599,12 +587,12 @@ void vtkPVGeometryFilter::CleanupOutputData(vtkPolyData* output, int doCommunica
 //----------------------------------------------------------------------------
 namespace
 {
-static void vtkPVGeometryFilterMergePieces(vtkMultiPieceDataSet* mp)
+static vtkPolyData* vtkPVGeometryFilterMergePieces(vtkMultiPieceDataSet* mp)
 {
   unsigned int num_pieces = mp->GetNumberOfPieces();
   if (num_pieces == 0)
   {
-    return;
+    return nullptr;
   }
 
   std::vector<vtkPolyData*> inputs;
@@ -635,7 +623,7 @@ static void vtkPVGeometryFilterMergePieces(vtkMultiPieceDataSet* mp)
   if (inputs.size() == 0)
   {
     // not much to do, this is an empty multi-piece.
-    return;
+    return nullptr;
   }
 
   vtkPolyData* output = vtkPolyData::New();
@@ -683,6 +671,7 @@ static void vtkPVGeometryFilterMergePieces(vtkMultiPieceDataSet* mp)
     vtkPVGeometryFilter::POLYS_OFFSETS(), &polys_offsets[0], static_cast<int>(num_pieces));
   metadata->Set(
     vtkPVGeometryFilter::STRIPS_OFFSETS(), &strips_offsets[0], static_cast<int>(num_pieces));
+  return output;
 }
 };
 
@@ -865,9 +854,10 @@ int vtkPVGeometryFilter::RequestAMRData(
 
         this->CleanupOutputData(outputBlock.GetPointer(), /*doCommunicate=*/0);
         this->AddCompositeIndex(outputBlock.GetPointer(), amr->GetCompositeIndex(level, dataIdx));
-        // we'll use block_id since that matches the index for each leaf node.
-        this->AddBlockColors(outputBlock.GetPointer(), block_id);
         this->AddHierarchicalIndex(outputBlock.GetPointer(), level, dataIdx);
+        // we don't call this->AddBlockColors() for AMR dataset since it doesn't
+        // make sense,  nor can be supported since all datasets merged into a
+        // single polydata for rendering.
       }
       amrDatasets->SetPiece(block_id, outputBlock.GetPointer());
     }
@@ -931,7 +921,7 @@ int vtkPVGeometryFilter::RequestCompositeData(
   int numInputs = 0;
 
   unsigned int block_id = 0;
-  iter->SkipEmptyNodesOff(); // since we want to a get an accurtate block-id count to
+  iter->SkipEmptyNodesOff(); // since we want to a get an accurate block-id count to
                              // set vtkBlockColors correctly.
   for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem(), ++block_id)
   {
@@ -967,28 +957,44 @@ int vtkPVGeometryFilter::RequestCompositeData(
   }
   vtkTimerLog::MarkEndEvent("vtkPVGeometryFilter::ExecuteCompositeDataSet");
 
-  // Merge mutli-pieces to avoid efficiency setbacks when ordered
+  // Merge multi-pieces to avoid efficiency setbacks when ordered
   // compositing is employed.
   iter.TakeReference(output->NewIterator());
-  vtkDataObjectTreeIterator* treeIter = vtkDataObjectTreeIterator::SafeDownCast(iter);
-  if (treeIter)
+  iter->SkipEmptyNodesOff(); // since we want to a get an accurate block-id count to
+                             // set vtkBlockColors correctly.
+  if (vtkDataObjectTreeIterator* treeIter = vtkDataObjectTreeIterator::SafeDownCast(iter))
   {
     treeIter->VisitOnlyLeavesOff();
   }
 
   std::vector<vtkMultiPieceDataSet*> pieces_to_merge;
+  std::vector<unsigned int> ids_for_pieces_to_merge;
+  block_id = 0;
   for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem())
   {
     vtkDataObject* curNode = iter->GetCurrentDataObject();
-    if (curNode && vtkMultiPieceDataSet::SafeDownCast(curNode))
+    if (vtkMultiPieceDataSet* piece = vtkMultiPieceDataSet::SafeDownCast(curNode))
     {
-      vtkMultiPieceDataSet* piece = vtkMultiPieceDataSet::SafeDownCast(curNode);
       pieces_to_merge.push_back(piece);
+      // save the current leaf node count. this will be used to decide how to
+      // color the merged pieces. This extra-care is taken to ensure that the
+      // ids are generated in a predictable manner. That way, UI can use that
+      // fact, if needed.
+      ids_for_pieces_to_merge.push_back(block_id);
+    }
+    else if (vtkCompositeDataSet::SafeDownCast(curNode) == nullptr)
+    {
+      // leaf node (null or not, doesn't matter).
+      block_id++;
     }
   }
   for (size_t cc = 0; cc < pieces_to_merge.size(); cc++)
   {
-    vtkPVGeometryFilterMergePieces(pieces_to_merge[cc]);
+    if (vtkPolyData* mergedPD = vtkPVGeometryFilterMergePieces(pieces_to_merge[cc]))
+    {
+      // We need to add vtkBlockColors to the merged dataset.
+      this->AddBlockColors(mergedPD, ids_for_pieces_to_merge[cc]);
+    }
   }
 
   // Now, when running in parallel, processes may have NULL-leaf nodes at
@@ -1014,7 +1020,7 @@ int vtkPVGeometryFilter::RequestCompositeData(
 
       vtkPolyData* trivalInput = vtkPolyData::New();
       iter->SkipEmptyNodesOff();
-      if (treeIter)
+      if (vtkDataObjectTreeIterator* treeIter = vtkDataObjectTreeIterator::SafeDownCast(iter))
       {
         treeIter->VisitOnlyLeavesOff();
       }
@@ -1183,14 +1189,7 @@ void vtkPVGeometryFilter::GenericDataSetExecute(
 
     // Geometry filter
     this->GenericGeometryFilter->SetInputData(input);
-
-    // Observe the progress of the internal filter.
-    this->GenericGeometryFilter->AddObserver(
-      vtkCommand::ProgressEvent, this->InternalProgressObserver);
     this->GenericGeometryFilter->Update();
-    // The internal filter is finished.  Remove the observer.
-    this->GenericGeometryFilter->RemoveObserver(this->InternalProgressObserver);
-
     output->ShallowCopy(this->GenericGeometryFilter->GetOutput());
 
     return;
@@ -1310,7 +1309,7 @@ void vtkPVGeometryFilter::StructuredGridExecute(vtkStructuredGrid* input, vtkPol
     {
       if (input->HasAnyBlankCells())
       {
-        this->DataSetSurfaceFilter->DataSetExecute(input, output);
+        this->DataSetSurfaceFilter->StructuredWithBlankingExecute(input, output);
       }
       else
       {
@@ -1408,20 +1407,20 @@ void vtkPVGeometryFilter::UnstructuredGridExecute(
       this->UnstructuredGridGeometryFilter->SetPassThroughCellIds(this->PassThroughCellIds);
       this->UnstructuredGridGeometryFilter->SetPassThroughPointIds(this->PassThroughPointIds);
 
-      // Observe the progress of the internal filter.
-      // TODO: Make the consecutive internal filter execution have monotonically
-      // increasing progress rather than restarting for every internal filter.
-      this->UnstructuredGridGeometryFilter->AddObserver(
-        vtkCommand::ProgressEvent, this->InternalProgressObserver);
+      // Turn off ghost cell clipping. This ensures that ghost cells are retained
+      // and handed to the DataSetSurfaceFilter to ensure only valid faces are
+      // generated. If this weren't here, then the DataSetSurfaceFilter would
+      // generate boundary faces between normal cells and where the ghost cells
+      // used to be, which is not correct.
+      this->UnstructuredGridGeometryFilter->DuplicateGhostCellClippingOff();
 
       // Disable point merging as it may prevent the correct visualization
       // of non-continuous attributes.
       this->UnstructuredGridGeometryFilter->MergingOff();
 
+      // TODO: Make the consecutive internal filter execution have monotonically
+      // increasing progress rather than restarting for every internal filter.
       this->UnstructuredGridGeometryFilter->Update();
-
-      // The internal filter finished.  Remove the observer.
-      this->UnstructuredGridGeometryFilter->RemoveObserver(this->InternalProgressObserver);
 
       this->UnstructuredGridGeometryFilter->SetInputData(NULL);
 
@@ -1453,12 +1452,7 @@ void vtkPVGeometryFilter::UnstructuredGridExecute(
 
     if (input->GetNumberOfCells() > 0)
     {
-      this->DataSetSurfaceFilter->AddObserver(
-        vtkCommand::ProgressEvent, this->InternalProgressObserver);
-
       this->DataSetSurfaceFilter->UnstructuredGridExecute(input, output);
-      
-      this->DataSetSurfaceFilter->RemoveObserver(this->InternalProgressObserver);
     }
 
     if (this->Triangulate && (output->GetNumberOfPolys() > 0))
@@ -1483,16 +1477,9 @@ void vtkPVGeometryFilter::UnstructuredGridExecute(
       vtkNew<vtkPolyData> nextStageInput;
       nextStageInput->ShallowCopy(output); // Yes output is correct.
       this->RecoverWireframeFilter->SetInputData(nextStageInput.Get());
-
-      // Observe the progress of the internal filter.
       // TODO: Make the consecutive internal filter execution have monotonically
       // increasing progress rather than restarting for every internal filter.
-      this->RecoverWireframeFilter->AddObserver(
-        vtkCommand::ProgressEvent, this->InternalProgressObserver);
       this->RecoverWireframeFilter->Update();
-      // The internal filter finished.  Remove the observer.
-      this->RecoverWireframeFilter->RemoveObserver(this->InternalProgressObserver);
-
       this->RecoverWireframeFilter->SetInputData(NULL);
 
       // Get what should be the final output.
@@ -1614,16 +1601,9 @@ void vtkPVGeometryFilter::PolyDataExecute(
         // Now use vtkPVRecoverGeometryWireframe to create an edge flag attribute
         // that will cause the wireframe to be rendered correctly.
         this->RecoverWireframeFilter->SetInputData(triangleFilter->GetOutput());
-
-        // Observe the progress of the internal filter.
         // TODO: Make the consecutive internal filter execution have monotonically
         // increasing progress rather than restarting for every internal filter.
-        this->RecoverWireframeFilter->AddObserver(
-          vtkCommand::ProgressEvent, this->InternalProgressObserver);
         this->RecoverWireframeFilter->Update();
-        // The internal filter finished.  Remove the observer.
-        this->RecoverWireframeFilter->RemoveObserver(this->InternalProgressObserver);
-
         this->RecoverWireframeFilter->SetInputData(NULL);
 
         // Get what should be the final output.

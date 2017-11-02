@@ -44,8 +44,8 @@ set(_vtkpy_modules
   ${CMAKE_BINARY_DIR}/VTK/Wrapping/Python/vtk_compile_complete
   vtkpython_pyc
   )
-if (TARGET vtkWebPython)
-  list(APPEND _vtkpy_modules vtkWebPython)
+if (TARGET vtkWebPythonCommon)
+  list(APPEND _vtkpy_modules vtkWebPythonCommon)
 endif()
 
 #------------------------------------------------------------------------------
@@ -59,27 +59,15 @@ set(PV_PYTHON_SOURCE_FILES
   paraview/benchmark/manyspheres.py
   paraview/benchmark/basic.py
   paraview/calculator.py
-  paraview/cinemareader.py
-  paraview/cinemaIO/cinema_store.py
-  paraview/cinemaIO/explorers.py
-  paraview/cinemaIO/__init__.py
-  paraview/cinemaIO/OexrHelper.py
-  paraview/cinemaIO/pv_explorers.py
-  paraview/cinemaIO/pv_introspect.py
-  paraview/cinemaIO/raster_wrangler.py
-  paraview/cinemaIO/utils.py
   paraview/collaboration.py
   paraview/coprocessing.py
   paraview/cpstate.py
-  paraview/data_exploration.py
   paraview/demos/demo1.py
   paraview/demos/show_grid_as_background.py
   paraview/extract_selection.py
   paraview/__init__.py
   paraview/lookuptable.py
   paraview/numeric.py
-  paraview/pvfilters.py
-  paraview/pvvtkextensions.py
   paraview/python_view.py
   paraview/servermanager.py
   paraview/simple.py

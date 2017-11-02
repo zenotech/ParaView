@@ -43,7 +43,7 @@ class vtkVRControlSlicePositionStyle : public vtkVRInteractorStyle
 public:
   static vtkVRControlSlicePositionStyle* New();
   vtkTypeMacro(vtkVRControlSlicePositionStyle, vtkVRInteractorStyle) void PrintSelf(
-    ostream& os, vtkIndent indent);
+    ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   virtual int GetControlledPropertySize() { return 3; }
 
@@ -66,8 +66,8 @@ protected:
   vtkNew<vtkMatrix4x4> InitialInvertedPose;
 
 private:
-  vtkVRControlSlicePositionStyle(const vtkVRControlSlicePositionStyle&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkVRControlSlicePositionStyle&) VTK_DELETE_FUNCTION;
+  vtkVRControlSlicePositionStyle(const vtkVRControlSlicePositionStyle&) = delete;
+  void operator=(const vtkVRControlSlicePositionStyle&) = delete;
 };
 
 #endif

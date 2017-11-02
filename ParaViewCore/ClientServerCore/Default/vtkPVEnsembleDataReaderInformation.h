@@ -32,19 +32,19 @@ class VTKPVCLIENTSERVERCOREDEFAULT_EXPORT vtkPVEnsembleDataReaderInformation
 public:
   static vtkPVEnsembleDataReaderInformation* New();
   vtkTypeMacro(vtkPVEnsembleDataReaderInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Transfer information about a single object into this object.
    */
-  virtual void CopyFromObject(vtkObject*);
+  void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
   //@{
   /**
    * Manage a serialized version of the information.
    */
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
+  void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
   //@}
 
   /**
@@ -59,11 +59,11 @@ public:
 
 protected:
   vtkPVEnsembleDataReaderInformation();
-  ~vtkPVEnsembleDataReaderInformation();
+  ~vtkPVEnsembleDataReaderInformation() override;
 
 private:
-  vtkPVEnsembleDataReaderInformation(const vtkPVEnsembleDataReaderInformation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVEnsembleDataReaderInformation&) VTK_DELETE_FUNCTION;
+  vtkPVEnsembleDataReaderInformation(const vtkPVEnsembleDataReaderInformation&) = delete;
+  void operator=(const vtkPVEnsembleDataReaderInformation&) = delete;
 
   class vtkInternal;
   vtkInternal* Internal;

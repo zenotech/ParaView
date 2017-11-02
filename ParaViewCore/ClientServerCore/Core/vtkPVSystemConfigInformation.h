@@ -71,24 +71,24 @@ public:
 public:
   static vtkPVSystemConfigInformation* New();
   vtkTypeMacro(vtkPVSystemConfigInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Transfer information about a single object into this object.
    */
-  virtual void CopyFromObject(vtkObject* obj);
+  void CopyFromObject(vtkObject* obj) VTK_OVERRIDE;
 
   /**
    * Merge another information object.
    */
-  virtual void AddInformation(vtkPVInformation* info);
+  void AddInformation(vtkPVInformation* info) VTK_OVERRIDE;
 
   //@{
   /**
    * Manage a serialized version of the information.
    */
-  virtual void CopyToStream(vtkClientServerStream* css);
-  virtual void CopyFromStream(const vtkClientServerStream* css);
+  void CopyToStream(vtkClientServerStream* css) VTK_OVERRIDE;
+  void CopyFromStream(const vtkClientServerStream* css) VTK_OVERRIDE;
   //@}
 
   /**
@@ -115,14 +115,14 @@ public:
 
 protected:
   vtkPVSystemConfigInformation();
-  ~vtkPVSystemConfigInformation();
+  ~vtkPVSystemConfigInformation() override;
 
 private:
   vector<ConfigInfo> Configs;
 
 private:
-  vtkPVSystemConfigInformation(const vtkPVSystemConfigInformation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVSystemConfigInformation&) VTK_DELETE_FUNCTION;
+  vtkPVSystemConfigInformation(const vtkPVSystemConfigInformation&) = delete;
+  void operator=(const vtkPVSystemConfigInformation&) = delete;
 };
 
 #endif

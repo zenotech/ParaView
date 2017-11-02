@@ -51,21 +51,21 @@ class VTK_EXPORT vtkPVRenderViewWithEDL : public vtkPVRenderView
 public:
   static vtkPVRenderViewWithEDL* New();
   vtkTypeMacro(vtkPVRenderViewWithEDL, vtkPVRenderView);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Description:
   // Initialize the view with an identifier. Unless noted otherwise, this method
   // must be called before calling any other methods on this class.
-  // @CallOnAllProcessess
-  virtual void Initialize(unsigned int id);
+  // \note CallOnAllProcesses
+  virtual void Initialize(unsigned int id) VTK_OVERRIDE;
 
 protected:
   vtkPVRenderViewWithEDL();
   ~vtkPVRenderViewWithEDL();
 
 private:
-  vtkPVRenderViewWithEDL(const vtkPVRenderViewWithEDL&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVRenderViewWithEDL&) VTK_DELETE_FUNCTION;
+  vtkPVRenderViewWithEDL(const vtkPVRenderViewWithEDL&) = delete;
+  void operator=(const vtkPVRenderViewWithEDL&) = delete;
 };
 
 #endif

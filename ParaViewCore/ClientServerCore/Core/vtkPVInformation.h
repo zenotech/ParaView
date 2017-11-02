@@ -32,7 +32,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVInformation : public vtkObject
 {
 public:
   vtkTypeMacro(vtkPVInformation, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Transfer information about a single object into this object.
@@ -72,13 +72,13 @@ public:
 
 protected:
   vtkPVInformation();
-  ~vtkPVInformation();
+  ~vtkPVInformation() override;
 
   int RootOnly;
   vtkSetMacro(RootOnly, int);
 
-  vtkPVInformation(const vtkPVInformation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVInformation&) VTK_DELETE_FUNCTION;
+  vtkPVInformation(const vtkPVInformation&) = delete;
+  void operator=(const vtkPVInformation&) = delete;
 };
 
 #endif

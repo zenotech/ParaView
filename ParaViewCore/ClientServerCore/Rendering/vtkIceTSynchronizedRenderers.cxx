@@ -29,13 +29,9 @@
 #include "vtkSmartPointer.h"
 #include "vtkTileDisplayHelper.h"
 #include "vtkTilesHelper.h"
-#include "vtkTimerLog.h"
 
-#include <IceT.h>
 #include <IceTGL.h>
 #include <assert.h>
-
-#include <map>
 
 // This pass is used to simply render an image onto the frame buffer. Used when
 // an ImageProcessingPass is set to paste the IceT composited image into the
@@ -50,7 +46,7 @@ public:
   vtkRenderPass* DelegatePass;
   bool UseDepthBuffer;
 
-  virtual void Render(const vtkRenderState* render_state)
+  virtual void Render(const vtkRenderState* render_state) VTK_OVERRIDE
   {
     vtkOpenGLClearErrorMacro();
     if (this->DelegatePass)
@@ -79,7 +75,7 @@ public:
 
   void SetUseDepthBuffer(bool useDB) { this->UseDepthBuffer = useDB; }
 
-  virtual void ReleaseGraphicsResources(vtkWindow* window)
+  virtual void ReleaseGraphicsResources(vtkWindow* window) VTK_OVERRIDE
   {
     if (this->DelegatePass)
     {
@@ -118,8 +114,8 @@ public:
   // Set the icet composite pass.
   vtkSetObjectMacro(IceTCompositePass, vtkIceTCompositePass);
 
-  virtual void GetTiledSizeAndOrigin(
-    const vtkRenderState* render_state, int* width, int* height, int* originX, int* originY)
+  virtual void GetTiledSizeAndOrigin(const vtkRenderState* render_state, int* width, int* height,
+    int* originX, int* originY) VTK_OVERRIDE
   {
     assert(this->IceTCompositePass != NULL);
     int tile_dims[2];
@@ -155,7 +151,7 @@ public:
     }
   }
 
-  virtual void ReleaseGraphicsResources(vtkWindow* window)
+  virtual void ReleaseGraphicsResources(vtkWindow* window) VTK_OVERRIDE
   {
     if (this->IceTCompositePass)
     {
@@ -183,7 +179,7 @@ public:
   // Description:
   // Updates some IceT context parameters to suit ParaView's need esp. in
   // multi-view configuration.
-  virtual void SetupContext(const vtkRenderState* render_state)
+  virtual void SetupContext(const vtkRenderState* render_state) VTK_OVERRIDE
   {
     vtkOpenGLClearErrorMacro();
     this->Superclass::SetupContext(render_state);
@@ -416,7 +412,6 @@ void vtkIceTSynchronizedRenderers::SlaveStartRender()
 {
   this->Superclass::SlaveStartRender();
 
-#ifdef VTKGL2
   int x, y;
   this->IceTCompositePass->GetTileDimensions(x, y);
   if (!(x == 1 && y == 1))
@@ -431,5 +426,4 @@ void vtkIceTSynchronizedRenderers::SlaveStartRender()
   this->Renderer->SetBackground(0, 0, 0);
   this->Renderer->SetGradientBackground(false);
   this->Renderer->SetTexturedBackground(false);
-#endif
 }

@@ -43,35 +43,44 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkSpreadSheetView : public vtkPVVie
 public:
   static vtkSpreadSheetView* New();
   vtkTypeMacro(vtkSpreadSheetView, vtkPVView);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Triggers a high-resolution render.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
-  virtual void StillRender() { this->StreamToClient(); }
+  void StillRender() VTK_OVERRIDE { this->StreamToClient(); }
 
   /**
    * Triggers a interactive render. Based on the settings on the view, this may
    * result in a low-resolution rendering or a simplified geometry rendering.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
-  virtual void InteractiveRender() { this->StreamToClient(); }
+  void InteractiveRender() VTK_OVERRIDE { this->StreamToClient(); }
 
   /**
    * Overridden to identify and locate the active-representation.
    */
-  virtual void Update();
+  void Update() VTK_OVERRIDE;
 
   //@{
   /**
    * Get/Set if the view shows extracted selection only or the actual data.
    * false by default.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   void SetShowExtractedSelection(bool);
   vtkBooleanMacro(ShowExtractedSelection, bool);
   vtkGetMacro(ShowExtractedSelection, bool);
+  //@}
+
+  //@{
+  /**
+   * Allow user to enable/disable cell connectivity generation in the datamodel
+   */
+  vtkSetMacro(GenerateCellConnectivity, bool);
+  vtkGetMacro(GenerateCellConnectivity, bool);
+  vtkBooleanMacro(GenerateCellConnectivity, bool);
   //@}
 
   //@{
@@ -84,19 +93,19 @@ public:
 
   /**
    * Get the number of columns.
-   * @CallOnClient
+   * \note CallOnClient
    */
   vtkIdType GetNumberOfColumns();
 
   /**
    * Get the number of rows.
-   * @CallOnClient
+   * \note CallOnClient
    */
   vtkIdType GetNumberOfRows();
 
   /**
    * Returns the name for the column.
-   * @CallOnClient
+   * \note CallOnClient
    */
   const char* GetColumnName(vtkIdType index);
 
@@ -105,7 +114,7 @@ public:
    * Returns the value at given location. This may result in collective
    * operations is data is not available locally. This method can only be called
    * on the CLIENT process for now.
-   * @CallOnClient
+   * \note CallOnClient
    */
   vtkVariant GetValue(vtkIdType row, vtkIdType col);
   vtkVariant GetValueByName(vtkIdType row, const char* columnName);
@@ -125,26 +134,26 @@ public:
   // Forwarded to vtkSortedTableStreamer.
   /**
    * Get/Set the column name to sort by.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   void SetColumnNameToSort(const char*);
   void SetColumnNameToSort() { this->SetColumnNameToSort(NULL); }
 
   /**
    * Get/Set the component to sort with. Use -1 (default) for magnitude.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   void SetComponentToSort(int val);
 
   /**
    * Get/Set whether the sort order must be Max to Min rather than Min to Max.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   void SetInvertSortOrder(bool);
 
   /**
    * Set the block size
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   void SetBlockSize(vtkIdType val);
 
@@ -163,7 +172,7 @@ public:
 
 protected:
   vtkSpreadSheetView();
-  ~vtkSpreadSheetView();
+  ~vtkSpreadSheetView() override;
 
   /**
    * On render streams all the data from the processes to the client.
@@ -178,6 +187,7 @@ protected:
   vtkTable* FetchBlock(vtkIdType blockindex, bool filterColumnForExport = false);
 
   bool ShowExtractedSelection;
+  bool GenerateCellConnectivity;
   vtkSortedTableStreamer* TableStreamer;
   vtkMarkSelectedRows* TableSelectionMarker;
   vtkReductionFilter* ReductionFilter;
@@ -192,8 +202,8 @@ protected:
   };
 
 private:
-  vtkSpreadSheetView(const vtkSpreadSheetView&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSpreadSheetView&) VTK_DELETE_FUNCTION;
+  vtkSpreadSheetView(const vtkSpreadSheetView&) = delete;
+  void operator=(const vtkSpreadSheetView&) = delete;
 
   class vtkInternals;
   friend class vtkInternals;

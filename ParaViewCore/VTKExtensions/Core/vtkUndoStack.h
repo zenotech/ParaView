@@ -55,7 +55,7 @@ public:
 
   static vtkUndoStack* New();
   vtkTypeMacro(vtkUndoStack, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Push an undo set on the Undo stack. This will clear
@@ -173,15 +173,15 @@ public:
 
 protected:
   vtkUndoStack();
-  ~vtkUndoStack();
+  ~vtkUndoStack() override;
   //@}
 
   vtkUndoStackInternal* Internal;
   int StackDepth;
 
 private:
-  vtkUndoStack(const vtkUndoStack&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkUndoStack&) VTK_DELETE_FUNCTION;
+  vtkUndoStack(const vtkUndoStack&) = delete;
+  void operator=(const vtkUndoStack&) = delete;
 
   bool InUndo;
   bool InRedo;

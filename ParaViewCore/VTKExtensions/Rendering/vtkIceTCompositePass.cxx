@@ -15,7 +15,6 @@
 #include "vtkIceTCompositePass.h"
 
 #include "vtkBoundingBox.h"
-#include "vtkCubeAxesActor.h"
 #include "vtkFloatArray.h"
 #include "vtkFrameBufferObjectBase.h"
 #include "vtkIceTContext.h"
@@ -35,34 +34,23 @@
 #include "vtkSmartPointer.h"
 #include "vtkTextureObject.h"
 #include "vtkTilesHelper.h"
+#include "vtkTimerLog.h"
 
 #include "vtk_icet.h"
 #include <assert.h>
 
-#ifdef VTKGL2
 #include "vtkCompositeZPassFS.h"
 #include "vtkOpenGLHelper.h"
 #include "vtkOpenGLShaderCache.h"
 #include "vtkShaderProgram.h"
 #include "vtkTextureObjectVS.h"
 #include "vtkValuePass.h"
-#else
-#include "vtkCamera.h"
-#include "vtkShader2.h"
-#include "vtkShader2Collection.h"
-#include "vtkShaderProgram2.h"
-#include "vtkTextureUnitManager.h"
-#include "vtkUniformVariables.h"
-#include "vtkgl.h"
-extern const char* vtkIceTCompositeZPassShader_fs;
-#endif
 
 namespace
 {
 static vtkIceTCompositePass* IceTDrawCallbackHandle = NULL;
 static const vtkRenderState* IceTDrawCallbackState = NULL;
 
-#ifdef VTKGL2
 void IceTDrawCallback(const IceTDouble* projection_matrix, const IceTDouble* modelview_matrix,
   const IceTFloat* background_color, const IceTInt* readback_viewport, IceTImage result)
 {
@@ -72,15 +60,6 @@ void IceTDrawCallback(const IceTDouble* projection_matrix, const IceTDouble* mod
       background_color, readback_viewport, result);
   }
 }
-#else
-void IceTGLDrawCallback()
-{
-  if (IceTDrawCallbackState && IceTDrawCallbackHandle)
-  {
-    IceTDrawCallbackHandle->GLDraw(IceTDrawCallbackState);
-  }
-}
-#endif
 
 void MergeCubeAxesBounds(double bounds[6], const vtkRenderState* rState)
 {
@@ -90,11 +69,20 @@ void MergeCubeAxesBounds(double bounds[6], const vtkRenderState* rState)
   for (int cc = 0; cc < rState->GetPropArrayCount(); cc++)
   {
     vtkProp* prop = rState->GetPropArray()[cc];
-    vtkCubeAxesActor* cubeAxes = vtkCubeAxesActor::SafeDownCast(prop);
-    if (cubeAxes != NULL && prop->GetVisibility() && prop->GetUseBounds())
+    if (prop->GetVisibility() && prop->GetUseBounds())
     {
-      // Use custom bounds API for cube axes to embed titles and labels
-      bbox.AddBounds(cubeAxes->GetRenderedBounds());
+      if (prop->IsA("vtkGridAxes3DActor") || prop->IsA("vtkCubeAxesActor"))
+      {
+        vtkProp3D* prop3D = static_cast<vtkProp3D*>(prop);
+        vtkBoundingBox box(prop3D->GetBounds());
+        // This is the same trick used by vtkCubeAxesActor::GetRenderedBounds():
+        if (box.IsValid())
+        {
+          box.Inflate(box.GetMaxLength());
+          box.GetBounds(bounds);
+          bbox.AddBounds(bounds);
+        }
+      }
     }
   }
 
@@ -158,11 +146,7 @@ vtkIceTCompositePass::~vtkIceTCompositePass()
   }
   if (this->Program != 0)
   {
-#ifdef VTKGL2
     delete this->Program;
-#else
-    this->Program->Delete();
-#endif
     this->Program = 0;
   }
 
@@ -208,11 +192,7 @@ void vtkIceTCompositePass::ReleaseGraphicsResources(vtkWindow* window)
   }
   if (this->Program != 0)
   {
-#ifdef VTKGL2
     this->Program->ReleaseGraphicsResources(window);
-#else
-    this->Program->ReleaseGraphicsResources();
-#endif
   }
   if (this->BackgroundTexture != 0)
   {
@@ -260,13 +240,11 @@ void vtkIceTCompositePass::SetupContext(const vtkRenderState* render_state)
   }
   else
   {
-#ifdef VTKGL2
     // First ensure the context supports floating point textures
     if (this->EnableFloatValuePass)
     {
       vtkValuePass* valuePass = vtkValuePass::SafeDownCast(this->RenderPass);
-      vtkRenderWindow* context = render_state->GetRenderer()->GetRenderWindow();
-      bool supported = valuePass->IsFloatingPointModeSupported(context);
+      bool supported = valuePass->IsFloatingPointModeSupported();
       if (!supported)
       {
         vtkWarningMacro("Disabling FloatValuePass!");
@@ -276,9 +254,6 @@ void vtkIceTCompositePass::SetupContext(const vtkRenderState* render_state)
 
     IceTEnum const format =
       this->EnableFloatValuePass ? ICET_IMAGE_COLOR_RGBA_FLOAT : ICET_IMAGE_COLOR_RGBA_UBYTE;
-#else
-    IceTEnum const format = ICET_IMAGE_COLOR_RGBA_UBYTE;
-#endif
 
     // If translucent geometry is present, then we should not include
     // ICET_DEPTH_BUFFER_BIT in  the input-buffer argument.
@@ -474,7 +449,6 @@ void vtkIceTCompositePass::Render(const vtkRenderState* render_state)
   this->IceTContext->MakeCurrent();
   this->SetupContext(render_state);
 
-#ifdef VTKGL2
   icetDrawCallback(IceTDrawCallback);
   IceTDrawCallbackHandle = this;
   IceTDrawCallbackState = render_state;
@@ -494,14 +468,6 @@ void vtkIceTCompositePass::Render(const vtkRenderState* render_state)
   IceTImage renderedImage = icetDrawFrame(vcdc->Element[0], wcvc->Element[0], background);
   IceTDrawCallbackHandle = NULL;
   IceTDrawCallbackState = NULL;
-#else
-  icetGLDrawCallback(IceTGLDrawCallback);
-  IceTDrawCallbackHandle = this;
-  IceTDrawCallbackState = render_state;
-  IceTImage renderedImage = icetGLDrawFrame();
-  IceTDrawCallbackHandle = NULL;
-  IceTDrawCallbackState = NULL;
-#endif
 
   // isolate vtk from IceT OpenGL errors
   vtkOpenGLClearErrorMacro();
@@ -514,12 +480,8 @@ void vtkIceTCompositePass::Render(const vtkRenderState* render_state)
     int eyeIndex = render_state->GetRenderer()->GetActiveCamera()->GetLeftEye() == 1 ? 0 : 1;
     this->LastRenderedRGBAColors = this->LastRenderedEyes[eyeIndex];
   }
-#ifdef VTKGL2
   IceTEnum const format =
     this->EnableFloatValuePass ? ICET_IMAGE_COLOR_RGBA_FLOAT : ICET_IMAGE_COLOR_RGBA_UBYTE;
-#else
-  IceTEnum const format = ICET_IMAGE_COLOR_RGBA_UBYTE;
-#endif
 
   // Capture image.
   vtkIdType numPixels = icetImageGetNumPixels(renderedImage);
@@ -576,6 +538,22 @@ void vtkIceTCompositePass::Render(const vtkRenderState* render_state)
   }
 
   this->CleanupContext(render_state);
+
+  double val = 0.;
+  icetGetDoublev(ICET_COMPOSITE_TIME, &val);
+  vtkTimerLog::InsertTimedEvent("ICET_COMPOSITE_TIME", val, 0);
+  icetGetDoublev(ICET_BLEND_TIME, &val);
+  vtkTimerLog::InsertTimedEvent("ICET_BLEND_TIME", val, 0);
+  icetGetDoublev(ICET_COMPRESS_TIME, &val);
+  vtkTimerLog::InsertTimedEvent("ICET_COMPRESS_TIME", val, 0);
+  icetGetDoublev(ICET_COLLECT_TIME, &val);
+  vtkTimerLog::InsertTimedEvent("ICET_COLLECT_TIME", val, 0);
+  icetGetDoublev(ICET_RENDER_TIME, &val);
+  vtkTimerLog::InsertTimedEvent("ICET_RENDER_TIME", val, 0);
+  icetGetDoublev(ICET_BUFFER_READ_TIME, &val);
+  vtkTimerLog::InsertTimedEvent("ICET_BUFFER_READ_TIME", val, 0);
+  icetGetDoublev(ICET_BUFFER_WRITE_TIME, &val);
+  vtkTimerLog::InsertTimedEvent("ICET_BUFFER_WRITE_TIME", val, 0);
 }
 
 // ----------------------------------------------------------------------------
@@ -584,7 +562,6 @@ void vtkIceTCompositePass::CreateProgram(vtkOpenGLRenderWindow* context)
   assert("pre: context_exists" && context != 0);
   assert("pre: Program_void" && this->Program == 0);
 
-#ifdef VTKGL2
   this->Program = new vtkOpenGLHelper;
   this->Program->Program =
     context->GetShaderCache()->ReadyShaderProgram(vtkTextureObjectVS, vtkCompositeZPassFS, "");
@@ -592,23 +569,6 @@ void vtkIceTCompositePass::CreateProgram(vtkOpenGLRenderWindow* context)
   {
     vtkErrorMacro("Shader program failed to build.");
   }
-#else
-  this->Program = vtkShaderProgram2::New();
-  this->Program->SetContext(context);
-
-  vtkShader2* shader = vtkShader2::New();
-  shader->SetContext(context);
-
-  this->Program->GetShaders()->AddItem(shader);
-  shader->Delete();
-  shader->SetType(VTK_SHADER_TYPE_FRAGMENT);
-  shader->SetSourceCode(vtkIceTCompositeZPassShader_fs);
-  this->Program->Build();
-  if (this->Program->GetLastBuildStatus() != VTK_SHADER_PROGRAM2_LINK_SUCCEEDED)
-  {
-    vtkErrorMacro("prog build failed");
-  }
-#endif
 
   assert("post: Program_exists" && this->Program != 0);
 }
@@ -654,7 +614,6 @@ void vtkIceTCompositePass::GLDraw(const vtkRenderState* render_state)
 
 //----------------------------------------------------------------------------
 // for OpenGL 2+
-#ifdef VTKGL2
 void vtkIceTCompositePass::Draw(const vtkRenderState* render_state, const IceTDouble* proj_matrix,
   const IceTDouble* mv_matrix, const IceTFloat* vtkNotUsed(background_color),
   const IceTInt* vtkNotUsed(readback_viewport), IceTImage result)
@@ -703,7 +662,7 @@ void vtkIceTCompositePass::Draw(const vtkRenderState* render_state, const IceTDo
     // Swap out the projection matrix for the (possibly modified) one from
     // iceT. This lets vtkCoordinate and vtkRenderer coordinate conversion
     // methods to work properly.
-    vtkMatrix4x4 *oldExplicitProj = cam->GetExplicitProjectionTransformMatrix();
+    vtkMatrix4x4* oldExplicitProj = cam->GetExplicitProjectionTransformMatrix();
     vtkNew<vtkMatrix4x4> tmpProjMat;
     tmpProjMat->DeepCopy(vcdc);
     tmpProjMat->Transpose();
@@ -760,14 +719,6 @@ void vtkIceTCompositePass::Draw(const vtkRenderState* render_state, const IceTDo
   }
   vtkOpenGLCheckErrorMacro("failed after Draw");
 }
-#else
-void vtkIceTCompositePass::Draw(const vtkRenderState* vtkNotUsed(render_state),
-  const IceTDouble* vtkNotUsed(proj_matrix), const IceTDouble* vtkNotUsed(mv_matrix),
-  const IceTFloat* vtkNotUsed(background_color), const IceTInt* vtkNotUsed(readback_viewport),
-  IceTImage vtkNotUsed(result))
-{
-}
-#endif
 
 //----------------------------------------------------------------------------
 void vtkIceTCompositePass::UpdateTileInformation(const vtkRenderState* render_state)
@@ -1009,10 +960,20 @@ void vtkIceTCompositePass::PushIceTDepthBufferToScreen(const vtkRenderState* ren
   this->ZTexture->CreateDepth(dims[0], dims[1], vtkTextureObject::Native, this->PBO);
 
   // TO to FB: apply TO on quad with special zcomposite fragment shader.
-  glPushAttrib(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+  GLboolean prevColorMask[4];
+  glGetBooleanv(GL_COLOR_WRITEMASK, prevColorMask);
   glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+  GLboolean prevDepthTest;
+  glGetBooleanv(GL_DEPTH_TEST, &prevDepthTest);
   glEnable(GL_DEPTH_TEST);
+
+  GLboolean prevDepthMask;
+  glGetBooleanv(GL_DEPTH_WRITEMASK, &prevDepthMask);
   glDepthMask(GL_TRUE);
+
+  GLint prevDepthFunc;
+  glGetIntegerv(GL_DEPTH_FUNC, &prevDepthFunc);
   glDepthFunc(GL_ALWAYS);
 
   if (this->Program == 0)
@@ -1020,29 +981,25 @@ void vtkIceTCompositePass::PushIceTDepthBufferToScreen(const vtkRenderState* ren
     this->CreateProgram(context);
   }
 
-#ifdef VTKGL2
   context->GetShaderCache()->ReadyShaderProgram(this->Program->Program);
   this->ZTexture->Activate();
   this->Program->Program->SetUniformi("depth", this->ZTexture->GetTextureUnit());
   this->ZTexture->CopyToFrameBuffer(
     0, 0, w - 1, h - 1, 0, 0, w, h, this->Program->Program, this->Program->VAO);
   this->ZTexture->Deactivate();
-#else
-  vtkTextureUnitManager* tu = context->GetTextureUnitManager();
-  int sourceId = tu->Allocate();
-  this->Program->GetUniformVariables()->SetUniformi("depth", 1, &sourceId);
-  vtkgl::ActiveTexture(vtkgl::TEXTURE0 + static_cast<GLenum>(sourceId));
-  this->Program->Use();
-  this->ZTexture->Bind();
-  this->ZTexture->CopyToFrameBuffer(0, 0, w - 1, h - 1, 0, 0, w, h);
-  this->ZTexture->UnBind();
-  this->Program->Restore();
 
-  tu->Free(sourceId);
-  vtkgl::ActiveTexture(vtkgl::TEXTURE0);
-#endif
+  if (prevDepthTest)
+  {
+    glEnable(GL_DEPTH_TEST);
+  }
+  else
+  {
+    glDisable(GL_DEPTH_TEST);
+  }
 
-  glPopAttrib();
+  glDepthMask(prevDepthMask);
+  glDepthFunc(prevDepthFunc);
+  glColorMask(prevColorMask[0], prevColorMask[1], prevColorMask[2], prevColorMask[3]);
 
   vtkOpenGLCheckErrorMacro("failed after PushIceTDepthBufferToScreen");
 }
@@ -1101,7 +1058,6 @@ void vtkIceTCompositePass::PushIceTColorBufferToScreen(const vtkRenderState* ren
   vtkOpenGLRenderWindow* context =
     vtkOpenGLRenderWindow::SafeDownCast(render_state->GetRenderer()->GetRenderWindow());
 
-#ifdef VTKGL2
   GLint blendSrcA = GL_ONE;
   GLint blendDstA = GL_ONE_MINUS_SRC_ALPHA;
   GLint blendSrcC = GL_SRC_ALPHA;
@@ -1113,27 +1069,6 @@ void vtkIceTCompositePass::PushIceTColorBufferToScreen(const vtkRenderState* ren
   // framebuffers have their color premultiplied by alpha.
   glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
   this->BackgroundTexture->CopyToFrameBuffer(0, 0, w - 1, h - 1, 0, 0, w, h, NULL, NULL);
-#else
-  glDisable(GL_ALPHA_TEST);
-  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-
-  // framebuffers have their color premultiplied by alpha.
-  vtkgl::BlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
-  // fixed vertex shader
-  glDisable(GL_LIGHTING);
-
-  // fixed fragment shader
-  glEnable(GL_TEXTURE_2D);
-  glDisable(GL_FOG);
-
-  // Copy background to colorbuffer
-  vtkgl::ActiveTexture(vtkgl::TEXTURE0);
-  // fixed-pipeline for vertex and fragment shaders.
-  this->BackgroundTexture->Bind();
-  this->BackgroundTexture->CopyToFrameBuffer(0, 0, w - 1, h - 1, 0, 0, w, h);
-  this->BackgroundTexture->UnBind();
-#endif
 
   // Apply (with blending) IceT color buffer on top of background
 
@@ -1166,17 +1101,9 @@ void vtkIceTCompositePass::PushIceTColorBufferToScreen(const vtkRenderState* ren
 
   glEnable(GL_BLEND);
 
-#ifdef VTKGL2
   this->IceTTexture->CopyToFrameBuffer(0, 0, w - 1, h - 1, 0, 0, w, h, NULL, NULL);
   // restore the blend state
   glBlendFuncSeparate(blendSrcC, blendDstC, blendSrcA, blendDstA);
-#else
-  vtkgl::ActiveTexture(vtkgl::TEXTURE0);
-  // fixed-pipeline for vertex and fragment shaders.
-  this->IceTTexture->Bind();
-  this->IceTTexture->CopyToFrameBuffer(0, 0, w - 1, h - 1, 0, 0, w, h);
-  this->IceTTexture->UnBind();
-#endif
 
   glPopAttrib();
 

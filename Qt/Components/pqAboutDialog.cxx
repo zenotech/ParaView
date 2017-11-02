@@ -43,11 +43,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkPVConfig.h"
 #include "vtkPVOpenGLInformation.h"
 #include "vtkPVPythonInformation.h"
+#include "vtkPVRenderingCapabilitiesInformation.h"
 #include "vtkPVServerInformation.h"
 #include "vtkProcessModule.h"
 #include "vtkSMProxyManager.h"
 #include "vtkSMSession.h"
 #include "vtkSMViewProxy.h"
+#include <QOpenGLContext>
+#include <QOpenGLFunctions>
 
 #include <QApplication>
 #include <QFile>
@@ -136,6 +139,8 @@ void pqAboutDialog::AddClientInformation()
   ::addItem(tree, "Architecture", PARAVIEW_BUILD_ARCHITECTURE);
 #endif
 
+  ::addItem(tree, "vtkIdType size", QString("%1bits").arg(8 * sizeof(vtkIdType)));
+
   vtkNew<vtkPVPythonInformation> pythonInfo;
   pythonInfo->CopyFromObject(NULL);
 
@@ -180,17 +185,18 @@ void pqAboutDialog::AddClientInformation()
   ::addItem(tree, "Test Directory", opts->GetTestDirectory());
   ::addItem(tree, "Data Directory", opts->GetDataDirectory());
 
-  vtkNew<vtkPVOpenGLInformation> OpenGLInfo;
-  OpenGLInfo->CopyFromObject(NULL);
-
-  ::addItem(tree, "OpenGL Vendor", QString::fromStdString(OpenGLInfo->GetVendor()));
-  ::addItem(tree, "OpenGL Version", QString::fromStdString(OpenGLInfo->GetVersion()));
-  ::addItem(tree, "OpenGL Renderer", QString::fromStdString(OpenGLInfo->GetRenderer()));
-#if QT_VERSION >= 0x050000
+  // For local OpenGL info, we ask Qt, as that's more truthful anyways.
+  QOpenGLContext* ctx = QOpenGLContext::currentContext();
+  if (QOpenGLFunctions* f = ctx ? ctx->functions() : nullptr)
+  {
+    const char* glVendor = reinterpret_cast<const char*>(f->glGetString(GL_VENDOR));
+    const char* glRenderer = reinterpret_cast<const char*>(f->glGetString(GL_RENDERER));
+    const char* glVersion = reinterpret_cast<const char*>(f->glGetString(GL_VERSION));
+    ::addItem(tree, "OpenGL Vendor", glVendor);
+    ::addItem(tree, "OpenGL Version", glVersion);
+    ::addItem(tree, "OpenGL Renderer", glRenderer);
+  }
   tree->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
-#else
-  tree->header()->setResizeMode(QHeaderView::ResizeToContents);
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -202,11 +208,7 @@ void pqAboutDialog::AddServerInformation()
   if (servers.size() > 0)
   {
     this->AddServerInformation(servers[0], tree);
-#if QT_VERSION >= 0x050000
     tree->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
-#else
-    tree->header()->setResizeMode(QHeaderView::ResizeToContents);
-#endif
   }
 }
 
@@ -251,6 +253,7 @@ void pqAboutDialog::AddServerInformation(pqServer* server, QTreeWidget* tree)
 
   ::addItem(tree, "Write Ogg/Theora Animations", serverInfo->GetOGVSupport() ? "On" : "Off");
   ::addItem(tree, "Write AVI Animations", serverInfo->GetAVISupport() ? "On" : "Off");
+  ::addItem(tree, "vtkIdType size", QString("%1bits").arg(serverInfo->GetIdTypeSize()));
 
   vtkSMSession* session = server->session();
   vtkNew<vtkPVPythonInformation> pythonInfo;
@@ -285,4 +288,25 @@ void pqAboutDialog::AddServerInformation(pqServer* server, QTreeWidget* tree)
   ::addItem(tree, "OpenGL Vendor", QString::fromStdString(OpenGLInfo->GetVendor()));
   ::addItem(tree, "OpenGL Version", QString::fromStdString(OpenGLInfo->GetVersion()));
   ::addItem(tree, "OpenGL Renderer", QString::fromStdString(OpenGLInfo->GetRenderer()));
+
+  vtkNew<vtkPVRenderingCapabilitiesInformation> renInfo;
+  session->GatherInformation(vtkPVSession::RENDER_SERVER, renInfo.GetPointer(), 0);
+
+  if (renInfo->Supports(vtkPVRenderingCapabilitiesInformation::HEADLESS_RENDERING))
+  {
+    std::ostringstream headlessModes;
+    if (renInfo->Supports(vtkPVRenderingCapabilitiesInformation::HEADLESS_RENDERING_USES_EGL))
+    {
+      headlessModes << "EGL ";
+    }
+    if (renInfo->Supports(vtkPVRenderingCapabilitiesInformation::HEADLESS_RENDERING_USES_OSMESA))
+    {
+      headlessModes << "OSMesa";
+    }
+    ::addItem(tree, "Headless support", QString::fromStdString(headlessModes.str()));
+  }
+  else
+  {
+    ::addItem(tree, "Headless support", "None");
+  }
 }

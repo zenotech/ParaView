@@ -4,6 +4,7 @@
   Module:    vtkPVSynchronizedRenderer.cxx
 
   Copyright (c) Kitware, Inc.
+  Copyright (c) 2017, NVIDIA CORPORATION.
   All rights reserved.
   See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
 
@@ -337,29 +338,16 @@ void vtkPVSynchronizedRenderer::SetRenderEmptyImages(bool useREI)
 }
 
 //----------------------------------------------------------------------------
-void vtkPVSynchronizedRenderer::SetUseFXAA(bool enable)
+void vtkPVSynchronizedRenderer::SetNVPipeSupport(bool enable)
 {
-  if (this->ParallelSynchronizer)
+  vtkPVClientServerSynchronizedRenderers* cssync =
+    vtkPVClientServerSynchronizedRenderers::SafeDownCast(this->CSSynchronizer);
+  if (!cssync)
   {
-    this->ParallelSynchronizer->SetUseFXAA(enable);
+    return;
   }
-  if (this->CSSynchronizer)
-  {
-    this->CSSynchronizer->SetUseFXAA(enable);
-  }
-}
 
-//----------------------------------------------------------------------------
-void vtkPVSynchronizedRenderer::SetFXAAOptions(vtkFXAAOptions* opts)
-{
-  if (this->ParallelSynchronizer)
-  {
-    this->ParallelSynchronizer->SetFXAAOptions(opts);
-  }
-  if (this->CSSynchronizer)
-  {
-    this->CSSynchronizer->SetFXAAOptions(opts);
-  }
+  cssync->SetNVPipeSupport(enable);
 }
 
 //----------------------------------------------------------------------------

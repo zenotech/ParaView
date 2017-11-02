@@ -50,7 +50,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPythonProgrammableFilter : public vtkP
 {
 public:
   vtkTypeMacro(vtkPythonProgrammableFilter, vtkProgrammableFilter);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
   static vtkPythonProgrammableFilter* New();
 
   //@{
@@ -127,44 +127,44 @@ public:
    * Set the number of input ports
    * This function is explicitly exposed to enable a vtkClientServerInterpreter to call it
    */
-  void SetNumberOfInputPorts(int numberOfInputPorts)
+  void SetNumberOfInputPorts(int numberOfInputPorts) VTK_OVERRIDE
   {
     this->Superclass::SetNumberOfInputPorts(numberOfInputPorts);
   }
 
 protected:
   vtkPythonProgrammableFilter();
-  ~vtkPythonProgrammableFilter();
+  ~vtkPythonProgrammableFilter() override;
 
   /**
    * For internal use only.
    */
   void Exec(const char*, const char*);
 
-  virtual int FillOutputPortInformation(int port, vtkInformation* info);
+  int FillOutputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   // overridden to allow multiple inputs to port 0
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   /**
    * Creates whatever output data set type is selected.
    */
-  virtual int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
-  virtual int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
-  virtual int RequestUpdateExtent(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestUpdateExtent(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   /**
    * We want to temporarilly cache request to be used in the Python
    * code so we override this method to store request for later use
    * since otherwise we won't have access to it.
    */
-  virtual int ProcessRequest(
-    vtkInformation* request, vtkInformationVector** inInfo, vtkInformationVector* outInfo);
+  int ProcessRequest(vtkInformation* request, vtkInformationVector** inInfo,
+    vtkInformationVector* outInfo) VTK_OVERRIDE;
 
   char* Script;
   char* InformationScript;
@@ -173,8 +173,8 @@ protected:
   int OutputDataSetType;
 
 private:
-  vtkPythonProgrammableFilter(const vtkPythonProgrammableFilter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPythonProgrammableFilter&) VTK_DELETE_FUNCTION;
+  vtkPythonProgrammableFilter(const vtkPythonProgrammableFilter&) = delete;
+  void operator=(const vtkPythonProgrammableFilter&) = delete;
 
   /**
    * When there is a request, cache it so that we can use it inside the Python

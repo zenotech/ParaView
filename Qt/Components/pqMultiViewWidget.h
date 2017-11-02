@@ -33,8 +33,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define pqMultiViewWidget_h
 
 #include "pqComponentsModule.h"
-#include <QUuid>
 #include <QWidget>
+
+#include "vtkSetGet.h" // for VTK_LEGACY
 
 class pqProxy;
 class pqView;
@@ -54,10 +55,11 @@ class PQCOMPONENTS_EXPORT pqMultiViewWidget : public QWidget
 {
   Q_OBJECT
   typedef QWidget Superclass;
-
+  Q_PROPERTY(bool decorationsVisibility READ isDecorationsVisible WRITE setDecorationsVisible NOTIFY
+      decorationsVisibilityChanged)
 public:
   pqMultiViewWidget(QWidget* parent = 0, Qt::WindowFlags f = 0);
-  virtual ~pqMultiViewWidget();
+  ~pqMultiViewWidget() override;
 
   /**
   * Get/Set the vtkSMViewLayoutProxy instance this widget is using as the layout
@@ -70,28 +72,6 @@ public:
   * Returns whether window decorations and splitter handles are visible.
   */
   bool isDecorationsVisible() const { return this->DecorationsVisible; }
-
-  /**
-  * Captures an image for the views in the layout. Note that there must be
-  * at least one valid view in the widget, otherwise returns NULL.
-  */
-  vtkImageData* captureImage(int width, int height);
-
-  /**
-  * setups up the environment for capture. Returns the magnification that can
-  * be used to capture the image for required size.
-  */
-  int prepareForCapture(int width, int height);
-
-  /**
-  * cleans up the environment after image capture.
-  */
-  void cleanupAfterCapture();
-
-  /**
-  * Capture an image and saves it out to a file.
-  */
-  bool writeImage(const QString& filename, int width, int height, int quality = -1);
 
   /**
   * Returns list of views assigned to frames in this widget.
@@ -116,6 +96,12 @@ signals:
   * fired when a frame in this widget becomes active.
   */
   void frameActivated();
+
+  /**
+   * fired when the decorations visibility is changed (by calling
+   * setDecorationsVisible).
+   */
+  void decorationsVisibilityChanged(bool visible);
 
 public slots:
   /**
@@ -146,6 +132,22 @@ public slots:
   void setDecorationsVisible(bool);
   void showDecorations() { this->setDecorationsVisible(true); }
   void hideDecorations() { this->setDecorationsVisible(false); }
+
+  /**
+   * This API is added temporarily and will be removed in the future.
+   * This is added to make the pqMultiViewWidget use QSplitter even when
+   * `DecorationsVisible` is set to false. Thus allowing views to be resized
+   * even when decorations are hidden. In reality, we should be able to simply
+   * use QSplitter with 0 handle width when decorations are hidden always.
+   * However, when an empty frame is present, the QSplitter sizing doesn't work
+   * as expected when saving screenshots of specific sizes. We need to
+   * investigate entering preview mode automatically when saving screenshots
+   * (#17552). When that's fixed, this can be removed.
+   *
+   * This method should be called before calling `setDecorationsVisible(false)`.
+   * Default value is false.
+   */
+  void setForceSplitter(bool val) { this->ForceSplitter = val; }
 
   /**
   * Locks the maximum size for each view-frame to the given size.
@@ -204,6 +206,12 @@ protected slots:
   */
   void viewAdded(pqView*);
 
+  /**
+  * called when the vtkSMViewLayoutProxy is changed in order to synchronize
+  * the separator width and color with the user inputs.
+  */
+  void updateSplitter();
+
 protected:
   /**
   * Called whenever a new frame needs to be created for a view. Note that view
@@ -217,7 +225,7 @@ protected:
   * Event filter callback to detect when a sub-frame becomes active, so that
   * we can mark it as such.
   */
-  virtual bool eventFilter(QObject* caller, QEvent* evt);
+  bool eventFilter(QObject* caller, QEvent* evt) override;
 
 private:
   QWidget* createWidget(int, vtkSMViewLayoutProxy* layout, QWidget* parentWdg, int& maxIndex);
@@ -229,6 +237,7 @@ private:
   pqInternals* Internals;
 
   bool DecorationsVisible;
+  bool ForceSplitter;
 
   QSize LockViewSize;
 };

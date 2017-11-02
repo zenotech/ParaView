@@ -48,7 +48,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMReaderFactory : public vtkSMObject
 public:
   static vtkSMReaderFactory* New();
   vtkTypeMacro(vtkSMReaderFactory, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Cleanup all registered prototypes.
@@ -176,7 +176,7 @@ public:
 
 protected:
   vtkSMReaderFactory();
-  ~vtkSMReaderFactory();
+  ~vtkSMReaderFactory() override;
 
   // To support legacy configuration files.
   void RegisterPrototype(
@@ -190,8 +190,8 @@ protected:
   vtkStringList* Readers;
 
 private:
-  vtkSMReaderFactory(const vtkSMReaderFactory&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMReaderFactory&) VTK_DELETE_FUNCTION;
+  vtkSMReaderFactory(const vtkSMReaderFactory&) = delete;
+  void operator=(const vtkSMReaderFactory&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

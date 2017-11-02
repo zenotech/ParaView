@@ -32,8 +32,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqView.h"
 
 // ParaView Server Manager includes.
+#include "vtkErrorCode.h"
 #include "vtkEventQtSlotConnect.h"
-#include "vtkImageData.h"
 #include "vtkMath.h"
 #include "vtkNew.h"
 #include "vtkPVXMLElement.h"
@@ -391,95 +391,6 @@ QSize pqView::getSize()
 {
   QWidget* wdg = this->widget();
   return wdg ? wdg->size() : QSize(0, 0);
-}
-
-//-----------------------------------------------------------------------------
-int pqView::computeMagnification(const QSize& fullsize, QSize& viewsize)
-{
-  int magnification = 1;
-
-  // If fullsize > viewsize, then magnification is involved.
-  int temp = std::ceil(fullsize.width() / static_cast<double>(viewsize.width()));
-  magnification = (temp > magnification) ? temp : magnification;
-
-  temp = std::ceil(fullsize.height() / static_cast<double>(viewsize.height()));
-  magnification = (temp > magnification) ? temp : magnification;
-
-  viewsize = fullsize / magnification;
-  return magnification;
-}
-
-//-----------------------------------------------------------------------------
-bool pqView::writeImage(const QString& filename, const QSize& fullsize, int quality)
-{
-  // FIXME: code duplicated with pqView::captureImage(). Fix it :).
-  if (!this->widget()->isVisible())
-  {
-    return false;
-  }
-
-  QWidget* vtkwidget = this->widget();
-  QSize cursize = vtkwidget->size();
-  QSize newsize = cursize;
-  int magnification = 1;
-  if (fullsize.isValid())
-  {
-    magnification = pqView::computeMagnification(fullsize, newsize);
-    vtkwidget->resize(newsize);
-  }
-  this->render();
-
-  vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  bool status = controller->WriteImage(
-    this->getViewProxy(), filename.toLatin1().data(), magnification, quality);
-  if (fullsize.isValid())
-  {
-    vtkwidget->resize(newsize);
-    vtkwidget->resize(cursize);
-    this->render();
-  }
-  return status;
-}
-
-//-----------------------------------------------------------------------------
-vtkImageData* pqView::captureImage(const QSize& fullsize)
-{
-  if (!this->widget()->isVisible())
-  {
-    return NULL;
-  }
-
-  QWidget* vtkwidget = this->widget();
-  QSize cursize = vtkwidget->size();
-  QSize newsize = cursize;
-  int magnification = 1;
-  if (fullsize.isValid())
-  {
-    magnification = pqView::computeMagnification(fullsize, newsize);
-    vtkwidget->resize(newsize);
-  }
-  this->render();
-
-  vtkImageData* vtkimage = this->captureImage(magnification);
-  if (fullsize.isValid())
-  {
-    vtkwidget->resize(newsize);
-    vtkwidget->resize(cursize);
-    this->render();
-  }
-  return vtkimage;
-}
-
-//-----------------------------------------------------------------------------
-vtkImageData* pqView::captureImage(int magnification)
-{
-  if (this->widget() && this->widget()->isVisible())
-  {
-    vtkSMViewProxy* view = this->getViewProxy();
-    Q_ASSERT(view);
-    return view->CaptureWindow(magnification);
-  }
-  return NULL;
 }
 
 //-----------------------------------------------------------------------------

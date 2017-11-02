@@ -33,10 +33,10 @@
  * The learned model output format is rather dense and can be confusing,
  * so it is discussed here.
  * The first filter output is a multiblock dataset consisting of 2 tables:
- * <ol>
- * <li> Raw covariance data.
- * <li> Covariance matrix and its Cholesky decomposition.
- * <ol>
+ *
+ * \li Raw covariance data.
+ * \li Covariance matrix and its Cholesky decomposition.
+ *
  * The raw covariance table has 3 meaningful columns: 2 titled "Column1"
  * and "Column2" whose entries generally refer to the N arrays you selected
  * when preparing the filter and 1 column titled "Entries" that contains
@@ -77,19 +77,19 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPSciVizMultiCorrelativeStats : public 
 public:
   static vtkPSciVizMultiCorrelativeStats* New();
   vtkTypeMacro(vtkPSciVizMultiCorrelativeStats, vtkSciVizStatistics);
-  virtual void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkPSciVizMultiCorrelativeStats();
-  virtual ~vtkPSciVizMultiCorrelativeStats();
+  ~vtkPSciVizMultiCorrelativeStats() override;
 
-  virtual int LearnAndDerive(vtkMultiBlockDataSet* model, vtkTable* inData);
-  virtual int AssessData(
-    vtkTable* observations, vtkDataObject* dataset, vtkMultiBlockDataSet* model);
+  int LearnAndDerive(vtkMultiBlockDataSet* model, vtkTable* inData) VTK_OVERRIDE;
+  int AssessData(
+    vtkTable* observations, vtkDataObject* dataset, vtkMultiBlockDataSet* model) VTK_OVERRIDE;
 
 private:
-  vtkPSciVizMultiCorrelativeStats(const vtkPSciVizMultiCorrelativeStats&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPSciVizMultiCorrelativeStats&) VTK_DELETE_FUNCTION;
+  vtkPSciVizMultiCorrelativeStats(const vtkPSciVizMultiCorrelativeStats&) = delete;
+  void operator=(const vtkPSciVizMultiCorrelativeStats&) = delete;
 };
 
 #endif // vtkPSciVizMultiCorrelativeStats_h

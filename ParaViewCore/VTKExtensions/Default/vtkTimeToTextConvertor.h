@@ -33,7 +33,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkTimeToTextConvertor : public vtkTableA
 public:
   static vtkTimeToTextConvertor* New();
   vtkTypeMacro(vtkTimeToTextConvertor, vtkTableAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -63,22 +63,22 @@ public:
 
 protected:
   vtkTimeToTextConvertor();
-  ~vtkTimeToTextConvertor();
+  ~vtkTimeToTextConvertor() override;
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
-  virtual int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   char* Format;
   double Shift;
   double Scale;
 
 private:
-  vtkTimeToTextConvertor(const vtkTimeToTextConvertor&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkTimeToTextConvertor&) VTK_DELETE_FUNCTION;
+  vtkTimeToTextConvertor(const vtkTimeToTextConvertor&) = delete;
+  void operator=(const vtkTimeToTextConvertor&) = delete;
 };
 
 #endif

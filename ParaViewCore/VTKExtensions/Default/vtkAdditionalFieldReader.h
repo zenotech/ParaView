@@ -30,7 +30,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkAdditionalFieldReader : public vtkPass
 public:
   vtkTypeMacro(vtkAdditionalFieldReader, vtkPassInputTypeAlgorithm);
   static vtkAdditionalFieldReader* New();
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -42,9 +42,9 @@ public:
 
 protected:
   vtkAdditionalFieldReader();
-  ~vtkAdditionalFieldReader();
+  ~vtkAdditionalFieldReader() override;
 
-  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   /**
    * The name of the file to be opened.
@@ -52,7 +52,7 @@ protected:
   char* FileName;
 
 private:
-  vtkAdditionalFieldReader(const vtkAdditionalFieldReader&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkAdditionalFieldReader&) VTK_DELETE_FUNCTION;
+  vtkAdditionalFieldReader(const vtkAdditionalFieldReader&) = delete;
+  void operator=(const vtkAdditionalFieldReader&) = delete;
 };
 #endif

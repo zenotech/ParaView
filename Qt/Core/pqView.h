@@ -43,7 +43,6 @@ class pqServer;
 class pqUndoStack;
 class pqViewInternal;
 class QWidget;
-class vtkImageData;
 class vtkSMSourceProxy;
 class vtkSMViewProxy;
 class vtkView;
@@ -67,7 +66,7 @@ public:
     PV_SELECTION_TOGGLE
   };
 
-  virtual ~pqView();
+  ~pqView() override;
 
   /**
   * Returns the internal render Module proxy associated with this object.
@@ -104,12 +103,6 @@ public:
   * Returns the type of this view module.
   */
   QString getViewType() const { return this->ViewType; }
-
-  /**
-  * Computes the magnification and view size given the current view size for
-  * the full size for the view.
-  */
-  static int computeMagnification(const QSize& fullsize, QSize& viewsize);
 
 public slots:
   /**
@@ -165,29 +158,6 @@ public:
   virtual QSize getSize();
 
   /**
-  * Capture the view image into a new vtkImageData with the given magnification
-  * and returns it. Default implementation forwards to
-  * vtkSMViewProxy::CaptureWindow(). Generally, it's not necessary to override
-  * this method. If you need to override it, be aware that the capture code
-  * will no work on other non-Qt based ParaView clients and hence it's not
-  * recommended. You should instead subclass vtkSMViewProxy and override the
-  * appropriate image capture method(s).
-  */
-  virtual vtkImageData* captureImage(int magnification);
-
-  /**
-  * Capture an image with the given size. This will internally resize the
-  * widget to come up with a valid magnification factor and then simply calls
-  * captureImage(int).
-  */
-  virtual vtkImageData* captureImage(const QSize& size);
-
-  /**
-  * Capture an image and saves it out to a file.
-  */
-  bool writeImage(const QString& filename, const QSize&, int quality = -1);
-
-  /**
   * This method checks if the representation is shown in this view.
   */
   bool hasRepresentation(pqRepresentation* repr) const;
@@ -215,8 +185,8 @@ public:
   /**
   * This method returns is any pqPipelineSource can be dislayed in this
   * view. NOTE: This is no longer virtual. Simply forwards to
+  * vtkSMViewProxy::CanDisplayData().
   */
-  // vtkSMViewProxy::CanDisplayData().
   bool canDisplay(pqOutputPort* opPort) const;
 
   /**
@@ -374,7 +344,7 @@ protected:
   * after the object has been created.
   * Overridden to update the list of representations currently available.
   */
-  virtual void initialize();
+  void initialize() override;
 
   /**
   * Subclasses must override this method to create a widget for the view.

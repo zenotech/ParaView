@@ -16,10 +16,8 @@
  * @class   vtkPEnSightReader
  *
  * Superclass for EnSight file parallel readers
- * @par Thanks:
- * <verbatim>
  *
- * @par Thanks:
+ * \verbatim
  * This file has been developed as part of the CARRIOCAS (Distributed
  * computation over ultra high optical internet network ) project (
  * http://www.carriocas.org/index.php?lng=ang ) of the SYSTEM@TIC French ICT
@@ -27,11 +25,8 @@
  * supervision of CEA (http://www.cea.fr) and EDF (http://www.edf.fr) by
  * Oxalya (http://www.oxalya.com)
  *
- * @par Thanks:
  *  Copyright (c) CEA
- *
- * @par Thanks:
- * </verbatim>
+ * \endverbatim
 */
 
 #ifndef vtkPEnSightReader_h
@@ -64,7 +59,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPEnSightReader : public vtkPGenericEnS
 {
 public:
   vtkTypeMacro(vtkPEnSightReader, vtkPGenericEnSightReader);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //----------------------------------------------------------------------------
   // PointIds and CellIds must be stored in a different way:
@@ -590,30 +585,13 @@ public:
   vtkGetStringMacro(MatchFileName);
   //@}
 
-  //@{
-  /**
-   * The MeasuredGeometryFile should list particle coordinates
-   * from 0->N-1.
-   * If a file is loaded where point Ids are listed from 1-N
-   * the Id to points reference will be wrong and the data
-   * will be generated incorrectly.
-   * Setting ParticleCoordinatesByIndex to true will force
-   * all Id's to increment from 0->N-1 (relative to their order
-   * in the file) and regardless of the actual Id of of the point.
-   * Warning, if the Points are listed in non sequential order
-   * then setting this flag will reorder them.
-   */
-  vtkSetMacro(ParticleCoordinatesByIndex, int);
-  vtkGetMacro(ParticleCoordinatesByIndex, int);
-  vtkBooleanMacro(ParticleCoordinatesByIndex, int);
-  //@}
-
 protected:
   vtkPEnSightReader();
-  ~vtkPEnSightReader();
+  ~vtkPEnSightReader() override;
 
-  virtual int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestInformation(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   /*int RequestUpdateExtent(
     vtkInformation *vtkNotUsed(request),
@@ -895,8 +873,6 @@ protected:
 
   int CheckOutputConsistency();
 
-  int ParticleCoordinatesByIndex;
-
   double ActualTimeValue;
 
   int GhostLevels;
@@ -904,8 +880,8 @@ protected:
   std::map<std::string, std::map<int, long> > FileOffsets;
 
 private:
-  vtkPEnSightReader(const vtkPEnSightReader&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPEnSightReader&) VTK_DELETE_FUNCTION;
+  vtkPEnSightReader(const vtkPEnSightReader&) = delete;
+  void operator=(const vtkPEnSightReader&) = delete;
 };
 
 #endif

@@ -33,15 +33,15 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMObject : public vtkObject
 public:
   static vtkSMObject* New();
   vtkTypeMacro(vtkSMObject, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkSMObject();
-  ~vtkSMObject();
+  ~vtkSMObject() override;
 
 private:
-  vtkSMObject(const vtkSMObject&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMObject&) VTK_DELETE_FUNCTION;
+  vtkSMObject(const vtkSMObject&) = delete;
+  void operator=(const vtkSMObject&) = delete;
 };
 
 #endif

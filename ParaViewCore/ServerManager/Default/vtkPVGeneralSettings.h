@@ -35,7 +35,7 @@ class VTKPVSERVERMANAGERDEFAULT_EXPORT vtkPVGeneralSettings : public vtkObject
 public:
   static vtkPVGeneralSettings* New();
   vtkTypeMacro(vtkPVGeneralSettings, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Access the singleton.
@@ -114,17 +114,6 @@ public:
     DEFAULT_TIME_STEP_LAST
   };
 
-  /**
-   * Enum for TransferFunctionResetMode
-   */
-  enum
-  {
-    GROW_ON_APPLY = 0,
-    GROW_ON_APPLY_AND_TIMESTEP = 1,
-    RESET_ON_APPLY = 2,
-    RESET_ON_APPLY_AND_TIMESTEP = 3
-  };
-
   //@{
   /**
    * Get/Set the transfer function reset mode.
@@ -171,6 +160,15 @@ public:
   vtkGetMacro(AnimationTimePrecision, int);
   //@}
 
+  //@{
+  /**
+   * Set when animation shortcuts are shown.
+   */
+  vtkSetMacro(ShowAnimationShortcuts, bool);
+  vtkGetMacro(ShowAnimationShortcuts, bool);
+  vtkBooleanMacro(ShowAnimationShortcuts, bool);
+  //@}
+
   /**
    * Forwarded for vtkSMParaViewPipelineControllerWithRendering.
    */
@@ -201,19 +199,6 @@ public:
 
   //@{
   /**
-   * Forwarded to vtkSMViewLayoutProxy.
-   */
-  void SetMultiViewImageBorderColor(double r, double g, double b);
-  void SetMultiViewImageBorderWidth(int width);
-  //@}
-
-  /**
-   * Forwarded to vtkSMViewProxy.
-   */
-  void SetTransparentBackground(bool val);
-
-  //@{
-  /**
    * Load all variables when loading a data set.
    */
   void SetLoadAllVariables(bool val);
@@ -228,9 +213,25 @@ public:
   bool GetLoadNoChartVariables();
   //@}
 
+  //@{
+  /**
+   * Get/Set the GUI font size. This is used only if GUIOverrideFont is true.
+   */
+  vtkSetClampMacro(GUIFontSize, int, 8, VTK_INT_MAX);
+  vtkGetMacro(GUIFontSize, int);
+  //@}
+
+  //@{
+  /**
+   * Get/Set whether the GUIFontSize should be used.
+   */
+  vtkSetMacro(GUIOverrideFont, bool);
+  vtkGetMacro(GUIOverrideFont, bool);
+  //@}
+
 protected:
   vtkPVGeneralSettings();
-  ~vtkPVGeneralSettings();
+  ~vtkPVGeneralSettings() override;
 
   int BlockColorsDistinctValues;
   bool AutoApply;
@@ -241,12 +242,15 @@ protected:
   bool CacheGeometryForAnimation;
   unsigned long AnimationGeometryCacheLimit;
   int AnimationTimePrecision;
+  bool ShowAnimationShortcuts;
   int PropertiesPanelMode;
   bool LockPanels;
+  int GUIFontSize;
+  bool GUIOverrideFont;
 
 private:
-  vtkPVGeneralSettings(const vtkPVGeneralSettings&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVGeneralSettings&) VTK_DELETE_FUNCTION;
+  vtkPVGeneralSettings(const vtkPVGeneralSettings&) = delete;
+  void operator=(const vtkPVGeneralSettings&) = delete;
 
   static vtkSmartPointer<vtkPVGeneralSettings> Instance;
 };

@@ -40,7 +40,7 @@ class VTKPVCLIENTSERVERCOREDEFAULT_EXPORT vtkPythonCalculator : public vtkProgra
 {
 public:
   vtkTypeMacro(vtkPythonCalculator, vtkProgrammableFilter);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
   static vtkPythonCalculator* New();
 
   //@{
@@ -51,16 +51,6 @@ public:
    */
   vtkSetMacro(ArrayAssociation, int);
   vtkGetMacro(ArrayAssociation, int);
-  //@}
-
-  //@{
-  /**
-   * Controls whether the input arrays are copied to the output.
-   * True by default.
-   */
-  vtkSetMacro(CopyArrays, bool);
-  vtkGetMacro(CopyArrays, bool);
-  vtkBooleanMacro(CopyArrays, bool);
   //@}
 
   //@{
@@ -86,31 +76,30 @@ public:
 
 protected:
   vtkPythonCalculator();
-  ~vtkPythonCalculator();
+  ~vtkPythonCalculator() override;
 
   /**
    * For internal use only.
    */
   void Exec(const char*);
 
-  virtual int FillOutputPortInformation(int port, vtkInformation* info);
+  int FillOutputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   // overridden to allow multiple inputs to port 0
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   // DeExpressionion:
   // Creates whatever output data set type is selected.
-  virtual int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   char* Expression;
   char* ArrayName;
   int ArrayAssociation;
-  bool CopyArrays;
 
 private:
-  vtkPythonCalculator(const vtkPythonCalculator&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPythonCalculator&) VTK_DELETE_FUNCTION;
+  vtkPythonCalculator(const vtkPythonCalculator&) = delete;
+  void operator=(const vtkPythonCalculator&) = delete;
 };
 
 #endif

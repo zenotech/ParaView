@@ -35,7 +35,7 @@ class VTKPVANIMATION_EXPORT vtkPVRepresentationAnimationHelper : public vtkSMPro
 public:
   static vtkPVRepresentationAnimationHelper* New();
   vtkTypeMacro(vtkPVRepresentationAnimationHelper, vtkSMProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -48,13 +48,13 @@ public:
 
 protected:
   vtkPVRepresentationAnimationHelper();
-  ~vtkPVRepresentationAnimationHelper();
+  ~vtkPVRepresentationAnimationHelper() override;
 
   vtkWeakPointer<vtkSMProxy> SourceProxy;
 
 private:
-  vtkPVRepresentationAnimationHelper(const vtkPVRepresentationAnimationHelper&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVRepresentationAnimationHelper&) VTK_DELETE_FUNCTION;
+  vtkPVRepresentationAnimationHelper(const vtkPVRepresentationAnimationHelper&) = delete;
+  void operator=(const vtkPVRepresentationAnimationHelper&) = delete;
 };
 
 #endif

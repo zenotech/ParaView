@@ -44,7 +44,7 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMPVRepresentationProxy
 public:
   static vtkSMPVRepresentationProxy* New();
   vtkTypeMacro(vtkSMPVRepresentationProxy, vtkSMRepresentationProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Returns true if scalar coloring is enabled. This checks whether a property
@@ -77,7 +77,8 @@ public:
    * Enable/disable scalar coloring using the specified array. This will set up a
    * color and opacity transfer functions using vtkSMTransferFunctionProxy
    * instance. If arrayname is NULL, then scalar coloring is turned off.
-   * \c attribute_type must be one of vtkDataObject::AttributeTypes.
+   * \param arrayname the name of the array.
+   * \param attribute_type must be one of vtkDataObject::AttributeTypes.
    * \param component enables choosing a component to color with,
    * -1 will change to Magnitude, >=0 will change to corresponding component.
    */
@@ -125,12 +126,13 @@ public:
   /**
    * Rescales the color transfer function and opacity transfer function using the
    * current data range for the chosen data-array. Returns true if rescale was
-   * successful. \c field_association must be one of
-   * vtkDataObject::AttributeTypes.
+   * successful.
    * If \c extend is true (false by default), the transfer function range will
    * only be extended as needed to fit the data range.
    * If \c force is false (true by default), then the transfer function range is
    * not changed if locked.
+   * @param arrayname the name of the array.
+   * @param attribute_type must be one of vtkDataObject::AttributeTypes.
    * @param[in] extend Extend existing range instead of clamping to the new
    * range (default: false).
    * @param[in] force Update transfer function even if the range is locked
@@ -312,11 +314,11 @@ public:
    * colors, scalar coloring it setup properly. Currently this is hard-coded for
    * Volume and Slice representation types.
    */
-  virtual bool SetRepresentationType(const char* type);
+  bool SetRepresentationType(const char* type) VTK_OVERRIDE;
 
 protected:
   vtkSMPVRepresentationProxy();
-  ~vtkSMPVRepresentationProxy();
+  ~vtkSMPVRepresentationProxy() override;
 
   /**
    * Rescales transfer function ranges using the array information provided.
@@ -328,7 +330,7 @@ protected:
    * Overridden to ensure that the RepresentationTypesInfo and
    * Representations's domain are up-to-date.
    */
-  virtual void CreateVTKObjects();
+  void CreateVTKObjects() VTK_OVERRIDE;
 
   // Whenever the "Representation" property is modified, we ensure that the
   // this->InvalidateDataInformation() is called.
@@ -339,12 +341,12 @@ protected:
    * "Input" properties for all internal representations (including setting up
    * of the link to the extract-selection representation).
    */
-  virtual void SetPropertyModifiedFlag(const char* name, int flag);
+  void SetPropertyModifiedFlag(const char* name, int flag) VTK_OVERRIDE;
 
   /**
    * Overridden to process "RepresentationType" elements.
    */
-  int ReadXMLAttributes(vtkSMSessionProxyManager* pm, vtkPVXMLElement* element);
+  int ReadXMLAttributes(vtkSMSessionProxyManager* pm, vtkPVXMLElement* element) VTK_OVERRIDE;
 
   /**
    * Internal method to set scalar coloring, do not use directly.
@@ -353,8 +355,8 @@ protected:
     const char* arrayname, int attribute_type, bool useComponent, int component);
 
 private:
-  vtkSMPVRepresentationProxy(const vtkSMPVRepresentationProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMPVRepresentationProxy&) VTK_DELETE_FUNCTION;
+  vtkSMPVRepresentationProxy(const vtkSMPVRepresentationProxy&) = delete;
+  void operator=(const vtkSMPVRepresentationProxy&) = delete;
 
   bool InReadXMLAttributes;
   class vtkStringSet;

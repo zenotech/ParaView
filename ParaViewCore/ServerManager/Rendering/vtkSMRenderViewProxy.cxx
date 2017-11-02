@@ -4,6 +4,7 @@
   Module:    $RCSfile$
 
   Copyright (c) Kitware, Inc.
+  Copyright (c) 2017, NVIDIA CORPORATION.
   All rights reserved.
   See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
 
@@ -23,7 +24,6 @@
 #include "vtkExtractSelectedFrustum.h"
 #include "vtkFloatArray.h"
 #include "vtkIdTypeArray.h"
-#include "vtkImageData.h"
 #include "vtkInformation.h"
 #include "vtkIntArray.h"
 #include "vtkMath.h"
@@ -32,10 +32,10 @@
 #include "vtkObjectFactory.h"
 #include "vtkPVCompositeDataInformation.h"
 #include "vtkPVDataInformation.h"
-#include "vtkPVDisplayInformation.h"
 #include "vtkPVLastSelectionInformation.h"
 #include "vtkPVOptions.h"
 #include "vtkPVRenderView.h"
+#include "vtkPVRenderingCapabilitiesInformation.h"
 #include "vtkPVServerInformation.h"
 #include "vtkPVXMLElement.h"
 #include "vtkPointData.h"
@@ -47,6 +47,7 @@
 #include "vtkSMDataDeliveryManager.h"
 #include "vtkSMEnumerationDomain.h"
 #include "vtkSMInputProperty.h"
+#include "vtkSMMaterialLibraryProxy.h"
 #include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMProperty.h"
 #include "vtkSMPropertyHelper.h"
@@ -63,31 +64,9 @@
 #include "vtkSmartPointer.h"
 #include "vtkTransform.h"
 #include "vtkWeakPointer.h"
-#include "vtkWindowToImageFilter.h"
 
 #include <cassert>
 #include <map>
-
-namespace
-{
-
-#if !defined(__APPLE__)
-bool vtkIsImageEmpty(vtkImageData* image)
-{
-  vtkDataArray* scalars = image->GetPointData()->GetScalars();
-  for (int comp = 0; comp < scalars->GetNumberOfComponents(); comp++)
-  {
-    double range[2];
-    scalars->GetRange(range, comp);
-    if (range[0] != 0.0 || range[1] != 0.0)
-    {
-      return false;
-    }
-  }
-  return true;
-}
-#endif
-};
 
 vtkStandardNewMacro(vtkSMRenderViewProxy);
 //----------------------------------------------------------------------------
@@ -244,13 +223,14 @@ bool vtkSMRenderViewProxy::StreamingUpdate(bool render_if_needed)
 
   // Now fetch any pieces that the server streamed back to the client.
   bool something_delivered = this->DeliveryManager->DeliverStreamedPieces();
-  if (render_if_needed && something_delivered)
+  bool OSPRayNotDone = view->GetOSPRayContinueStreaming();
+  if (render_if_needed && (something_delivered || OSPRayNotDone))
   {
     this->StillRender();
   }
 
   this->GetSession()->CleanupPendingProgress();
-  return something_delivered;
+  return something_delivered || OSPRayNotDone;
 }
 
 //-----------------------------------------------------------------------------
@@ -420,13 +400,12 @@ void vtkSMRenderViewProxy::CreateVTKObjects()
   {
     // Update whether render servers can open display i.e. remote rendering is
     // possible on all processes.
-    vtkPVDisplayInformation* info = vtkPVDisplayInformation::New();
-    this->GetSession()->GatherInformation(vtkPVSession::RENDER_SERVER, info, 0);
-    if (info->GetCanOpenDisplay() == 0 || info->GetSupportsOpenGL() == 0)
+    vtkNew<vtkPVRenderingCapabilitiesInformation> info;
+    this->GetSession()->GatherInformation(vtkPVSession::RENDER_SERVER, info.Get(), 0);
+    if (!info->Supports(vtkPVRenderingCapabilitiesInformation::OPENGL))
     {
       remote_rendering_available = false;
     }
-    info->Delete();
   }
 
   // Disable remote rendering on all processes, if not available.
@@ -436,6 +415,22 @@ void vtkSMRenderViewProxy::CreateVTKObjects()
     stream << vtkClientServerStream::Invoke << VTKOBJECT(this) << "RemoteRenderingAvailableOff"
            << vtkClientServerStream::End;
     this->ExecuteStream(stream);
+  }
+
+  const bool enable_nvpipe = this->GetSession()->GetServerInformation()->GetNVPipeSupport();
+  {
+    vtkClientServerStream strm;
+    strm << vtkClientServerStream::Invoke << VTKOBJECT(this);
+    if (enable_nvpipe)
+    {
+      strm << "NVPipeAvailableOn";
+    }
+    else
+    {
+      strm << "NVPipeAvailableOff";
+    }
+    strm << vtkClientServerStream::End;
+    this->ExecuteStream(strm);
   }
 
   // Attach to the collaborative session a callback to clear the selection cache
@@ -463,9 +458,8 @@ const char* vtkSMRenderViewProxy::GetRepresentationType(vtkSMSourceProxy* produc
 
   vtkSMSessionProxyManager* pxm = this->GetSessionProxyManager();
   const char* representationsToTry[] = { "UnstructuredGridRepresentation",
-    "UnstructuredGridBaseRepresentation", "StructuredGridRepresentation",
-    "UniformGridRepresentation", "AMRRepresentation", "PVMoleculeRepresentation",
-    "GeometryRepresentation", NULL };
+    "StructuredGridRepresentation", "UniformGridRepresentation", "AMRRepresentation",
+    "PVMoleculeRepresentation", "GeometryRepresentation", NULL };
   for (int cc = 0; representationsToTry[cc] != NULL; ++cc)
   {
     vtkSMProxy* prototype = pxm->GetPrototypeProxy("representations", representationsToTry[cc]);
@@ -687,13 +681,13 @@ vtkSMRepresentationProxy* vtkSMRenderViewProxy::PickBlock(int x, int y, unsigned
   {
     vtkSMProxy* selectionSource = vtkSMProxy::SafeDownCast(sources->GetItemAsObject(0));
 
+    vtkSMPropertyHelper inputHelper(repr, "Input");
     // get representation input data
-    vtkSMSourceProxy* reprInput =
-      vtkSMSourceProxy::SafeDownCast(vtkSMPropertyHelper(repr, "Input").GetAsProxy());
+    vtkSMSourceProxy* reprInput = vtkSMSourceProxy::SafeDownCast(inputHelper.GetAsProxy());
 
     // convert cell selection to block selection
     vtkSMProxy* blockSelection = vtkSMSelectionHelper::ConvertSelection(
-      vtkSelectionNode::BLOCKS, selectionSource, reprInput, 0);
+      vtkSelectionNode::BLOCKS, selectionSource, reprInput, inputHelper.GetOutputPort());
 
     // set block index
     flatIndex = vtkSMPropertyHelper(blockSelection, "Blocks").GetAsInt();
@@ -808,7 +802,7 @@ bool vtkSMRenderViewProxy::ConvertDisplayToPointOnSurface(
 }
 
 //----------------------------------------------------------------------------
-bool vtkSMRenderViewProxy::SelectSurfaceCells(const int region[4],
+bool vtkSMRenderViewProxy::SelectInternal(const vtkClientServerStream& csstream,
   vtkCollection* selectedRepresentations, vtkCollection* selectionSources, bool multiple_selections)
 {
   if (!this->IsSelectionAvailable())
@@ -816,33 +810,40 @@ bool vtkSMRenderViewProxy::SelectSurfaceCells(const int region[4],
     return false;
   }
 
+  vtkScopedMonitorProgress monitorProgress(this);
+
   this->IsSelectionCached = true;
 
+  // Call PreRender since Select making will cause multiple renders on the
+  // render window. Calling PreRender ensures that the view is ready to render.
+  vtkTypeUInt32 render_location = this->PreRender(/*interactive=*/false);
+  this->ExecuteStream(csstream, false, render_location);
+  bool retVal =
+    this->FetchLastSelection(multiple_selections, selectedRepresentations, selectionSources);
+  this->PostRender(false);
+  return retVal;
+}
+
+//----------------------------------------------------------------------------
+bool vtkSMRenderViewProxy::SelectSurfaceCells(const int region[4],
+  vtkCollection* selectedRepresentations, vtkCollection* selectionSources, bool multiple_selections)
+{
   vtkClientServerStream stream;
   stream << vtkClientServerStream::Invoke << VTKOBJECT(this) << "SelectCells" << region[0]
          << region[1] << region[2] << region[3] << vtkClientServerStream::End;
-  this->ExecuteStream(stream);
-
-  return this->FetchLastSelection(multiple_selections, selectedRepresentations, selectionSources);
+  return this->SelectInternal(
+    stream, selectedRepresentations, selectionSources, multiple_selections);
 }
 
 //----------------------------------------------------------------------------
 bool vtkSMRenderViewProxy::SelectSurfacePoints(const int region[4],
   vtkCollection* selectedRepresentations, vtkCollection* selectionSources, bool multiple_selections)
 {
-  if (!this->IsSelectionAvailable())
-  {
-    return false;
-  }
-
-  this->IsSelectionCached = true;
-
   vtkClientServerStream stream;
   stream << vtkClientServerStream::Invoke << VTKOBJECT(this) << "SelectPoints" << region[0]
          << region[1] << region[2] << region[3] << vtkClientServerStream::End;
-  this->ExecuteStream(stream);
-
-  return this->FetchLastSelection(multiple_selections, selectedRepresentations, selectionSources);
+  return this->SelectInternal(
+    stream, selectedRepresentations, selectionSources, multiple_selections);
 }
 
 namespace
@@ -933,6 +934,9 @@ bool vtkSMRenderViewProxy::ComputeVisibleScalarRange(
                   "unsupported.");
     return false;
   }
+
+  vtkScopedMonitorProgress monitorProgress(this);
+
   bool multiple_selections = true;
 
   range[0] = VTK_DOUBLE_MAX;
@@ -1022,6 +1026,8 @@ bool vtkSMRenderViewProxy::SelectFrustumInternal(const int region[4],
   vtkCollection* selectedRepresentations, vtkCollection* selectionSources, bool multiple_selections,
   int fieldAssociation)
 {
+  vtkScopedMonitorProgress monitorProgress(this);
+
   // Simply stealing old code for now. This code have many coding style
   // violations and seems too long for what it does. At some point we'll check
   // it out.
@@ -1129,10 +1135,6 @@ bool vtkSMRenderViewProxy::SelectFrustumInternal(const int region[4],
 bool vtkSMRenderViewProxy::SelectPolygonPoints(vtkIntArray* polygonPts,
   vtkCollection* selectedRepresentations, vtkCollection* selectionSources, bool multiple_selections)
 {
-  if (!this->IsSelectionAvailable())
-  {
-    return false;
-  }
   return this->SelectPolygonInternal(polygonPts, selectedRepresentations, selectionSources,
     multiple_selections, "SelectPolygonPoints");
 }
@@ -1141,10 +1143,6 @@ bool vtkSMRenderViewProxy::SelectPolygonPoints(vtkIntArray* polygonPts,
 bool vtkSMRenderViewProxy::SelectPolygonCells(vtkIntArray* polygonPts,
   vtkCollection* selectedRepresentations, vtkCollection* selectionSources, bool multiple_selections)
 {
-  if (!this->IsSelectionAvailable())
-  {
-    return false;
-  }
   return this->SelectPolygonInternal(polygonPts, selectedRepresentations, selectionSources,
     multiple_selections, "SelectPolygonCells");
 }
@@ -1154,24 +1152,20 @@ bool vtkSMRenderViewProxy::SelectPolygonInternal(vtkIntArray* polygonPts,
   vtkCollection* selectedRepresentations, vtkCollection* selectionSources, bool multiple_selections,
   const char* method)
 {
-  this->IsSelectionCached = true;
-
   vtkClientServerStream stream;
   stream << vtkClientServerStream::Invoke << VTKOBJECT(this) << method
          << vtkClientServerStream::InsertArray(polygonPts->GetPointer(0),
               polygonPts->GetNumberOfTuples() * polygonPts->GetNumberOfComponents())
          << polygonPts->GetNumberOfTuples() * polygonPts->GetNumberOfComponents()
          << vtkClientServerStream::End;
-  this->ExecuteStream(stream);
-
-  return this->FetchLastSelection(multiple_selections, selectedRepresentations, selectionSources);
+  return this->SelectInternal(
+    stream, selectedRepresentations, selectionSources, multiple_selections);
 }
 
 //----------------------------------------------------------------------------
-void vtkSMRenderViewProxy::CaptureWindowInternalRender()
+void vtkSMRenderViewProxy::RenderForImageCapture()
 {
-  vtkPVRenderView* view = vtkPVRenderView::SafeDownCast(this->GetClientSideObject());
-  if (view->GetUseInteractiveRenderingForScreenshots())
+  if (vtkSMPropertyHelper(this, "UseInteractiveRenderingForScreenshots", /*quiet=*/true).GetAsInt())
   {
     this->InteractiveRender();
   }
@@ -1179,72 +1173,6 @@ void vtkSMRenderViewProxy::CaptureWindowInternalRender()
   {
     this->StillRender();
   }
-}
-
-//----------------------------------------------------------------------------
-vtkImageData* vtkSMRenderViewProxy::CaptureWindowInternal(int magnification)
-{
-#if !defined(__APPLE__)
-  vtkPVRenderView* view = vtkPVRenderView::SafeDownCast(this->GetClientSideObject());
-#endif
-
-// Offscreen rendering is not functioning properly on the mac.
-// Do not use it.
-#if !defined(__APPLE__)
-  vtkRenderWindow* window = this->GetRenderWindow();
-  int prevOffscreen = window->GetOffScreenRendering();
-  bool use_offscreen =
-    view->GetUseOffscreenRendering() || view->GetUseOffscreenRenderingForScreenshots();
-  window->SetOffScreenRendering(use_offscreen ? 1 : 0);
-#endif
-
-  this->GetRenderWindow()->SwapBuffersOff();
-
-  this->CaptureWindowInternalRender();
-
-  vtkSmartPointer<vtkWindowToImageFilter> w2i = vtkSmartPointer<vtkWindowToImageFilter>::New();
-  w2i->SetInput(this->GetRenderWindow());
-  w2i->SetMagnification(magnification);
-  w2i->ReadFrontBufferOff();
-  w2i->ShouldRerenderOff();
-#ifdef VTKGL2
-  // we don't need the boundary fix for GL2. The boundary issue
-  // was an OpenGL fixed pipeline artifact. (See paraview/paraview#16813).
-  w2i->FixBoundaryOff();
-#else
-  w2i->FixBoundaryOn();
-#endif
-
-  // BUG #8715: We go through this indirection since the active connection needs
-  // to be set during update since it may request re-renders if magnification >1.
-  vtkClientServerStream stream;
-  stream << vtkClientServerStream::Invoke << w2i.GetPointer() << "Update"
-         << vtkClientServerStream::End;
-  this->ExecuteStream(stream, false, vtkProcessModule::CLIENT);
-
-  this->GetRenderWindow()->SwapBuffersOn();
-
-#if !defined(__APPLE__)
-  window->SetOffScreenRendering(prevOffscreen);
-
-  if (view->GetUseOffscreenRenderingForScreenshots() && vtkIsImageEmpty(w2i->GetOutput()))
-  {
-    // ensure that some image was capture. Due to buggy offscreen rendering
-    // support on some drivers, we may end up with black images, in which case
-    // we force on-screen rendering.
-    if (vtkMultiProcessController::GetGlobalController()->GetNumberOfProcesses() == 1)
-    {
-      vtkWarningMacro("Disabling offscreen rendering since empty image was detected.");
-      view->SetUseOffscreenRenderingForScreenshots(false);
-      return this->CaptureWindowInternal(magnification);
-    }
-  }
-#endif
-
-  vtkImageData* capture = vtkImageData::New();
-  capture->ShallowCopy(w2i->GetOutput());
-  this->GetRenderWindow()->Frame();
-  return capture;
 }
 
 //----------------------------------------------------------------------------
@@ -1282,7 +1210,7 @@ int vtkSMRenderViewProxy::GetValueRenderingMode()
 {
   vtkSMPropertyHelper helper(this, "ValueRenderingModeGet");
   helper.UpdateValueFromServer();
-  return  helper.GetAsInt();
+  return helper.GetAsInt();
 }
 
 //------------------------------------------------------------------------------

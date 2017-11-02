@@ -37,7 +37,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMPluginManager : public vtkSMObject
 public:
   static vtkSMPluginManager* New();
   vtkTypeMacro(vtkSMPluginManager, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -103,7 +103,7 @@ public:
 
 protected:
   vtkSMPluginManager();
-  ~vtkSMPluginManager();
+  ~vtkSMPluginManager() override;
 
   bool InLoadPlugin;
   void OnPluginRegistered();
@@ -111,8 +111,8 @@ protected:
   vtkPVPluginsInformation* LocalInformation;
 
 private:
-  vtkSMPluginManager(const vtkSMPluginManager&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMPluginManager&) VTK_DELETE_FUNCTION;
+  vtkSMPluginManager(const vtkSMPluginManager&) = delete;
+  void operator=(const vtkSMPluginManager&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

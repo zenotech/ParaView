@@ -38,12 +38,12 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMComparativeViewProxy : public vtkS
 public:
   static vtkSMComparativeViewProxy* New();
   vtkTypeMacro(vtkSMComparativeViewProxy, vtkSMViewProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Updates the data pipelines for all visible representations.
    */
-  virtual void Update();
+  void Update() VTK_OVERRIDE;
 
   /**
    * Get all the internal views. The views should only be used to be layed out
@@ -51,18 +51,6 @@ public:
    * views.
    */
   void GetViews(vtkCollection* collection);
-
-  //@{
-  /**
-   * Get all internal vtkSMRepresentations for a given view.  If the given
-   * view is not managed by this comparative view it will be ignored.  The
-   * representations should only be used by the GUI for creating representation
-   * clones.  It is not recommended to directly change the properties of the returned
-   * representations.
-   */
-  void GetRepresentationsForView(vtkSMViewProxy*, vtkCollection*);
-  void GetRepresentations(int x, int y, vtkCollection*);
-  //@}
 
   /**
    * Returns the root view proxy.
@@ -73,21 +61,21 @@ public:
    * Dirty means this algorithm will execute during next update.
    * This all marks all consumers as dirty.
    */
-  virtual void MarkDirty(vtkSMProxy* modifiedProxy);
+  void MarkDirty(vtkSMProxy* modifiedProxy) VTK_OVERRIDE;
 
   /**
    * Overridden to forward the call to the internal root view proxy.
    */
-  virtual const char* GetRepresentationType(vtkSMSourceProxy* producer, int outputPort);
+  const char* GetRepresentationType(vtkSMSourceProxy* producer, int outputPort) VTK_OVERRIDE;
 
   /**
    * Returns the render-window used by the root view, if any.
    */
-  virtual vtkRenderWindow* GetRenderWindow()
+  vtkRenderWindow* GetRenderWindow() VTK_OVERRIDE
   {
     return this->GetRootView() ? this->GetRootView()->GetRenderWindow() : NULL;
   }
-  virtual vtkRenderWindowInteractor* GetInteractor()
+  vtkRenderWindowInteractor* GetInteractor() VTK_OVERRIDE
   {
     return this->GetRootView() ? this->GetRootView()->GetInteractor() : NULL;
   }
@@ -97,31 +85,31 @@ public:
    * raise an error. Client code should set up interactor for each of the
    * internal views explicitly.
    */
-  virtual void SetupInteractor(vtkRenderWindowInteractor* iren);
+  void SetupInteractor(vtkRenderWindowInteractor* iren) VTK_OVERRIDE;
 
   /**
    * Overridden to call MakeRenderWindowInteractor() on each of the internal
    * views.
    */
-  virtual bool MakeRenderWindowInteractor(bool quiet = false);
+  bool MakeRenderWindowInteractor(bool quiet = false) VTK_OVERRIDE;
 
 protected:
   vtkSMComparativeViewProxy();
-  ~vtkSMComparativeViewProxy();
+  ~vtkSMComparativeViewProxy() override;
 
   /**
    * Overridden to do the capturing of images from each of the internal views
    * and then stitching them together.
    */
-  virtual vtkImageData* CaptureWindowInternal(int magnification);
+  vtkImageData* CaptureWindowInternal(int magX, int magY) VTK_OVERRIDE;
 
   void InvokeConfigureEvent();
 
-  virtual void CreateVTKObjects();
+  void CreateVTKObjects() VTK_OVERRIDE;
 
 private:
-  vtkSMComparativeViewProxy(const vtkSMComparativeViewProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMComparativeViewProxy&) VTK_DELETE_FUNCTION;
+  vtkSMComparativeViewProxy(const vtkSMComparativeViewProxy&) = delete;
+  void operator=(const vtkSMComparativeViewProxy&) = delete;
 };
 
 #endif

@@ -31,7 +31,6 @@
 #include <direct.h>         // _getcwd
 #include <shlobj.h>         // SHGetFolderPath
 #include <string.h>         // for strcasecmp
-#include <sys/stat.h>       // stat
 #include <windows.h>        // FindFirstFile, FindNextFile, FindClose, ...
 #define vtkPVServerFileListingGetCWD _getcwd
 #else
@@ -39,8 +38,7 @@
 #include <errno.h>     // errno
 #include <stdlib.h>    // getenv
 #include <string.h>    // strerror
-#include <sys/stat.h>  // stat
-#include <sys/types.h> // DIR, struct dirent, struct stat
+#include <sys/types.h> // DIR, struct dirent
 #include <unistd.h>    // access, getcwd
 #define vtkPVServerFileListingGetCWD getcwd
 #endif
@@ -49,6 +47,7 @@
 #include <vector>
 #endif
 
+#include <algorithm>
 #include <set>
 #include <string>
 #include <time.h>
@@ -360,6 +359,7 @@ vtkPVFileInformation::vtkPVFileInformation()
   this->Name = NULL;
   this->FullPath = NULL;
   this->FastFileTypeDetection = 0;
+  this->ReadDetailedFileInformation = false;
   this->Hidden = false;
   this->Extension = NULL;
   this->Size = 0;
@@ -411,37 +411,45 @@ void vtkPVFileInformation::CopyFromObject(vtkObject* object)
   }
 
   this->FastFileTypeDetection = helper->GetFastFileTypeDetection();
+  this->ReadDetailedFileInformation = helper->GetReadDetailedFileInformation();
 
   std::string working_directory = vtksys::SystemTools::GetCurrentWorkingDirectory().c_str();
   if (helper->GetWorkingDirectory() && helper->GetWorkingDirectory()[0])
   {
     working_directory = helper->GetWorkingDirectory();
   }
+  std::string lworking_directory = vtkPVFileInformationHelper::Utf8ToLocalWin32(working_directory);
 
-  std::string path = MakeAbsolutePath(helper->GetPath(), working_directory);
+  std::string path = helper->GetPath();
+  std::string lpath = vtkPVFileInformationHelper::Utf8ToLocalWin32(path);
+  this->SetName(path.c_str());
 
-  this->SetName(helper->GetPath());
+  if (!vtksys::SystemTools::FileIsFullPath(path))
+  {
+    lpath = MakeAbsolutePath(lpath, lworking_directory);
+  }
+
   bool isLink = false;
 
 #if defined(_WIN32)
   std::string::size_type idx;
-  for (idx = path.find('/', 0); idx != std::string::npos; idx = path.find('/', idx))
+  for (idx = lpath.find('/', 0); idx != std::string::npos; idx = lpath.find('/', idx))
   {
-    path.replace(idx, 1, 1, '\\');
+    lpath.replace(idx, 1, 1, '\\');
   }
 
-  int len = static_cast<int>(path.size());
-  if (len > 4 && path.compare(len - 4, 4, ".lnk") == 0)
+  int len = static_cast<int>(lpath.size());
+  if (len > 4 && lpath.compare(len - 4, 4, ".lnk") == 0)
   {
     WIN32_FIND_DATA data;
-    path = vtkPVFileInformationResolveLink(path, data);
+    lpath = vtkPVFileInformationResolveLink(lpath, data);
     isLink = true;
   }
 #endif
 
-  this->SetFullPath(path.c_str());
+  this->SetFullPath(vtkPVFileInformationHelper::LocalToUtf8Win32(lpath).c_str());
 
-  this->Type = vtkPVFileInformationGetType(this->FullPath);
+  this->Type = vtkPVFileInformationGetType(lpath.c_str()); // this->FullPath);
   if (isLink && this->Type == SINGLE_FILE)
   {
     this->Type = SINGLE_FILE_LINK;
@@ -499,11 +507,13 @@ void vtkPVFileInformation::GetSpecialDirectories()
   // Return favorite directories ...
 
   TCHAR szPath[MAX_PATH];
+  std::string tmp;
 
   if (SUCCEEDED(SHGetSpecialFolderPath(NULL, szPath, CSIDL_PERSONAL, false)))
   {
+    tmp = szPath;
     vtkSmartPointer<vtkPVFileInformation> info = vtkSmartPointer<vtkPVFileInformation>::New();
-    info->SetFullPath(szPath);
+    info->SetFullPath(vtkPVFileInformationHelper::LocalToUtf8Win32(tmp).c_str());
     info->SetName("My Documents");
     info->Type = DIRECTORY;
     this->Contents->AddItem(info);
@@ -511,8 +521,9 @@ void vtkPVFileInformation::GetSpecialDirectories()
 
   if (SUCCEEDED(SHGetSpecialFolderPath(NULL, szPath, CSIDL_DESKTOPDIRECTORY, false)))
   {
+    tmp = szPath;
     vtkSmartPointer<vtkPVFileInformation> info = vtkSmartPointer<vtkPVFileInformation>::New();
-    info->SetFullPath(szPath);
+    info->SetFullPath(vtkPVFileInformationHelper::LocalToUtf8Win32(tmp).c_str());
     info->SetName("Desktop");
     info->Type = DIRECTORY;
     this->Contents->AddItem(info);
@@ -520,8 +531,9 @@ void vtkPVFileInformation::GetSpecialDirectories()
 
   if (SUCCEEDED(SHGetSpecialFolderPath(NULL, szPath, CSIDL_FAVORITES, false)))
   {
+    tmp = szPath;
     vtkSmartPointer<vtkPVFileInformation> info = vtkSmartPointer<vtkPVFileInformation>::New();
-    info->SetFullPath(szPath);
+    info->SetFullPath(vtkPVFileInformationHelper::LocalToUtf8Win32(tmp).c_str());
     info->SetName("Favorites");
     info->Type = DIRECTORY;
     this->Contents->AddItem(info);
@@ -640,7 +652,9 @@ void vtkPVFileInformation::GetWindowsDirectoryListing()
 #if defined(_WIN32)
   vtkPVFileInformationSet info_set;
 
-  if (IsNetworkPath(this->FullPath))
+  std::string lfullPath = vtkPVFileInformationHelper::Utf8ToLocalWin32(this->FullPath);
+
+  if (IsNetworkPath(lfullPath))
   {
     std::vector<std::string> shares;
     int type;
@@ -649,10 +663,9 @@ void vtkPVFileInformation::GetWindowsDirectoryListing()
       for (unsigned int i = 0; i < shares.size(); i++)
       {
         vtkPVFileInformation* info = vtkPVFileInformation::New();
-        info->SetName(shares[i].c_str());
-        std::string fullpath =
-          vtksys::SystemTools::CollapseFullPath(shares[i].c_str(), this->FullPath);
-        info->SetFullPath(fullpath.c_str());
+        info->SetName(vtkPVFileInformationHelper::LocalToUtf8Win32(shares[i]).c_str());
+        std::string fullpath = vtksys::SystemTools::CollapseFullPath(shares[i].c_str(), lfullPath);
+        info->SetFullPath(vtkPVFileInformationHelper::LocalToUtf8Win32(fullpath).c_str());
         info->Type = type;
         info->FastFileTypeDetection = this->FastFileTypeDetection;
         info_set.insert(info);
@@ -668,7 +681,7 @@ void vtkPVFileInformation::GetWindowsDirectoryListing()
     return;
   }
 
-  if (IsUncPath(this->FullPath))
+  if (IsUncPath(lfullPath))
   {
     bool didListing = false;
     std::vector<vtksys::String> parts =
@@ -683,9 +696,9 @@ void vtkPVFileInformation::GetWindowsDirectoryListing()
         for (unsigned int i = 0; i < shares.size(); i++)
         {
           vtkPVFileInformation* info = vtkPVFileInformation::New();
-          info->SetName(shares[i].c_str());
+          info->SetName(vtkPVFileInformationHelper::LocalToUtf8Win32(shares[i]).c_str());
           std::string fullpath = "\\\\" + parts[0] + "\\" + shares[i];
-          info->SetFullPath(fullpath.c_str());
+          info->SetFullPath(vtkPVFileInformationHelper::LocalToUtf8Win32(fullpath).c_str());
           info->Type = NETWORK_SHARE;
           info->FastFileTypeDetection = this->FastFileTypeDetection;
           info_set.insert(info);
@@ -711,7 +724,7 @@ void vtkPVFileInformation::GetWindowsDirectoryListing()
   }
 
   // Search for all files in the given directory.
-  std::string prefix = this->FullPath;
+  std::string prefix = lfullPath;
   vtkPVFileInformationAddTerminatingSlash(prefix);
   std::string pattern = prefix;
   pattern += "*";
@@ -758,15 +771,15 @@ void vtkPVFileInformation::GetWindowsDirectoryListing()
     if (isdir || isfile)
     {
       vtkPVFileInformation* infoD = vtkPVFileInformation::New();
-      infoD->SetName(filename.c_str());
-      infoD->SetFullPath(fullpath.c_str());
+      infoD->SetName(vtkPVFileInformationHelper::LocalToUtf8Win32(filename).c_str());
+      infoD->SetFullPath(vtkPVFileInformationHelper::LocalToUtf8Win32(fullpath).c_str());
       infoD->Type = type;
       infoD->FastFileTypeDetection = this->FastFileTypeDetection;
       infoD->SetHiddenFlag(); // needs full path set first
 
       // Recover status info
       struct _stat64 status;
-      int res = _stat64(infoD->FullPath, &status);
+      int res = _stat64(fullpath.c_str(), &status);
       if (res != -1)
       {
         if (isfile)
@@ -861,26 +874,34 @@ void vtkPVFileInformation::GetDirectoryListing()
     info->Type = INVALID;
     info->SetHiddenFlag();
 
-    // Recover status info
-    struct stat status;
-    int res = stat(info->FullPath, &status);
-    if (res != -1)
+    vtksys::SystemTools::Stat_t status;
+    int res;
+    if (this->ReadDetailedFileInformation)
     {
-      if (!S_ISDIR(status.st_mode))
+      // Recover status info
+      res = vtksys::SystemTools::Stat(info->FullPath, &status);
+      if (res != -1)
       {
-        std::string::size_type pos = std::string(d->d_name).rfind('.');
-        if (pos != std::string::npos)
+        if (!S_ISDIR(status.st_mode))
         {
-          std::string ext = std::string(d->d_name).substr(pos + 1);
-          info->SetExtension(ext.c_str());
+          std::string::size_type pos = std::string(d->d_name).rfind('.');
+          if (pos != std::string::npos)
+          {
+            std::string ext = std::string(d->d_name).substr(pos + 1);
+            info->SetExtension(ext.c_str());
+          }
         }
+        info->Size = status.st_size;
+        info->ModificationTime = status.st_mtime;
       }
-      info->Size = status.st_size;
-      info->ModificationTime = status.st_mtime;
     }
 // fix to bug #09452 such that directories with trailing names can be
 // shown in the file dialog
 #if defined(__SVR4) && defined(__sun)
+    if (!this->ReadDetailedFileInformation)
+    {
+      res = vtksys::SystemTools::Stat(info->FullPath, &status);
+    }
     if (res != -1 && status.st_mode & S_IFDIR)
     {
       info->Type = DIRECTORY;
@@ -936,8 +957,9 @@ void vtkPVFileInformation::SetHiddenFlag()
     this->Hidden = false;
     return;
   }
-  LPCSTR fp = this->FullPath;
-  DWORD flags = GetFileAttributes(fp);
+  // LPCSTR fp = this->FullPath;
+  DWORD flags =
+    GetFileAttributes(vtkPVFileInformationHelper::Utf8ToLocalWin32(this->FullPath).c_str());
   this->Hidden = (flags & FILE_ATTRIBUTE_HIDDEN) ? true : false;
 #else
   if (!this->Name)

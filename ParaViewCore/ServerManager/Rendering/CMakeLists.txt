@@ -47,6 +47,9 @@ set (Module_SRCS
   vtkSMDataDeliveryManager.cxx
   vtkSMFunctionalBagChartSeriesSelectionDomain.cxx
   vtkSMImplicitPlaneRepresentationProxy.cxx
+  vtkSMLightProxy.cxx
+  vtkSMMaterialDomain.cxx
+  vtkSMMaterialLibraryProxy.cxx
   vtkSMMultiSliceViewProxy.cxx
   vtkSMNewWidgetRepresentationProxy.cxx
   vtkSMOrthographicSliceViewProxy.cxx
@@ -56,8 +59,10 @@ set (Module_SRCS
   vtkSMRepresentationProxy.cxx
   vtkSMRepresentationTypeDomain.cxx
   vtkSMRepresentedArrayListDomain.cxx
+  vtkSMSaveScreenshotProxy.cxx
   vtkSMScalarBarWidgetRepresentationProxy.cxx
   vtkSMSelectionHelper.cxx
+  vtkSMSelectionLink.cxx
   vtkSMSpreadSheetRepresentationProxy.cxx
   vtkSMTextWidgetRepresentationProxy.cxx
   vtkSMTransferFunctionManager.cxx
@@ -67,6 +72,7 @@ set (Module_SRCS
   vtkSMViewLayoutProxy.cxx
   vtkSMViewProxy.cxx
   vtkSMViewProxyInteractorHelper.cxx
+  vtkSMViewResolutionDomain.cxx
   vtkSMWidgetRepresentationProxy.cxx
 )
 
@@ -128,7 +134,4 @@ set_source_files_properties(
   HEADER_FILE_ONLY
   WRAP_EXCLUDE)
 #-----------------------------------------------------------------------------
-if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL2")
-  add_definitions(-DVTKGL2)
-endif()
 vtk_module_library(vtkPVServerManagerRendering ${Module_SRCS})

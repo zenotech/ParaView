@@ -31,7 +31,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVTextSource : public vtkTableAlgorith
 public:
   static vtkPVTextSource* New();
   vtkTypeMacro(vtkPVTextSource, vtkTableAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -43,18 +43,18 @@ public:
 
 protected:
   vtkPVTextSource();
-  ~vtkPVTextSource();
+  ~vtkPVTextSource() override;
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
-  virtual int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
+  int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
   char* Text;
 
 private:
-  vtkPVTextSource(const vtkPVTextSource&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVTextSource&) VTK_DELETE_FUNCTION;
+  vtkPVTextSource(const vtkPVTextSource&) = delete;
+  void operator=(const vtkPVTextSource&) = delete;
 };
 
 #endif

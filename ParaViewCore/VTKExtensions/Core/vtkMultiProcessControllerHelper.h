@@ -39,7 +39,7 @@ class VTKPVVTKEXTENSIONSCORE_EXPORT vtkMultiProcessControllerHelper : public vtk
 public:
   static vtkMultiProcessControllerHelper* New();
   vtkTypeMacro(vtkMultiProcessControllerHelper, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Reduce the stream to all processes calling the (*operation) for reduction.
@@ -65,11 +65,11 @@ public:
 
 protected:
   vtkMultiProcessControllerHelper();
-  ~vtkMultiProcessControllerHelper();
+  ~vtkMultiProcessControllerHelper() override;
 
 private:
-  vtkMultiProcessControllerHelper(const vtkMultiProcessControllerHelper&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkMultiProcessControllerHelper&) VTK_DELETE_FUNCTION;
+  vtkMultiProcessControllerHelper(const vtkMultiProcessControllerHelper&) = delete;
+  void operator=(const vtkMultiProcessControllerHelper&) = delete;
 };
 
 #endif

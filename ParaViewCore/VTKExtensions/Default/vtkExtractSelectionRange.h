@@ -32,7 +32,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkExtractSelectionRange : public vtkTabl
 public:
   static vtkExtractSelectionRange* New();
   vtkTypeMacro(vtkExtractSelectionRange, vtkTableAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -67,11 +67,11 @@ public:
 
 protected:
   vtkExtractSelectionRange();
-  ~vtkExtractSelectionRange();
+  ~vtkExtractSelectionRange() override;
 
-  int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   int FieldType;
   int Component;
@@ -79,8 +79,8 @@ protected:
   double Range[2];
 
 private:
-  vtkExtractSelectionRange(const vtkExtractSelectionRange&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkExtractSelectionRange&) VTK_DELETE_FUNCTION;
+  vtkExtractSelectionRange(const vtkExtractSelectionRange&) = delete;
+  void operator=(const vtkExtractSelectionRange&) = delete;
 };
 
 #endif

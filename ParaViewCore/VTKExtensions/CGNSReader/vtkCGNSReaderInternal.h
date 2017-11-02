@@ -29,19 +29,18 @@
 #ifndef vtkCGNSReaderInternal_h
 #define vtkCGNSReaderInternal_h
 
-#include <cgns_io.h> // Low level IO for fast parsing
-#include <cgnslib.h> // DataType, and other definition
-
 #include <iostream>
 #include <map>
 #include <string.h> // for inline strcmp
 #include <string>
 #include <vector>
 
+#include "vtkCGNSSubsetInclusionLattice.h"
 #include "vtkIdTypeArray.h"
-#include "vtkPoints.h"
-
 #include "vtkMultiProcessController.h"
+#include "vtkNew.h"
+#include "vtkPoints.h"
+#include "vtk_cgns.h"
 
 namespace CGNSRead
 {
@@ -167,10 +166,30 @@ typedef struct
 } VTKVariable;
 
 //------------------------------------------------------------------------------
+class ZoneBCInformation
+{
+public:
+  char_33 name;
+  char_33 family;
+  ZoneBCInformation()
+  {
+    this->name[0] = '\0';
+    this->family[0] = '\0';
+  }
+};
+
+//------------------------------------------------------------------------------
 class ZoneInformation
 {
 public:
   char_33 name;
+  char_33 family;
+  std::vector<CGNSRead::ZoneBCInformation> bcs;
+  ZoneInformation()
+  {
+    this->name[0] = '\0';
+    this->family[0] = '\0';
+  }
 };
 
 //------------------------------------------------------------------------------
@@ -220,6 +239,8 @@ public:
   std::vector<CGNSRead::FamilyInformation> family;
   std::map<std::string, double> referenceState;
 
+  std::vector<CGNSRead::ZoneInformation> zones;
+
   int nzones;
 
   // std::vector<CGNSRead::zone> zone;
@@ -267,31 +288,55 @@ public:
   ~vtkCGNSMetaData();
   //@}
 
+  vtkCGNSSubsetInclusionLattice* GetSIL() const { return this->SIL; }
+  void SetExternalSIL(vtkCGNSSubsetInclusionLattice* sil)
+  {
+    if (sil)
+    {
+      this->SIL = sil;
+      this->SkipSILUpdates = true;
+    }
+    else
+    {
+      this->SIL = vtkSmartPointer<vtkCGNSSubsetInclusionLattice>::New();
+      this->SkipSILUpdates = false;
+    }
+  }
+
 private:
-  vtkCGNSMetaData(const vtkCGNSMetaData&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCGNSMetaData&) VTK_DELETE_FUNCTION;
+  vtkCGNSMetaData(const vtkCGNSMetaData&) = delete;
+  void operator=(const vtkCGNSMetaData&) = delete;
+
+  void UpdateSIL();
 
   std::vector<CGNSRead::BaseInformation> baseList;
   std::string LastReadFilename;
   // Not very elegant :
   std::vector<double> GlobalTime;
+
+  vtkSmartPointer<vtkCGNSSubsetInclusionLattice> SIL;
+  bool SkipSILUpdates;
 };
-
-//------------------------------------------------------------------------------
-// sort variables by name helper function
-static int sortVariablesByName(const void* vOne, const void* vTwo)
-{
-  Variable* varOne = (Variable*)vOne;
-  Variable* varTwo = (Variable*)vTwo;
-
-  return (strcmp(varOne->name, varTwo->name));
-}
 
 //------------------------------------------------------------------------------
 // compare name return true if name1 == name2
 inline bool compareName(const char_33 nameOne, const char_33 nameTwo)
 {
   return (strncmp(nameOne, nameTwo, 32) == 0);
+}
+
+//------------------------------------------------------------------------------
+// remove trailing whitespaces
+inline void removeTrailingWhiteSpaces(char_33 name)
+{
+  char* end = name + strlen(name) - 1;
+  while (end >= name && isspace(*end))
+  {
+    --end;
+  }
+  ++end;
+  assert(end >= name && end < name + 33);
+  *end = '\0';
 }
 
 //------------------------------------------------------------------------------
@@ -330,7 +375,12 @@ void fillVectorsFromVars(std::vector<CGNSRead::CGNSVariable>& vars,
 //------------------------------------------------------------------------------
 int setUpRind(const int cgioNum, const double rindId, int* rind);
 //------------------------------------------------------------------------------
-int getFirstNodeId(const int cgioNum, const double parentId, const char* label, double* id);
+/**
+ * Find the first node with the given `label`. If `name` is non-NULL, then the
+ * first node with given `label` that has the given `name` as well.
+ */
+int getFirstNodeId(
+  const int cgioNum, const double parentId, const char* label, double* id, const char* name = NULL);
 //------------------------------------------------------------------------------
 int get_section_connectivity(const int cgioNum, const double cgioSectionId, const int dim,
   const cgsize_t* srcStart, const cgsize_t* srcEnd, const cgsize_t* srcStride,

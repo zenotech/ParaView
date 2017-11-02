@@ -44,7 +44,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMIntRangeDomain : public vtkSMDomain
 public:
   static vtkSMIntRangeDomain* New();
   vtkTypeMacro(vtkSMIntRangeDomain, vtkSMDomain);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Return a min. value if it exists. If the min. exists
@@ -88,11 +88,11 @@ public:
 
 protected:
   vtkSMIntRangeDomain();
-  ~vtkSMIntRangeDomain();
+  ~vtkSMIntRangeDomain() override;
 
 private:
-  vtkSMIntRangeDomain(const vtkSMIntRangeDomain&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMIntRangeDomain&) VTK_DELETE_FUNCTION;
+  vtkSMIntRangeDomain(const vtkSMIntRangeDomain&) = delete;
+  void operator=(const vtkSMIntRangeDomain&) = delete;
 
   typedef vtkSMRangeDomainTemplate<int> RealSuperclass;
 };

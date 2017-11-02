@@ -1,3 +1,8 @@
+set (__dependencies)
+if (PARAVIEW_USE_OSPRAY)
+  list (APPEND __dependencies vtkRenderingOSPRay)
+endif ()
+
 vtk_module(vtkPVServerManagerRendering
   GROUPS
     ParaViewRendering
@@ -6,14 +11,14 @@ vtk_module(vtkPVServerManagerRendering
   DEPENDS
     vtkPVServerImplementationRendering
     vtkPVServerManagerCore
+    vtkjsoncpp
+    ${__dependencies}
   PRIVATE_DEPENDS
     vtkCommonColor
-    vtkjsoncpp
     vtksys
   COMPILE_DEPENDS
     vtkUtilitiesProcessXML
   TEST_DEPENDS
-    vtkjsoncpp
     vtkPVServerManagerApplication
   TEST_LABELS
     PARAVIEW

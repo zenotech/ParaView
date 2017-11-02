@@ -32,7 +32,7 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkTilesHelper : public vtkObject
 public:
   static vtkTilesHelper* New();
   vtkTypeMacro(vtkTilesHelper, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -91,15 +91,15 @@ public:
 
 protected:
   vtkTilesHelper();
-  ~vtkTilesHelper();
+  ~vtkTilesHelper() override;
 
   int TileDimensions[2];
   int TileMullions[2];
   int TileWindowSize[2];
 
 private:
-  vtkTilesHelper(const vtkTilesHelper&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkTilesHelper&) VTK_DELETE_FUNCTION;
+  vtkTilesHelper(const vtkTilesHelper&) = delete;
+  void operator=(const vtkTilesHelper&) = delete;
 };
 
 #endif

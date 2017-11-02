@@ -30,7 +30,7 @@ class VTKPVANIMATION_EXPORT vtkPythonAnimationCue : public vtkAnimationCue
 public:
   static vtkPythonAnimationCue* New();
   vtkTypeMacro(vtkPythonAnimationCue, vtkAnimationCue);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -55,7 +55,7 @@ public:
 
 protected:
   vtkPythonAnimationCue();
-  ~vtkPythonAnimationCue();
+  ~vtkPythonAnimationCue() override;
 
   //@{
   /**
@@ -75,8 +75,8 @@ protected:
   char* Script;
 
 private:
-  vtkPythonAnimationCue(const vtkPythonAnimationCue&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPythonAnimationCue&) VTK_DELETE_FUNCTION;
+  vtkPythonAnimationCue(const vtkPythonAnimationCue&) = delete;
+  void operator=(const vtkPythonAnimationCue&) = delete;
 };
 
 #endif

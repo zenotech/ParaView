@@ -42,7 +42,7 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMNewWidgetRepresentationProxy : pub
 public:
   static vtkSMNewWidgetRepresentationProxy* New();
   vtkTypeMacro(vtkSMNewWidgetRepresentationProxy, vtkSMProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -73,13 +73,13 @@ public:
 
 protected:
   vtkSMNewWidgetRepresentationProxy();
-  ~vtkSMNewWidgetRepresentationProxy();
+  ~vtkSMNewWidgetRepresentationProxy() override;
 
   /**
    * Overridden from vtkSMProxy to call BeginCreateVTKObjects() and
    * EndCreateVTKObjects().
    */
-  virtual void CreateVTKObjects();
+  void CreateVTKObjects() VTK_OVERRIDE;
 
   vtkSMProxy* RepresentationProxy;
   vtkSMProxy* WidgetProxy;
@@ -100,8 +100,8 @@ protected:
   void ProcessLinkedPropertyEvent(vtkSMProperty* controlledProperty, unsigned long event);
 
 private:
-  vtkSMNewWidgetRepresentationProxy(const vtkSMNewWidgetRepresentationProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMNewWidgetRepresentationProxy&) VTK_DELETE_FUNCTION;
+  vtkSMNewWidgetRepresentationProxy(const vtkSMNewWidgetRepresentationProxy&) = delete;
+  void operator=(const vtkSMNewWidgetRepresentationProxy&) = delete;
 };
 
 #endif

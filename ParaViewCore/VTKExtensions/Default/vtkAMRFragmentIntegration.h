@@ -42,16 +42,16 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkAMRFragmentIntegration
 public:
   static vtkAMRFragmentIntegration* New();
   vtkTypeMacro(vtkAMRFragmentIntegration, vtkMultiBlockDataSetAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkAMRFragmentIntegration();
-  virtual ~vtkAMRFragmentIntegration();
+  ~vtkAMRFragmentIntegration() override;
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int FillOutputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  int FillOutputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   /**
    * Pipeline helper.  Run on each material independently.
@@ -61,8 +61,8 @@ protected:
     std::vector<std::string> massWeightedNames);
 
 private:
-  vtkAMRFragmentIntegration(const vtkAMRFragmentIntegration&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkAMRFragmentIntegration&) VTK_DELETE_FUNCTION;
+  vtkAMRFragmentIntegration(const vtkAMRFragmentIntegration&) = delete;
+  void operator=(const vtkAMRFragmentIntegration&) = delete;
 };
 
 #endif /* vtkAMRFragmentIntegration_h */

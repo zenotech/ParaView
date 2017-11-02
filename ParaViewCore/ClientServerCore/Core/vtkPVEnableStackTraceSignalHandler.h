@@ -31,31 +31,31 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVEnableStackTraceSignalHandler : publ
 public:
   static vtkPVEnableStackTraceSignalHandler* New();
   vtkTypeMacro(vtkPVEnableStackTraceSignalHandler, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Transfer information about a single object into this object.
    */
-  virtual void CopyFromObject(vtkObject*);
+  void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
   /**
    * Merge another information object.
    */
-  virtual void AddInformation(vtkPVInformation*) {}
+  void AddInformation(vtkPVInformation*) VTK_OVERRIDE {}
 
   /**
    * Manage a serialized version of the information.
    */
-  virtual void CopyToStream(vtkClientServerStream*) {}
-  virtual void CopyFromStream(const vtkClientServerStream*) {}
+  void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE {}
+  void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE {}
 
 protected:
   vtkPVEnableStackTraceSignalHandler() {}
-  ~vtkPVEnableStackTraceSignalHandler() {}
+  ~vtkPVEnableStackTraceSignalHandler() override {}
 
 private:
-  vtkPVEnableStackTraceSignalHandler(const vtkPVEnableStackTraceSignalHandler&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVEnableStackTraceSignalHandler&) VTK_DELETE_FUNCTION;
+  vtkPVEnableStackTraceSignalHandler(const vtkPVEnableStackTraceSignalHandler&) = delete;
+  void operator=(const vtkPVEnableStackTraceSignalHandler&) = delete;
 };
 
 #endif

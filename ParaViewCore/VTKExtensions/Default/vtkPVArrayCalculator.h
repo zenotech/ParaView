@@ -41,15 +41,15 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVArrayCalculator : public vtkArrayCal
 {
 public:
   vtkTypeMacro(vtkPVArrayCalculator, vtkArrayCalculator);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   static vtkPVArrayCalculator* New();
 
 protected:
   vtkPVArrayCalculator();
-  ~vtkPVArrayCalculator();
+  ~vtkPVArrayCalculator() override;
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   //@{
   /**
@@ -64,8 +64,8 @@ protected:
   void UpdateArrayAndVariableNames(vtkDataObject* theInputObj, vtkDataSetAttributes* inDataAttrs);
 
 private:
-  vtkPVArrayCalculator(const vtkPVArrayCalculator&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVArrayCalculator&) VTK_DELETE_FUNCTION;
+  vtkPVArrayCalculator(const vtkPVArrayCalculator&) = delete;
+  void operator=(const vtkPVArrayCalculator&) = delete;
 };
 //@}
 

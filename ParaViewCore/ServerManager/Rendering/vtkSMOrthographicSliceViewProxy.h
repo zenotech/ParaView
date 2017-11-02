@@ -30,34 +30,35 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMOrthographicSliceViewProxy
 public:
   static vtkSMOrthographicSliceViewProxy* New();
   vtkTypeMacro(vtkSMOrthographicSliceViewProxy, vtkSMRenderViewProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Overridden to forward the call to the internal root view proxy.
    */
-  virtual const char* GetRepresentationType(vtkSMSourceProxy* producer, int outputPort);
+  const char* GetRepresentationType(vtkSMSourceProxy* producer, int outputPort) VTK_OVERRIDE;
 
   /**
    * Overridden to set initial default slices when a representation is created.
    * Not sure that's the best way to do this, but leaving the logic unchanged in
    * this pass.
    */
-  virtual vtkSMRepresentationProxy* CreateDefaultRepresentation(vtkSMProxy* proxy, int outputPort);
+  vtkSMRepresentationProxy* CreateDefaultRepresentation(
+    vtkSMProxy* proxy, int outputPort) VTK_OVERRIDE;
 
 protected:
   vtkSMOrthographicSliceViewProxy();
-  ~vtkSMOrthographicSliceViewProxy();
+  ~vtkSMOrthographicSliceViewProxy() override;
 
   void InitDefaultSlices(vtkSMSourceProxy* source, int opport, vtkSMRepresentationProxy* repr);
 
-  virtual void CreateVTKObjects();
+  void CreateVTKObjects() VTK_OVERRIDE;
   void OnMouseWheelBackwardEvent(vtkObject*, unsigned long, void* calldata);
   void OnMouseWheelForwardEvent(vtkObject*, unsigned long, void* calldata);
   void OnPlacePointEvent(vtkObject*, unsigned long, void* calldata);
 
 private:
-  vtkSMOrthographicSliceViewProxy(const vtkSMOrthographicSliceViewProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMOrthographicSliceViewProxy&) VTK_DELETE_FUNCTION;
+  vtkSMOrthographicSliceViewProxy(const vtkSMOrthographicSliceViewProxy&) = delete;
+  void operator=(const vtkSMOrthographicSliceViewProxy&) = delete;
 };
 
 #endif

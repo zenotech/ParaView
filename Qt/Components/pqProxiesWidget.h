@@ -41,7 +41,7 @@ class pqView;
 
 /**
 * pqProxiesWidget similar to pqProxyWidget with the difference being that
-* unlink pqProxyWidget, pqProxiesWidget supports showing of multiple proxies in
+* unlike pqProxyWidget, pqProxiesWidget supports showing of multiple proxies in
 * the same widget. Internally, it indeed creates a pqProxyWidget for each of
 * the added proxies.
 *
@@ -64,7 +64,7 @@ class PQCOMPONENTS_EXPORT pqProxiesWidget : public QWidget
 
 public:
   pqProxiesWidget(QWidget* parent = 0, Qt::WindowFlags flags = 0);
-  virtual ~pqProxiesWidget();
+  ~pqProxiesWidget() override;
 
 public slots:
   /**

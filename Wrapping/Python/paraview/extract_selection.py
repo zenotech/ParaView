@@ -66,7 +66,7 @@ def execute(self):
     # get a dictionary for arrays in the dataset attributes. We pass that
     # as the variables in the eval namespace for calculator.compute().
     elocals = calculator.get_arrays(inputs[0].GetAttributes(attributeType))
-    if not elocals.has_key("id") and re.search(r'\bid\b', query):
+    if ("id" not in elocals) and re.search(r'\bid\b', query):
         # add "id" array if the query string refers to id.
         # This is a temporary fix. We should look into
         # accelerating id-based selections in the future.
@@ -78,7 +78,7 @@ def execute(self):
         print ("Error: Failed to evaluate Expression '%s'. "\
             "The following exception stack should provide additional developer "\
             "specific information. This typically implies a malformed "\
-            "expression. Verify that the expression is valid.\n" % query, file=sys.stderr)
+            "expression. Verify that the expression is valid.\n" % query, file=stderr)
         raise
 
     if not maskarray_is_valid(maskArray):
@@ -100,9 +100,13 @@ def execute(self):
         # have already ensured that the input is shallow copied over properly
         # before this method gets called.
 
-        # note: since mask array is a bool-array, we multiply it by int8(1) to
-        # make it a type of array that can be represented as vtkSignedCharArray.
-        output.GetAttributes(attributeType).append(maskArray * np.int8(1), "vtkInsidedness")
+        # Note: we must force the data type to VTK_SIGNED_CHAR or the array will
+        # be ignored by the freeze selection operation
+        from vtk.util.numpy_support import numpy_to_vtk
+        if type(maskArray) is not vtk.numpy_interface.dataset_adapter.VTKNoneArray:
+            insidedness = numpy_to_vtk(maskArray, deep=1, array_type=vtk.VTK_SIGNED_CHAR)
+            insidedness.SetName("vtkInsidedness")
+            output.GetAttributes(attributeType).VTKObject.AddArray(insidedness)
     else:
         # handle extraction.
         # flatnonzero() will give is array of indices where the arrays is

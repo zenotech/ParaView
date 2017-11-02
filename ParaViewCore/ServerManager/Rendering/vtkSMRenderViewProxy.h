@@ -42,7 +42,7 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMRenderViewProxy : public vtkSMView
 public:
   static vtkSMRenderViewProxy* New();
   vtkTypeMacro(vtkSMRenderViewProxy, vtkSMViewProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -130,12 +130,12 @@ public:
    * RenderView. This include changing the interactor style as well as
    * overriding VTK rendering to use the Proxy/ViewProxy API instead.
    */
-  virtual void SetupInteractor(vtkRenderWindowInteractor* iren);
+  void SetupInteractor(vtkRenderWindowInteractor* iren) VTK_OVERRIDE;
 
   /**
    * Returns the interactor.
    */
-  virtual vtkRenderWindowInteractor* GetInteractor();
+  vtkRenderWindowInteractor* GetInteractor() VTK_OVERRIDE;
 
   /**
    * Returns the client-side renderer (composited or 3D).
@@ -171,12 +171,12 @@ public:
    * Called vtkPVView::Update on the server-side. Overridden to update the state
    * of NeedsUpdateLOD flag.
    */
-  virtual void Update();
+  void Update() VTK_OVERRIDE;
 
   /**
    * We override that method to handle LOD and non-LOD NeedsUpdate in transparent manner.
    */
-  virtual bool GetNeedsUpdate();
+  bool GetNeedsUpdate() VTK_OVERRIDE;
 
   /**
    * Called to render a streaming pass. Returns true if the view "streamed" some
@@ -188,12 +188,12 @@ public:
    * Overridden to check through the various representations that this view can
    * create.
    */
-  virtual const char* GetRepresentationType(vtkSMSourceProxy* producer, int outputPort);
+  const char* GetRepresentationType(vtkSMSourceProxy* producer, int outputPort) VTK_OVERRIDE;
 
   /**
    * Returns the render window used by this view.
    */
-  virtual vtkRenderWindow* GetRenderWindow();
+  vtkRenderWindow* GetRenderWindow() VTK_OVERRIDE;
 
   /**
    * Provides access to the vtkSMViewProxyInteractorHelper object that handles
@@ -230,7 +230,13 @@ public:
 
 protected:
   vtkSMRenderViewProxy();
-  ~vtkSMRenderViewProxy();
+  ~vtkSMRenderViewProxy() override;
+
+  /**
+   * Overridden to call this->InteractiveRender() if
+   * "UseInteractiveRenderingForScreenshots" is true.
+   */
+  void RenderForImageCapture() VTK_OVERRIDE;
 
   /**
    * Calls UpdateLOD() on the vtkPVRenderView.
@@ -241,23 +247,15 @@ protected:
    * Overridden to ensure that we clean up the selection cache on the server
    * side.
    */
-  virtual void MarkDirty(vtkSMProxy* modifiedProxy);
-
-  //@{
-  /**
-   * Subclasses should override this method to do the actual image capture.
-   */
-  virtual vtkImageData* CaptureWindowInternal(int magnification);
-  virtual void CaptureWindowInternalRender();
-  //@}
+  void MarkDirty(vtkSMProxy* modifiedProxy) VTK_OVERRIDE;
 
   bool SelectFrustumInternal(const int region[4], vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources, bool multiple_selections, int fieldAssociation);
   bool SelectPolygonInternal(vtkIntArray* polygon, vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources, bool multiple_selections, const char* method);
 
-  virtual vtkTypeUInt32 PreRender(bool interactive);
-  virtual void PostRender(bool interactive);
+  vtkTypeUInt32 PreRender(bool interactive) VTK_OVERRIDE;
+  void PostRender(bool interactive) VTK_OVERRIDE;
 
   /**
    * Fetches the LastSelection from the data-server and then converts it to a
@@ -269,7 +267,7 @@ protected:
   /**
    * Called at the end of CreateVTKObjects().
    */
-  virtual void CreateVTKObjects();
+  void CreateVTKObjects() VTK_OVERRIDE;
 
   /**
    * Returns true if the proxy is in interaction mode that corresponds to making
@@ -290,8 +288,15 @@ protected:
   bool NeedsUpdateLOD;
 
 private:
-  vtkSMRenderViewProxy(const vtkSMRenderViewProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMRenderViewProxy&) VTK_DELETE_FUNCTION;
+  vtkSMRenderViewProxy(const vtkSMRenderViewProxy&) = delete;
+  void operator=(const vtkSMRenderViewProxy&) = delete;
+
+  /**
+   * Internal method to execute `cmd` on the rendering processes to do rendering
+   * for selection.
+   */
+  bool SelectInternal(const vtkClientServerStream& cmd, vtkCollection* selectedRepresentations,
+    vtkCollection* selectionSources, bool multiple_selections);
 
   vtkNew<vtkSMViewProxyInteractorHelper> InteractorHelper;
 };

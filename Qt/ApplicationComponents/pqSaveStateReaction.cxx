@@ -48,9 +48,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMTrace.h"
 #include "vtkSmartPointer.h"
 
-#include <QtDebug>
 #include <QFile>
 #include <QTextStream>
+#include <QtDebug>
 
 //-----------------------------------------------------------------------------
 pqSaveStateReaction::pqSaveStateReaction(QAction* parentObject)
@@ -72,7 +72,7 @@ void pqSaveStateReaction::updateEnableState()
 }
 
 //-----------------------------------------------------------------------------
-void pqSaveStateReaction::saveState()
+bool pqSaveStateReaction::saveState()
 {
 #ifdef PARAVIEW_ENABLE_PYTHON
   QString fileExt = tr("ParaView state file (*.pvsm);;Python state file (*.py);;All files (*)");
@@ -96,7 +96,9 @@ void pqSaveStateReaction::saveState()
     {
       pqSaveStateReaction::saveState(selectedFile);
     }
+    return true;
   }
+  return false;
 }
 
 //-----------------------------------------------------------------------------

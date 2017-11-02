@@ -150,7 +150,7 @@ public:
       }
     }
 
-    return Json::Value::nullRef;
+    return Json::Value::nullSingleton();
   }
 
   //----------------------------------------------------------------------------
@@ -174,7 +174,7 @@ public:
       }
     }
 
-    return Json::Value::nullRef;
+    return Json::Value::nullSingleton();
   }
 
   //----------------------------------------------------------------------------
@@ -503,7 +503,7 @@ public:
 
     Json::Path settingPath(root.c_str());
     Json::Value& jsonValue = settingPath.make(this->SettingCollections[0].Value);
-    jsonValue[leaf] = Json::Value::nullRef;
+    jsonValue[leaf] = Json::Value::nullSingleton();
 
     if (values.size() > 1)
     {
@@ -538,7 +538,7 @@ public:
       if (jsonValue.isArray())
       {
         // Reset to null so that we aren't setting a value on a Json::Value array
-        jsonValue = Json::Value::nullRef;
+        jsonValue = Json::Value::nullSingleton();
         this->Modified();
       }
 
@@ -553,7 +553,7 @@ public:
       if (!jsonValue.isArray() && !jsonValue.isNull())
       {
         // Reset to null so that the jsonValue.resize() operation works
-        jsonValue = Json::Value::nullRef;
+        jsonValue = Json::Value::nullSingleton();
         this->Modified();
       }
 
@@ -581,7 +581,7 @@ public:
       if (jsonValue.isArray())
       {
         // Reset to null so that we aren't setting a value on a Json::Value array
-        jsonValue = Json::Value::nullRef;
+        jsonValue = Json::Value::nullSingleton();
         this->Modified();
       }
 
@@ -596,7 +596,7 @@ public:
       if (!jsonValue.isArray() && !jsonValue.isNull())
       {
         // Reset to null so that the jsonValue.resize() operation works
-        jsonValue = Json::Value::nullRef;
+        jsonValue = Json::Value::nullSingleton();
         this->Modified();
       }
 
@@ -624,7 +624,7 @@ public:
       if (jsonValue.isArray())
       {
         // Reset to null so that we aren't setting a value on a Json::Value array
-        jsonValue = Json::Value::nullRef;
+        jsonValue = Json::Value::nullSingleton();
         this->Modified();
       }
 
@@ -639,7 +639,7 @@ public:
       if (!jsonValue.isArray() && !jsonValue.isNull())
       {
         // Reset to null so that the jsonValue.resize() operation works
-        jsonValue = Json::Value::nullRef;
+        jsonValue = Json::Value::nullSingleton();
         this->Modified();
       }
 
@@ -1252,7 +1252,6 @@ bool vtkSMSettings::GetPropertySetting(
   jsonPrefix.append(parent->GetXMLName());
   jsonPrefix.append(".");
   jsonPrefix.append(parent->GetPropertyName(property));
-  std::cout << maxPriority << ", " << jsonPrefix << std::endl;
 
   return this->Internal->GetPropertySetting(jsonPrefix.c_str(), property, maxPriority);
 }
@@ -1420,7 +1419,7 @@ Json::Value vtkConvertXMLElementToJSON(
 // See: https://gitlab.kitware.com/paraview/paraview/issues/16938
 #ifdef VTK_USE_64BIT_IDS
 template <>
-Json::Value vtkConvertXMLElementToJSON <vtkIdType>(
+Json::Value vtkConvertXMLElementToJSON<vtkIdType>(
   vtkSMVectorProperty* vp, const std::vector<vtkSmartPointer<vtkPVXMLElement> >& elements)
 {
   // Since we need to handle enumeration domain :/.

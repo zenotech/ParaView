@@ -26,15 +26,15 @@ class VTK_EXPORT vtkMySpecialRepresentation : public vtkGeometryRepresentationWi
 public:
   static vtkMySpecialRepresentation* New();
   vtkTypeMacro(vtkMySpecialRepresentation, vtkGeometryRepresentationWithFaces);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkMySpecialRepresentation();
   ~vtkMySpecialRepresentation();
 
 private:
-  vtkMySpecialRepresentation(const vtkMySpecialRepresentation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkMySpecialRepresentation&) VTK_DELETE_FUNCTION;
+  vtkMySpecialRepresentation(const vtkMySpecialRepresentation&) = delete;
+  void operator=(const vtkMySpecialRepresentation&) = delete;
 };
 
 #endif

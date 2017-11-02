@@ -30,23 +30,19 @@
 #ifndef vtkSMTransferFunctionPresets_h
 #define vtkSMTransferFunctionPresets_h
 
-#include "vtkPVServerManagerRenderingModule.h" // needed for exports
 #include "vtkSMObject.h"
-#include "vtkStdString.h" // needed for vtkStdString.
 
-// forward declare Json::Value
-namespace Json
-{
-class Value;
-class ValueConstIterator;
-}
+#include "vtkPVServerManagerRenderingModule.h" // needed for exports
+#include "vtkStdString.h"                      // needed for vtkStdString.
+#include <vtk_jsoncpp_fwd.h>                   // for forward declarations
+
 class vtkPVXMLElement;
 class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMTransferFunctionPresets : public vtkSMObject
 {
 public:
   static vtkSMTransferFunctionPresets* New();
   vtkTypeMacro(vtkSMTransferFunctionPresets, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Returns the number of presets current available (including builtin and
@@ -151,11 +147,11 @@ public:
 
 protected:
   vtkSMTransferFunctionPresets();
-  ~vtkSMTransferFunctionPresets();
+  ~vtkSMTransferFunctionPresets() override;
 
 private:
-  vtkSMTransferFunctionPresets(const vtkSMTransferFunctionPresets&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMTransferFunctionPresets&) VTK_DELETE_FUNCTION;
+  vtkSMTransferFunctionPresets(const vtkSMTransferFunctionPresets&) = delete;
+  void operator=(const vtkSMTransferFunctionPresets&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

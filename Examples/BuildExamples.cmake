@@ -42,7 +42,7 @@ endif()
 add_custom_command(
   OUTPUT "${ParaView_BINARY_DIR}/ParaViewExamples.done"
   COMMAND ${CMAKE_CTEST_COMMAND}
-  ARGS ${build_config_arg}
+       ${build_config_arg}
        --build-and-test
        ${ParaView_SOURCE_DIR}/Examples
        ${ParaView_BINARY_DIR}/Examples/All
@@ -53,6 +53,8 @@ add_custom_command(
        --build-makeprogram ${CMAKE_MAKE_PROGRAM}
        --build-options -DParaView_DIR:PATH=${ParaView_BINARY_DIR}
                        -DPARAVIEW_QT_VERSION:STRING=${PARAVIEW_QT_VERSION}
+                       -DQT_QMAKE_EXECUTABLE:FILEPATH=${QT_QMAKE_EXECUTABLE}
+                       -DQt5_DIR:PATH=${Qt5_DIR}
                        -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                        -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                        -DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS}

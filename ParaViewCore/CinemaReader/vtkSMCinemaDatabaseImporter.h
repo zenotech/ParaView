@@ -27,7 +27,7 @@
 #include "vtkSMObject.h"
 
 #include "vtkPVCinemaReaderModule.h" // for export macros
-#include <string> // needed for std::string
+#include <string>                    // needed for std::string
 
 class vtkPVCinemaDatabaseInformation;
 class vtkSMSelfGeneratingSourceProxy;
@@ -39,7 +39,7 @@ class VTKPVCINEMAREADER_EXPORT vtkSMCinemaDatabaseImporter : public vtkSMObject
 public:
   static vtkSMCinemaDatabaseImporter* New();
   vtkTypeMacro(vtkSMCinemaDatabaseImporter, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Returns true if the \c session supports Cinema databases. Currently, only
@@ -62,14 +62,14 @@ public:
 
 protected:
   vtkSMCinemaDatabaseImporter();
-  ~vtkSMCinemaDatabaseImporter();
+  ~vtkSMCinemaDatabaseImporter() override;
 
   void AddPropertiesForControls(vtkSMSelfGeneratingSourceProxy* reader,
     const std::string& parametername, const vtkPVCinemaDatabaseInformation* cinfo);
 
 private:
-  vtkSMCinemaDatabaseImporter(const vtkSMCinemaDatabaseImporter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMCinemaDatabaseImporter&) VTK_DELETE_FUNCTION;
+  vtkSMCinemaDatabaseImporter(const vtkSMCinemaDatabaseImporter&) = delete;
+  void operator=(const vtkSMCinemaDatabaseImporter&) = delete;
 };
 
 #endif

@@ -40,21 +40,21 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkFileSequenceParser : public vtkObject
 public:
   static vtkFileSequenceParser* New();
   vtkTypeMacro(vtkFileSequenceParser, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Extract base file name sequence from the file.
    * Returns true if a sequence is detected and
    * sets SequenceName and SequenceIndex.
    */
-  bool ParseFileSequence(char* file);
+  bool ParseFileSequence(const char* file);
 
   vtkGetStringMacro(SequenceName);
   vtkGetMacro(SequenceIndex, int);
 
 protected:
   vtkFileSequenceParser();
-  ~vtkFileSequenceParser();
+  ~vtkFileSequenceParser() override;
 
   vtksys::RegularExpression* reg_ex;
   vtksys::RegularExpression* reg_ex2;
@@ -70,8 +70,8 @@ protected:
   char* SequenceName;
 
 private:
-  vtkFileSequenceParser(const vtkFileSequenceParser&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkFileSequenceParser&) VTK_DELETE_FUNCTION;
+  vtkFileSequenceParser(const vtkFileSequenceParser&) = delete;
+  void operator=(const vtkFileSequenceParser&) = delete;
 };
 
 #endif

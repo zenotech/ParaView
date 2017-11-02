@@ -53,6 +53,7 @@
 
 #include <algorithm>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -352,13 +353,49 @@ void vtkPVDataInformation::CopyFromCompositeDataSetFinalize(vtkCompositeDataSet*
 {
   this->SetCompositeDataClassName(data->GetClassName());
   this->CompositeDataSetType = data->GetDataObjectType();
-
   if (this->DataSetType == -1)
   {
     // This is a composite dataset with no non-empty leaf node. Set some data
     // type (Look at BUG #7144).
     this->SetDataClassName("vtkDataSet");
     this->DataSetType = VTK_DATA_SET;
+  }
+
+  // Copy Field Data information, if any
+  vtkFieldData* fd = data->GetFieldData();
+  if (fd && fd->GetNumberOfArrays() > 0)
+  {
+    if (this->FieldDataInformation->GetNumberOfArrays() > 0)
+    {
+      // Issue #17793. We need to take extra care when merging field data
+      // information to ensure that we don't mark arrays only present on the
+      // non-leaf node as partial.
+      vtkNew<vtkPVDataSetAttributesInformation> myfdInformation;
+      myfdInformation->CopyFromFieldData(fd);
+
+      std::set<std::string> my_unique_arrays;
+      for (int cc = 0, max = myfdInformation->GetNumberOfArrays(); cc < max; ++cc)
+      {
+        const char* aname = myfdInformation->GetArrayInformation(cc)->GetName();
+        if (aname && this->FieldDataInformation->GetArrayInformation(aname) == nullptr)
+        {
+          my_unique_arrays.insert(aname);
+        }
+      }
+      this->FieldDataInformation->AddInformation(myfdInformation);
+      // now unmark arrays in my_unique_arrays as not partial.
+      for (const auto& aname : my_unique_arrays)
+      {
+        if (auto ainfo = this->FieldDataInformation->GetArrayInformation(aname.c_str()))
+        {
+          ainfo->SetIsPartial(0);
+        }
+      }
+    }
+    else
+    {
+      this->FieldDataInformation->CopyFromFieldData(fd);
+    }
   }
 }
 
@@ -795,7 +832,8 @@ void vtkPVDataInformation::AddInformation(vtkPVInformation* pvi, int addingParts
     return;
   }
 
-  if (this->NumberOfPoints == 0 && this->NumberOfCells == 0 && this->NumberOfDataSets == 0)
+  if (this->NumberOfPoints == 0 && this->NumberOfCells == 0 && this->NumberOfDataSets == 0 &&
+    this->FieldDataInformation->GetNumberOfArrays() == 0)
   {
     // Just copy the other array information.
     this->DeepCopy(info, !addingParts);
@@ -808,7 +846,12 @@ void vtkPVDataInformation::AddInformation(vtkPVInformation* pvi, int addingParts
   // This would allow extracting grid from mixed structured collections.
   if (this->DataSetType != info->GetDataSetType())
   { // IsTypeOf method will not work here.  Must be done manually.
-    if (this->DataSetType == VTK_IMAGE_DATA || this->DataSetType == VTK_RECTILINEAR_GRID ||
+    if (this->DataSetType == -1)
+    {
+      this->DataSetType = info->GetDataSetType();
+      this->SetDataClassName(info->GetDataClassName());
+    }
+    else if (this->DataSetType == VTK_IMAGE_DATA || this->DataSetType == VTK_RECTILINEAR_GRID ||
       this->DataSetType == VTK_DATA_SET || info->GetDataSetType() == VTK_IMAGE_DATA ||
       info->GetDataSetType() == VTK_RECTILINEAR_GRID || info->GetDataSetType() == VTK_DATA_SET)
     {

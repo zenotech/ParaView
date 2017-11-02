@@ -22,10 +22,14 @@
  * the volume of each particle from the volume fraction.
  *
  * This will turn on validation and debug i/o of the filter.
- *#define vtkMaterialInterfaceFilterDEBUG
+ * \code{.cpp}
+ * #define vtkMaterialInterfaceFilterDEBUG
+ * \endcode
  *
  * This will turn on profiling of how long each part of the filter takes
- *#define vtkMaterialInterfaceFilterPROFILE
+ * \code{.cpp}
+ * #define vtkMaterialInterfaceFilterPROFILE
+ * \endcode
 */
 
 #ifndef vtkMaterialInterfaceFilter_h
@@ -68,7 +72,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkMaterialInterfaceFilter
 public:
   static vtkMaterialInterfaceFilter* New();
   vtkTypeMacro(vtkMaterialInterfaceFilter, vtkMultiBlockDataSetAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // PARAVIEW interface stuff
 
@@ -326,15 +330,15 @@ public:
   /**
    * Return the mtime also considering the locator and clip function.
    */
-  vtkMTimeType GetMTime();
+  vtkMTimeType GetMTime() VTK_OVERRIDE;
 
 protected:
   vtkMaterialInterfaceFilter();
-  ~vtkMaterialInterfaceFilter();
+  ~vtkMaterialInterfaceFilter() override;
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int FillOutputPortInformation(int port, vtkInformation* info);
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  int FillOutputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   // Set up the result arrays for the calculations we are about to
   // make.
@@ -720,8 +724,8 @@ protected:
 #endif
 
 private:
-  vtkMaterialInterfaceFilter(const vtkMaterialInterfaceFilter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkMaterialInterfaceFilter&) VTK_DELETE_FUNCTION;
+  vtkMaterialInterfaceFilter(const vtkMaterialInterfaceFilter&) = delete;
+  void operator=(const vtkMaterialInterfaceFilter&) = delete;
 };
 
 #endif

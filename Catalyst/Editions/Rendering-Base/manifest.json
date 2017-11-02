@@ -21,7 +21,7 @@
         "type": "BOOL",
         "value": "ON"
       },
-      { "name": "Module_vtkRenderingContextOpenGL",
+      { "name": "Module_vtkRenderingContextOpenGL2",
         "type": "BOOL",
         "value": "ON"
       },
@@ -37,7 +37,7 @@
         "type": "BOOL",
         "value": "ON"
       },
-      { "name": "Module_vtkRenderingOpenGL",
+      { "name": "Module_vtkRenderingOpenGL2",
         "type": "BOOL",
         "value": "ON"
       },
@@ -61,7 +61,7 @@
         "type": "BOOL",
         "value": "ON"
       },
-      { "name": "Module_vtkRenderingGL2PS",
+      { "name": "Module_vtkRenderingGL2PSOpenGL2",
         "type": "BOOL",
         "value": "ON"
       },
@@ -69,7 +69,7 @@
         "type": "BOOL",
         "value": "ON"
       },
-      { "name": "Module_vtkIOExportOpenGL",
+      { "name": "Module_vtkIOExportOpenGL2",
         "type": "BOOL",
         "value": "ON"
       },
@@ -99,6 +99,7 @@
     { "name": "vtkPVVTKExtensionsRendering",
       "path": "ParaViewCore/VTKExtensions/Rendering",
       "include": [
+        { "path": "module.cmake" },
         { "path": "vtkIceTCompositeZPassShader_fs.glsl" },
         { "path": "vtkIceTConstants.h" },
         { "path": "vtkPVStreamingMacros.h" },
@@ -116,6 +117,7 @@
         { "class": "vtkIceTCompositePass" },
         { "class": "vtkIceTContext" },
         { "class": "vtkImageCompressor" },
+        { "class": "vtkImageTransparencyFilter" },
         { "class": "vtkKdTreeGenerator" },
         { "class": "vtkKdTreeManager" },
         { "class": "vtkLZ4Compressor" },
@@ -156,7 +158,6 @@
         { "class": "vtkSelectionConverter" },
         { "class": "vtkSortedTableStreamer" },
         { "class": "vtkSquirtCompressor" },
-        { "class": "vtkTexturePainter" },
         { "class": "vtkTileDisplayHelper" },
         { "class": "vtkTilesHelper" },
         { "class": "vtkTrackballPan" },
@@ -166,6 +167,8 @@
         { "class": "vtkZlibImageCompressor" }
       ],
       "replace": [
+        { "path":"ParaViewCore/VTKExtensions/Rendering/CMakeLists.txt" },
+        { "path":"ParaViewCore/VTKExtensions/Rendering/module.cmake" },
         { "path": "ParaViewCore/VTKExtensions/Rendering/Rendering-Base-glsl.catalyst.cmake" }
       ],
       "cswrap": true,
@@ -209,16 +212,16 @@
       "cswrap": true,
       "pythonwrap": true
     },
-    { "name": "vtkIOExportOpenGL",
-      "path": "VTK/IO/ExportOpenGL",
+    { "name": "vtkIOExportOpenGL2",
+      "path": "VTK/IO/ExportOpenGL2",
       "exclude": [
         { "path": "Testing" }
       ],
       "cswrap": true,
       "pythonwrap": true
     },
-    { "name": "vtkRenderingGL2PS",
-      "path": "VTK/Rendering/GL2PS",
+    { "name": "vtkRenderingGL2PSOpenGL2",
+      "path": "VTK/Rendering/GL2PSOpenGL2",
       "exclude": [
         { "path": "Testing" }
       ],
@@ -303,6 +306,7 @@
         { "class": "vtkMergeCells" },
         { "class": "vtkMultiBlockDataGroupFilter" },
         { "class": "vtkPassArrays" },
+        { "class": "vtkPassThrough" },
         { "class": "vtkSplitColumnComponents" },
         { "class": "vtkTransformPolyDataFilter" }
       ],
@@ -326,7 +330,8 @@
       "include": [
         { "class": "vtkEllipseArcSource" },
         { "class": "vtkFrustumSource" },
-        { "class": "vtkOutlineSource" }
+        { "class": "vtkOutlineSource" },
+        { "class": "vtkPlaneSource" }
       ],
       "cswrap": true,
       "pythonwrap": true
@@ -355,6 +360,7 @@
         { "class": "vtkBillboardTextActor3D" },
         { "class": "vtkCamera" },
         { "class": "vtkCellPicker" },
+        { "class": "vtkCIEDE2000" },
         { "class": "vtkColorTransferFunction" },
         { "class": "vtkCompositeDataDisplayAttributes" },
         { "class": "vtkCoordinate" },
@@ -392,6 +398,7 @@
         { "class": "vtkPainterDeviceAdapter" },
         { "class": "vtkPicker" },
         { "class": "vtkPickingManager" },
+        { "class": "vtkPointGaussianMapper" },
         { "class": "vtkPolyDataMapper" },
         { "class": "vtkPolyDataMapper2D" },
         { "class": "vtkProp" },
@@ -408,9 +415,11 @@
         { "class": "vtkRendererDelegate" },
         { "class": "vtkRenderPass" },
         { "class": "vtkRenderState" },
+        { "class": "vtkRenderTimerLog" },
         { "class": "vtkRenderWindow" },
         { "class": "vtkRenderWindowInteractor" },
         { "class": "vtkShaderDeviceAdapter2" },
+        { "class": "vtkSkybox" },
         { "class": "vtkStringToImage" },
         { "class": "vtkTDxInteractorStyle" },
         { "class": "vtkTDxInteractorStyleCamera" },
@@ -458,6 +467,7 @@
       "path": "VTK/Rendering/Parallel",
       "include": [
         { "path": "module.cmake" },
+        { "path": "vtkCompositeZPassFS.glsl" },
         { "class": "vtkCompositedSynchronizedRenderers" },
         { "class": "vtkCompositer" },
         { "class": "vtkCompositeRenderManager" },
@@ -531,10 +541,8 @@
       "include": [
         { "path": "hints" },
         { "class": "vtk3DWidgetRepresentation" },
-        { "class": "vtkCaveSynchronizedRenderers" },
-        { "class": "vtkIceTSynchronizedRenderers" },
-        { "class": "vtkMPIMoveData" },
         { "class": "vtkCacheSizeKeeper" },
+        { "class": "vtkCaveSynchronizedRenderers" },
         { "class": "vtkChartRepresentation" },
         { "class": "vtkChartSelectionRepresentation" },
         { "class": "vtkClientServerMoveData" },
@@ -543,23 +551,27 @@
         { "class": "vtkGeometryRepresentation" },
         { "class": "vtkGeometryRepresentationWithFaces" },
         { "class": "vtkGlyph3DRepresentation" },
+        { "class": "vtkIceTSynchronizedRenderers" },
+        { "class": "vtkMPIMoveData" },
         { "class": "vtkOutlineRepresentation" },
         { "class": "vtkPolarAxesRepresentation" },
         { "class": "vtkPVCacheKeeper" },
         { "class": "vtkPVCacheKeeperPipeline" },
         { "class": "vtkPVClientServerSynchronizedRenderers" },
         { "class": "vtkPVCompositeRepresentation" },
-        { "class": "vtkPVContextView" },
         { "class": "vtkPVContextInteractorStyle" },
+        { "class": "vtkPVContextView" },
         { "class": "vtkPVDataDeliveryManager" },
         { "class": "vtkPVDataRepresentation" },
         { "class": "vtkPVDataRepresentationPipeline" },
-        { "class": "vtkPVDisplayInformation" },
+        { "class": "vtkPVGridAxes3DRepresentation" },
         { "class": "vtkPVHardwareSelector" },
         { "class": "vtkPVImplicitPlaneRepresentation" },
         { "class": "vtkPVLastSelectionInformation" },
+        { "class": "vtkPVOpenGLInformation" },
         { "class": "vtkPVPlotMatrixView" },
         { "class": "vtkPVProminentValuesInformation" },
+        { "class": "vtkPVRenderingCapabilitiesInformation" },
         { "class": "vtkPVRenderView" },
         { "class": "vtkPVRenderViewSettings" },
         { "class": "vtkPVRepresentedDataInformation" },
@@ -681,6 +693,7 @@
         { "class": "vtkSMDataDeliveryManager" },
         { "class": "vtkSMFunctionalBagChartSeriesSelectionDomain" },
         { "class": "vtkSMImplicitPlaneRepresentationProxy" },
+        { "class": "vtkSMMaterialLibraryProxy" },
         { "class": "vtkSMNewWidgetRepresentationProxy" },
         { "class": "vtkSMParaViewPipelineControllerWithRendering" },
         { "class": "vtkSMPlotMatrixViewProxy" },
@@ -689,6 +702,7 @@
         { "class": "vtkSMRepresentationProxy" },
         { "class": "vtkSMRepresentationTypeDomain" },
         { "class": "vtkSMRepresentedArrayListDomain" },
+        { "class": "vtkSMSaveScreenshotProxy" },
         { "class": "vtkSMScalarBarWidgetRepresentationProxy" },
         { "class": "vtkSMSelectionHelper" },
         { "class": "vtkSMSpreadSheetRepresentationProxy" },
@@ -700,6 +714,7 @@
         { "class": "vtkSMViewLayoutProxy" },
         { "class": "vtkSMViewProxy" },
         { "class": "vtkSMViewProxyInteractorHelper" },
+        { "class": "vtkSMViewResolutionDomain" },
         { "class": "vtkSMWidgetRepresentationProxy" }
       ],
       "replace": [
@@ -711,8 +726,8 @@
       "cswrap": true,
       "pythonwrap": true
     },
-    { "name": "vtkRenderingOpenGL",
-      "path": "VTK/Rendering/OpenGL",
+    { "name": "vtkRenderingOpenGL2",
+      "path": "VTK/Rendering/OpenGL2",
       "comment": [
         "Including everything because the CMake code has lots of",
         "logic in it and it isn't worth duplicating it all just to",
@@ -754,8 +769,8 @@
       "cswrap": true,
       "pythonwrap": true
     },
-    { "name": "vtkRenderingContextOpenGL",
-      "path": "VTK/Rendering/ContextOpenGL",
+    { "name": "vtkRenderingContextOpenGL2",
+      "path": "VTK/Rendering/ContextOpenGL2",
       "exclude": [
         { "path": "Testing" }
       ],
@@ -828,9 +843,15 @@
       "path": "VTK/Imaging/Core",
       "include": [
         { "path": "module.cmake" },
+        { "path": "vtkImageInterpolatorInternals.h" },
+        { "class": "vtkAbstractImageInterpolator" },
         { "class": "vtkExtractVOI" },
         { "class": "vtkImageExtractComponents" },
-        { "class": "vtkImageShiftScale" }
+        { "class": "vtkImageInterpolator" },
+        { "class": "vtkImageResize" },
+        { "class": "vtkImageResize" },
+        { "class": "vtkImageShiftScale" },
+        { "class": "vtkImageSincInterpolator" }
       ],
       "replace": [
         { "path": "VTK/Imaging/Core/CMakeLists.txt" }
@@ -920,6 +941,9 @@
     { "name": "vtkParseOGLExt",
       "path": "VTK/Utilities/ParseOGLExt"
     },
+    { "name": "vtkglew",
+      "path": "VTK/ThirdParty/glew"
+    },
     { "name": "vtkjpeg",
       "path": "VTK/ThirdParty/jpeg"
     },
@@ -938,8 +962,8 @@
     { "name": "vtkgl2ps",
       "path": "VTK/ThirdParty/gl2ps"
     },
-    { "name": "vtklz4",
-      "path": "ThirdParty/lz4"
+    { "name": "vtklibharu",
+      "path": "VTK/ThirdParty/libharu"
     }
   ],
   "proxies":[
@@ -948,6 +972,7 @@
         "DataSetSurfaceFilter",
         "ExtractHistogram",
         "IntegrateAttributes",
+        "PipelineConnection",
         "WarpScalar",
         "WarpVector"
       ]
@@ -970,6 +995,7 @@
         "DataLabelRepresentation",
         "GeometryRepresentation",
         "Glyph3DRepresentation",
+        "GridAxesRepresentation",
         "ImageSliceRepresentation",
         "MoleculeRepresentation",
         "OutlineRepresentation",
@@ -983,17 +1009,17 @@
         "SurfaceRepresentationBase",
         "UniformGridBaseRepresentation",
         "UniformGridRepresentation",
-        "UnstructuredGridBaseRepresentation",
         "UnstructuredGridRepresentation",
         "ViewBase"
       ]
     },
     { "path":"ParaViewCore/ServerManager/SMApplication/Resources/utilities.xml",
       "proxies":[
+        "GridAxes3DActor",
         "PiecewiseFunction",
         "PVLookupTable",
-        "ViewLayout",
-        "GridAxes3DActor"
+        "SaveScreenshot",
+        "ViewLayout"
       ]
     }
   ]

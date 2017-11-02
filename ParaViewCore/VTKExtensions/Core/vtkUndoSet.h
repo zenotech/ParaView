@@ -44,7 +44,7 @@ class VTKPVVTKEXTENSIONSCORE_EXPORT vtkUndoSet : public vtkObject
 public:
   static vtkUndoSet* New();
   vtkTypeMacro(vtkUndoSet, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Perform an Undo.
@@ -88,14 +88,14 @@ public:
 
 protected:
   vtkUndoSet();
-  ~vtkUndoSet();
+  ~vtkUndoSet() override;
 
   vtkCollection* Collection;
   vtkCollection* TmpWorkingCollection;
 
 private:
-  vtkUndoSet(const vtkUndoSet&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkUndoSet&) VTK_DELETE_FUNCTION;
+  vtkUndoSet(const vtkUndoSet&) = delete;
+  void operator=(const vtkUndoSet&) = delete;
 };
 
 #endif

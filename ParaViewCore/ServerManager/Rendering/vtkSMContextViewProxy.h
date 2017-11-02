@@ -30,7 +30,6 @@
 class vtkAbstractContextItem;
 class vtkContextView;
 class vtkEventForwarderCommand;
-class vtkImageData;
 class vtkRenderWindow;
 class vtkRenderWindowInteractor;
 class vtkSelection;
@@ -41,7 +40,7 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMContextViewProxy : public vtkSMVie
 public:
   static vtkSMContextViewProxy* New();
   vtkTypeMacro(vtkSMContextViewProxy, vtkSMViewProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Provides access to the vtk chart view.
@@ -57,7 +56,7 @@ public:
    * Return the render window from which offscreen rendering and interactor can
    * be accessed
    */
-  virtual vtkRenderWindow* GetRenderWindow();
+  vtkRenderWindow* GetRenderWindow() VTK_OVERRIDE;
 
   /**
    * A client process need to set the interactor to enable interactivity. Use
@@ -65,12 +64,12 @@ public:
    * RenderView. This include changing the interactor style as well as
    * overriding VTK rendering to use the Proxy/ViewProxy API instead.
    */
-  virtual void SetupInteractor(vtkRenderWindowInteractor* iren);
+  void SetupInteractor(vtkRenderWindowInteractor* iren) VTK_OVERRIDE;
 
   /**
    * Returns the interactor.
    */
-  virtual vtkRenderWindowInteractor* GetInteractor();
+  vtkRenderWindowInteractor* GetInteractor() VTK_OVERRIDE;
 
   /**
    * Resets the zoom level to 100%
@@ -84,20 +83,15 @@ public:
    * CreateDefaultRepresentation() will still work without regard for this
    * Plottable hint.
    */
-  virtual bool CanDisplayData(vtkSMSourceProxy* producer, int outputPort);
+  bool CanDisplayData(vtkSMSourceProxy* producer, int outputPort) VTK_OVERRIDE;
 
   vtkSelection* GetCurrentSelection();
 
 protected:
   vtkSMContextViewProxy();
-  ~vtkSMContextViewProxy();
+  ~vtkSMContextViewProxy() override;
 
-  /**
-   * Subclasses should override this method to do the actual image capture.
-   */
-  virtual vtkImageData* CaptureWindowInternal(int magnification);
-
-  virtual void CreateVTKObjects();
+  void CreateVTKObjects() VTK_OVERRIDE;
 
   /**
    * Used to update the axis range properties on each interaction event.
@@ -122,19 +116,18 @@ protected:
    * Overridden to update ChartAxes ranges on every render. This ensures that
    * the property's values are up-to-date.
    */
-  virtual void PostRender(bool interactive);
+  void PostRender(bool interactive) VTK_OVERRIDE;
 
   /**
    * Overridden to process the "skip_plotable_check" attribute.
    */
-  virtual int ReadXMLAttributes(vtkSMSessionProxyManager* pm, vtkPVXMLElement* element);
+  int ReadXMLAttributes(vtkSMSessionProxyManager* pm, vtkPVXMLElement* element) VTK_OVERRIDE;
 
   /**
    * The context view that is used for all context derived charts.
    */
   vtkContextView* ChartView;
 
-  //@{
   /**
    * To avoid showing large datasets in context views, that typically rely on
    * delivering all data to the client side (or cloning it), by default make
@@ -145,10 +138,16 @@ protected:
    */
   bool SkipPlotableCheck;
 
+  /**
+   * Flag automatically set when Bottom and Right custom
+   * axes related property are present in this proxy.
+   * Used to know if these must be set or not
+   */
+  bool XYChartViewBase4Axes;
+
 private:
-  vtkSMContextViewProxy(const vtkSMContextViewProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMContextViewProxy&) VTK_DELETE_FUNCTION;
-  //@}
+  vtkSMContextViewProxy(const vtkSMContextViewProxy&) = delete;
+  void operator=(const vtkSMContextViewProxy&) = delete;
 
   /**
    * Copies axis ranges from each of the vtkAxis on the vtkChartXY to the

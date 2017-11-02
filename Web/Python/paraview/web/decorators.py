@@ -1,3 +1,6 @@
+import sys
+if sys.version_info >= (3,):
+    xrange = range
 
 #--------------------------------------------------------------------------
 # Handle BooleanDomain
@@ -225,3 +228,11 @@ def genericDecorator(prop, uiElt, hint):
 #--------------------------------------------------------------------------
 def multiLineDecorator(prop, uiElt, hint):
     uiElt['widget'] = 'textarea'
+
+#--------------------------------------------------------------------------
+# Decorate for proxyEditorPropertyWidget hint
+#--------------------------------------------------------------------------
+def proxyEditorPropertyWidgetDecorator(prop, uiElt, hint):
+    propName = hint.GetAttribute("property")
+    if propName:
+        uiElt['visibilityProperty'] = propName

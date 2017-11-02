@@ -67,13 +67,14 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVXYChartView : public vtkPVConte
 public:
   static vtkPVXYChartView* New();
   vtkTypeMacro(vtkPVXYChartView, vtkPVContextView);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Set the chart type, defaults to line chart
    */
   void SetChartType(const char* type);
   void SetChartTypeToLine() { this->SetChartType("Line"); }
+  void SetChartTypeToPoint() { this->SetChartType("Point"); }
   void SetChartTypeToBar() { this->SetChartType("Bar"); }
   void SetChartTypeToBag() { this->SetChartType("Bag"); }
   void SetChartTypeToBox() { this->SetChartType("Box"); }
@@ -423,6 +424,15 @@ public:
   vtkGetMacro(HideTimeMarker, bool);
   //@}
 
+  //@{
+  /**
+   * Set whether to sort the data in the chart by the x-axis array so that line
+   * plot connectivity is from left to right rather than semi-randomly by index.
+   */
+  vtkGetMacro(SortByXAxis, bool);
+  vtkSetMacro(SortByXAxis, bool);
+  //@}
+
   /**
    * Provides access to the chart view.
    */
@@ -431,7 +441,7 @@ public:
   /**
    * Get the context item.
    */
-  virtual vtkAbstractContextItem* GetContextItem();
+  vtkAbstractContextItem* GetContextItem() VTK_OVERRIDE;
 
   /**
    * Representations can use this method to set the selection for a particular
@@ -440,16 +450,16 @@ public:
    * the local process alone. The view does not manage data movement for the
    * selection.
    */
-  virtual void SetSelection(vtkChartRepresentation* repr, vtkSelection* selection);
+  void SetSelection(vtkChartRepresentation* repr, vtkSelection* selection) VTK_OVERRIDE;
 
   /**
    * Overridden to rescale axes range on every update.
    */
-  virtual void Update();
+  void Update() VTK_OVERRIDE;
 
 protected:
   vtkPVXYChartView();
-  ~vtkPVXYChartView();
+  ~vtkPVXYChartView() override;
 
   void SetAxisRangeMinimum(int index, double min);
   void SetAxisRangeMaximum(int index, double max);
@@ -457,7 +467,7 @@ protected:
   /**
    * Actual rendering implementation.
    */
-  virtual void Render(bool interactive);
+  void Render(bool interactive) VTK_OVERRIDE;
 
   //@{
   /**
@@ -483,10 +493,11 @@ protected:
   void SelectionChanged();
 
   bool HideTimeMarker;
+  bool SortByXAxis;
 
 private:
-  vtkPVXYChartView(const vtkPVXYChartView&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVXYChartView&) VTK_DELETE_FUNCTION;
+  vtkPVXYChartView(const vtkPVXYChartView&) = delete;
+  void operator=(const vtkPVXYChartView&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

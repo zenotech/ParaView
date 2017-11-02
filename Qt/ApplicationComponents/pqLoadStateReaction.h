@@ -58,7 +58,8 @@ public:
   * having to create a reaction instance.
   * If no server is specified, active server is used.
   */
-  static void loadState(const QString& filename, pqServer* server = NULL);
+  static void loadState(
+    const QString& filename, bool dialogBlocked = false, pqServer* server = NULL);
   static void loadState();
 
 public slots:
@@ -66,13 +67,13 @@ public slots:
   * Updates the enabled state. Applications need not explicitly call
   * this.
   */
-  void updateEnableState();
+  void updateEnableState() override;
 
 protected:
   /**
   * Called when the action is triggered.
   */
-  virtual void onTriggered() { pqLoadStateReaction::loadState(); }
+  void onTriggered() override { pqLoadStateReaction::loadState(); }
 
 private:
   Q_DISABLE_COPY(pqLoadStateReaction)

@@ -47,7 +47,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMWriterFactory : public vtkSMObject
 public:
   static vtkSMWriterFactory* New();
   vtkTypeMacro(vtkSMWriterFactory, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Cleanup all registered prototypes.
@@ -124,11 +124,11 @@ public:
 
 protected:
   vtkSMWriterFactory();
-  ~vtkSMWriterFactory();
+  ~vtkSMWriterFactory() override;
 
 private:
-  vtkSMWriterFactory(const vtkSMWriterFactory&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMWriterFactory&) VTK_DELETE_FUNCTION;
+  vtkSMWriterFactory(const vtkSMWriterFactory&) = delete;
+  void operator=(const vtkSMWriterFactory&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

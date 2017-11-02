@@ -45,7 +45,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkGridAxesPlane2DActor : public vtkProp3
 public:
   static vtkGridAxesPlane2DActor* New();
   vtkTypeMacro(vtkGridAxesPlane2DActor, vtkProp3D);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -143,25 +143,6 @@ public:
 
   //@{
   /**
-   * Enable/Disable layer support. Default is off. When enabled, the prop will
-   * only render when the viewport's layer matches the Layer set on this prop.
-   */
-  vtkSetMacro(EnableLayerSupport, bool);
-  vtkGetMacro(EnableLayerSupport, bool);
-  vtkBooleanMacro(EnableLayerSupport, bool);
-  //@}
-
-  //@{
-  /**
-   * Set the layer to render this prop under when EnableLayerSupport is true.
-   * Default is 0.
-   */
-  vtkSetMacro(Layer, int);
-  vtkGetMacro(Layer, int);
-  //@}
-
-  //@{
-  /**
    * Get/Set the property used to control the appearance of the rendered grid.
    */
   void SetProperty(vtkProperty*);
@@ -176,22 +157,22 @@ public:
   /**
    * Returns the prop bounds.
    */
-  virtual double* GetBounds()
+  double* GetBounds() VTK_OVERRIDE
   {
     this->GetGridBounds(this->Bounds);
     return this->Bounds;
   }
   //@}
 
-  virtual int RenderOpaqueGeometry(vtkViewport*);
-  virtual int RenderTranslucentPolygonalGeometry(vtkViewport* viewport);
-  virtual int RenderOverlay(vtkViewport* viewport);
-  virtual int HasTranslucentPolygonalGeometry();
-  virtual void ReleaseGraphicsResources(vtkWindow*);
+  int RenderOpaqueGeometry(vtkViewport*) VTK_OVERRIDE;
+  int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) VTK_OVERRIDE;
+  int RenderOverlay(vtkViewport* viewport) VTK_OVERRIDE;
+  int HasTranslucentPolygonalGeometry() VTK_OVERRIDE;
+  void ReleaseGraphicsResources(vtkWindow*) VTK_OVERRIDE;
 
 protected:
   vtkGridAxesPlane2DActor(vtkGridAxesHelper* helper = NULL);
-  ~vtkGridAxesPlane2DActor();
+  ~vtkGridAxesPlane2DActor() override;
 
   //@{
   /**
@@ -203,11 +184,6 @@ protected:
   static vtkGridAxesPlane2DActor* New(vtkGridAxesHelper* helper);
   friend class vtkGridAxes2DActor;
   //@}
-
-  /**
-   * Returns true if the actor must render in the viewport.
-   */
-  bool IsLayerActive(vtkViewport* viewport);
 
   //@{
   /**
@@ -228,9 +204,6 @@ protected:
   unsigned int TickDirection;
   std::deque<double> TickPositions[3];
 
-  bool EnableLayerSupport;
-  int Layer;
-
   vtkNew<vtkPolyData> PolyData;
   vtkNew<vtkPoints> PolyDataPoints;
   vtkNew<vtkCellArray> PolyDataLines;
@@ -241,8 +214,8 @@ protected:
   bool HelperManagedExternally;
 
 private:
-  vtkGridAxesPlane2DActor(const vtkGridAxesPlane2DActor&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkGridAxesPlane2DActor&) VTK_DELETE_FUNCTION;
+  vtkGridAxesPlane2DActor(const vtkGridAxesPlane2DActor&) = delete;
+  void operator=(const vtkGridAxesPlane2DActor&) = delete;
   std::deque<double> EmptyVector;
 
   typedef std::pair<vtkVector3d, vtkVector3d> LineSegmentType;

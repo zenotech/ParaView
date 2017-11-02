@@ -31,7 +31,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkEquivalenceSet : public vtkObject
 {
 public:
   vtkTypeMacro(vtkEquivalenceSet, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
   static vtkEquivalenceSet* New();
 
   void Initialize();
@@ -72,7 +72,7 @@ public:
 
 protected:
   vtkEquivalenceSet();
-  ~vtkEquivalenceSet();
+  ~vtkEquivalenceSet() override;
 
   int NumberOfResolvedSets;
 
@@ -84,8 +84,8 @@ protected:
   void EquateInternal(int id1, int id2);
 
 private:
-  vtkEquivalenceSet(const vtkEquivalenceSet&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkEquivalenceSet&) VTK_DELETE_FUNCTION;
+  vtkEquivalenceSet(const vtkEquivalenceSet&) = delete;
+  void operator=(const vtkEquivalenceSet&) = delete;
 };
 
 #endif

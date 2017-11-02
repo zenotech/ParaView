@@ -33,7 +33,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkEnsembleDataReader : public vtkDataObj
 public:
   static vtkEnsembleDataReader* New();
   vtkTypeMacro(vtkEnsembleDataReader, vtkDataObjectAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -82,9 +82,9 @@ public:
 
 protected:
   vtkEnsembleDataReader();
-  ~vtkEnsembleDataReader();
+  ~vtkEnsembleDataReader() override;
 
-  virtual int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
   vtkAlgorithm* GetCurrentReader();
 
 private:
@@ -95,8 +95,8 @@ private:
   class vtkInternal;
   vtkInternal* Internal;
 
-  vtkEnsembleDataReader(const vtkEnsembleDataReader&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkEnsembleDataReader&) VTK_DELETE_FUNCTION;
+  vtkEnsembleDataReader(const vtkEnsembleDataReader&) = delete;
+  void operator=(const vtkEnsembleDataReader&) = delete;
 };
 
 #endif

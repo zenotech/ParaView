@@ -29,7 +29,7 @@ class VTKPVCLIENTSERVERCOREDEFAULT_EXPORT vtkPVMacFileInformationHelper : public
 public:
   static vtkPVMacFileInformationHelper* New();
   vtkTypeMacro(vtkPVMacFileInformationHelper, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Description:
   // Get the home directory for the user.
@@ -65,8 +65,8 @@ protected:
   virtual ~vtkPVMacFileInformationHelper();
 
 private:
-  vtkPVMacFileInformationHelper(const vtkPVMacFileInformationHelper&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVMacFileInformationHelper&) VTK_DELETE_FUNCTION;
+  vtkPVMacFileInformationHelper(const vtkPVMacFileInformationHelper&) = delete;
+  void operator=(const vtkPVMacFileInformationHelper&) = delete;
 };
 
 #endif

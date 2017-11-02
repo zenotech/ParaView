@@ -39,10 +39,12 @@ class pqLiveInsituVisualizationManager;
 class vtkSMLiveInsituLinkProxy;
 
 /**
-* Reaction for setting a breakpoint to Catalyst CoProcessing Engine
-* for Live-Data Visualization.
-* @ingroup Reactions
-* @LiveInsitu
+ * @class pqCatalystRemoveBreakpointReaction
+ * @brief  Reaction for setting a breakpoint to Catalyst CoProcessing Engine for Live-Data
+ * Visualization.
+ *
+ * @ingroup Reactions
+ * @ingroup LiveInsitu
 */
 class PQAPPLICATIONCOMPONENTS_EXPORT pqCatalystRemoveBreakpointReaction : public pqReaction
 {
@@ -53,10 +55,10 @@ public:
   pqCatalystRemoveBreakpointReaction(QAction* parent = 0);
 
 public slots:
-  virtual void updateEnableState();
+  void updateEnableState() override;
 
 protected:
-  virtual void onTriggered();
+  void onTriggered() override;
 
 private:
   Q_DISABLE_COPY(pqCatalystRemoveBreakpointReaction)

@@ -2,10 +2,8 @@
 Utility functions to mimic the template support functions for vtkVariant
 """
 
-import vtk
-import vtkConstants
-
-from vtk import vtkVariant
+from paraview.vtk import vtkVariant, VTK_OBJECT
+from paraview.vtk.util import vtkConstants
 
 _variant_type_map = {
     'void' : vtkConstants.VTK_VOID,
@@ -20,8 +18,6 @@ _variant_type_map = {
     'unsigned long' : vtkConstants.VTK_UNSIGNED_LONG,
     'long long' : vtkConstants.VTK_LONG_LONG,
     'unsigned long long' : vtkConstants.VTK_UNSIGNED_LONG_LONG,
-    '__int64' : vtkConstants.VTK___INT64,
-    'unsigned __int64' : vtkConstants.VTK_UNSIGNED___INT64,
     'float' : vtkConstants.VTK_FLOAT,
     'double' : vtkConstants.VTK_DOUBLE,
     'string' : vtkConstants.VTK_STRING,
@@ -43,8 +39,6 @@ _variant_method_map = {
     vtkConstants.VTK_UNSIGNED_LONG : 'ToUnsignedLong',
     vtkConstants.VTK_LONG_LONG : 'ToLongLong',
     vtkConstants.VTK_UNSIGNED_LONG_LONG : 'ToUnsignedLongLong',
-    vtkConstants.VTK___INT64 : 'To__Int64',
-    vtkConstants.VTK_UNSIGNED___INT64 : 'ToUnsigned__Int64',
     vtkConstants.VTK_FLOAT : 'ToFloat',
     vtkConstants.VTK_DOUBLE : 'ToDouble',
     vtkConstants.VTK_STRING : 'ToString',
@@ -65,8 +59,6 @@ _variant_check_map = {
     vtkConstants.VTK_UNSIGNED_LONG : 'IsUnsignedLong',
     vtkConstants.VTK_LONG_LONG : 'IsLongLong',
     vtkConstants.VTK_UNSIGNED_LONG_LONG : 'IsUnsignedLongLong',
-    vtkConstants.VTK___INT64 : 'Is__Int64',
-    vtkConstants.VTK_UNSIGNED___INT64 : 'IsUnsigned__Int64',
     vtkConstants.VTK_FLOAT : 'IsFloat',
     vtkConstants.VTK_DOUBLE : 'IsDouble',
     vtkConstants.VTK_STRING : 'IsString',
@@ -158,7 +150,7 @@ def vtkVariantStrictWeakOrder(s1, s2):
     r2 = getattr(s2, _variant_method_map[t2])()
 
     # compare vtk objects by classname
-    if t1 == vtk.VTK_OBJECT:
+    if t1 == VTK_OBJECT:
         return cmp(r1.GetClassName(), r2.GetClassName())
 
     return cmp(r1, r2)

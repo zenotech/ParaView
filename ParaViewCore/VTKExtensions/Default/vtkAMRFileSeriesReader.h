@@ -24,21 +24,22 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkAMRFileSeriesReader : public vtkFileSe
 public:
   static vtkAMRFileSeriesReader* New();
   vtkTypeMacro(vtkAMRFileSeriesReader, vtkFileSeriesReader);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
-  virtual int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
-  virtual int RequestUpdateTime(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestUpdateTime(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
-  virtual int RequestUpdateTimeDependentInformation(
-    vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestUpdateTimeDependentInformation(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
 private:
   vtkAMRFileSeriesReader();
-  vtkAMRFileSeriesReader(const vtkAMRFileSeriesReader&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkAMRFileSeriesReader&) VTK_DELETE_FUNCTION;
+  vtkAMRFileSeriesReader(const vtkAMRFileSeriesReader&) = delete;
+  void operator=(const vtkAMRFileSeriesReader&) = delete;
 };
 
 #endif

@@ -70,7 +70,7 @@ class vtkGMVReader : public vtkMultiBlockDataSetAlgorithm
 public:
   static vtkGMVReader* New();
   vtkTypeMacro(vtkGMVReader, vtkMultiBlockDataSetAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Description:
   // Specify file name of GMV datafile to read
@@ -201,10 +201,11 @@ public:
 
 protected:
   vtkGMVReader();
-  ~vtkGMVReader();
+  ~vtkGMVReader() override;
   // int ProcessRequest( vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-  int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
-  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
+  int RequestInformation(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   // Setup the output with no data available.  Used in error cases.
   void SetupEmptyOutput();
@@ -247,8 +248,8 @@ protected:
 #endif
 
 private:
-  vtkGMVReader(const vtkGMVReader&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkGMVReader&) VTK_DELETE_FUNCTION;
+  vtkGMVReader(const vtkGMVReader&) = delete;
+  void operator=(const vtkGMVReader&) = delete;
 
   vtkStringArray* FileNames; // VTK array of files
   bool ContainsProbtimeKeyword;

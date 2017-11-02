@@ -35,7 +35,7 @@ public:
   static vtkCinemaExporter* New();
   vtkTypeMacro(vtkCinemaExporter, vtkExporter);
 
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   vtkSetStringMacro(FileName);
   vtkGetStringMacro(FileName);
@@ -51,9 +51,9 @@ public:
 
 protected:
   vtkCinemaExporter();
-  ~vtkCinemaExporter();
+  ~vtkCinemaExporter() override;
 
-  void WriteData();
+  void WriteData() VTK_OVERRIDE;
 
   /////////////////////////////////////////////////////////////////////////////
 
@@ -73,8 +73,8 @@ private:
   /// initializes it if required.
   bool checkInterpreterInitialization();
 
-  vtkCinemaExporter(const vtkCinemaExporter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCinemaExporter&) VTK_DELETE_FUNCTION;
+  vtkCinemaExporter(const vtkCinemaExporter&) = delete;
+  void operator=(const vtkCinemaExporter&) = delete;
 };
 
 #endif

@@ -51,7 +51,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkAMRDualGridHelper : public vtkObject
 public:
   static vtkAMRDualGridHelper* New();
   vtkTypeMacro(vtkAMRDualGridHelper, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -144,7 +144,7 @@ public:
 
 private:
   vtkAMRDualGridHelper();
-  ~vtkAMRDualGridHelper();
+  ~vtkAMRDualGridHelper() override;
 
   char* ArrayName;
   int DataTypeSize;
@@ -225,8 +225,8 @@ private:
   int EnableAsynchronousCommunication;
 
 private:
-  vtkAMRDualGridHelper(const vtkAMRDualGridHelper&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkAMRDualGridHelper&) VTK_DELETE_FUNCTION;
+  vtkAMRDualGridHelper(const vtkAMRDualGridHelper&) = delete;
+  void operator=(const vtkAMRDualGridHelper&) = delete;
 };
 
 // I need to define this small object in the namespace of this class.

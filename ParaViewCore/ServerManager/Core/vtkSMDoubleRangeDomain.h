@@ -45,7 +45,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMDoubleRangeDomain : public vtkSMDomain
 public:
   static vtkSMDoubleRangeDomain* New();
   vtkTypeMacro(vtkSMDoubleRangeDomain, vtkSMDomain);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Return a min. value if it exists. If the min. exists
@@ -87,13 +87,18 @@ public:
   double GetMinimum(unsigned int idx) { return this->RealSuperclass::GetMinimum(idx); }
   double GetMaximum(unsigned int idx) { return this->RealSuperclass::GetMaximum(idx); }
 
+  /**
+   * Returns the resolution.
+   */
+  int GetResolution() { return this->RealSuperclass::GetResolution(); }
+
 protected:
   vtkSMDoubleRangeDomain();
-  ~vtkSMDoubleRangeDomain();
+  ~vtkSMDoubleRangeDomain() override;
 
 private:
-  vtkSMDoubleRangeDomain(const vtkSMDoubleRangeDomain&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMDoubleRangeDomain&) VTK_DELETE_FUNCTION;
+  vtkSMDoubleRangeDomain(const vtkSMDoubleRangeDomain&) = delete;
+  void operator=(const vtkSMDoubleRangeDomain&) = delete;
 
   typedef vtkSMRangeDomainTemplate<double> RealSuperclass;
 };

@@ -27,9 +27,6 @@
 #cmakedefine VISIT_BUILD_READER_Mili
 
 #cmakedefine PARAVIEW_ENABLE_PYTHON
-#ifdef PARAVIEW_ENABLE_PYTHON
-#cmakedefine VTK_PYTHON_VERSION "@VTK_PYTHON_VERSION@"
-#endif
 #cmakedefine PARAVIEW_FREEZE_PYTHON
 #cmakedefine PARAVIEW_BUILD_ARCHITECTURE "@PARAVIEW_BUILD_ARCHITECTURE@"
 
@@ -78,6 +75,10 @@
 // defined when qt support is enabled
 #cmakedefine PARAVIEW_ENABLE_QT_SUPPORT
 
+#ifdef PARAVIEW_ENABLE_QT_SUPPORT
+# define PARAVIEW_QT_VERSION @PARAVIEW_QT_VERSION@
+#endif
+
 // ParaView data root (useful for testing).
 #define PARAVIEW_DATA_ROOT "@PARAVIEW_DATA_ROOT@"
 
@@ -97,9 +98,12 @@
 
 #cmakedefine PARAVIEW_ENABLE_FFMPEG
 
-#cmakedefine PARAVIEW_USE_PISTON
 #cmakedefine PARAVIEW_USE_OSPRAY
 
+#cmakedefine PARAVIEW_USE_OPENTURNS
+
 #cmakedefine PARAVIEW_ENABLE_EMBEDDED_DOCUMENTATION
+
+#cmakedefine PARAVIEW_ENABLE_NVPIPE
 
 #endif

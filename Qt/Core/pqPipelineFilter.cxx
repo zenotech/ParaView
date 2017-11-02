@@ -306,7 +306,7 @@ pqOutputPort* pqPipelineFilter::getInput(const QString& portname, int index) con
     qCritical() << "Invalid index: " << index;
     return 0;
   }
-  
+
   return iter.value()[index];
 }
 
@@ -374,7 +374,7 @@ void pqPipelineFilter::inputChanged(const QString& portname)
   }
 
   vtkSMInputProperty* ivp =
-    vtkSMInputProperty::SafeDownCast(this->getProxy()->GetProperty(portname.toLatin1().data()));
+    vtkSMInputProperty::SafeDownCast(this->getProxy()->GetProperty(portname.toLocal8Bit().data()));
   if (!ivp)
   {
     qCritical() << "Failed to locate input property " << portname;

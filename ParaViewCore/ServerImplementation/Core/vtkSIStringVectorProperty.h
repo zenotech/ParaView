@@ -16,6 +16,7 @@
  * @class   vtkSIStringVectorProperty
  *
  * ServerImplementation Property to deal with String array as method arguments.
+ * It also takes care of string encoding on server side.
 */
 
 #ifndef vtkSIStringVectorProperty_h
@@ -29,11 +30,11 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSIStringVectorProperty : public vt
 public:
   static vtkSIStringVectorProperty* New();
   vtkTypeMacro(vtkSIStringVectorProperty, vtkSIVectorProperty);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkSIStringVectorProperty();
-  ~vtkSIStringVectorProperty();
+  ~vtkSIStringVectorProperty() override;
 
   enum ElementTypes
   {
@@ -45,27 +46,28 @@ protected:
   /**
    * Push a new state to the underneath implementation
    */
-  virtual bool Push(vtkSMMessage*, int);
+  bool Push(vtkSMMessage*, int) VTK_OVERRIDE;
 
   /**
    * Pull the current state of the underneath implementation
    */
-  virtual bool Pull(vtkSMMessage*);
+  bool Pull(vtkSMMessage*) VTK_OVERRIDE;
 
   /**
    * Parse the xml for the property.
    */
-  virtual bool ReadXMLAttributes(vtkSIProxy* proxyhelper, vtkPVXMLElement* element);
+  bool ReadXMLAttributes(vtkSIProxy* proxyhelper, vtkPVXMLElement* element) VTK_OVERRIDE;
 
 private:
-  vtkSIStringVectorProperty(const vtkSIStringVectorProperty&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSIStringVectorProperty&) VTK_DELETE_FUNCTION;
+  vtkSIStringVectorProperty(const vtkSIStringVectorProperty&) = delete;
+  void operator=(const vtkSIStringVectorProperty&) = delete;
 
   class vtkVectorOfStrings;
   class vtkVectorOfInts;
 
   bool Push(const vtkVectorOfStrings& values);
   vtkVectorOfInts* ElementTypes;
+  bool NeedReencoding;
 };
 
 #endif

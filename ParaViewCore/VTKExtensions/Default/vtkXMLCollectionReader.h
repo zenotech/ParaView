@@ -39,7 +39,7 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkXMLCollectionReader : public vtkXMLRea
 public:
   static vtkXMLCollectionReader* New();
   vtkTypeMacro(vtkXMLCollectionReader, vtkXMLReader);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -128,7 +128,7 @@ public:
 
 protected:
   vtkXMLCollectionReader();
-  ~vtkXMLCollectionReader();
+  ~vtkXMLCollectionReader() override;
 
   void BuildRestrictedDataSets();
 
@@ -136,25 +136,25 @@ protected:
   int ForceOutputTypeToMultiBlock;
 
   // Get the name of the data set being read.
-  virtual const char* GetDataSetName();
+  const char* GetDataSetName() VTK_OVERRIDE;
 
-  virtual int ReadPrimaryElement(vtkXMLDataElement* ePrimary);
-  virtual int FillOutputPortInformation(int, vtkInformation* info);
+  int ReadPrimaryElement(vtkXMLDataElement* ePrimary) VTK_OVERRIDE;
+  int FillOutputPortInformation(int, vtkInformation* info) VTK_OVERRIDE;
 
   vtkDataObject* SetupOutput(const char* filePath, int index);
 
-  virtual int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   // Overload of vtkXMLReader function, so we can handle updating the
   // information on multiple outputs
-  virtual int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   // Setup the output with no data available.  Used in error cases.
-  virtual void SetupEmptyOutput();
+  void SetupEmptyOutput() VTK_OVERRIDE;
 
-  void ReadXMLData();
+  void ReadXMLData() VTK_OVERRIDE;
   void ReadXMLDataImpl();
 
   // Callback registered with the InternalProgressObserver.
@@ -176,8 +176,8 @@ protected:
     vtkDataObject* actualOutput);
 
 private:
-  vtkXMLCollectionReader(const vtkXMLCollectionReader&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkXMLCollectionReader&) VTK_DELETE_FUNCTION;
+  vtkXMLCollectionReader(const vtkXMLCollectionReader&) = delete;
+  void operator=(const vtkXMLCollectionReader&) = delete;
 
   int CurrentOutput;
 };

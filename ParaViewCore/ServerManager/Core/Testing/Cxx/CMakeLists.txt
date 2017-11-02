@@ -1,5 +1,6 @@
 paraview_add_test_cxx(${vtk-module}CxxTests tests
   NO_DATA NO_VALID
+  TestAdjustRange.cxx
   TestSelfGeneratingSourceProxy.cxx
   TestSessionProxyManager.cxx
   TestSettings.cxx
@@ -15,4 +16,5 @@ paraview_add_test_cxx(${vtk-module}CxxTests tmp_tests
   )
 list(APPEND tests
   ${tmp_tests})
+
 vtk_test_cxx_executable(${vtk-module}CxxTests tests)

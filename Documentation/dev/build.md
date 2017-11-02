@@ -10,7 +10,7 @@ Adapted from the [Paraview wiki](http://www.paraview.org/Wiki/ParaView:Build_And
 Prerequisites
 =============
 * The ParaView build process requires [CMake](http://www.cmake.org/) version 2.8.8 or higher and a working compiler. On Unix-like operating systems, it also requires Make, while on Windows it requires Visual Studio and Ninja build.
-* Building ParaView's user interface requires [Qt](http://www.qt.io/download-open-source/), version 4.7+ (4.8.\* is recommended, 5.7.\* also works). To compile ParaView, either the LGPL or commercial versions of Qt may be used. Also note that on Windows you need to choose a Visual Studio version to match binaries available for your Qt version.
+* Building ParaView's user interface requires [Qt](http://www.qt.io/download-open-source/), version 5.6+ (5.9.\* is recommended, 5.7.\* and 5.8\* also work). To compile ParaView, either the LGPL or commercial versions of Qt may be used. Also note that on Windows you need to choose a Visual Studio version to match binaries available for your Qt version.
 * For Windows builds, unix-like environments such as Cygwin, or MinGW are not supported.
 
 Download And Install CMake
@@ -41,6 +41,14 @@ Linux Ubuntu/Debian (16.04):
     - sudo -H pip install Mako
 * sudo apt-get install ninja-build
     - ninja is a speedy replacement for make, highly recommended.
+
+**Note for Ubuntu 16.04**. The official Qt 5.9.1 binaries downloaded from `qt.io`
+are linked against a different version of `libprotobuf` than what ParaView uses,
+which causes runtime errors in ParaView. To avoid this, you can move the file
+`libqgtk3.so` out from `Qt5.9.1/plugins/platformthemes`. This platform theme is
+linked against a different `libprotobuf` than ParaView. Moving it causes it not
+to be loaded, thereby avoiding the runtime errors with no negative effects on
+running ParaView.
 
 Windows:
 
@@ -84,7 +92,6 @@ Run CMake
 
 | Variable | Value | Description |
 | -------- | ----- | ------------|
-| VTK_RENDERING_BACKEND | OpenGL2 | Use modern OpenGL |
 | PARAVIEW_ENABLE_PYTHON | ON | Add python scripting support |
 | BUILD_TESTING | ON/OFF | Build tests if you are contributing to ParaView |
 

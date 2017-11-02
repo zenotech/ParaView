@@ -30,7 +30,7 @@ class VTKPVCATALYST_EXPORT vtkCPInputDataDescription : public vtkObject
 public:
   static vtkCPInputDataDescription* New();
   vtkTypeMacro(vtkCPInputDataDescription, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Description:
   // Reset the names of the fields that are needed.
@@ -122,8 +122,8 @@ protected:
   vtkDataObject* Grid;
 
 private:
-  vtkCPInputDataDescription(const vtkCPInputDataDescription&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCPInputDataDescription&) VTK_DELETE_FUNCTION;
+  vtkCPInputDataDescription(const vtkCPInputDataDescription&) = delete;
+  void operator=(const vtkCPInputDataDescription&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

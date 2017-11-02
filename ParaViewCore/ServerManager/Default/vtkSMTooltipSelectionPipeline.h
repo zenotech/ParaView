@@ -42,16 +42,16 @@ class VTKPVSERVERMANAGERDEFAULT_EXPORT vtkSMTooltipSelectionPipeline
 public:
   static vtkSMTooltipSelectionPipeline* New();
   vtkTypeMacro(vtkSMTooltipSelectionPipeline, vtkSMPreselectionPipeline);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
   static vtkSMTooltipSelectionPipeline* GetInstance();
 
   //@{
   /**
    * Re-implemented from vtkSMPreselectionPipeline
    */
-  virtual void Hide(vtkSMRenderViewProxy* view);
-  virtual void Show(vtkSMSourceProxy* sourceRepresentation, vtkSMSourceProxy* selection,
-    vtkSMRenderViewProxy* view);
+  void Hide(vtkSMRenderViewProxy* view) VTK_OVERRIDE;
+  void Show(vtkSMSourceProxy* sourceRepresentation, vtkSMSourceProxy* selection,
+    vtkSMRenderViewProxy* view) VTK_OVERRIDE;
   //@}
 
   /**
@@ -65,16 +65,16 @@ public:
    * Get information about the tooltip to be displayed.
    * Return false if the method failed computing information.
    */
-  bool GetTooltipInfo(double tooltipPos[2], std::string& tooltipText);
+  bool GetTooltipInfo(int association, double tooltipPos[2], std::string& tooltipText);
 
 protected:
   vtkSMTooltipSelectionPipeline();
-  ~vtkSMTooltipSelectionPipeline();
+  ~vtkSMTooltipSelectionPipeline() override;
 
   /**
    * Re-implemented from vtkSMPreselectionPipeline
    */
-  void ClearCache();
+  void ClearCache() VTK_OVERRIDE;
 
   /**
    * Connect the ClientServerMoveData filter to the pipeline to get
@@ -101,8 +101,8 @@ protected:
   bool TooltipEnabled;
 
 private:
-  vtkSMTooltipSelectionPipeline(const vtkSMTooltipSelectionPipeline&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMTooltipSelectionPipeline&) VTK_DELETE_FUNCTION;
+  vtkSMTooltipSelectionPipeline(const vtkSMTooltipSelectionPipeline&) = delete;
+  void operator=(const vtkSMTooltipSelectionPipeline&) = delete;
 };
 
 #endif

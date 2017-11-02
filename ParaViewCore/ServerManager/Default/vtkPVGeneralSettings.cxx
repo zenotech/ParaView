@@ -23,6 +23,7 @@
 #include "vtkSMInputArrayDomain.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
 #include "vtkSMTrace.h"
+#include "vtkSMTransferFunctionManager.h"
 #include "vtkSMViewLayoutProxy.h"
 #include "vtkSMViewProxy.h"
 
@@ -30,7 +31,6 @@
 
 vtkSmartPointer<vtkPVGeneralSettings> vtkPVGeneralSettings::Instance;
 
-vtkInstantiatorNewMacro(vtkPVGeneralSettings);
 //----------------------------------------------------------------------------
 vtkPVGeneralSettings* vtkPVGeneralSettings::New()
 {
@@ -46,13 +46,16 @@ vtkPVGeneralSettings::vtkPVGeneralSettings()
   , AutoApply(false)
   , AutoApplyActiveOnly(false)
   , DefaultViewType(NULL)
-  , TransferFunctionResetMode(vtkPVGeneralSettings::GROW_ON_APPLY)
+  , TransferFunctionResetMode(vtkSMTransferFunctionManager::GROW_ON_APPLY)
   , ScalarBarMode(vtkPVGeneralSettings::AUTOMATICALLY_HIDE_SCALAR_BARS)
   , CacheGeometryForAnimation(false)
   , AnimationGeometryCacheLimit(0)
   , AnimationTimePrecision(17)
+  , ShowAnimationShortcuts(0)
   , PropertiesPanelMode(vtkPVGeneralSettings::ALL_IN_ONE)
   , LockPanels(false)
+  , GUIFontSize(0)
+  , GUIOverrideFont(false)
 {
   this->SetDefaultViewType("RenderView");
 }
@@ -174,33 +177,6 @@ void vtkPVGeneralSettings::SetInheritRepresentationProperties(bool val)
   if (val != vtkSMParaViewPipelineControllerWithRendering::GetInheritRepresentationProperties())
   {
     vtkSMParaViewPipelineControllerWithRendering::SetInheritRepresentationProperties(val);
-    this->Modified();
-  }
-}
-
-//----------------------------------------------------------------------------
-void vtkPVGeneralSettings::SetMultiViewImageBorderColor(double r, double g, double b)
-{
-  vtkSMViewLayoutProxy::SetMultiViewImageBorderColor(r, g, b);
-  this->Modified();
-}
-
-//----------------------------------------------------------------------------
-void vtkPVGeneralSettings::SetMultiViewImageBorderWidth(int width)
-{
-  if (width != vtkSMViewLayoutProxy::GetMultiViewImageBorderWidth())
-  {
-    vtkSMViewLayoutProxy::SetMultiViewImageBorderWidth(width);
-    this->Modified();
-  }
-}
-
-//----------------------------------------------------------------------------
-void vtkPVGeneralSettings::SetTransparentBackground(bool val)
-{
-  if (val != vtkSMViewProxy::GetTransparentBackground())
-  {
-    vtkSMViewProxy::SetTransparentBackground(val);
     this->Modified();
   }
 }

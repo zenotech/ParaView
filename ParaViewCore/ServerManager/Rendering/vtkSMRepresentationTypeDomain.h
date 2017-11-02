@@ -42,18 +42,18 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMRepresentationTypeDomain
 public:
   static vtkSMRepresentationTypeDomain* New();
   vtkTypeMacro(vtkSMRepresentationTypeDomain, vtkSMStringListDomain);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Returns 1 if the domain updated the property.
    * Overridden to use input data information to pick appropriate representation
    * type.
    */
-  virtual int SetDefaultValues(vtkSMProperty*, bool use_unchecked_values);
+  int SetDefaultValues(vtkSMProperty*, bool use_unchecked_values) VTK_OVERRIDE;
 
 protected:
   vtkSMRepresentationTypeDomain();
-  ~vtkSMRepresentationTypeDomain();
+  ~vtkSMRepresentationTypeDomain() override;
 
   /**
    * Returns the datainformation from the current input, if possible.
@@ -61,8 +61,8 @@ protected:
   vtkPVDataInformation* GetInputInformation();
 
 private:
-  vtkSMRepresentationTypeDomain(const vtkSMRepresentationTypeDomain&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMRepresentationTypeDomain&) VTK_DELETE_FUNCTION;
+  vtkSMRepresentationTypeDomain(const vtkSMRepresentationTypeDomain&) = delete;
+  void operator=(const vtkSMRepresentationTypeDomain&) = delete;
 };
 
 #endif

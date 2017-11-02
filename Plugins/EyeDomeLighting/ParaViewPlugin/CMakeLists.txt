@@ -1,6 +1,8 @@
-include_directories(${VTK_INCLUDE_DIRS}
-  ${EyeDomeLighting_SOURCE_DIR}/EyeDomeLighting
-  ${EyeDomeLighting_BINARY_DIR}/EyeDomeLighting)
+include_directories(
+  ${VTK_INCLUDE_DIRS}
+  ${PARAVIEW_INCLUDE_DIRS}
+  ${PARAVIEW_GUI_INCLUDE_DIRS}
+  )
 
 add_paraview_plugin(
   EyeDomeLightingView "1.0"
@@ -11,8 +13,6 @@ add_paraview_plugin(
   SERVER_MANAGER_XML
     RenderPassViews.xml
 )
-target_link_libraries(EyeDomeLightingView
-  LINK_PRIVATE vtkEyeDomeLighting)
 
 # Add testing if necessary
 if (BUILD_TESTING)

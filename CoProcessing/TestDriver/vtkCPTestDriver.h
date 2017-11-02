@@ -34,7 +34,7 @@ class VTKPVCATALYSTTESTDRIVER_EXPORT vtkCPTestDriver : public vtkObject
 public:
   static vtkCPTestDriver* New();
   vtkTypeMacro(vtkCPTestDriver, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * Run the test driver.  Returns 0 if there were no errors.
@@ -79,8 +79,8 @@ protected:
   ~vtkCPTestDriver();
 
 private:
-  vtkCPTestDriver(const vtkCPTestDriver&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkCPTestDriver&) VTK_DELETE_FUNCTION;
+  vtkCPTestDriver(const vtkCPTestDriver&) = delete;
+  void operator=(const vtkCPTestDriver&) = delete;
 
   /**
    * The grid builder for creating the input grids to the coprocessing library.

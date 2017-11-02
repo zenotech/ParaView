@@ -41,17 +41,18 @@ void vtkPVInitializePythonModules();
 
 #include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
+#include "pqCoreUtilities.h"
 #include "pqDeleteReaction.h"
-#ifdef PARAVIEW_USE_QTHELP
-#include "pqHelpReaction.h"
-#endif
 #include "pqLoadDataReaction.h"
+#include "pqLoadStateReaction.h"
 #include "pqOptions.h"
 #include "pqParaViewBehaviors.h"
 #include "pqParaViewMenuBuilders.h"
+#include "pqSaveStateReaction.h"
 #include "pqSettings.h"
 #include "pqTimer.h"
 #include "pqWelcomeDialog.h"
+#include "vtkCommand.h"
 #include "vtkPVGeneralSettings.h"
 #include "vtkPVPlugin.h"
 #include "vtkProcessModule.h"
@@ -61,9 +62,15 @@ void vtkPVInitializePythonModules();
 #include "pvStaticPluginsInit.h"
 #endif
 
+#ifdef PARAVIEW_USE_QTHELP
+#include "pqHelpReaction.h"
+#endif
+
 #include <QDragEnterEvent>
 #include <QDropEvent>
+#include <QMessageBox>
 #include <QMimeData>
+#include <QTextCodec>
 #include <QUrl>
 
 #ifdef PARAVIEW_ENABLE_EMBEDDED_DOCUMENTATION
@@ -72,6 +79,7 @@ void vtkPVInitializePythonModules();
 
 #ifdef PARAVIEW_ENABLE_PYTHON
 #include "pqPythonDebugLeaksView.h"
+#include "pqPythonShell.h"
 typedef pqPythonDebugLeaksView DebugLeaksViewType;
 #else
 #include "vtkQtDebugLeaksView.h"
@@ -82,9 +90,14 @@ class ParaViewMainWindow::pqInternals : public Ui::pqClientMainWindow
 {
 public:
   bool FirstShow;
+  int CurrentGUIFontSize;
+  pqTimer UpdateFontSizeTimer;
   pqInternals()
     : FirstShow(true)
+    , CurrentGUIFontSize(0)
   {
+    this->UpdateFontSizeTimer.setInterval(0);
+    this->UpdateFontSizeTimer.setSingleShot(true);
   }
 };
 
@@ -93,9 +106,10 @@ ParaViewMainWindow::ParaViewMainWindow()
 {
   // the debug leaks view should be constructed as early as possible
   // so that it can monitor vtk objects created at application startup.
+  DebugLeaksViewType* leaksView = nullptr;
   if (getenv("PV_DEBUG_LEAKS_VIEW"))
   {
-    vtkQtDebugLeaksView* leaksView = new DebugLeaksViewType(this);
+    leaksView = new DebugLeaksViewType(this);
     leaksView->setWindowFlags(Qt::Window);
     leaksView->show();
   }
@@ -111,6 +125,21 @@ ParaViewMainWindow::ParaViewMainWindow()
 
   this->Internals = new pqInternals();
   this->Internals->setupUi(this);
+  this->Internals->outputWidgetDock->hide();
+  this->Internals->pythonShellDock->hide();
+#ifdef PARAVIEW_ENABLE_PYTHON
+  pqPythonShell* shell = new pqPythonShell(this);
+  shell->setObjectName("pythonShell");
+  this->Internals->pythonShellDock->setWidget(shell);
+  if (leaksView)
+  {
+    leaksView->setShell(shell);
+  }
+#endif
+
+  // show output widget if we received an error message.
+  this->connect(this->Internals->outputWidget, SIGNAL(messageDisplayed(const QString&, int)),
+    SLOT(handleMessage(const QString&, int)));
 
   // Setup default GUI layout.
   this->setTabPosition(Qt::LeftDockWidgetArea, QTabWidget::North);
@@ -125,6 +154,7 @@ ParaViewMainWindow::ParaViewMainWindow()
     this->Internals->colorMapEditorDock, this->Internals->comparativePanelDock);
   this->tabifyDockWidget(
     this->Internals->colorMapEditorDock, this->Internals->collaborationPanelDock);
+  this->tabifyDockWidget(this->Internals->colorMapEditorDock, this->Internals->lightInspectorDock);
 
   this->Internals->selectionDisplayDock->hide();
   this->Internals->animationViewDock->hide();
@@ -135,13 +165,17 @@ ParaViewMainWindow::ParaViewMainWindow()
   this->Internals->multiBlockInspectorDock->hide();
   this->Internals->colorMapEditorDock->hide();
   this->Internals->timeInspectorDock->hide();
+  this->Internals->lightInspectorDock->hide();
 
   this->tabifyDockWidget(this->Internals->animationViewDock, this->Internals->statisticsDock);
+  this->tabifyDockWidget(this->Internals->animationViewDock, this->Internals->outputWidgetDock);
+  this->tabifyDockWidget(this->Internals->animationViewDock, this->Internals->pythonShellDock);
 
   // setup properties dock
   this->tabifyDockWidget(this->Internals->propertiesDock, this->Internals->viewPropertiesDock);
   this->tabifyDockWidget(this->Internals->propertiesDock, this->Internals->displayPropertiesDock);
   this->tabifyDockWidget(this->Internals->propertiesDock, this->Internals->informationDock);
+  this->tabifyDockWidget(this->Internals->propertiesDock, this->Internals->multiBlockInspectorDock);
 
   vtkSMSettings* settings = vtkSMSettings::GetInstance();
 
@@ -186,6 +220,12 @@ ParaViewMainWindow::ParaViewMainWindow()
       this->Internals->displayPropertiesDock = NULL;
       break;
   }
+
+  // update UI when font size changes.
+  vtkPVGeneralSettings* gsSettings = vtkPVGeneralSettings::GetInstance();
+  pqCoreUtilities::connect(
+    gsSettings, vtkCommand::ModifiedEvent, &this->Internals->UpdateFontSizeTimer, SLOT(start()));
+  this->connect(&this->Internals->UpdateFontSizeTimer, SIGNAL(timeout()), SLOT(updateFontSize()));
 
   this->Internals->propertiesDock->show();
   this->Internals->propertiesDock->raise();
@@ -277,7 +317,15 @@ void ParaViewMainWindow::dropEvent(QDropEvent* evt)
   {
     if (!url.toLocalFile().isEmpty())
     {
-      files.append(url.toLocalFile());
+      QString path = url.toLocalFile();
+      if (path.endsWith(".pvsm", Qt::CaseInsensitive))
+      {
+        pqLoadStateReaction::loadState(path);
+      }
+      else
+      {
+        files.append(url.toLocalFile());
+      }
     }
   }
 
@@ -303,8 +351,26 @@ void ParaViewMainWindow::showEvent(QShowEvent* evt)
       {
         pqTimer::singleShot(1000, this, SLOT(showWelcomeDialog()));
       }
+
+      this->updateFontSize();
     }
   }
+}
+
+//-----------------------------------------------------------------------------
+void ParaViewMainWindow::closeEvent(QCloseEvent* evt)
+{
+  pqApplicationCore* core = pqApplicationCore::instance();
+  if (core->settings()->value("GeneralSettings.ShowSaveStateOnExit", false).toBool())
+  {
+    if (QMessageBox::question(this, "Exit ParaView?",
+          "Do you want to save the state before exiting ParaView?",
+          QMessageBox::Save | QMessageBox::Discard) == QMessageBox::Save)
+    {
+      pqSaveStateReaction::saveState();
+    }
+  }
+  evt->accept();
 }
 
 //-----------------------------------------------------------------------------
@@ -312,4 +378,48 @@ void ParaViewMainWindow::showWelcomeDialog()
 {
   pqWelcomeDialog dialog(this);
   dialog.exec();
+}
+
+//-----------------------------------------------------------------------------
+void ParaViewMainWindow::updateFontSize()
+{
+  vtkPVGeneralSettings* gsSettings = vtkPVGeneralSettings::GetInstance();
+  bool overrideFontSize = gsSettings->GetGUIOverrideFont();
+  int fontSize = overrideFontSize ? gsSettings->GetGUIFontSize() : 0;
+  if (this->Internals->CurrentGUIFontSize != fontSize)
+  {
+    if (fontSize > 0) // note vtkPVGeneralSettings clamps it to [8, INT_MAX)
+    {
+      this->setStyleSheet(QString("* { font-size: %1pt }").arg(fontSize));
+    }
+    else
+    {
+      this->setStyleSheet(QString());
+    }
+    this->Internals->CurrentGUIFontSize = fontSize;
+  }
+}
+
+//-----------------------------------------------------------------------------
+void ParaViewMainWindow::handleMessage(const QString&, int type)
+{
+  QDockWidget* dock = this->Internals->outputWidgetDock;
+  if (!dock->isVisible() && (type == pqOutputWidget::ERROR || type == pqOutputWidget::WARNING))
+  {
+    // if dock is not visible, we always pop it up as a floating dialog. This
+    // avoids causing re-renders which may cause more errors and more confusion.
+    QRect rectApp = this->geometry();
+
+    QRect rectDock(
+      QPoint(0, 0), QSize(static_cast<int>(rectApp.width() * 0.4), dock->sizeHint().height()));
+    rectDock.moveCenter(
+      QPoint(rectApp.center().x(), rectApp.bottom() - dock->sizeHint().height() / 2));
+    dock->setFloating(true);
+    dock->setGeometry(rectDock);
+    dock->show();
+  }
+  if (dock->isVisible())
+  {
+    dock->raise();
+  }
 }

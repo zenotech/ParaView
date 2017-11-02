@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>276</width>
-    <height>966</height>
+    <height>991</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -27,12 +27,10 @@
     <number>9</number>
    </property>
    <item>
-    <widget class="pqTreeWidget" name="compositeTree">
-     <column>
-      <property name="text">
-       <string>Data Hierarchy</string>
-      </property>
-     </column>
+    <widget class="pqTreeView" name="compositeTree">
+     <property name="uniformRowHeights">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
    <item>
@@ -41,7 +39,16 @@
       <string>Properties</string>
      </property>
      <layout class="QGridLayout">
-      <property name="margin">
+      <property name="leftMargin">
+       <number>4</number>
+      </property>
+      <property name="topMargin">
+       <number>4</number>
+      </property>
+      <property name="rightMargin">
+       <number>4</number>
+      </property>
+      <property name="bottomMargin">
        <number>4</number>
       </property>
       <property name="spacing">
@@ -56,18 +63,18 @@
       </item>
       <item row="0" column="1">
        <widget class="QLineEdit" name="filename">
-	 <property name="cursor">
-           <cursorShape>ArrowCursor</cursorShape>
-         </property>
-         <property name="acceptDrops">
-           <bool>false</bool>
-         </property>
-         <property name="styleSheet">
-           <string notr="true">background-color: rgba(0, 0, 0, 0);border: none;</string>
-         </property>
-         <property name="readOnly">
-           <bool>true</bool>
-         </property>
+        <property name="cursor">
+         <cursorShape>ArrowCursor</cursorShape>
+        </property>
+        <property name="acceptDrops">
+         <bool>false</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgba(0, 0, 0, 0);border: none;</string>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
        </widget>
       </item>
       <item row="1" column="0">
@@ -79,18 +86,18 @@
       </item>
       <item row="1" column="1">
        <widget class="QLineEdit" name="path">
-	 <property name="cursor">
-           <cursorShape>ArrowCursor</cursorShape>
-         </property>
-         <property name="acceptDrops">
-           <bool>false</bool>
-         </property>
-         <property name="styleSheet">
-           <string notr="true">background-color: rgba(0, 0, 0, 0);border: none;</string>
-         </property>
-         <property name="readOnly">
-           <bool>true</bool>
-         </property>
+        <property name="cursor">
+         <cursorShape>ArrowCursor</cursorShape>
+        </property>
+        <property name="acceptDrops">
+         <bool>false</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgba(0, 0, 0, 0);border: none;</string>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
        </widget>
       </item>
      </layout>
@@ -102,6 +109,21 @@
       <string>Statistics</string>
      </property>
      <layout class="QGridLayout">
+      <property name="leftMargin">
+       <number>4</number>
+      </property>
+      <property name="topMargin">
+       <number>4</number>
+      </property>
+      <property name="rightMargin">
+       <number>4</number>
+      </property>
+      <property name="bottomMargin">
+       <number>4</number>
+      </property>
+      <property name="spacing">
+       <number>4</number>
+      </property>
       <item row="0" column="0">
        <widget class="QLabel" name="label">
         <property name="text">
@@ -132,8 +154,20 @@
         </property>
         <widget class="QWidget" name="DataSet">
          <layout class="QGridLayout">
-          <property name="margin">
+          <property name="leftMargin">
            <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <property name="verticalSpacing">
+           <number>4</number>
           </property>
           <item row="0" column="0">
            <widget class="QLabel" name="label_2">
@@ -185,8 +219,23 @@
         </widget>
         <widget class="QWidget" name="Table">
          <layout class="QGridLayout">
-          <property name="margin">
+          <property name="leftMargin">
            <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <property name="horizontalSpacing">
+           <number>-1</number>
+          </property>
+          <property name="verticalSpacing">
+           <number>4</number>
           </property>
           <item row="0" column="0">
            <widget class="QLabel" name="label_11">
@@ -276,7 +325,16 @@
       <string>Data Arrays</string>
      </property>
      <layout class="QGridLayout">
-      <property name="margin">
+      <property name="leftMargin">
+       <number>4</number>
+      </property>
+      <property name="topMargin">
+       <number>4</number>
+      </property>
+      <property name="rightMargin">
+       <number>4</number>
+      </property>
+      <property name="bottomMargin">
        <number>4</number>
       </property>
       <property name="spacing">
@@ -312,18 +370,18 @@
       </item>
       <item row="0" column="0">
        <widget class="QLineEdit" name="dataTimeLabel">
-	 <property name="cursor">
-           <cursorShape>ArrowCursor</cursorShape>
-         </property>
-         <property name="acceptDrops">
-           <bool>false</bool>
-         </property>
-         <property name="styleSheet">
-           <string notr="true">background-color: rgba(0, 0, 0, 0);border: none;</string>
-         </property>
-         <property name="readOnly">
-           <bool>true</bool>
-         </property>
+        <property name="cursor">
+         <cursorShape>ArrowCursor</cursorShape>
+        </property>
+        <property name="acceptDrops">
+         <bool>false</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgba(0, 0, 0, 0);border: none;</string>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
        </widget>
       </item>
      </layout>
@@ -335,6 +393,21 @@
       <string>Extents</string>
      </property>
      <layout class="QGridLayout">
+      <property name="leftMargin">
+       <number>4</number>
+      </property>
+      <property name="topMargin">
+       <number>4</number>
+      </property>
+      <property name="rightMargin">
+       <number>4</number>
+      </property>
+      <property name="bottomMargin">
+       <number>4</number>
+      </property>
+      <property name="spacing">
+       <number>4</number>
+      </property>
       <item row="2" column="1">
        <widget class="QLineEdit" name="zExtent">
         <property name="cursor">
@@ -419,7 +492,16 @@
       <string>Bounds</string>
      </property>
      <layout class="QGridLayout">
-      <property name="margin">
+      <property name="leftMargin">
+       <number>4</number>
+      </property>
+      <property name="topMargin">
+       <number>4</number>
+      </property>
+      <property name="rightMargin">
+       <number>4</number>
+      </property>
+      <property name="bottomMargin">
        <number>4</number>
       </property>
       <property name="spacing">
@@ -428,7 +510,7 @@
       <item row="2" column="0">
        <widget class="QLabel" name="label_8">
         <property name="text">
-         <string>Z range:</string>
+         <string>Z Range:</string>
         </property>
        </widget>
       </item>
@@ -467,7 +549,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="label_6">
         <property name="text">
-         <string>X range:</string>
+         <string>X Range:</string>
         </property>
        </widget>
       </item>
@@ -490,7 +572,7 @@
       <item row="1" column="0">
        <widget class="QLabel" name="label_7">
         <property name="text">
-         <string>Y range:</string>
+         <string>Y Range:</string>
         </property>
        </widget>
       </item>
@@ -509,7 +591,16 @@
       <string>Time</string>
      </property>
      <layout class="QGridLayout">
-      <property name="margin">
+      <property name="leftMargin">
+       <number>4</number>
+      </property>
+      <property name="topMargin">
+       <number>4</number>
+      </property>
+      <property name="rightMargin">
+       <number>4</number>
+      </property>
+      <property name="bottomMargin">
        <number>4</number>
       </property>
       <property name="spacing">
@@ -561,6 +652,11 @@
    <class>pqTreeWidget</class>
    <extends>QTreeWidget</extends>
    <header>pqTreeWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>pqTreeView</class>
+   <extends>QTreeView</extends>
+   <header>pqTreeView.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

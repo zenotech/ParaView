@@ -34,12 +34,13 @@ class vtkInformationObjectBaseKey;
 class vtkInformationRequestKey;
 class vtkInformationVector;
 class vtkPVSynchronizedRenderWindows;
+class vtkRenderWindow;
 
 class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVView : public vtkView
 {
 public:
   vtkTypeMacro(vtkPVView, vtkView);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   static void SetEnableStreaming(bool);
   static bool GetEnableStreaming();
@@ -52,7 +53,7 @@ public:
   /**
    * Initialize the view with an identifier. Unless noted otherwise, this method
    * must be called before calling any other methods on this class.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   virtual void Initialize(unsigned int id);
 
@@ -60,7 +61,7 @@ public:
   /**
    * Set the position on this view in the multiview configuration.
    * This can be called only after Initialize().
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   virtual void SetPosition(int, int);
   vtkGetVector2Macro(Position, int);
@@ -70,22 +71,31 @@ public:
   /**
    * Set the size of this view in the multiview configuration.
    * This can be called only after Initialize().
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   virtual void SetSize(int, int);
   vtkGetVector2Macro(Size, int);
   //@}
 
   /**
+   * Description:
+   * Set the screen PPI.
+   * This can be called only after Initialize().
+   * \note CallOnAllProcesses
+   */
+  virtual void SetPPI(int);
+  vtkGetMacro(PPI, int);
+
+  /**
    * Triggers a high-resolution render.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   virtual void StillRender() = 0;
 
   /**
    * Triggers a interactive render. Based on the settings on the view, this may
    * result in a low-resolution rendering or a simplified geometry rendering.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   virtual void InteractiveRender() = 0;
 
@@ -109,7 +119,7 @@ public:
   /**
    * Get/Set the time this view is showing. Whenever time is changed, this fires
    * a ViewTimeChangedEvent event.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   virtual void SetViewTime(double value);
   vtkGetMacro(ViewTime, double);
@@ -121,7 +131,7 @@ public:
    * identify what geometry cache to use for the current render. It is passed on
    * to the representations in vtkPVView::Update(). The CacheKey is respected
    * only when UseCache is true.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   vtkSetMacro(CacheKey, double);
   vtkGetMacro(CacheKey, double);
@@ -130,7 +140,7 @@ public:
   //@{
   /**
    * Get/Set whether caching is enabled.
-   * @CallOnAllProcessess
+   * \note CallOnAllProcesses
    */
   vtkSetMacro(UseCache, bool);
   vtkGetMacro(UseCache, bool);
@@ -177,7 +187,7 @@ public:
    * Overridden to not call Update() directly on the input representations,
    * instead use ProcessViewRequest() for all vtkPVDataRepresentations.
    */
-  virtual void Update();
+  void Update() VTK_OVERRIDE;
 
   /**
    * Returns true if the application is currently in tile display mode.
@@ -204,11 +214,24 @@ public:
    */
   bool GetLocalProcessSupportsInteraction();
 
+  /**
+   * Returns the unique indentifier used for this view. This gets set in
+   * `Initialize()`.
+   */
   vtkGetMacro(Identifier, unsigned int);
+
+  /**
+   * If this view needs a render window (not all views may use one),
+   * this method can be used to get the render window associated with this view
+   * on the current process. Note that this window may be shared with other
+   * views depending on the process on which this is called and the
+   * configuration ParaView is running under.
+   */
+  virtual vtkRenderWindow* GetRenderWindow();
 
 protected:
   vtkPVView();
-  ~vtkPVView();
+  ~vtkPVView() override;
 
   /**
    * Overridden to check that the representation has View setup properly. Older
@@ -216,7 +239,7 @@ protected:
    * call the superclass implementations. We check that that's not the case and
    * warn.
    */
-  virtual void AddRepresentationInternal(vtkDataRepresentation* rep);
+  void AddRepresentationInternal(vtkDataRepresentation* rep) VTK_OVERRIDE;
 
   // vtkPVSynchronizedRenderWindows is used to ensure that this view participates
   // in tile-display configurations. Even if your view subclass a simple
@@ -260,10 +283,11 @@ protected:
 
   int Size[2];
   int Position[2];
+  int PPI;
 
 private:
-  vtkPVView(const vtkPVView&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVView&) VTK_DELETE_FUNCTION;
+  vtkPVView(const vtkPVView&) = delete;
+  void operator=(const vtkPVView&) = delete;
 
   class vtkInternals;
 

@@ -39,7 +39,7 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkPVComparativeAnimationCue : public v
 public:
   static vtkPVComparativeAnimationCue* New();
   vtkTypeMacro(vtkPVComparativeAnimationCue, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -150,7 +150,7 @@ public:
 
 protected:
   vtkPVComparativeAnimationCue();
-  ~vtkPVComparativeAnimationCue();
+  ~vtkPVComparativeAnimationCue() override;
 
   /**
    * Get the property being animated.
@@ -170,8 +170,8 @@ protected:
   bool Enabled;
 
 private:
-  vtkPVComparativeAnimationCue(const vtkPVComparativeAnimationCue&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVComparativeAnimationCue&) VTK_DELETE_FUNCTION;
+  vtkPVComparativeAnimationCue(const vtkPVComparativeAnimationCue&) = delete;
+  void operator=(const vtkPVComparativeAnimationCue&) = delete;
 
   class vtkInternals;
   vtkInternals* Internals;

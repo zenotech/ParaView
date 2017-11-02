@@ -35,7 +35,7 @@ class VTKPVANIMATION_EXPORT vtkPVCameraAnimationCue : public vtkPVKeyFrameAnimat
 public:
   static vtkPVCameraAnimationCue* New();
   vtkTypeMacro(vtkPVCameraAnimationCue, vtkPVKeyFrameAnimationCue);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -55,22 +55,31 @@ public:
    */
   void SetMode(int mode);
 
-  virtual void BeginUpdateAnimationValues() {}
-  virtual void SetAnimationValue(int, double) {}
-  virtual void EndUpdateAnimationValues();
+  //@{
+  /**
+   * Get/Set the animation timekeeper
+   */
+  vtkGetObjectMacro(TimeKeeper, vtkSMProxy);
+  void SetTimeKeeper(vtkSMProxy*);
+  //@}
+
+  void BeginUpdateAnimationValues() VTK_OVERRIDE {}
+  void SetAnimationValue(int, double) VTK_OVERRIDE {}
+  void EndUpdateAnimationValues() VTK_OVERRIDE;
 
   void SetDataSourceProxy(vtkSMProxy* dataSourceProxy);
 
 protected:
   vtkPVCameraAnimationCue();
-  ~vtkPVCameraAnimationCue();
+  ~vtkPVCameraAnimationCue() override;
 
   vtkPVRenderView* View;
   vtkSMProxy* DataSourceProxy;
+  vtkSMProxy* TimeKeeper;
 
 private:
-  vtkPVCameraAnimationCue(const vtkPVCameraAnimationCue&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVCameraAnimationCue&) VTK_DELETE_FUNCTION;
+  vtkPVCameraAnimationCue(const vtkPVCameraAnimationCue&) = delete;
+  void operator=(const vtkPVCameraAnimationCue&) = delete;
 };
 
 #endif

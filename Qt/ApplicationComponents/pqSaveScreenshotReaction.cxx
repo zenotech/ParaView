@@ -32,18 +32,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqSaveScreenshotReaction.h"
 
 #include "pqActiveObjects.h"
+#include "pqApplicationCore.h"
 #include "pqCoreUtilities.h"
 #include "pqFileDialog.h"
-#include "pqImageUtil.h"
-#include "pqPVApplicationCore.h"
-#include "pqSaveSnapshotDialog.h"
+#include "pqProxyWidgetDialog.h"
+#include "pqServer.h"
 #include "pqSettings.h"
-#include "pqStereoModeHelper.h"
-#include "pqTabbedMultiViewWidget.h"
 #include "pqView.h"
 #include "vtkImageData.h"
-#include "vtkSMProxy.h"
+#include "vtkNew.h"
+#include "vtkSMParaViewPipelineController.h"
+#include "vtkSMProperty.h"
+#include "vtkSMPropertyHelper.h"
+#include "vtkSMPropertyLink.h"
+#include "vtkSMSaveScreenshotProxy.h"
 #include "vtkSMSessionProxyManager.h"
+#include "vtkSMUtilities.h"
+#include "vtkSMViewLayoutProxy.h"
+#include "vtkSMViewProxy.h"
 #include "vtkSmartPointer.h"
 
 #include <QDebug>
@@ -71,28 +77,8 @@ void pqSaveScreenshotReaction::updateEnableState()
 }
 
 //-----------------------------------------------------------------------------
-void pqSaveScreenshotReaction::saveScreenshot()
+QString pqSaveScreenshotReaction::promptFileName()
 {
-  pqView* view = pqActiveObjects::instance().activeView();
-  if (!view)
-  {
-    qDebug() << "Cannnot save image. No active view.";
-    return;
-  }
-
-  pqSaveSnapshotDialog ssDialog(pqCoreUtilities::mainWidget());
-  ssDialog.setViewSize(view->getSize());
-
-  pqTabbedMultiViewWidget* viewManager = qobject_cast<pqTabbedMultiViewWidget*>(
-    pqApplicationCore::instance()->manager("MULTIVIEW_WIDGET"));
-  ssDialog.setAllViewsSize(viewManager ? viewManager->clientSize() : view->getSize());
-  ssDialog.setEnableSaveAllViews(viewManager != 0);
-
-  if (ssDialog.exec() != QDialog::Accepted)
-  {
-    return;
-  }
-
   QString lastUsedExt;
   // Load the most recently used file extensions from QSettings, if available.
   pqSettings* settings = pqApplicationCore::instance()->settings();
@@ -101,12 +87,9 @@ void pqSaveScreenshotReaction::saveScreenshot()
     lastUsedExt = settings->value("extensions/ScreenshotExtension").toString();
   }
 
-  QString filters;
-  filters += "PNG image (*.png)";
-  filters += ";;BMP image (*.bmp)";
-  filters += ";;TIFF image (*.tif)";
-  filters += ";;PPM image (*.ppm)";
-  filters += ";;JPG image (*.jpg)";
+  QString filters("PNG image (*.png);;JPG image (*.jpg);;TIFF image (*.tif)"
+                  ";;BMP image (*.bmp);;PPM image (*.ppm)");
+
   pqFileDialog file_dialog(
     NULL, pqCoreUtilities::mainWidget(), tr("Save Screenshot:"), QString(), filters);
   file_dialog.setRecentlyUsedExtension(lastUsedExt);
@@ -114,70 +97,132 @@ void pqSaveScreenshotReaction::saveScreenshot()
   file_dialog.setFileMode(pqFileDialog::AnyFile);
   if (file_dialog.exec() != QDialog::Accepted)
   {
-    return;
+    return QString();
   }
 
   QString file = file_dialog.getSelectedFiles()[0];
-  QFileInfo fileInfo = QFileInfo(file);
+  QFileInfo fileInfo(file);
   lastUsedExt = QString("*.") + fileInfo.suffix();
   settings->setValue("extensions/ScreenshotExtension", lastUsedExt);
-
-  QSize size = ssDialog.viewSize();
-  QString palette = ssDialog.palette();
-
-  vtkSMSessionProxyManager* pxm = pqActiveObjects::instance().activeServer()->proxyManager();
-  vtkSMProxy* colorPalette = pxm->GetProxy("global_properties", "ColorPalette");
-  vtkSmartPointer<vtkSMProxy> clone;
-  if (colorPalette && !palette.isEmpty())
-  {
-    // save current property values
-    clone.TakeReference(pxm->NewProxy(colorPalette->GetXMLGroup(), colorPalette->GetXMLName()));
-    clone->Copy(colorPalette);
-
-    vtkSMProxy* chosenPalette = pxm->NewProxy("palettes", palette.toLatin1().data());
-    colorPalette->Copy(chosenPalette);
-    chosenPalette->Delete();
-  }
-
-  QScopedPointer<pqStereoModeHelper> helper(ssDialog.saveAllViews()
-      ? new pqStereoModeHelper(ssDialog.getStereoMode(), view->getServer())
-      : new pqStereoModeHelper(ssDialog.getStereoMode(), view));
-
-  pqSaveScreenshotReaction::saveScreenshot(file, size, ssDialog.quality(), ssDialog.saveAllViews());
-
-  // restore color palette.
-  if (clone)
-  {
-    colorPalette->Copy(clone);
-    pqApplicationCore::instance()->render();
-  }
+  return file;
 }
 
 //-----------------------------------------------------------------------------
-void pqSaveScreenshotReaction::saveScreenshot(
+void pqSaveScreenshotReaction::saveScreenshot()
+{
+  pqView* view = pqActiveObjects::instance().activeView();
+  if (!view)
+  {
+    qDebug() << "Cannot save image. No active view.";
+    return;
+  }
+
+  vtkSMViewProxy* viewProxy = view->getViewProxy();
+  vtkSMViewLayoutProxy* layout = vtkSMViewLayoutProxy::FindLayout(viewProxy);
+  int showWindowDecorations = -1;
+
+  vtkSMSessionProxyManager* pxm = view->getServer()->proxyManager();
+  vtkSmartPointer<vtkSMProxy> proxy;
+  proxy.TakeReference(pxm->NewProxy("misc", "SaveScreenshot"));
+  vtkSMSaveScreenshotProxy* shProxy = vtkSMSaveScreenshotProxy::SafeDownCast(proxy);
+  if (!shProxy)
+  {
+    qCritical() << "Incorrect type for `SaveScreenshot` proxy.";
+    return;
+  }
+
+  // Cache the separator width and color
+  int width = vtkSMPropertyHelper(shProxy, "SeparatorWidth").GetAsInt();
+  double color[3];
+  vtkSMPropertyHelper(shProxy, "SeparatorColor").Get(color, 3);
+  // Link the vtkSMViewLayoutProxy to vtkSMSaveScreenshotProxy to update
+  // the SeparatorWidth and SeparatorColor
+  vtkNew<vtkSMPropertyLink> widthLink, colorLink;
+  if (layout)
+  {
+    widthLink->AddLinkedProperty(shProxy, "SeparatorWidth", vtkSMLink::INPUT);
+    widthLink->AddLinkedProperty(layout, "SeparatorWidth", vtkSMLink::OUTPUT);
+    colorLink->AddLinkedProperty(shProxy, "SeparatorColor", vtkSMLink::INPUT);
+    colorLink->AddLinkedProperty(layout, "SeparatorColor", vtkSMLink::OUTPUT);
+  }
+
+  vtkNew<vtkSMParaViewPipelineController> controller;
+  controller->PreInitializeProxy(shProxy);
+  vtkSMPropertyHelper(shProxy, "View").Set(viewProxy);
+  vtkSMPropertyHelper(shProxy, "Layout").Set(layout);
+  controller->PostInitializeProxy(shProxy);
+
+  if (shProxy->UpdateSaveAllViewsPanelVisibility())
+  {
+    Q_ASSERT(layout != NULL);
+    // let's hide window decorations.
+    vtkSMPropertyHelper helper(layout, "ShowWindowDecorations");
+    showWindowDecorations = helper.GetAsInt();
+    helper.Set(0);
+  }
+
+  pqProxyWidgetDialog dialog(shProxy, pqCoreUtilities::mainWidget());
+  dialog.setObjectName("SaveScreenshotDialog");
+  dialog.setApplyChangesImmediately(true);
+  dialog.setWindowTitle("Save Screenshot Options");
+  dialog.setEnableSearchBar(true);
+  dialog.setSettingsKey("SaveScreenshotDialog");
+  if (dialog.exec() == QDialog::Accepted)
+  {
+    QString filename = pqSaveScreenshotReaction::promptFileName();
+    if (!filename.isEmpty())
+    {
+      shProxy->WriteImage(filename.toLocal8Bit().data());
+    }
+  }
+
+  if (layout)
+  {
+    // Reset the separator width and color
+    vtkSMPropertyHelper(layout, "SeparatorWidth").Set(width);
+    vtkSMPropertyHelper(layout, "SeparatorColor").Set(color, 3);
+    if (showWindowDecorations != -1)
+    {
+      vtkSMPropertyHelper(layout, "ShowWindowDecorations").Set(showWindowDecorations);
+    }
+    layout->UpdateVTKObjects();
+    widthLink->RemoveAllLinks();
+    colorLink->RemoveAllLinks();
+  }
+  // This should not be needed as image capturing code only affects back buffer,
+  // however it is currently needed due to paraview/paraview#17256. Once that's
+  // fixed, we should remove this.
+  pqApplicationCore::instance()->render();
+}
+
+//-----------------------------------------------------------------------------
+bool pqSaveScreenshotReaction::saveScreenshot(
   const QString& filename, const QSize& size, int quality, bool all_views)
 {
-  pqTabbedMultiViewWidget* viewManager = qobject_cast<pqTabbedMultiViewWidget*>(
-    pqApplicationCore::instance()->manager("MULTIVIEW_WIDGET"));
-  if (all_views && viewManager)
+  pqView* view = pqActiveObjects::instance().activeView();
+  if (!view)
   {
-    if (!viewManager->writeImage(filename, size.width(), size.height(), quality))
-    {
-      qCritical() << "Save Image failed.";
-    }
+    qDebug() << "Cannot save image. No active view.";
+    return false;
+  }
+
+  vtkSMViewProxy* viewProxy = view->getViewProxy();
+
+  vtkSmartPointer<vtkImageData> image;
+  const vtkVector2i isize(size.width(), size.height());
+  if (all_views)
+  {
+    vtkSMViewLayoutProxy* layout = vtkSMViewLayoutProxy::FindLayout(viewProxy);
+    image = vtkSMSaveScreenshotProxy::CaptureImage(layout, isize);
   }
   else
   {
-    if (pqView* view = pqActiveObjects::instance().activeView())
-    {
-      if (!view->writeImage(filename, size, quality))
-      {
-        qCritical() << "Save Image failed.";
-      }
-    }
-    else
-    {
-      qCritical() << "No active view present. Save screenshot failed.";
-    }
+    image = vtkSMSaveScreenshotProxy::CaptureImage(viewProxy, isize);
   }
+
+  if (image)
+  {
+    return vtkSMUtilities::SaveImage(image, filename.toLocal8Bit().data(), quality) != 0;
+  }
+  return false;
 }

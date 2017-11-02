@@ -40,12 +40,12 @@ class VTKPVCINEMAREADER_EXPORT vtkPVCinemaDatabaseInformation : public vtkPVInfo
 public:
   static vtkPVCinemaDatabaseInformation* New();
   vtkTypeMacro(vtkPVCinemaDatabaseInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  virtual void CopyFromObject(vtkObject*);
-  virtual void AddInformation(vtkPVInformation*);
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
+  void CopyFromObject(vtkObject*) VTK_OVERRIDE;
+  void AddInformation(vtkPVInformation*) VTK_OVERRIDE;
+  void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
 
   typedef std::vector<std::string> VectorOfStrings;
   typedef VectorOfStrings PipelineObjectsType;
@@ -97,7 +97,7 @@ public:
 
 protected:
   vtkPVCinemaDatabaseInformation();
-  ~vtkPVCinemaDatabaseInformation();
+  ~vtkPVCinemaDatabaseInformation() override;
 
   void Reset();
 
@@ -108,8 +108,8 @@ protected:
   PipelineObjectVisibilitiesType PipelineObjectVisibilities;
 
 private:
-  vtkPVCinemaDatabaseInformation(const vtkPVCinemaDatabaseInformation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkPVCinemaDatabaseInformation&) VTK_DELETE_FUNCTION;
+  vtkPVCinemaDatabaseInformation(const vtkPVCinemaDatabaseInformation&) = delete;
+  void operator=(const vtkPVCinemaDatabaseInformation&) = delete;
 };
 
 #endif

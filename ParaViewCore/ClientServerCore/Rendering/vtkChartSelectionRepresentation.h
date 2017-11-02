@@ -43,18 +43,18 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkChartSelectionRepresentation
 public:
   static vtkChartSelectionRepresentation* New();
   vtkTypeMacro(vtkChartSelectionRepresentation, vtkPVDataRepresentation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
    * This needs to be called on all instances of vtkChartSelectionRepresentation when
    * the input is modified.
    */
-  virtual void MarkModified() { this->Superclass::MarkModified(); }
+  void MarkModified() VTK_OVERRIDE { this->Superclass::MarkModified(); }
 
   /**
    * Set visibility of the representation.
    */
-  virtual void SetVisibility(bool visible);
+  void SetVisibility(bool visible) VTK_OVERRIDE;
 
   /**
    * Get/Set the chart representation for which this is a selection
@@ -64,25 +64,25 @@ public:
 
 protected:
   vtkChartSelectionRepresentation();
-  ~vtkChartSelectionRepresentation();
+  ~vtkChartSelectionRepresentation() override;
 
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int RequestData(
-    vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector*);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  int RequestData(
+    vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector*) VTK_OVERRIDE;
 
   /**
    * Adds the representation to the view.  This is called from
    * vtkView::AddRepresentation().  Subclasses should override this method.
    * Returns true if the addition succeeds.
    */
-  virtual bool AddToView(vtkView* view);
+  bool AddToView(vtkView* view) VTK_OVERRIDE;
 
   /**
    * Removes the representation to the view.  This is called from
    * vtkView::RemoveRepresentation().  Subclasses should override this method.
    * Returns true if the removal succeeds.
    */
-  virtual bool RemoveFromView(vtkView* view);
+  bool RemoveFromView(vtkView* view) VTK_OVERRIDE;
 
   vtkWeakPointer<vtkPVContextView> ContextView;
   vtkWeakPointer<vtkChartRepresentation> ChartRepresentation;
@@ -92,8 +92,8 @@ protected:
   bool EnableServerSideRendering;
 
 private:
-  vtkChartSelectionRepresentation(const vtkChartSelectionRepresentation&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkChartSelectionRepresentation&) VTK_DELETE_FUNCTION;
+  vtkChartSelectionRepresentation(const vtkChartSelectionRepresentation&) = delete;
+  void operator=(const vtkChartSelectionRepresentation&) = delete;
 };
 
 #endif

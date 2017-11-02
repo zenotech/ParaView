@@ -35,7 +35,7 @@ class VTKPVANIMATION_EXPORT vtkSMAnimationSceneGeometryWriter : public vtkSMAnim
 public:
   static vtkSMAnimationSceneGeometryWriter* New();
   vtkTypeMacro(vtkSMAnimationSceneGeometryWriter, vtkSMAnimationSceneWriter);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Get/Set the View Module from which we are writing the
   // geometry.
@@ -44,29 +44,29 @@ public:
 
 protected:
   vtkSMAnimationSceneGeometryWriter();
-  ~vtkSMAnimationSceneGeometryWriter();
+  ~vtkSMAnimationSceneGeometryWriter() override;
 
   /**
    * Called to initialize saving.
    */
-  virtual bool SaveInitialize(int startCount);
+  bool SaveInitialize(int startCount) VTK_OVERRIDE;
 
   /**
    * Called to save a particular frame.
    */
-  virtual bool SaveFrame(double time);
+  bool SaveFrame(double time) VTK_OVERRIDE;
 
   /**
    * Called to finalize saving.
    */
-  virtual bool SaveFinalize();
+  bool SaveFinalize() VTK_OVERRIDE;
 
   vtkSMProxy* GeometryWriter;
   vtkSMProxy* ViewModule;
 
 private:
-  vtkSMAnimationSceneGeometryWriter(const vtkSMAnimationSceneGeometryWriter&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMAnimationSceneGeometryWriter&) VTK_DELETE_FUNCTION;
+  vtkSMAnimationSceneGeometryWriter(const vtkSMAnimationSceneGeometryWriter&) = delete;
+  void operator=(const vtkSMAnimationSceneGeometryWriter&) = delete;
 };
 
 #endif

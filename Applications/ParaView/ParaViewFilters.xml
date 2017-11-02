@@ -65,6 +65,7 @@
     <Proxy group="filters" name="ParticlePath" />
     <Proxy group="filters" name="ParticleTracer" />
     <Proxy group="filters" name="StreakLine" />
+    <Proxy group="filters" name="SynchronizeTime" />
     <Proxy group="filters" name="TemporalCache" />
     <Proxy group="filters" name="TemporalInterpolator" />
     <Proxy group="filters" name="TemporalShiftScale" />
@@ -126,17 +127,22 @@
     <Proxy group="filters" name="PointLineInterpolator" />
     <Proxy group="filters" name="PointPlaneInterpolator" />
     <Proxy group="filters" name="PointVolumeInterpolator" />
+    <Proxy group="filters" name="PointDatasetInterpolator" />
     <Proxy group="filters" name="SPHLineInterpolator" />
     <Proxy group="filters" name="SPHPlaneInterpolator" />
     <Proxy group="filters" name="SPHVolumeInterpolator" />
+    <Proxy group="filters" name="SPHDatasetInterpolator" />
   </Category>
 
+  <Proxy group="filters" name="AggregateDataSet" />
+  <Proxy group="filters" name="AppendArcLength" />
   <Proxy group="filters" name="AddFieldArrays" />
   <Proxy group="filters" name="ImageDataToAMR" />
   <Proxy group="filters" name="UniformGridPartitioner" />
   <Proxy group="filters" name="Append" />
   <Proxy group="filters" name="AppendAttributes" />
   <Proxy group="filters" name="AppendPolyData" />
+  <Proxy group="filters" name="AppendReductionFilter" />
   <Proxy group="filters" name="AngularPeriodicFilter" />
   <Proxy group="filters" name="ArbitrarySourceStreamTracer" />
   <Proxy group="filters" name="BlockIdScalars" />
@@ -146,6 +152,7 @@
   <Proxy group="filters" name="CellCenters" />
   <Proxy group="filters" name="CellDataToPointData" />
   <Proxy group="filters" name="CellDerivatives"/>
+  <Proxy group="filters" name="CellSize" />
   <Proxy group="filters" name="CleanPolyData" />
   <Proxy group="filters" name="CleanUnstructuredGrid" />
   <Proxy group="filters" name="CleanUnstructuredGridCells" />
@@ -165,6 +172,7 @@
   <Proxy group="filters" name="Delaunay2D" />
   <Proxy group="filters" name="Delaunay3D" />
   <Proxy group="filters" name="ElevationFilter" />
+  <Proxy group="filters" name="EvenlySpacedStreamlines2D" />
   <Proxy group="filters" name="ExtractBlock" />
   <Proxy group="filters" name="ExtractComponent" />
   <Proxy group="filters" name="ExtractEdges" />
@@ -196,6 +204,8 @@
   <Proxy group="filters" name="MeshQuality" />
   <Proxy group="filters" name="OctreeDepthLimit" />
   <Proxy group="filters" name="OctreeDepthScalars" />
+  <Proxy group="filters" name="OTKernelSmoothing" />
+  <Proxy group="filters" name="OTDensityMap" />
   <Proxy group="filters" name="OutlineCornerFilter" />
   <Proxy group="filters" name="OutlineFilter" />
   <Proxy group="filters" name="ParticlePathLines" />
@@ -218,6 +228,7 @@
   <Proxy group="filters" name="RectilinearGridConnectivity" />
   <Proxy group="filters" name="RectilinearGridToPointSet" />
   <Proxy group="filters" name="ReflectionFilter" />
+  <Proxy group="filters" name="RemoveGhostInformation" />
   <Proxy group="filters" name="ResampleToImage" />
   <Proxy group="filters" name="ResampleWithDataset" />
   <Proxy group="filters" name="RibbonFilter" />
@@ -259,5 +270,6 @@
   <Proxy group="filters" name="GenericStreamTracer" />
   <Proxy group="filters" name="GenericGeometryFilter" />
   <Proxy group="filters" name="SliceAlongPolyLine" />
+  <Proxy group="filters" name="SliceWithPlane" />
   <Proxy group="filters" name="RulerFilter" />
 </ParaViewFilters>

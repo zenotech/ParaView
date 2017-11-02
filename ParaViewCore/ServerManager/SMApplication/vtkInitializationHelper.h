@@ -34,16 +34,25 @@ class VTKPVSERVERMANAGERAPPLICATION_EXPORT vtkInitializationHelper : public vtkO
 {
 public:
   vtkTypeMacro(vtkInitializationHelper, vtkObject);
-  void PrintSelf(ostream&, vtkIndent);
+  void PrintSelf(ostream&, vtkIndent) VTK_OVERRIDE;
 
-  //@{
   /**
    * Initializes the server manager. Do not use the server manager
    * before calling this.
    */
   static void Initialize(const char* executable, int type);
+
+  /**
+   * Initializes the server manager. Do not use the server manager
+   * before calling this. In this variant, one passes in a vtkPVOptions
+   * instance.
+   *
+   * @note `--no-mpi` and `--mpi` options are handled specially, by this call.
+   * If you want to pass those to vtkProcessModule so it doesn't (or does)
+   * initialize MPI, set the corresponding ivars on the `options` object passed
+   * in.
+   */
   static void Initialize(const char* executable, int type, vtkPVOptions* options);
-  //@}
 
   /**
    * Alternative API to initialize the server manager. This takes in  the
@@ -99,7 +108,7 @@ public:
 
 protected:
   vtkInitializationHelper(){};
-  virtual ~vtkInitializationHelper(){};
+  ~vtkInitializationHelper() override{};
 
   /**
    * Load user and site settings
@@ -118,8 +127,8 @@ protected:
   static std::string GetUserSettingsFilePath();
 
 private:
-  vtkInitializationHelper(const vtkInitializationHelper&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkInitializationHelper&) VTK_DELETE_FUNCTION;
+  vtkInitializationHelper(const vtkInitializationHelper&) = delete;
+  void operator=(const vtkInitializationHelper&) = delete;
 
   static bool LoadSettingsFilesDuringInitialization;
 

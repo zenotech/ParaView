@@ -29,7 +29,7 @@
  * proxy gets saved, the extended definitions are also saved in the XML state so
  * that they can be loaded back as well.
  *
- * @warnings
+ * @warning
  * This is only intended for simple source proxies. The `ExtendDefinition()` API
  * is only intended to add new property definitions for the proxy and should not
  * be used for adding other entities in a proxy definition such as sub proxies,
@@ -46,7 +46,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMSelfGeneratingSourceProxy : public vtkS
 public:
   static vtkSMSelfGeneratingSourceProxy* New();
   vtkTypeMacro(vtkSMSelfGeneratingSourceProxy, vtkSMSourceProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
@@ -67,20 +67,20 @@ public:
   /**
    * Overridden to process extended definition XML in the state file.
    */
-  virtual int LoadXMLState(vtkPVXMLElement* element, vtkSMProxyLocator* locator);
+  int LoadXMLState(vtkPVXMLElement* element, vtkSMProxyLocator* locator) VTK_OVERRIDE;
 
   /**
    * Overridden to push extended definitions to the server side if not already pushed.
    */
-  virtual void CreateVTKObjects();
+  void CreateVTKObjects() VTK_OVERRIDE;
 
 protected:
   vtkSMSelfGeneratingSourceProxy();
-  ~vtkSMSelfGeneratingSourceProxy();
+  ~vtkSMSelfGeneratingSourceProxy() override;
 
 private:
-  vtkSMSelfGeneratingSourceProxy(const vtkSMSelfGeneratingSourceProxy&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkSMSelfGeneratingSourceProxy&) VTK_DELETE_FUNCTION;
+  vtkSMSelfGeneratingSourceProxy(const vtkSMSelfGeneratingSourceProxy&) = delete;
+  void operator=(const vtkSMSelfGeneratingSourceProxy&) = delete;
 
   bool ExtendDefinitionOnSIProxy(vtkPVXMLElement* xml);
 
