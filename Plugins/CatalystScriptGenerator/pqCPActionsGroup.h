@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqCPActionsGroup_h
-#define __pqCPActionsGroup_h
+#ifndef pqCPActionsGroup_h
+#define pqCPActionsGroup_h
 
 #include <QActionGroup>
 
@@ -39,8 +39,9 @@ class pqCPActionsGroup : public QActionGroup
 {
   Q_OBJECT
   typedef QActionGroup Superclass;
+
 public:
-  pqCPActionsGroup(QObject* parent=0);
+  pqCPActionsGroup(QObject* parent = 0);
   virtual ~pqCPActionsGroup();
 
 protected slots:

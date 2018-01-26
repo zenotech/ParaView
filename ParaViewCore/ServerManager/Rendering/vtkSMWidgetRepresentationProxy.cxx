@@ -15,9 +15,9 @@
 #include "vtkSMWidgetRepresentationProxy.h"
 
 #include "vtkClientServerStream.h"
-#include "vtkWidgetRepresentation.h"
 #include "vtkObjectFactory.h"
 #include "vtkProcessModule.h"
+#include "vtkWidgetRepresentation.h"
 
 vtkStandardNewMacro(vtkSMWidgetRepresentationProxy);
 
@@ -55,15 +55,7 @@ void vtkSMWidgetRepresentationProxy::SendRepresentation()
 }
 
 //---------------------------------------------------------------------------
-void vtkSMWidgetRepresentationProxy::PrintSelf(
-  ostream& os, vtkIndent indent)
+void vtkSMWidgetRepresentationProxy::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
-
-
-
-
-
-
-

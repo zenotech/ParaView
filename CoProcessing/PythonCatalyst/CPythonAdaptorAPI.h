@@ -12,8 +12,8 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#ifndef __CPythonAdaptorAPI_h
-#define __CPythonAdaptorAPI_h
+#ifndef CPythonAdaptorAPI_h
+#define CPythonAdaptorAPI_h
 
 #include "vtkPVPythonCatalystModule.h"
 
@@ -33,13 +33,13 @@
 extern "C" {
 #endif
 
-  // call at the start of the simulation
-  void VTKPVPYTHONCATALYST_EXPORT coprocessorinitializewithpython(
-    char* pythonFileName, int* pythonFileNameLength);
+// call at the start of the simulation
+void VTKPVPYTHONCATALYST_EXPORT coprocessorinitializewithpython(
+  char* pythonFileName, int* pythonFileNameLength);
 
-  // add in another Catalyst Python pipeline script.
-  void VTKPVPYTHONCATALYST_EXPORT coprocessoraddpythonscript(
-    char* pythonFileName, int* pythonFileNameLength);
+// add in another Catalyst Python pipeline script.
+void VTKPVPYTHONCATALYST_EXPORT coprocessoraddpythonscript(
+  char* pythonFileName, int* pythonFileNameLength);
 
 #ifdef __cplusplus
 } /* extern "C" */

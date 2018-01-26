@@ -17,10 +17,10 @@
 // vtkVisibleLinesPainter is a hidden lines removal painter that removes hidden
 // lines. Once this painter is inserted in the painter chain, if the
 // representation type is VTK_WIREFRAME, then it will automatically remove the
-// hidden lines. 
+// hidden lines.
 
-#ifndef __vtkVisibleLinesPainter_h
-#define __vtkVisibleLinesPainter_h
+#ifndef vtkVisibleLinesPainter_h
+#define vtkVisibleLinesPainter_h
 
 #include "vtkOpenGLRepresentationPainter.h"
 
@@ -35,9 +35,8 @@ public:
   // Release any graphics resources that are being consumed by this mapper.
   // The parameter window could be used to determine which graphic
   // resources to release. In this case, releases the display lists.
-  virtual void ReleaseGraphicsResources(vtkWindow *);
+  virtual void ReleaseGraphicsResources(vtkWindow*);
 
-//BTX
 protected:
   vtkVisibleLinesPainter();
   ~vtkVisibleLinesPainter();
@@ -52,22 +51,19 @@ protected:
 
   // Description:
   // Changes the polygon mode according to the representation.
-  void RenderInternal(vtkRenderer* renderer, vtkActor* actor, 
-                      unsigned long typeflags, bool forceCompileOnly);
+  void RenderInternal(
+    vtkRenderer* renderer, vtkActor* actor, unsigned long typeflags, bool forceCompileOnly);
 
   // Description:
   // Returns true when rendering is possible.
   bool CanRender(vtkRenderer*, vtkActor*);
 
 private:
-  vtkVisibleLinesPainter(const vtkVisibleLinesPainter&); // Not implemented.
-  void operator=(const vtkVisibleLinesPainter&); // Not implemented.
+  vtkVisibleLinesPainter(const vtkVisibleLinesPainter&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkVisibleLinesPainter&) VTK_DELETE_FUNCTION;
 
   class vtkInternals;
   vtkInternals* Internals;
-//ETX
 };
 
 #endif
-
-

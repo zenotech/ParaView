@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,37 +29,37 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqSignalAdaptorSILModel_h 
-#define __pqSignalAdaptorSILModel_h
+#ifndef pqSignalAdaptorSILModel_h
+#define pqSignalAdaptorSILModel_h
 
-#include <QObject>
 #include "pqComponentsModule.h"
+#include <QObject>
 
 class pqSILModel;
 
-/// pqSignalAdaptorSILModel is a signal adaptor for a pqSILModel.
+/**
+* pqSignalAdaptorSILModel is a signal adaptor for a pqSILModel.
+*/
 class PQCOMPONENTS_EXPORT pqSignalAdaptorSILModel : public QObject
 {
   Q_OBJECT
   Q_PROPERTY(QList<QVariant> values READ values WRITE setValues);
 
   typedef QObject Superclass;
+
 public:
   pqSignalAdaptorSILModel(pqSILModel* model, const char* hierarchyName);
   virtual ~pqSignalAdaptorSILModel();
 
   QList<QVariant> values() const;
-slots:
+  slots:
   void setValues(const QList<QVariant>&);
 
 private:
-  pqSignalAdaptorSILModel(const pqSignalAdaptorSILModel&); // Not implemented.
-  void operator=(const pqSignalAdaptorSILModel&); // Not implemented.
+  Q_DISABLE_COPY(pqSignalAdaptorSILModel)
 
   pqSILModel* Model;
   QString HierarchyName;
 };
 
 #endif
-
-

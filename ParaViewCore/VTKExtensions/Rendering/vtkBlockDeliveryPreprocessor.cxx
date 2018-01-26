@@ -20,6 +20,7 @@
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkMultiBlockDataSet.h"
+#include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkSelection.h"
 #include "vtkSelectionNode.h"
@@ -28,73 +29,95 @@
 #include "vtkTable.h"
 #include "vtkUniformGridAMRDataIterator.h"
 
+#include <set>
+
+class vtkBlockDeliveryPreprocessor::CompositeDataSetIndicesType : public std::set<unsigned int>
+{
+};
+
 vtkStandardNewMacro(vtkBlockDeliveryPreprocessor);
 //----------------------------------------------------------------------------
 vtkBlockDeliveryPreprocessor::vtkBlockDeliveryPreprocessor()
 {
-  this->CompositeDataSetIndex = 0;
   this->FieldAssociation = vtkDataObject::FIELD_ASSOCIATION_POINTS;
   this->FlattenTable = 0;
   this->GenerateOriginalIds = true;
   this->GenerateCellConnectivity = false;
+  this->CompositeDataSetIndices = new CompositeDataSetIndicesType();
 }
 
 //----------------------------------------------------------------------------
 vtkBlockDeliveryPreprocessor::~vtkBlockDeliveryPreprocessor()
 {
+  delete this->CompositeDataSetIndices;
+}
+
+//----------------------------------------------------------------------------
+void vtkBlockDeliveryPreprocessor::AddCompositeDataSetIndex(unsigned int index)
+{
+  if (this->CompositeDataSetIndices->find(index) == this->CompositeDataSetIndices->end())
+  {
+    this->CompositeDataSetIndices->insert(index);
+    this->Modified();
+  }
+}
+
+//----------------------------------------------------------------------------
+void vtkBlockDeliveryPreprocessor::RemoveAllCompositeDataSetIndices()
+{
+  if (this->CompositeDataSetIndices->size() > 0)
+  {
+    this->CompositeDataSetIndices->clear();
+    this->Modified();
+  }
 }
 
 //----------------------------------------------------------------------------
 int vtkBlockDeliveryPreprocessor::RequestDataObject(
-  vtkInformation*,
-  vtkInformationVector** inputVector,
-  vtkInformationVector* outputVector)
+  vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
   if (!inInfo)
-    {
+  {
     return 0;
-    }
+  }
 
   vtkCompositeDataSet* inputCD = vtkCompositeDataSet::GetData(inInfo);
   vtkDataObject* newOutput = 0;
 
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
   if (inputCD)
-    {
+  {
     if (vtkMultiBlockDataSet::GetData(outInfo))
-      {
+    {
       return 1;
-      }
+    }
     newOutput = vtkMultiBlockDataSet::New();
-    }
+  }
   else
-    {
+  {
     if (vtkTable::GetData(outInfo))
-      {
-      return 1;
-      }
-    newOutput = vtkTable::New();
-    }
-  if (newOutput)
     {
+      return 1;
+    }
+    newOutput = vtkTable::New();
+  }
+  if (newOutput)
+  {
     outInfo->Set(vtkDataObject::DATA_OBJECT(), newOutput);
     newOutput->Delete();
     this->GetOutputPortInformation(0)->Set(
       vtkDataObject::DATA_EXTENT_TYPE(), newOutput->GetExtentType());
     return 1;
-    }
+  }
 
   return 0;
 }
 
 //----------------------------------------------------------------------------
-int vtkBlockDeliveryPreprocessor::RequestData(vtkInformation*,
-  vtkInformationVector** inputVector,
-  vtkInformationVector* outputVector)
+int vtkBlockDeliveryPreprocessor::RequestData(
+  vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
-  //cout << "vtkBlockDeliveryPreprocessor::CompositeDataSetIndex: "
-  // << this->CompositeDataSetIndex << endl;
   vtkDataObject* inputDO = vtkDataObject::GetData(inputVector[0], 0);
   vtkDataObject* outputDO = vtkDataObject::GetData(outputVector, 0);
 
@@ -113,61 +136,60 @@ int vtkBlockDeliveryPreprocessor::RequestData(vtkInformation*,
 
   vtkSmartPointer<vtkSplitColumnComponents> split;
   if (this->FlattenTable)
-    {
+  {
     split = vtkSmartPointer<vtkSplitColumnComponents>::New();
-    vtkCompositeDataPipeline *pipeline = vtkCompositeDataPipeline::New();
+    vtkCompositeDataPipeline* pipeline = vtkCompositeDataPipeline::New();
     split->SetExecutive(pipeline);
     pipeline->Delete();
     filter = split;
     split->SetInputConnection(adtf->GetOutputPort());
     split->SetNamingModeToNamesWithUnderscores();
     split->Update();
-    }
+  }
 
-  vtkMultiBlockDataSet* output = vtkMultiBlockDataSet::SafeDownCast(
-    outputDO);
+  vtkMultiBlockDataSet* output = vtkMultiBlockDataSet::SafeDownCast(outputDO);
   if (!output)
-    {
+  {
     outputDO->ShallowCopy(filter->GetOutputDataObject(0));
     return 1;
-    }
+  }
 
-  if (this->CompositeDataSetIndex != 0)
-    {
-    vtkSmartPointer<vtkExtractBlock> eb = vtkSmartPointer<vtkExtractBlock>::New();
+  if (this->CompositeDataSetIndices->size() == 0 ||
+    (this->CompositeDataSetIndices->size() == 1 && (*this->CompositeDataSetIndices->begin()) == 0))
+  {
+    output->ShallowCopy(filter->GetOutputDataObject(0));
+  }
+  else
+  {
+    vtkNew<vtkExtractBlock> eb;
     eb->SetInputConnection(filter->GetOutputPort());
-    eb->AddIndex(this->CompositeDataSetIndex);
+    for (CompositeDataSetIndicesType::iterator iter = this->CompositeDataSetIndices->begin();
+         iter != this->CompositeDataSetIndices->end(); ++iter)
+    {
+      eb->AddIndex(*iter);
+    }
     eb->PruneOutputOff();
     eb->Update();
     output->ShallowCopy(eb->GetOutput());
-    }
-  else
-    {
-    output->ShallowCopy(filter->GetOutputDataObject(0));
-    }
+  }
 
   // Add meta-data about composite-index/hierarchical index to help
   // vtkSelectionStreamer.
   vtkCompositeDataIterator* iter = output->NewIterator();
-  vtkUniformGridAMRDataIterator* ugIter =
-    vtkUniformGridAMRDataIterator::SafeDownCast(iter);
-  for (iter->InitTraversal(); !iter->IsDoneWithTraversal();
-    iter->GoToNextItem())
-    {
+  vtkUniformGridAMRDataIterator* ugIter = vtkUniformGridAMRDataIterator::SafeDownCast(iter);
+  for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem())
+  {
     vtkInformation* metaData = iter->GetCurrentMetaData();
-    if(metaData)
+    if (metaData)
+    {
+      metaData->Set(vtkSelectionNode::COMPOSITE_INDEX(), iter->GetCurrentFlatIndex());
+      if (ugIter)
       {
-      metaData->Set(
-        vtkSelectionNode::COMPOSITE_INDEX(), iter->GetCurrentFlatIndex());
-      if(ugIter)
-        {
-        metaData->Set(
-          vtkSelectionNode::HIERARCHICAL_LEVEL(), ugIter->GetCurrentLevel());
-        metaData->Set(
-          vtkSelectionNode::HIERARCHICAL_INDEX(), ugIter->GetCurrentIndex());
-        }
+        metaData->Set(vtkSelectionNode::HIERARCHICAL_LEVEL(), ugIter->GetCurrentLevel());
+        metaData->Set(vtkSelectionNode::HIERARCHICAL_INDEX(), ugIter->GetCurrentIndex());
       }
     }
+  }
   iter->Delete();
   return 1;
 }

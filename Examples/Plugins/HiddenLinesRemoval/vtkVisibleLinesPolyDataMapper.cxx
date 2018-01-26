@@ -14,9 +14,9 @@
 =========================================================================*/
 #include "vtkVisibleLinesPolyDataMapper.h"
 
+#include "vtkDefaultPainter.h"
 #include "vtkObjectFactory.h"
 #include "vtkVisibleLinesPainter.h"
-#include "vtkDefaultPainter.h"
 
 vtkStandardNewMacro(vtkVisibleLinesPolyDataMapper);
 //----------------------------------------------------------------------------
@@ -45,5 +45,3 @@ void vtkVisibleLinesPolyDataMapper::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
-
-

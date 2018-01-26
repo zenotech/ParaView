@@ -16,8 +16,8 @@
 // .SECTION Description
 // vtkPVRenderLoopEvent
 
-#ifndef __vtkPVRenderLoopEvent_h
-#define __vtkPVRenderLoopEvent_h
+#ifndef vtkPVRenderLoopEvent_h
+#define vtkPVRenderLoopEvent_h
 // --------------------------------------------------------------------includes
 #include "vtkObject.h"
 
@@ -34,23 +34,18 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent);
 
   static void Handle();
+
 protected:
   // ...........................................................protected-ivars
 
 protected:
-//BTX
-  // .......................................................................BTX
   vtkPVRenderLoopEvent();
   ~vtkPVRenderLoopEvent();
 
 private:
-  vtkPVRenderLoopEventInternal *Internal;
-  vtkPVRenderLoopEvent(const vtkPVRenderLoopEvent&); // Not implemented.
-  void operator=(const vtkPVRenderLoopEvent&); // Not implemented.
-//ETX
-  // .......................................................................ETX
-
-
+  vtkPVRenderLoopEventInternal* Internal;
+  vtkPVRenderLoopEvent(const vtkPVRenderLoopEvent&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVRenderLoopEvent&) VTK_DELETE_FUNCTION;
 };
 
-#endif // __vtkPVRenderLoopEvent_h
+#endif // vtkPVRenderLoopEvent_h

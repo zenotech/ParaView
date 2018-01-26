@@ -64,14 +64,13 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // with the manta versions of those so that the object can be drawn
 // in a manta renderer within a PVMantaView
 
-#ifndef __vtkPVMantaRepresentation_h
-#define __vtkPVMantaRepresentation_h
+#ifndef vtkPVMantaRepresentation_h
+#define vtkPVMantaRepresentation_h
 
 #include "vtkGeometryRepresentationWithFaces.h"
 #include "vtkMantaModule.h"
 
-class VTKMANTA_EXPORT vtkPVMantaRepresentation :
-  public vtkGeometryRepresentationWithFaces
+class VTKMANTA_EXPORT vtkPVMantaRepresentation : public vtkGeometryRepresentationWithFaces
 {
 public:
   static vtkPVMantaRepresentation* New();
@@ -84,11 +83,11 @@ public:
 
   // Description:
   // control that ray traced rendering characteristics of this object
-  void SetMaterialType(char *);
-  char *GetMaterialType();
-  void SetReflectance(double );
+  void SetMaterialType(char*);
+  char* GetMaterialType();
+  void SetReflectance(double);
   double GetReflectance();
-  void SetThickness(double );
+  void SetThickness(double);
   double GetThickness();
   void SetEta(double);
   double GetEta();
@@ -99,18 +98,13 @@ public:
   void SetAllowDataMaterial(bool);
   bool GetAllowDataMaterial();
 
-//BTX
 protected:
   vtkPVMantaRepresentation();
   ~vtkPVMantaRepresentation();
 
 private:
-
-  vtkPVMantaRepresentation(const vtkPVMantaRepresentation&); // Not implemented.
-  void operator=(const vtkPVMantaRepresentation&); // Not implemented.
-
-//ETX
+  vtkPVMantaRepresentation(const vtkPVMantaRepresentation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVMantaRepresentation&) VTK_DELETE_FUNCTION;
 };
-
 
 #endif

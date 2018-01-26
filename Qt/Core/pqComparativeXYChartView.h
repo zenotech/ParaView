@@ -29,12 +29,14 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqComparativeXYChartView_h
-#define __pqComparativeXYChartView_h
+#ifndef pqComparativeXYChartView_h
+#define pqComparativeXYChartView_h
 
 #include "pqComparativeContextView.h"
 
-/// The comparative line chart subclass.
+/**
+* The comparative line chart subclass.
+*/
 class PQCORE_EXPORT pqComparativeXYChartView : public pqComparativeContextView
 {
   Q_OBJECT
@@ -42,15 +44,14 @@ class PQCORE_EXPORT pqComparativeXYChartView : public pqComparativeContextView
 
 public:
   pqComparativeXYChartView(const QString& group, const QString& name,
-    vtkSMComparativeViewProxy* view, pqServer* server, QObject* parent=NULL);
+    vtkSMComparativeViewProxy* view, pqServer* server, QObject* parent = NULL);
   ~pqComparativeXYChartView();
 
   static QString chartViewType() { return "ComparativeXYChartView"; }
   static QString chartViewTypeName() { return "Line Chart View (Comparative)"; }
 
 private:
-  pqComparativeXYChartView(const pqComparativeXYChartView&); // Not implemented.
-  void operator=(const pqComparativeXYChartView&); // Not implemented.
+  Q_DISABLE_COPY(pqComparativeXYChartView)
 };
 
 #endif

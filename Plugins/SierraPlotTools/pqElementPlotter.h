@@ -20,8 +20,8 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
-#ifndef __pqElementPlotter_h
-#define __pqElementPlotter_h
+#ifndef pqElementPlotter_h
+#define pqElementPlotter_h
 
 #include "pqPlotter.h"
 
@@ -30,40 +30,35 @@ class pqElementPlotter : public pqPlotter
   Q_OBJECT;
 
 public:
+  pqElementPlotter() {}
 
-  pqElementPlotter()
-  {
-  }
+  virtual ~pqElementPlotter() {}
 
-  virtual ~pqElementPlotter()
-  {
-  }
+  virtual QStringList getTheVars(vtkSMProxy* meshReaderProxy);
 
-  virtual QStringList getTheVars(vtkSMProxy * meshReaderProxy);
+  virtual vtkSMProperty* getSMVariableProperty(vtkSMProxy* meshReaderProxy);
 
-  virtual vtkSMProperty * getSMVariableProperty(vtkSMProxy * meshReaderProxy);
+  virtual vtkPVDataSetAttributesInformation* getDataSetAttributesInformation(
+    vtkPVDataInformation* pvDataInfo);
 
-  virtual vtkPVDataSetAttributesInformation * getDataSetAttributesInformation(vtkPVDataInformation * pvDataInfo);
-
-  virtual vtkPVArrayInformation * getArrayInformation(vtkPVDataSetAttributesInformation *);
+  virtual vtkPVArrayInformation* getArrayInformation(vtkPVDataSetAttributesInformation*);
 
   virtual bool amIAbleToSelectByNumber();
 
-  virtual pqPipelineSource * getPlotFilter();
+  virtual pqPipelineSource* getPlotFilter();
 
-  virtual void setVarsStatus(vtkSMProxy * meshReaderProxy, bool flag);
+  virtual void setVarsStatus(vtkSMProxy* meshReaderProxy, bool flag);
 
-  virtual void setVarsActive(vtkSMProxy * meshReaderProxy, QString varName,
-    bool activeFlag);
+  virtual void setVarsActive(vtkSMProxy* meshReaderProxy, QString varName, bool activeFlag);
 
   virtual QString getFilterName();
 
   virtual QMap<QString, QList<pqOutputPort*> > buildNamedInputs(
-    pqPipelineSource * meshReader, QList<int> itemList, bool & success);
+    pqPipelineSource* meshReader, QList<int> itemList, bool& success);
 
   virtual QString getNumberItemsLabel();
 
   virtual QString getPlotterTextEditObjectName();
 };
 
-#endif // __pqElementPlotter_h
+#endif // pqElementPlotter_h

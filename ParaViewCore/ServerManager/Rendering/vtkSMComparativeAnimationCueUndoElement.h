@@ -12,28 +12,32 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMComparativeAnimationCueUndoElement - UndoElement for ComparativeAnimationCue
-// .SECTION Description
+/**
+ * @class   vtkSMComparativeAnimationCueUndoElement
+ * @brief   UndoElement for ComparativeAnimationCue
+ *
+*/
 
-#ifndef __vtkSMComparativeAnimationCueUndoElement_h
-#define __vtkSMComparativeAnimationCueUndoElement_h
+#ifndef vtkSMComparativeAnimationCueUndoElement_h
+#define vtkSMComparativeAnimationCueUndoElement_h
 
 #include "vtkPVServerManagerRenderingModule.h" //needed for exports
 #include "vtkSMUndoElement.h"
-#include <vtkWeakPointer.h> // needed for vtkWeakPointer.
 #include <vtkSmartPointer.h> // needed for vtkSmartPointer.
+#include <vtkWeakPointer.h>  // needed for vtkWeakPointer.
 
 class vtkPVXMLElement;
 
-class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMComparativeAnimationCueUndoElement : public vtkSMUndoElement
+class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMComparativeAnimationCueUndoElement
+  : public vtkSMUndoElement
 {
 public:
   static vtkSMComparativeAnimationCueUndoElement* New();
   vtkTypeMacro(vtkSMComparativeAnimationCueUndoElement, vtkSMUndoElement);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  virtual int Undo();
-  virtual int Redo();
+  virtual int Undo() VTK_OVERRIDE;
+  virtual int Redo() VTK_OVERRIDE;
 
   void SetXMLStates(vtkTypeUInt32 id, vtkPVXMLElement* before, vtkPVXMLElement* after);
 
@@ -46,8 +50,9 @@ protected:
   vtkTypeUInt32 ComparativeAnimationCueID;
 
 private:
-  vtkSMComparativeAnimationCueUndoElement(const vtkSMComparativeAnimationCueUndoElement&); // Not implemented.
-  void operator=(const vtkSMComparativeAnimationCueUndoElement&); // Not implemented.
+  vtkSMComparativeAnimationCueUndoElement(
+    const vtkSMComparativeAnimationCueUndoElement&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMComparativeAnimationCueUndoElement&) VTK_DELETE_FUNCTION;
 };
 
 #endif

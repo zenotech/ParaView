@@ -4,11 +4,12 @@ paraview_test_load_baselines_dirs(""
 paraview_test_load_data_dirs(SurfaceLIC
   shuttle-surf
   )
-paraview_test_load_data(SurfaceLIC
-  #office.binary.vtk # Downloaded by ParaViewData
-  shuttle-surf.vtm
-  )
-paraview_test_data_target(SurfaceLIC)
+
+set(data_files shuttle-surf.vtm)
+if(NOT PARAVIEW_BUILD_QT_GUI)
+    list(APPEND data_files office.binary.vtk)
+endif()
+paraview_test_load_data(SurfaceLIC ${data_files})
 
 # Surface LIC Plugin testing
 # these tests could run safely in serial and
@@ -18,11 +19,6 @@ SET(PVBATCH_TESTS
   SurfaceLIC-ShuttleZoom2
   SurfaceLIC-ShuttleAll
   )
-# don't attempt to load plugin if linked static
-SET(STATIC_LINK 1)
-IF (BUILD_SHARED_LIBS)
-  set(STATIC_LINK 0)
-ENDIF()
 IF (PARAVIEW_USE_MPI AND VTK_MPIRUN_EXE)
   # run the tests in parallel
   SET(NP 3)
@@ -44,7 +40,7 @@ IF (PARAVIEW_USE_MPI AND VTK_MPIRUN_EXE)
         -D ${PARAVIEW_TEST_OUTPUT_DATA_DIR}
         -T ${PARAVIEW_TEST_OUTPUT_DIR}
         -V DATA{${PARAVIEW_TEST_BASELINE_DIR}/SurfaceLICPlugin/${tfile}.png}
-        -S ${STATIC_LINK}
+        --threshold 30
         --state ${CMAKE_CURRENT_SOURCE_DIR}/${tfile}.pvsm)
     SET_TESTS_PROPERTIES(${tfile}-Batch PROPERTIES LABELS "PARAVIEW")
   ENDFOREACH()
@@ -59,7 +55,7 @@ ELSE()
         -D ${PARAVIEW_TEST_OUTPUT_DATA_DIR}
         -T ${PARAVIEW_TEST_OUTPUT_DIR}
         -V DATA{${PARAVIEW_TEST_BASELINE_DIR}/SurfaceLICPlugin/${tfile}.png}
-        -S ${STATIC_LINK}
+        --threshold 30
         --state ${CMAKE_CURRENT_SOURCE_DIR}/${tfile}.pvsm)
     SET_TESTS_PROPERTIES(${tfile}-Batch PROPERTIES LABELS "PARAVIEW")
   ENDFOREACH()

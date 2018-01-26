@@ -18,8 +18,8 @@
 // subclasses that use a image-processing render pass for processing the image
 // before rendering it on the screen.
 
-#ifndef __vtkPVRenderViewWithSobel_h
-#define __vtkPVRenderViewWithSobel_h
+#ifndef vtkPVRenderViewWithSobel_h
+#define vtkPVRenderViewWithSobel_h
 
 #include "vtkPVRenderView.h"
 
@@ -33,18 +33,16 @@ public:
   // Description:
   // Initialize the view with an identifier. Unless noted otherwise, this method
   // must be called before calling any other methods on this class.
-  // @CallOnAllProcessess
+  // \note CallOnAllProcesses
   virtual void Initialize(unsigned int id);
 
-//BTX
 protected:
   vtkPVRenderViewWithSobel();
   ~vtkPVRenderViewWithSobel();
 
 private:
-  vtkPVRenderViewWithSobel(const vtkPVRenderViewWithSobel&); // Not implemented
-  void operator=(const vtkPVRenderViewWithSobel&); // Not implemented
-//ETX
+  vtkPVRenderViewWithSobel(const vtkPVRenderViewWithSobel&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVRenderViewWithSobel&) VTK_DELETE_FUNCTION;
 };
 
 #endif

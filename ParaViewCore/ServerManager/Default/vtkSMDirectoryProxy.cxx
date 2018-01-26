@@ -15,9 +15,10 @@
 #include "vtkSMDirectoryProxy.h"
 
 #include "vtkObjectFactory.h"
-#include "vtkClientServerStream.h"
+#include "vtkSMPropertyHelper.h"
+#include "vtkSMProxyManager.h"
 #include "vtkSMSession.h"
-#include "vtkProcessModule.h"
+#include "vtkSMSessionProxyManager.h"
 
 vtkStandardNewMacro(vtkSMDirectoryProxy);
 //----------------------------------------------------------------------------
@@ -31,109 +32,56 @@ vtkSMDirectoryProxy::~vtkSMDirectoryProxy()
 }
 
 //----------------------------------------------------------------------------
-void vtkSMDirectoryProxy::List(const char* dir)
+bool vtkSMDirectoryProxy::List(const char* dir)
 {
-  this->CreateVTKObjects();
-  if (!this->ObjectsCreated)
-    {
-    return;
-    }
-
-  vtkClientServerStream stream;
-  stream << vtkClientServerStream::Invoke
-    << VTKOBJECT(this) << "Open"
-    << dir
-    << vtkClientServerStream::End;
-  this->ExecuteStream(stream, false, vtkProcessModule::DATA_SERVER_ROOT);
-  this->UpdatePropertyInformation();
-}
-//----------------------------------------------------------------------------
-bool vtkSMDirectoryProxy::MakeDirectory(const char* dir, vtkTypeUInt32 processes)
-{
-  this->CreateVTKObjects();
-  if (!this->ObjectsCreated)
-    {
-    return false;
-    }
-
-  vtkClientServerStream stream;
-  stream << vtkClientServerStream::Invoke
-    << VTKOBJECT(this) << "MakeDirectory"
-    << dir
-    << vtkClientServerStream::End;
-  this->ExecuteStream(stream, false, processes);
-
-  vtkClientServerStream result = this->GetSession()->GetLastResult(processes);
-  if(result.GetNumberOfMessages() == 1 &&
-    result.GetNumberOfArguments(0) == 1)
-    {
-    int tmp;
-    if(result.GetArgument(0, 0, &tmp) && tmp)
-      {
-      return true;
-      }
-    }
-  return false;
+  return this->CallDirectoryMethod("OpenDirectory", dir);
 }
 
 //----------------------------------------------------------------------------
-bool vtkSMDirectoryProxy::DeleteDirectory(const char* dir, vtkTypeUInt32 processes)
+bool vtkSMDirectoryProxy::MakeDirectory(const char* dir)
 {
-  this->CreateVTKObjects();
-  if (!this->ObjectsCreated)
-    {
-    return false;
-    }
-
-  vtkClientServerStream stream;
-  stream << vtkClientServerStream::Invoke
-    << VTKOBJECT(this) << "DeleteDirectory"
-    << dir
-    << vtkClientServerStream::End;
-  this->ExecuteStream(stream, false, processes);
-
-  vtkClientServerStream result = this->GetSession()->GetLastResult(processes);
-  if(result.GetNumberOfMessages() == 1 &&
-    result.GetNumberOfArguments(0) == 1)
-    {
-    int tmp;
-    if(result.GetArgument(0, 0, &tmp) && tmp)
-      {
-      return true;
-      }
-    }
-  return false;
+  return this->CallDirectoryMethod("MakeDirectory", dir);
 }
 
 //----------------------------------------------------------------------------
-bool vtkSMDirectoryProxy::Rename(const char* oldname, const char* newname,
-  vtkTypeUInt32 processes)
+bool vtkSMDirectoryProxy::DeleteDirectory(const char* dir)
+{
+  return this->CallDirectoryMethod("DeleteDirectory", dir);
+}
+
+//----------------------------------------------------------------------------
+bool vtkSMDirectoryProxy::Rename(const char* oldname, const char* newname)
+{
+  return this->CallDirectoryMethod("RenameDirectory", oldname, newname);
+}
+
+bool vtkSMDirectoryProxy::CallDirectoryMethod(
+  const char* method, const char* path, const char* secondaryPath)
 {
   this->CreateVTKObjects();
   if (!this->ObjectsCreated)
-    {
+  {
     return false;
-    }
+  }
 
-  vtkClientServerStream stream;
-  stream << vtkClientServerStream::Invoke
-    << VTKOBJECT(this) << "Rename"
-    << oldname << newname
-    << vtkClientServerStream::End;
-  this->ExecuteStream(stream, false, processes);
+  // creat a helper for calling a method on vtk objects
+  vtkSMSessionProxyManager* pxm =
+    vtkSMProxyManager::GetProxyManager()->GetSessionProxyManager(this->GetSession());
+  vtkSmartPointer<vtkSMProxy> helper;
+  helper.TakeReference(pxm->NewProxy("misc", "FilePathEncodingHelper"));
+  helper->UpdateVTKObjects();
+  vtkSMPropertyHelper(helper->GetProperty("ActiveFileName")).Set(path);
+  if (secondaryPath != NULL)
+  {
+    vtkSMPropertyHelper(helper->GetProperty("SecondaryFileName")).Set(secondaryPath);
+  }
+  vtkSMPropertyHelper(helper->GetProperty("ActiveGlobalId"))
+    .Set(static_cast<vtkIdType>(this->GetGlobalID()));
+  helper->UpdateVTKObjects();
+  helper->UpdatePropertyInformation(helper->GetProperty(method));
 
-  vtkClientServerStream result = this->GetSession()->GetLastResult(processes);
-  if(result.GetNumberOfMessages() == 1 &&
-    result.GetNumberOfArguments(0) == 1)
-    {
-    int tmp;
-    if(result.GetArgument(0, 0, &tmp) && tmp)
-      {
-      return true;
-      }
-    }
-
-  return false;
+  int ret = vtkSMPropertyHelper(helper->GetProperty(method)).GetAsInt();
+  return (ret != 0);
 }
 
 //----------------------------------------------------------------------------

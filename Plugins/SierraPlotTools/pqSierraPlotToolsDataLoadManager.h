@@ -19,8 +19,8 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
-#ifndef __pqSierraPlotToolsDataLoadManager_h
-#define __pqSierraPlotToolsDataLoadManager_h
+#ifndef pqSierraPlotToolsDataLoadManager_h
+#define pqSierraPlotToolsDataLoadManager_h
 
 #include <QDialog>
 
@@ -31,8 +31,9 @@ class pqServer;
 class pqSierraPlotToolsDataLoadManager : public QDialog
 {
   Q_OBJECT;
+
 public:
-  pqSierraPlotToolsDataLoadManager(QWidget *p, Qt::WindowFlags f = 0);
+  pqSierraPlotToolsDataLoadManager(QWidget* p, Qt::WindowFlags f = 0);
   ~pqSierraPlotToolsDataLoadManager();
 
 public slots:
@@ -43,14 +44,13 @@ signals:
   void createdPipeline();
 
 protected:
-  pqServer *Server;
+  pqServer* Server;
 
 private:
-  pqSierraPlotToolsDataLoadManager(const pqSierraPlotToolsDataLoadManager &); // Not implemented
-  void operator=(const pqSierraPlotToolsDataLoadManager &);        // Not implemented
+  Q_DISABLE_COPY(pqSierraPlotToolsDataLoadManager)
 
   class pqUI;
-  pqUI *ui;
+  pqUI* ui;
 };
 
-#endif //__pqSierraPlotToolsDataLoadManager_h
+#endif // pqSierraPlotToolsDataLoadManager_h

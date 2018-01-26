@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqAnimationCue_h
-#define __pqAnimationCue_h
+#ifndef pqAnimationCue_h
+#define pqAnimationCue_h
 
 #include "pqProxy.h"
 
@@ -41,9 +41,10 @@ class PQCORE_EXPORT pqAnimationCue : public pqProxy
 {
   Q_OBJECT
   typedef pqProxy Superclass;
+
 public:
-  pqAnimationCue(const QString& group, const QString& name,
-    vtkSMProxy* proxy, pqServer* server, QObject* parent=NULL);
+  pqAnimationCue(const QString& group, const QString& name, vtkSMProxy* proxy, pqServer* server,
+    QObject* parent = NULL);
   virtual ~pqAnimationCue();
 
   // Returns the number of keyframes in this cue.
@@ -76,17 +77,21 @@ public:
   // Returns the index of the property being animated.
   int getAnimatedPropertyIndex() const;
 
-  /// Set the type of the keyframe created by default.
-  /// default is CompositeKeyFrame.
-  void setKeyFrameType(const QString& type)
-    { this->KeyFrameType = type; }
+  /**
+  * Set the type of the keyframe created by default.
+  * default is CompositeKeyFrame.
+  */
+  void setKeyFrameType(const QString& type) { this->KeyFrameType = type; }
 
-  /// Used by editors to trigger keyframesModified() signal after bulk of
-  /// modifications have been made to the cue/key frames.
-  void triggerKeyFramesModified()
-    { emit this->keyframesModified(); }
-   
-  /// Get/Set the enabled state for the cue.
+  /**
+  * Used by editors to trigger keyframesModified() signal after bulk of
+  * modifications have been made to the cue/key frames.
+  */
+  void triggerKeyFramesModified() { emit this->keyframesModified(); }
+
+  /**
+  * Get/Set the enabled state for the cue.
+  */
   void setEnabled(bool enable);
   bool isEnabled() const;
 
@@ -94,22 +99,27 @@ signals:
   // emitted when something about the keyframes changes.
   void keyframesModified();
 
-  // Fired when the animated proxy/property/index 
+  // Fired when the animated proxy/property/index
   // changes.
   void modified();
 
-  /// Fired when the enabled-state of the cue changes.
+  /**
+  * Fired when the enabled-state of the cue changes.
+  */
   void enabled(bool);
 
 private slots:
-  /// Called when the "Enabled" property is changed.
+  /**
+  * Called when the "Enabled" property is changed.
+  */
   void onEnabledModified();
 
 private:
-  pqAnimationCue(const pqAnimationCue&); // Not implemented.
-  void operator=(const pqAnimationCue&); // Not implemented.
+  Q_DISABLE_COPY(pqAnimationCue)
 
-  /// Methods used to register/unregister keyframe proxies.
+  /**
+  * Methods used to register/unregister keyframe proxies.
+  */
   void addKeyFrameInternal(vtkSMProxy*);
   void removeKeyFrameInternal(vtkSMProxy*);
   QString KeyFrameType;

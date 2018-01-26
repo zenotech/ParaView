@@ -12,13 +12,16 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMEnsembleDataReaderProxy
-// .SECTION Description
-// Examines file paths found in ensemble data files (.pve) and creates readers
-// that can read those files. Sets the correct reader for each file on the
-// corresponding VTK object.
-#ifndef __vtkSMEnsembleDataReaderProxy_h
-#define __vtkSMEnsembleDataReaderProxy_h
+/**
+ * @class   vtkSMEnsembleDataReaderProxy
+ *
+ * Examines file paths found in ensemble data files (.pve) and creates readers
+ * that can read those files. Sets the correct reader for each file on the
+ * corresponding VTK object.
+*/
+
+#ifndef vtkSMEnsembleDataReaderProxy_h
+#define vtkSMEnsembleDataReaderProxy_h
 
 #include "vtkPVServerManagerDefaultModule.h" // for export
 #include "vtkSMSourceProxy.h"
@@ -27,23 +30,24 @@ class VTKPVSERVERMANAGERDEFAULT_EXPORT vtkSMEnsembleDataReaderProxy : public vtk
 {
 public:
   vtkTypeMacro(vtkSMEnsembleDataReaderProxy, vtkSMSourceProxy);
-  void PrintSelf(ostream &os, vtkIndent indent);
-  static vtkSMEnsembleDataReaderProxy *New();
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
+  static vtkSMEnsembleDataReaderProxy* New();
 
-  virtual void UpdateVTKObjects();
+  virtual void UpdateVTKObjects() VTK_OVERRIDE;
 
 protected:
   vtkSMEnsembleDataReaderProxy();
   virtual ~vtkSMEnsembleDataReaderProxy();
 
-  virtual void SetPropertyModifiedFlag(const char *name, int flag);
+  virtual void SetPropertyModifiedFlag(const char* name, int flag) VTK_OVERRIDE;
 
   bool FileNamePotentiallyModified;
+
 private:
   bool FetchFileNames();
 
-  vtkSMEnsembleDataReaderProxy(const vtkSMEnsembleDataReaderProxy&); // Not implemented.
-  void operator=(const vtkSMEnsembleDataReaderProxy&); // Not implemented.
+  vtkSMEnsembleDataReaderProxy(const vtkSMEnsembleDataReaderProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMEnsembleDataReaderProxy&) VTK_DELETE_FUNCTION;
 };
 
 #endif

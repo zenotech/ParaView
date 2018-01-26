@@ -12,13 +12,16 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVJoystickFlyOut - Rotates camera with xy mouse movement.
-// .SECTION Description
-// vtkPVJoystickFlyOut allows the user to interactively
-// manipulate the camera, the viewpoint of the scene.
+/**
+ * @class   vtkPVJoystickFlyOut
+ * @brief   Rotates camera with xy mouse movement.
+ *
+ * vtkPVJoystickFlyOut allows the user to interactively
+ * manipulate the camera, the viewpoint of the scene.
+*/
 
-#ifndef __vtkPVJoystickFlyOut_h
-#define __vtkPVJoystickFlyOut_h
+#ifndef vtkPVJoystickFlyOut_h
+#define vtkPVJoystickFlyOut_h
 
 #include "vtkPVJoystickFly.h"
 #include "vtkPVVTKExtensionsRenderingModule.h" // needed for export macro
@@ -26,17 +29,17 @@
 class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkPVJoystickFlyOut : public vtkPVJoystickFly
 {
 public:
-  static vtkPVJoystickFlyOut *New();
+  static vtkPVJoystickFlyOut* New();
   vtkTypeMacro(vtkPVJoystickFlyOut, vtkPVJoystickFly);
-  void PrintSelf(ostream& os, vtkIndent indent);
-  
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
+
 protected:
   vtkPVJoystickFlyOut();
   ~vtkPVJoystickFlyOut();
 
 private:
-  vtkPVJoystickFlyOut(const vtkPVJoystickFlyOut&); // Not implemented
-  void operator=(const vtkPVJoystickFlyOut&); // Not implemented
+  vtkPVJoystickFlyOut(const vtkPVJoystickFlyOut&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVJoystickFlyOut&) VTK_DELETE_FUNCTION;
 };
 
 #endif

@@ -12,17 +12,20 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMBooleanDomain - a domain with two values: true or false
-// .SECTION Description
-// vtkSMBooleanDomain does not really restrict the values of the property
-// that contains it. All integer values are valid. Rather, it is used to
-// specified that the property represents a true/false state. This domains
-// works with only vtkSMIntVectorProperty.
-// .SECTION See Also
-// vtkSMDomain vtkSMIntVectorProperty
+/**
+ * @class   vtkSMBooleanDomain
+ * @brief   a domain with two values: true or false
+ *
+ * vtkSMBooleanDomain does not really restrict the values of the property
+ * that contains it. All integer values are valid. Rather, it is used to
+ * specified that the property represents a true/false state. This domains
+ * works with only vtkSMIntVectorProperty.
+ * @sa
+ * vtkSMDomain vtkSMIntVectorProperty
+*/
 
-#ifndef __vtkSMBooleanDomain_h
-#define __vtkSMBooleanDomain_h
+#ifndef vtkSMBooleanDomain_h
+#define vtkSMBooleanDomain_h
 
 #include "vtkPVServerManagerCoreModule.h" //needed for exports
 #include "vtkSMDomain.h"
@@ -32,25 +35,26 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMBooleanDomain : public vtkSMDomain
 public:
   static vtkSMBooleanDomain* New();
   vtkTypeMacro(vtkSMBooleanDomain, vtkSMDomain);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Returns true if the propery is a vtkSMIntVectorProperty.
-  // Return 0 otherwise.
-  virtual int IsInDomain(vtkSMProperty* property);
+  /**
+   * Returns true if the propery is a vtkSMIntVectorProperty.
+   * Return 0 otherwise.
+   */
+  virtual int IsInDomain(vtkSMProperty* property) VTK_OVERRIDE;
 
-  // Description:
-  // Set the value of an element of a property from the animation editor.
-  virtual void SetAnimationValue(vtkSMProperty *property, int idx,
-                                 double value);
+  /**
+   * Set the value of an element of a property from the animation editor.
+   */
+  virtual void SetAnimationValue(vtkSMProperty* property, int idx, double value) VTK_OVERRIDE;
 
 protected:
   vtkSMBooleanDomain();
   ~vtkSMBooleanDomain();
 
 private:
-  vtkSMBooleanDomain(const vtkSMBooleanDomain&); // Not implemented
-  void operator=(const vtkSMBooleanDomain&); // Not implemented
+  vtkSMBooleanDomain(const vtkSMBooleanDomain&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMBooleanDomain&) VTK_DELETE_FUNCTION;
 };
 
 #endif

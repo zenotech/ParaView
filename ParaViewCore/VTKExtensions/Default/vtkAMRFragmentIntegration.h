@@ -12,58 +12,60 @@
   the U.S. Government retains certain rights in this software.
 
 =========================================================================*/
-// .NAME vtkAMRFragmentIntegration - Generates fragment analysis from an
-// amr volume and a previously run contour on that volume
-//
-// .SECTION Description
-//   Input 0: The AMR Volume
-//
-//   Output 0: A multiblock containing tables of fragments, one block 
-//             for each requested material
+/**
+ * @class   vtkAMRFragmentIntegration
+ * @brief   Generates fragment analysis from an
+ * amr volume and a previously run contour on that volume
+ *
+ *
+ *   Input 0: The AMR Volume
+ *
+ *   Output 0: A multiblock containing tables of fragments, one block
+ *             for each requested material
+*/
 
-#ifndef __vtkAMRFragmentIntegration_h
-#define __vtkAMRFragmentIntegration_h
+#ifndef vtkAMRFragmentIntegration_h
+#define vtkAMRFragmentIntegration_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkMultiBlockDataSetAlgorithm.h"
-#include <string>  // STL required.
-#include <vector>  // STL required.
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
+#include <string>                            // STL required.
+#include <vector>                            // STL required.
 
 class vtkTable;
 class vtkNonOverlappingAMR;
 class vtkDataSet;
 
-class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkAMRFragmentIntegration : public vtkMultiBlockDataSetAlgorithm
+class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkAMRFragmentIntegration
+  : public vtkMultiBlockDataSetAlgorithm
 {
 public:
-  static vtkAMRFragmentIntegration *New();
-  vtkTypeMacro(vtkAMRFragmentIntegration,vtkMultiBlockDataSetAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  static vtkAMRFragmentIntegration* New();
+  vtkTypeMacro(vtkAMRFragmentIntegration, vtkMultiBlockDataSetAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkAMRFragmentIntegration();
   virtual ~vtkAMRFragmentIntegration();
 
-  //BTX
-  virtual int FillInputPortInformation(int port, vtkInformation *info);
-  virtual int FillOutputPortInformation(int port, vtkInformation *info);
+  virtual int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  virtual int FillOutputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
-  virtual int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
+  virtual int RequestData(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
-  // Description:
-  //   Pipeline helper.  Run on each material independently.
-  vtkTable* DoRequestData(vtkNonOverlappingAMR* volume, 
-                          const char* volumeArray,
-                          const char* massArray,
-                          std::vector<std::string> volumeWeightedNames,
-                          std::vector<std::string> massWeightedNames);
+  /**
+   * Pipeline helper.  Run on each material independently.
+   */
+  vtkTable* DoRequestData(vtkNonOverlappingAMR* volume, const char* volumeArray,
+    const char* massArray, std::vector<std::string> volumeWeightedNames,
+    std::vector<std::string> massWeightedNames);
 
 private:
-  vtkAMRFragmentIntegration(const vtkAMRFragmentIntegration&);  // Not implemented.
-  void operator=(const vtkAMRFragmentIntegration&);  // Not implemented.
-  //ETX
+  vtkAMRFragmentIntegration(const vtkAMRFragmentIntegration&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkAMRFragmentIntegration&) VTK_DELETE_FUNCTION;
 };
 
-#endif /* __vtkAMRFragmentIntegration_h */
+#endif /* vtkAMRFragmentIntegration_h */
 //
 // VTK-HeaderTest-Exclude: vtkAMRFragmentIntegration.h

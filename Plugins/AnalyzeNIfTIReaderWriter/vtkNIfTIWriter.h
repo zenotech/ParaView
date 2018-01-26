@@ -14,13 +14,13 @@
 =========================================================================*/
 // .NAME vtkNIfTIWriter - Writes NIfTI files.
 // .SECTION Description
-// vtkNIfTIWriter writes NIfTI files. 
+// vtkNIfTIWriter writes NIfTI files.
 //
 // .SECTION See Also
 // vtkNIfTIReader vtkAnalayzeReader vtkAnalyzeWriter
 
-#ifndef __vtkNIfTIWriter_h
-#define __vtkNIfTIWriter_h
+#ifndef vtkNIfTIWriter_h
+#define vtkNIfTIWriter_h
 
 #include "vtkImageWriter.h"
 
@@ -35,21 +35,23 @@ class vtkUnsignedCharArray;
 class vtkNIfTIWriter : public vtkImageWriter
 {
 public:
-  static vtkNIfTIWriter *New();
-  vtkTypeMacro(vtkNIfTIWriter,vtkImageWriter);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  static vtkNIfTIWriter* New();
+  vtkTypeMacro(vtkNIfTIWriter, vtkImageWriter);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   void SetFileType(int inValue);
   int getFileType();
 
-  unsigned int getImageSizeInBytes(){return(imageSizeInBytes);};
+  unsigned int getImageSizeInBytes() { return (imageSizeInBytes); };
 
 protected:
   vtkNIfTIWriter();
   ~vtkNIfTIWriter();
-  
-  virtual void WriteFile(ofstream *file, vtkImageData *data, int ext[6], int wholeExtent[6]);
-  virtual void WriteFileHeader(ofstream *file, vtkImageData *cache, int wholeExtent[6]);
+
+  virtual void WriteFile(
+    ofstream* file, vtkImageData* data, int ext[6], int wholeExtent[6]) VTK_OVERRIDE;
+  virtual void WriteFileHeader(
+    ofstream* file, vtkImageData* cache, int wholeExtent[6]) VTK_OVERRIDE;
 
 private:
   int FileType;
@@ -58,13 +60,13 @@ private:
   int iname_offset;
   bool foundNiftiHeader;
   bool foundAnalayzeHeader;
-  double **q;
-  double **s;
+  double** q;
+  double** s;
   int sform_code;
   int qform_code;
 
-  vtkNIfTIWriter(const vtkNIfTIWriter&);  // Not implemented.
-  void operator=(const vtkNIfTIWriter&);  // Not implemented.
+  vtkNIfTIWriter(const vtkNIfTIWriter&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkNIfTIWriter&) VTK_DELETE_FUNCTION;
 };
 
 #endif

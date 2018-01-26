@@ -33,10 +33,16 @@ if (PARAVIEW_BUILD_QT_GUI)
   list (APPEND examples_dependencies pqApplicationComponents)
 endif()
 
+set(ENABLE_CATALYST OFF)
+if (PARAVIEW_ENABLE_PYTHON AND PARAVIEW_USE_MPI AND PARAVIEW_ENABLE_CATALYST AND NOT WIN32)
+  list (APPEND examples_dependencies vtkPVPythonCatalyst)
+  set (ENABLE_CATALYST ON)
+endif()
+
 add_custom_command(
   OUTPUT "${ParaView_BINARY_DIR}/ParaViewExamples.done"
   COMMAND ${CMAKE_CTEST_COMMAND}
-  ARGS ${build_config_arg}
+       ${build_config_arg}
        --build-and-test
        ${ParaView_SOURCE_DIR}/Examples
        ${ParaView_BINARY_DIR}/Examples/All
@@ -47,6 +53,8 @@ add_custom_command(
        --build-makeprogram ${CMAKE_MAKE_PROGRAM}
        --build-options -DParaView_DIR:PATH=${ParaView_BINARY_DIR}
                        -DPARAVIEW_QT_VERSION:STRING=${PARAVIEW_QT_VERSION}
+                       -DQT_QMAKE_EXECUTABLE:FILEPATH=${QT_QMAKE_EXECUTABLE}
+                       -DQt5_DIR:PATH=${Qt5_DIR}
                        -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                        -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                        -DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS}
@@ -54,6 +62,9 @@ add_custom_command(
                        -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
                        -DCMAKE_LIBRARY_OUTPUT_DIRECTORY:PATH=${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
                        -DCMAKE_RUNTIME_OUTPUT_DIRECTORY:PATH=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                       -DBUILD_TESTING:BOOL=${BUILD_TESTING}
+                       -DPARAVIEW_TEST_OUTPUT_DIR:PATH=${PARAVIEW_TEST_OUTPUT_DIR}
+                       -DENABLE_CATALYST:BOOL=${ENABLE_CATALYST}
                        ${extra_params}
                        --no-warn-unused-cli
   COMMAND ${CMAKE_COMMAND} -E touch

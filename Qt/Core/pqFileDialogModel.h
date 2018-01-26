@@ -34,15 +34,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _pqFileDialogModel_h
 
 #include "pqCoreModule.h"
-#include <QObject>
 #include <QAbstractItemModel>
 #include <QFileIconProvider>
+#include <QObject>
 
 #include "vtkPVFileInformation.h"
 class vtkProcessModule;
 class pqServer;
 class QModelIndex;
-
 
 /**
 pqFileDialogModel allows remote browsing of a connected ParaView server's
@@ -59,21 +58,42 @@ class PQCORE_EXPORT pqFileDialogModel : public QAbstractItemModel
   Q_OBJECT
 
 public:
-  /// server is the server for which we need the listing.
-  /// if the server is NULL, we get file listings locally
+  /**
+  * server is the server for which we need the listing.
+  * if the server is NULL, we get file listings locally
+  */
   pqFileDialogModel(pqServer* server, QObject* Parent = NULL);
   ~pqFileDialogModel();
 
-  /// Sets the path that the file dialog will display
+  //@{
+  /**
+   * Get/Sets whether the dialog shows additional information about the files
+   * like modification time and file size.  This information can be
+   * time consuming to display if the server has many files in one directory
+   * so it is not displayed by default.
+   */
+  void setShowDetailedInfo(bool show);
+  bool isShowingDetailedInfo();
+  //@}
+
+  /**
+  * Sets the path that the file dialog will display
+  */
   void setCurrentPath(const QString&);
 
-  /// Returns the path the the file dialog will display
+  /**
+  * Returns the path the the file dialog will display
+  */
   QString getCurrentPath();
 
-  /// Return true if the file at the index is hidden
-  bool isHidden( const QModelIndex& );
+  /**
+  * Return true if the file at the index is hidden
+  */
+  bool isHidden(const QModelIndex&);
 
-  /// Return true if the given row is a directory
+  /**
+  * Return true if the given row is a directory
+  */
   bool isDir(const QModelIndex&);
 
   // Creates a directory. "dirName" can be relative or absolute path
@@ -85,49 +105,79 @@ public:
   // Renames a directory or file.
   bool rename(const QString& oldname, const QString& newname);
 
-  /// Returns whether the file exists
-  /// also returns the full path, which could be a resolved shortcut
+  /**
+  * Returns whether the file exists
+  * also returns the full path, which could be a resolved shortcut
+  */
   bool fileExists(const QString& file, QString& fullpath);
 
-  /// Returns whether a directory exists
-  /// also returns the full path, which could be a resolved shortcut
+  /**
+  * Returns whether a directory exists
+  * also returns the full path, which could be a resolved shortcut
+  */
   bool dirExists(const QString& dir, QString& fullpath);
 
-  /// returns the path delimiter, could be \ or / depending on the platform
-  /// this model is browsing
+  /**
+  * returns the path delimiter, could be \ or / depending on the platform
+  * this model is browsing
+  */
   QChar separator() const;
 
-  /// return the absolute path for this file
+  /**
+  * return the absolute path for this file
+  */
   QString absoluteFilePath(const QString&);
 
-  /// Returns the set of file paths associated with the given row
-  /// (a row may represent one-to-many paths if grouping is implemented)
-  /// this also resolved symlinks if necessary
+  /**
+  * Returns the set of file paths associated with the given row
+  * (a row may represent one-to-many paths if grouping is implemented)
+  * this also resolved symlinks if necessary
+  */
   QStringList getFilePaths(const QModelIndex&);
 
-  /// Returns the server that this model is browsing
+  /**
+  * Returns the server that this model is browsing
+  */
   pqServer* server() const;
 
-  /// sets data (used by the view when editing names of folders)
+  /**
+  * sets data (used by the view when editing names of folders)
+  */
   bool setData(const QModelIndex& idx, const QVariant& value, int role);
 
   // overloads for QAbstractItemModel
 
-  /// return the number of columns in the model
+  /**
+  * return the number of columns in the model
+  */
   int columnCount(const QModelIndex&) const;
-  /// return the data for an item
-  QVariant data(const QModelIndex & idx, int role) const;
-  /// return an index from another index
+  /**
+  * return the data for an item
+  */
+  QVariant data(const QModelIndex& idx, int role) const;
+  /**
+  * return an index from another index
+  */
   QModelIndex index(int row, int column, const QModelIndex&) const;
-  /// return the parent index of an index
+  /**
+  * return the parent index of an index
+  */
   QModelIndex parent(const QModelIndex&) const;
-  /// return the number of rows under a given index
+  /**
+  * return the number of rows under a given index
+  */
   int rowCount(const QModelIndex&) const;
-  /// return whether a given index has children
+  /**
+  * return whether a given index has children
+  */
   bool hasChildren(const QModelIndex& p) const;
-  /// returns header data
+  /**
+  * returns header data
+  */
   QVariant headerData(int section, Qt::Orientation, int role) const;
-  /// returns flags for item
+  /**
+  * returns flags for item
+  */
   Qt::ItemFlags flags(const QModelIndex& idx) const;
 
 private:
@@ -135,12 +185,21 @@ private:
   pqImplementation* const Implementation;
 };
 
-
 class pqFileDialogModelIconProvider : protected QFileIconProvider
 {
 public:
-  enum IconType { Computer, Drive, Folder, File, FolderLink, FileLink,
-                  NetworkRoot, NetworkDomain, NetworkFolder };
+  enum IconType
+  {
+    Computer,
+    Drive,
+    Folder,
+    File,
+    FolderLink,
+    FileLink,
+    NetworkRoot,
+    NetworkDomain,
+    NetworkFolder
+  };
   pqFileDialogModelIconProvider();
   QIcon icon(IconType t) const;
   QIcon icon(vtkPVFileInformation::FileTypes f) const;
@@ -155,6 +214,4 @@ protected:
   QIcon NetworkIcon;
 };
 
-
 #endif // !_pqFileDialogModel_h
-

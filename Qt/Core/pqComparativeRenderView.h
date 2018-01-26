@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -29,18 +29,21 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqComparativeRenderView_h 
-#define __pqComparativeRenderView_h
+#ifndef pqComparativeRenderView_h
+#define pqComparativeRenderView_h
 
 #include "pqRenderView.h"
 
 class vtkSMComparativeViewProxy;
 
-/// RenderView used for comparative visualization (or film-strip visualization).
+/**
+* RenderView used for comparative visualization (or film-strip visualization).
+*/
 class PQCORE_EXPORT pqComparativeRenderView : public pqRenderView
 {
   Q_OBJECT
   typedef pqRenderView Superclass;
+
 public:
   static QString comparativeRenderViewType() { return "ComparativeRenderView"; }
 
@@ -50,36 +53,35 @@ public:
   // \c view  :- RenderView proxy.
   // \c server:- server on which the proxy is created.
   // \c parent:- QObject parent.
-  pqComparativeRenderView( const QString& group,
-                const QString& name, 
-                vtkSMViewProxy* renModule, 
-                pqServer* server, 
-                QObject* parent=NULL);
+  pqComparativeRenderView(const QString& group, const QString& name, vtkSMViewProxy* renModule,
+    pqServer* server, QObject* parent = NULL);
   virtual ~pqComparativeRenderView();
 
-  /// Returns the comparative view proxy.
+  /**
+  * Returns the comparative view proxy.
+  */
   vtkSMComparativeViewProxy* getComparativeRenderViewProxy() const;
 
-  /// Returns the root render view in the comparative view.
+  /**
+  * Returns the root render view in the comparative view.
+  */
   virtual vtkSMRenderViewProxy* getRenderViewProxy() const;
 
-  /// This method is temporarily overridden to handle image capture.
-  /// Eventually, we need to move this logic to vtkSMComparativeViewProxy.
-  virtual vtkImageData* captureImage(int magnification);
-  using Superclass::captureImage;
-
 protected slots:
-  /// Called when the layout on the comparative vis changes.
-  void updateViewWidgets(QWidget* container=NULL);
+  /**
+  * Called when the layout on the comparative vis changes.
+  */
+  void updateViewWidgets(QWidget* container = NULL);
 
 protected:
-  /// Creates a new instance of the QWidget subclass to be used to show this
-  /// view. Default implementation creates a QVTKWidget.
+  /**
+  * Creates a new instance of the QWidget subclass to be used to show this
+  * view. Default implementation creates a pqQVTKWidgetBase.
+  */
   virtual QWidget* createWidget();
 
 private:
-  pqComparativeRenderView(const pqComparativeRenderView&); // Not implemented.
-  void operator=(const pqComparativeRenderView&); // Not implemented.
+  Q_DISABLE_COPY(pqComparativeRenderView)
 
   class pqInternal;
   pqInternal* Internal;

@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __vtkVRSpaceNavigatorGrabWorldStyle_h_
-#define __vtkVRSpaceNavigatorGrabWorldStyle_h_
+#ifndef vtkVRSpaceNavigatorGrabWorldStyle_h_
+#define vtkVRSpaceNavigatorGrabWorldStyle_h_
 
 #include "vtkVRInteractorStyle.h"
 
@@ -45,19 +45,19 @@ struct vtkVREventData;
 class vtkVRSpaceNavigatorGrabWorldStyle : public vtkVRInteractorStyle
 {
 public:
-  static vtkVRSpaceNavigatorGrabWorldStyle *New();
-  vtkTypeMacro(vtkVRSpaceNavigatorGrabWorldStyle, vtkVRInteractorStyle)
-  void PrintSelf(ostream &os, vtkIndent indent);
+  static vtkVRSpaceNavigatorGrabWorldStyle* New();
+  vtkTypeMacro(vtkVRSpaceNavigatorGrabWorldStyle, vtkVRInteractorStyle);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkVRSpaceNavigatorGrabWorldStyle();
   ~vtkVRSpaceNavigatorGrabWorldStyle();
 
-  virtual void HandleAnalog ( const vtkVREventData& data );
+  virtual void HandleAnalog(const vtkVREventData& data);
 
 private:
-  vtkVRSpaceNavigatorGrabWorldStyle(const vtkVRSpaceNavigatorGrabWorldStyle&); // Not implemented.
-  void operator=(const vtkVRSpaceNavigatorGrabWorldStyle&); // Not implemented.
+  vtkVRSpaceNavigatorGrabWorldStyle(const vtkVRSpaceNavigatorGrabWorldStyle&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkVRSpaceNavigatorGrabWorldStyle&) VTK_DELETE_FUNCTION;
 };
 
-#endif //__vtkVRSpaceNavigatorGrabWorldStyle.h_
+#endif // vtkVRSpaceNavigatorGrabWorldStyle.h_

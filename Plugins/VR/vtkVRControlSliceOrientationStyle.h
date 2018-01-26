@@ -29,20 +29,20 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __vtkVRControlSliceOrientationStyle_h
-#define __vtkVRControlSliceOrientationStyle_h
+#ifndef vtkVRControlSliceOrientationStyle_h
+#define vtkVRControlSliceOrientationStyle_h
 
-#include "vtkVRInteractorStyle.h"
 #include "vtkNew.h"
+#include "vtkVRInteractorStyle.h"
 
 class vtkMatrix4x4;
 
 class vtkVRControlSliceOrientationStyle : public vtkVRInteractorStyle
 {
 public:
-  static vtkVRControlSliceOrientationStyle *New();
-  vtkTypeMacro(vtkVRControlSliceOrientationStyle, vtkVRInteractorStyle)
-  void PrintSelf(ostream &os, vtkIndent indent);
+  static vtkVRControlSliceOrientationStyle* New();
+  vtkTypeMacro(vtkVRControlSliceOrientationStyle, vtkVRInteractorStyle);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   virtual int GetControlledPropertySize() { return 3; }
 
@@ -70,9 +70,8 @@ protected:
   vtkNew<vtkMatrix4x4> InitialInvertedPose;
 
 private:
-  // Not implemented:
-  vtkVRControlSliceOrientationStyle(const vtkVRControlSliceOrientationStyle&);
-  void operator=(const vtkVRControlSliceOrientationStyle&);
+  vtkVRControlSliceOrientationStyle(const vtkVRControlSliceOrientationStyle&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkVRControlSliceOrientationStyle&) VTK_DELETE_FUNCTION;
 };
 
 #endif

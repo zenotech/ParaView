@@ -12,55 +12,56 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVGL2PSExporter - ParaView wrapper for vtkGL2PS exporter.
-// .SECTION Description
-// This is used to export ParaView renderings to a variety of vector graphics
-// formats.
+/**
+ * @class   vtkPVGL2PSExporter
+ * @brief   ParaView wrapper for vtkGL2PS exporter.
+ *
+ * This is used to export ParaView renderings to a variety of vector graphics
+ * formats.
+*/
 
-#ifndef __vtkPVGL2PSExporter_h
-#define __vtkPVGL2PSExporter_h
+#ifndef vtkPVGL2PSExporter_h
+#define vtkPVGL2PSExporter_h
 
-#include "vtkGL2PSExporter.h"
+#include "vtkOpenGLGL2PSExporter.h"
 #include "vtkPVVTKExtensionsRenderingModule.h" // needed for export macro
-#include "vtkStdString.h" // for vtkStdString
+#include "vtkStdString.h"                      // for vtkStdString
 
-class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkPVGL2PSExporter
-    : public vtkGL2PSExporter
+class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkPVGL2PSExporter : public vtkOpenGLGL2PSExporter
 {
 public:
   static vtkPVGL2PSExporter* New();
-  vtkTypeMacro(vtkPVGL2PSExporter, vtkGL2PSExporter);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkPVGL2PSExporter, vtkOpenGLGL2PSExporter);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Set/Get the name of the output file.
-  vtkSetMacro(FileName, const char *)
-  const char *GetFileName()
-  {
-    return this->FileName.c_str();
-  }
+  //@{
+  /**
+   * Set/Get the name of the output file.
+   */
+  vtkSetMacro(FileName, const char*) const char* GetFileName() { return this->FileName.c_str(); }
+  //@}
 
-  // Description:
-  // If Write3DPropsAsRasterImage is true, add all instances of
-  // vtkCubeAxesActors to the RenderExclusions.
+  //@{
+  /**
+   * If Write3DPropsAsRasterImage is true, add all instances of
+   * vtkCubeAxesActors to the RenderExclusions.
+   */
   vtkSetMacro(ExcludeCubeAxesActorsFromRasterization, int)
-  vtkGetMacro(ExcludeCubeAxesActorsFromRasterization, int)
-  vtkBooleanMacro(ExcludeCubeAxesActorsFromRasterization, int)
+    vtkGetMacro(ExcludeCubeAxesActorsFromRasterization, int)
+      vtkBooleanMacro(ExcludeCubeAxesActorsFromRasterization, int)
+    //@}
 
-//BTX
-protected:
-  vtkPVGL2PSExporter();
+    protected : vtkPVGL2PSExporter();
   ~vtkPVGL2PSExporter();
 
-  void WriteData();
+  void WriteData() VTK_OVERRIDE;
 
   vtkStdString FileName;
   int ExcludeCubeAxesActorsFromRasterization;
 
 private:
-  vtkPVGL2PSExporter(const vtkPVGL2PSExporter&); // Not implemented
-  void operator=(const vtkPVGL2PSExporter&); // Not implemented
-//ETX
+  vtkPVGL2PSExporter(const vtkPVGL2PSExporter&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVGL2PSExporter&) VTK_DELETE_FUNCTION;
 };
 
 #endif

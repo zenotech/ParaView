@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -32,7 +32,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "myMainWindow.h"
 #include "ui_myMainWindow.h"
 
+#ifdef PARAVIEW_USE_QTHELP
 #include "pqHelpReaction.h"
+#endif
 #include "pqParaViewBehaviors.h"
 #include "pqParaViewMenuBuilders.h"
 
@@ -55,13 +57,12 @@ myMainWindow::myMainWindow()
   this->Internals->animationViewDock->hide();
   this->Internals->statisticsDock->hide();
   this->Internals->comparativePanelDock->hide();
-  this->tabifyDockWidget(this->Internals->animationViewDock,
-    this->Internals->statisticsDock);
+  this->tabifyDockWidget(this->Internals->animationViewDock, this->Internals->statisticsDock);
 
-  // Enable help for from the object inspector.
+  // Enable help from the properties panel.
   QObject::connect(this->Internals->proxyTabWidget,
-    SIGNAL(helpRequested(QString)),
-    this, SLOT(showHelpForProxy(const QString&)));
+    SIGNAL(helpRequested(const QString&, const QString&)), this,
+    SLOT(showHelpForProxy(const QString&, const QString&)));
 
   // Populate application menus with actions.
   pqParaViewMenuBuilders::buildFileMenu(*this->Internals->menu_File);
@@ -77,8 +78,7 @@ myMainWindow::myMainWindow()
   pqParaViewMenuBuilders::buildToolsMenu(*this->Internals->menuTools);
 
   // setup the context menu for the pipeline browser.
-  pqParaViewMenuBuilders::buildPipelineBrowserContextMenu(
-    *this->Internals->pipelineBrowser);
+  pqParaViewMenuBuilders::buildPipelineBrowserContextMenu(*this->Internals->pipelineBrowser);
 
   pqParaViewMenuBuilders::buildToolbars(*this);
 
@@ -103,10 +103,10 @@ myMainWindow::~myMainWindow()
   delete this->Internals;
 }
 
-
 //-----------------------------------------------------------------------------
-void myMainWindow::showHelpForProxy(const QString& proxyname)
+void myMainWindow::showHelpForProxy(const QString& groupname, const QString& proxyname)
 {
-  pqHelpReaction::showHelp(
-    QString("qthelp://paraview.org/paraview/%1.html").arg(proxyname));
+#ifdef PARAVIEW_USE_QTHELP
+  pqHelpReaction::showProxyHelp(groupname, proxyname);
+#endif
 }

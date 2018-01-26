@@ -67,6 +67,8 @@
                  value="0" />
           <Entry text="ZLib"
                  value="1" />
+          <Entry text="LZ4"
+                 value="2" />
         </EnumerationDomain>
         <Documentation>The compression algorithm used to compress binary data
         (appended mode only).</Documentation>
@@ -308,6 +310,7 @@
                proxyname="XMLPPolyDataWriterCore"></Proxy>
         <ExposedProperties>
           <PropertyGroup label="XML Writer Parameters">
+            <Property name="GhostLevel" />
             <Property name="DataMode" />
             <Property name="HeaderType" />
             <Property name="EncodeAppendedData" />
@@ -352,6 +355,7 @@
                proxyname="XMLPUnstructuredGridWriterCore"></Proxy>
         <ExposedProperties>
           <PropertyGroup label="XML Writer Parameters">
+            <Property name="GhostLevel" />
             <Property name="DataMode" />
             <Property name="HeaderType" />
             <Property name="EncodeAppendedData" />
@@ -648,10 +652,10 @@
     <!-- ================================================================= -->
     <PSWriterProxy class="vtkParallelSerialWriter"
                    file_name_method="SetFileName"
-                   name="PDataSetWriter"
+                   name="PDataSetWriterPolyData"
                    parallel_only="1">
       <Documentation short_help="Writer that writes polydata as legacy vtk files.">
-      Writer to write any type of data object in a legacy vtk data file. This
+      Writer to write vtkPolyData in a legacy vtk data file. This
       version is used when running in parallel. It gathers data to first node
       and saves one file.</Documentation>
       <SubProxy>
@@ -670,7 +674,7 @@
         </ProxyGroupDomain>
         <DataTypeDomain composite_data_supported="0"
                         name="input_type">
-          <DataType value="vtkDataObject" />
+          <DataType value="vtkPolyData" />
         </DataTypeDomain>
         <Documentation>The input filter/source whose output dataset is to
         written to the file.</Documentation>
@@ -702,8 +706,69 @@
         <WriterFactory extensions="vtk"
                        file_description="Legacy VTK Files" />
       </Hints>
-      <!-- End of PDataSetWriter -->
+      <!-- End of PDataSetWriterPolyData -->
     </PSWriterProxy>
+
+    <!-- ================================================================= -->
+    <PSWriterProxy class="vtkParallelSerialWriter"
+                   file_name_method="SetFileName"
+                   name="PDataSetWriterUnstructuredGrid"
+                   parallel_only="1">
+      <Documentation short_help="Writer that writes unstructured grid as legacy vtk files.">
+      Writer to write vtkUnstructuredGrid of data object in a legacy vtk data file. This
+      version is used when running in parallel. It gathers data to first node
+      and saves one file.</Documentation>
+      <SubProxy>
+        <Proxy name="Writer"
+               proxygroup="internal_writers"
+               proxyname="DataSetWriterCore"></Proxy>
+        <ExposedProperties>
+          <Property name="FileType" />
+        </ExposedProperties>
+      </SubProxy>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain composite_data_supported="0"
+                        name="input_type">
+          <DataType value="vtkUnstructuredGrid" />
+        </DataTypeDomain>
+        <Documentation>The input filter/source whose output dataset is to
+        written to the file.</Documentation>
+      </InputProperty>
+      <StringVectorProperty command="SetFileName"
+                            name="FileName"
+                            number_of_elements="1">
+        <Documentation>The name of the file to be written.</Documentation>
+      </StringVectorProperty>
+      <IntVectorProperty command="SetWriteAllTimeSteps"
+                         default_values="0"
+                         name="WriteAllTimeSteps"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>When WriteAllTimeSteps is turned ON, the writer is
+        executed once for each timestep available from the
+        reader.</Documentation>
+      </IntVectorProperty>
+      <SubProxy>
+        <Proxy name="PostGatherHelper"
+               proxygroup="filters"
+               proxyname="Append" />
+      </SubProxy>
+      <Hints>
+        <Property name="Input"
+                  show="0" />
+        <Property name="FileName"
+                  show="0" />
+        <WriterFactory extensions="vtk"
+                       file_description="Legacy VTK Files" />
+      </Hints>
+      <!-- End of PDataSetWriterUnstructuredGrid -->
+    </PSWriterProxy>
+
     <!-- ================================================================= -->
     <PSWriterProxy class="vtkParallelSerialWriter"
                    file_name_method="SetFileName"
@@ -721,8 +786,19 @@
                proxyname="PLYWriter"></Proxy>
         <ExposedProperties>
           <Property name="FileType" />
+          <Property name="EnableColoring" />
+          <Property name="ColorArrayName" />
+          <Property name="LookupTable" />
         </ExposedProperties>
+        <LinkProperties>
+          <Property name="DummyInput" with_property="Input" />
+        </LinkProperties>
       </SubProxy>
+      <PropertyGroup label="Color Properties">
+        <Property name="EnableColoring" />
+        <Property name="ColorArrayName" />
+        <Property name="LookupTable" />
+      </PropertyGroup>
       <InputProperty command="SetInputConnection"
                      name="Input">
         <ProxyGroupDomain name="groups">
@@ -740,6 +816,15 @@
                             number_of_elements="1">
         <Documentation>The name of the file to be written.</Documentation>
       </StringVectorProperty>
+      <IntVectorProperty command="SetWriteAllTimeSteps"
+                         default_values="0"
+                         name="WriteAllTimeSteps"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>When WriteAllTimeSteps is turned ON, the writer is
+        executed once for each time step available from the
+        reader.</Documentation>
+      </IntVectorProperty>
       <SubProxy>
         <Proxy name="PostGatherHelper"
                proxygroup="filters"
@@ -750,8 +835,9 @@
                   show="0" />
         <Property name="FileName"
                   show="0" />
-        <WriterFactory extensions="ply"
-                       file_description="PLY Polygonal File Format" />
+        <WriterFactory extensions="ply" file_description="PLY Polygonal File Format" />
+        <InitializationHelper class="vtkSMPLYWriterProxyInitializationHelper" />
+        <UseDocumentationForLabels />
       </Hints>
       <!-- End of PLYWriter -->
     </PSWriterProxy>
@@ -791,6 +877,15 @@
                             number_of_elements="1">
         <Documentation>The name of the file to be written.</Documentation>
       </StringVectorProperty>
+      <IntVectorProperty name="WriteAllTimeSteps"
+                         command="SetWriteAllTimeSteps"
+                         number_of_elements="1"
+                         default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>When WriteAllTimeSteps is turned ON, the writer is
+        executed once for each timestep available from the reader.
+        </Documentation>
+      </IntVectorProperty>
       <SubProxy>
         <Proxy name="PostGatherHelper"
                proxygroup="filters"
@@ -805,6 +900,57 @@
                        file_description="Stereo Lithography File Format" />
       </Hints>
       <!-- End of PSTLWriter -->
+    </PSWriterProxy>
+    <!-- ================================================================= -->
+    <PSWriterProxy class="vtkParallelSerialWriter"
+                   file_name_method="SetFileName"
+                   name="HoudiniWriter">
+      <Documentation short_help="Write polygonal data in Houdini .geo format.">
+      Writer to write polygonal data in ASCII Houdini .geo (pre-v12.0)
+      format. </Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkPolyData" />
+        </DataTypeDomain>
+        <Documentation>The input filter/source whose output dataset is to
+        written to the file.</Documentation>
+      </InputProperty>
+      <StringVectorProperty command="SetFileName"
+                            name="FileName"
+                            number_of_elements="1">
+        <Documentation>The name of the file to be written.</Documentation>
+      </StringVectorProperty>
+      <IntVectorProperty name="WriteAllTimeSteps"
+                         command="SetWriteAllTimeSteps"
+                         number_of_elements="1"
+                         default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>When WriteAllTimeSteps is turned ON, the writer is
+        executed once for each timestep available from the reader.
+        </Documentation>
+      </IntVectorProperty>
+      <SubProxy>
+        <Proxy name="PostGatherHelper"
+               proxygroup="filters"
+               proxyname="AppendPolyData" />
+      </SubProxy>
+      <SubProxy>
+        <Proxy name="Writer" class="vtkHoudiniPolyDataWriter" />
+      </SubProxy>
+      <Hints>
+        <Property name="Input"
+                  show="0" />
+        <Property name="FileName"
+                  show="0" />
+        <WriterFactory extensions="geo" file_description="Houdini File Format" />
+        <UseDocumentationForLabels />
+      </Hints>
+      <!-- End of HoudiniWriter -->
     </PSWriterProxy>
     <!-- ================================================================= -->
     <WriterProxy class="vtkMetaImageWriter"
@@ -1080,12 +1226,22 @@
         executed once for each time step available from the
         reader.</Documentation>
       </IntVectorProperty>
+      <IntVectorProperty command="SetIgnoreMetaDataWarning"
+                         default_values="0"
+                         name="IgnoreMetaDataWarning"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>In certain cases like Catalyst we know that metadata doesn't exist and
+        we want to ignore that warning.</Documentation>
+      </IntVectorProperty>
       <Hints>
         <Property name="Input"
                   show="0" />
         <Property name="FileName"
                   show="0" />
         <Property name="GhostLevel"
+                  show="0" />
+        <Property name="IgnoreMetaDataWarning"
                   show="0" />
         <WriterFactory extensions="g e ex2 ex2v2 exo gen exoII exoii"
                        file_description="Exodus II File" />
@@ -1125,69 +1281,7 @@
       </Hints>
       <!-- End of EnSightWriter -->
     </PWriterProxy>
-    <Proxy class="vtkSMAnimationSceneImageWriter"
-           name="AnimationSceneImageWriter">
-      <Documentation>Internal writer to used paraview uses when it disconnects
-      the GUI.</Documentation>
-      <IntVectorProperty command="SetMagnification"
-                         default_values="1"
-                         name="Magnification"
-                         number_of_elements="1">
-        <IntRangeDomain min="1"
-                        name="range" />
-        <Documentation>The magnification factor to use for the saved
-        animation.</Documentation>
-      </IntVectorProperty>
-      <StringVectorProperty command="SetFileName"
-                            name="FileName"
-                            number_of_elements="1">
-        <Documentation>The name of the file to save the animation
-        into.</Documentation>
-      </StringVectorProperty>
-      <DoubleVectorProperty command="SetFrameRate"
-                            default_values="0"
-                            name="FrameRate"
-                            number_of_elements="1">
-        <Documentation>Get/Set the frame rate to use for saving the animation.
-        This frame rate is the frame rate that gets saved in the movie file
-        generated, if applicable. If does not affect the FrameRate set on the
-        animation scene at all. In other words, this is the playback frame rate
-        and not the animation generation frame rate.</Documentation>
-      </DoubleVectorProperty>
 
-      <DoubleVectorProperty command="SetPlaybackTimeWindow"
-                            default_values="-1 1"
-                            name="PlaybackTimeWindow"
-                            number_of_elements="2">
-        <Documentation>Time range to write</Documentation>
-      </DoubleVectorProperty>
-
-      <IntVectorProperty command="SetCompression"
-                         default_values="1"
-                         name="Compression"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation> Turns on(the default) or off compression for FFMEG
-         (AVI on Linux and Mac) backend.
-        </Documentation>
-      </IntVectorProperty>
-
-      <IntVectorProperty command="SetStartFileCount"
-                         default_values="0"
-                         name="StartFileCount"
-                         number_of_elements="1">
-      </IntVectorProperty>
-
-      <Hints>
-        <Property name="Input"
-                  show="0" />
-        <Property name="FileName"
-                  show="0" />
-        <Property name="Compression"
-                  show="0" />
-      </Hints>
-      <!-- End of AnimationSceneImageWriter -->
-    </Proxy>
     <!-- ================================================================= -->
     <SourceProxy class="vtkXMLPVAnimationWriter"
                  name="XMLPVAnimationWriter">

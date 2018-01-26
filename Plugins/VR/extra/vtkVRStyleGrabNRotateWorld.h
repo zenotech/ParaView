@@ -29,13 +29,13 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __vtkVRStyleGrabNRotateWorld_h
-#define __vtkVRStyleGrabNRotateWorld_h
+#ifndef vtkVRStyleGrabNRotateWorld_h
+#define vtkVRStyleGrabNRotateWorld_h
 
-#include "vtkVRInteractorStyle.h"
 #include "vtkSmartPointer.h"
-#include <vector>
+#include "vtkVRInteractorStyle.h"
 #include <map>
+#include <vector>
 
 class vtkSMProperty;
 class vtkSMProxy;
@@ -50,8 +50,9 @@ class vtkVRStyleGrabNRotateWorld : public vtkVRInteractorStyle
 {
   Q_OBJECT
   typedef vtkVRInteractorStyle Superclass;
+
 public:
-  vtkVRStyleGrabNRotateWorld(QObject* parent=0);
+  vtkVRStyleGrabNRotateWorld(QObject* parent = 0);
   virtual ~vtkVRStyleGrabNRotateWorld();
 
   /// called to handle an event. If the style does not handle this event or
@@ -73,19 +74,17 @@ public:
   virtual vtkPVXMLElement* saveConfiguration() const;
 
 protected:
-  void HandleButton ( const vtkVREventData& data );
-  void HandleAnalog ( const vtkVREventData& data );
-  void HandleTracker( const vtkVREventData& data );
-  void SetButtonValue( std::string dest, int value );
-  void SetAnalogValue( std::string dest, double value );
-  void SetAnalogVectorValue( std::string dest,
-                             const double* value,
-                             unsigned int total);
-  void RecordOrientation(vtkSMRenderViewProxy* proxy,  const vtkVREventData& data);
+  void HandleButton(const vtkVREventData& data);
+  void HandleAnalog(const vtkVREventData& data);
+  void HandleTracker(const vtkVREventData& data);
+  void SetButtonValue(std::string dest, int value);
+  void SetAnalogValue(std::string dest, double value);
+  void SetAnalogVectorValue(std::string dest, const double* value, unsigned int total);
+  void RecordOrientation(vtkSMRenderViewProxy* proxy, const vtkVREventData& data);
   void UpdateOrientation(const vtkVREventData& data);
-  void SetTrackerValue( std::string dest, double value );
-  void SetTrackerVectorValue( std::string dest, const double value[16] );
-  std::vector<std::string> tokenize( std::string input);
+  void SetTrackerValue(std::string dest, double value);
+  void SetTrackerVectorValue(std::string dest, const double value[16]);
+  std::vector<std::string> tokenize(std::string input);
   std::string Button;
   std::string Tracker;
   bool Enabled;
@@ -93,7 +92,8 @@ protected:
   double InitialQuat[4];
   double InitialTrackerQuat[4];
   double UpdatedQuat[4];
-  vtkMatrix4x4 *InitialInvertedPose;
+  vtkMatrix4x4* InitialInvertedPose;
+
 private:
   Q_DISABLE_COPY(vtkVRStyleGrabNRotateWorld)
 };

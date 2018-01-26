@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -37,8 +37,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QLayout>
 #include <QMap>
 #include <QPointer>
-#include <QtDebug>
 #include <QWidget>
+#include <QtDebug>
 
 // SM includes
 #include "vtkPVXMLElement.h"
@@ -48,28 +48,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMSessionProxyManager.h"
 
 // ParaView Server Manager includes
-#include "pq3DWidget.h"
 #include "pqApplicationCore.h"
 #include "pqPipelineFilter.h"
 #include "pqPipelineModel.h"
 #include "pqPipelineSource.h"
-#include "pqServerManagerModel.h"
 #include "pqSMProxy.h"
+#include "pqServerManagerModel.h"
 
-pqSignalAdaptorProxy::pqSignalAdaptorProxy(QObject* p, 
-              const char* colorProperty, const char* signal)
-  : QObject(p), PropertyName(colorProperty)
+pqSignalAdaptorProxy::pqSignalAdaptorProxy(
+  QObject* p, const char* colorProperty, const char* signal)
+  : QObject(p)
+  , PropertyName(colorProperty)
 {
-  QObject::connect(p, signal,
-                   this, SLOT(handleProxyChanged()));
+  QObject::connect(p, signal, this, SLOT(handleProxyChanged()));
 }
 
 QVariant pqSignalAdaptorProxy::proxy() const
 {
   QString str = this->parent()->property(this->PropertyName).toString();
   vtkSMSessionProxyManager* pm =
-      vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
-  pqSMProxy p = pm->GetProxy(str.toLatin1().data());
+    vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
+  pqSMProxy p = pm->GetProxy(str.toLocal8Bit().data());
   QVariant ret;
   ret.setValue(p);
   return ret;
@@ -77,21 +76,20 @@ QVariant pqSignalAdaptorProxy::proxy() const
 
 void pqSignalAdaptorProxy::setProxy(const QVariant& var)
 {
-  if(var != this->proxy())
-    {
+  if (var != this->proxy())
+  {
     pqSMProxy p = var.value<pqSMProxy>();
-    if(p)
+    if (p)
+    {
+      pqPipelineSource* o =
+        pqApplicationCore::instance()->getServerManagerModel()->findItem<pqPipelineSource*>(p);
+      if (o)
       {
-      pqPipelineSource* o = 
-        pqApplicationCore::instance()->getServerManagerModel()->
-        findItem<pqPipelineSource*>(p);
-      if(o)
-        {
         QString name = o->getSMName();
         this->parent()->setProperty(this->PropertyName, QVariant(name));
-        }
       }
     }
+  }
 }
 
 void pqSignalAdaptorProxy::handleProxyChanged()
@@ -99,4 +97,3 @@ void pqSignalAdaptorProxy::handleProxyChanged()
   QVariant p = this->proxy();
   emit this->proxyChanged(p);
 }
-

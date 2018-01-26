@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __ParaViewMainWindow_h
-#define __ParaViewMainWindow_h
+#ifndef ParaViewMainWindow_h
+#define ParaViewMainWindow_h
 
 #include <QMainWindow>
 
@@ -39,25 +39,28 @@ class ParaViewMainWindow : public QMainWindow
 {
   Q_OBJECT
   typedef QMainWindow Superclass;
+
 public:
   ParaViewMainWindow();
   ~ParaViewMainWindow();
 
 protected:
-  void dragEnterEvent(QDragEnterEvent *evt);
-  void dropEvent(QDropEvent *evt);
+  void dragEnterEvent(QDragEnterEvent* evt);
+  void dropEvent(QDropEvent* evt);
+  void showEvent(QShowEvent* evt);
+  void closeEvent(QCloseEvent* evt);
 
 protected slots:
-  void showHelpForProxy(const QString& proxyname, const QString& groupname);
+  void showHelpForProxy(const QString& groupname, const QString& proxyname);
+  void showWelcomeDialog();
+  void handleMessage(const QString&, int);
+  void updateFontSize();
 
 private:
-  ParaViewMainWindow(const ParaViewMainWindow&); // Not implemented.
-  void operator=(const ParaViewMainWindow&); // Not implemented.
+  Q_DISABLE_COPY(ParaViewMainWindow)
 
   class pqInternals;
   pqInternals* Internals;
 };
 
 #endif
-
-

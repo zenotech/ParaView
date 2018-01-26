@@ -5,7 +5,7 @@ Typical usage of this module is as follows::
 
     from paraview import smstate
     state = smstate.get_state()
-    print state
+    print (state)
 
 Note, this cannot be called when Python tracing is active.
 """
@@ -13,6 +13,10 @@ Note, this cannot be called when Python tracing is active.
 from paraview import servermanager as sm
 from paraview import smtrace
 from paraview import simple
+import sys
+
+if sys.version_info >= (3,):
+    xrange = range
 
 class supported_proxies(object):
     """filter object used to hide proxies that are currently not supported by
@@ -50,7 +54,7 @@ def __toposort_visit(result, proxy, input_set, marked_set, t_marked_set=None):
     else:
         temporarily_marked_set = t_marked_set
     if proxy in temporarily_marked_set:
-        raise RuntimeError, "Cycle detected in pipeline! %r" % proxy
+        raise RuntimeError ("Cycle detected in pipeline! %r" % proxy)
     if not proxy in marked_set:
         temporarily_marked_set.add(proxy)
         consumers = set()
@@ -102,7 +106,7 @@ def get_state(propertiesToTraceOnCreate=1, # sm.vtkSMTrace.RECORD_MODIFIED_PROPE
     skipHiddenRepresentations=True, source_set=[], filter=None, raw=False):
     """Returns the state string"""
     if sm.vtkSMTrace.GetActiveTracer():
-        raise RuntimeError, "Cannot generate Python state when tracing is active."
+        raise RuntimeError ("Cannot generate Python state when tracing is active.")
 
     if filter is None:
         filter = visible_representations() if skipHiddenRepresentations else supported_proxies()
@@ -112,7 +116,7 @@ def get_state(propertiesToTraceOnCreate=1, # sm.vtkSMTrace.RECORD_MODIFIED_PROPE
         start_set = source_set
     else:
         # if nothing is specified, we save all views and sources.
-        start_set = simple.GetSources().values() + simple.GetViews()
+        start_set = [x for x in simple.GetSources().values()] + simple.GetViews()
     start_set = [x for x in start_set if filter(x)]
 
     # now, locate dependencies for the start_set, pruning irrelevant branches
@@ -126,7 +130,7 @@ def get_state(propertiesToTraceOnCreate=1, # sm.vtkSMTrace.RECORD_MODIFIED_PROPE
 
     # proxies_of_interest is set of all proxies that we should trace.
     proxies_of_interest = producers.union(consumers)
-    #print "proxies_of_interest", proxies_of_interest
+    #print ("proxies_of_interest", proxies_of_interest)
 
     trace_config = smtrace.start_trace()
     # this ensures that lookup tables/scalar bars etc. are fully traced.
@@ -141,9 +145,8 @@ def get_state(propertiesToTraceOnCreate=1, # sm.vtkSMTrace.RECORD_MODIFIED_PROPE
     views = [x for x in proxies_of_interest if smtrace.Trace.get_registered_name(x, "views")]
     if views:
         # sort views by their names, so the state has some structure to it.
-        views = sorted(views, cmp=lambda x,y:\
-                cmp(smtrace.Trace.get_registered_name(x, "views"),
-                    smtrace.Trace.get_registered_name(y, "views")))
+        views = sorted(views, key=lambda x:\
+                smtrace.Trace.get_registered_name(x, "views"))
         trace.append_separated([\
             "# ----------------------------------------------------------------",
             "# setup views used in the visualization",
@@ -196,8 +199,8 @@ def get_state(propertiesToTraceOnCreate=1, # sm.vtkSMTrace.RECORD_MODIFIED_PROPE
         if smtrace.Trace.get_registered_name(x, "representations")]
     scalarbar_representations = [x for x in sorted_proxies_of_interest\
         if smtrace.Trace.get_registered_name(x, "scalar_bars")]
-    # print "sorted_representations", sorted_representations
-    # print "scalarbar_representations", scalarbar_representations
+    # print ("sorted_representations", sorted_representations)
+    # print ("scalarbar_representations", scalarbar_representations)
     if sorted_representations or scalarbar_representations:
         for view in views:
             view_representations = [x for x in view.Representations if x in sorted_representations]
@@ -232,13 +235,22 @@ def get_state(propertiesToTraceOnCreate=1, # sm.vtkSMTrace.RECORD_MODIFIED_PROPE
                 for rep in view_scalarbars:
                     smtrace.Trace.get_accessor(rep)
             trace.append_separated(smtrace.get_current_trace_output_and_reset(raw=True))
+
+    # restore the active source since the order in which the pipeline is created
+    # in the state file can end up changing the active source to be different
+    # than what it was when the state is being saved.
+    trace.append_separated([\
+            "# ----------------------------------------------------------------",
+            "# finally, restore active source",
+            "SetActiveSource(%s)" % smtrace.Trace.get_accessor(simple.GetActiveSource()),
+            "# ----------------------------------------------------------------"])
     del trace_config
     smtrace.stop_trace()
-    #print trace
+    #print (trace)
     return str(trace) if not raw else trace.raw_data()
 
 if __name__ == "__main__":
-    print  "Running test"
+    print ( "Running test")
     simple.Mandelbrot()
     simple.Show()
     simple.Hide()
@@ -253,5 +265,5 @@ if __name__ == "__main__":
     simple.Render()
 #    rep.SetScalarBarVisibility(view, False)
 
-    print "===================================================================="
-    print get_state()
+    print ("====================================================================")
+    print (get_state())

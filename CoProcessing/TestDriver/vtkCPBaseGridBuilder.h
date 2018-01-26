@@ -12,12 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkCPBaseGridBuilder - Abstract class for creating grids.
-// .SECTION Description
-// Abstract class for creating grids for a test driver.  
+/**
+ * @class   vtkCPBaseGridBuilder
+ * @brief   Abstract class for creating grids.
+ *
+ * Abstract class for creating grids for a test driver.
+*/
 
-#ifndef __vtkCPBaseGridBuilder_h
-#define __vtkCPBaseGridBuilder_h
+#ifndef vtkCPBaseGridBuilder_h
+#define vtkCPBaseGridBuilder_h
 
 #include "vtkObject.h"
 #include "vtkPVCatalystTestDriverModule.h" // needed for export macros
@@ -28,13 +31,13 @@ class VTKPVCATALYSTTESTDRIVER_EXPORT vtkCPBaseGridBuilder : public vtkObject
 {
 public:
   vtkTypeMacro(vtkCPBaseGridBuilder, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Return a grid.  BuiltNewGrid is 0 if the grid is the same
-  // as the last time step.
-  virtual vtkDataObject* GetGrid(unsigned long TimeStep, double Time,
-                                 int & BuiltNewGrid) = 0;
+  /**
+   * Return a grid.  BuiltNewGrid is 0 if the grid is the same
+   * as the last time step.
+   */
+  virtual vtkDataObject* GetGrid(unsigned long TimeStep, double Time, int& BuiltNewGrid) = 0;
 
   // maybe also have a subdivide grid cells here as well
 
@@ -43,8 +46,8 @@ protected:
   ~vtkCPBaseGridBuilder();
 
 private:
-  vtkCPBaseGridBuilder(const vtkCPBaseGridBuilder&); // Not implemented
-  void operator=(const vtkCPBaseGridBuilder&); // Not implemented
+  vtkCPBaseGridBuilder(const vtkCPBaseGridBuilder&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkCPBaseGridBuilder&) VTK_DELETE_FUNCTION;
 };
 
 #endif

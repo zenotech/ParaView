@@ -1,5 +1,5 @@
 /*=========================================================================
-  
+
   Program:   ParaView
   Module:    vtkPVPythonOptions.h
 
@@ -12,15 +12,18 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVPythonOptions - ParaView options storage
-// .SECTION Description
-// An object of this class represents a storage for ParaView options
-// 
-// These options can be retrieved during run-time, set using configuration file
-// or using Command Line Arguments.
+/**
+ * @class   vtkPVPythonOptions
+ * @brief   ParaView options storage
+ *
+ * An object of this class represents a storage for ParaView options
+ *
+ * These options can be retrieved during run-time, set using configuration file
+ * or using Command Line Arguments.
+*/
 
-#ifndef __vtkPVPythonOptions_h
-#define __vtkPVPythonOptions_h
+#ifndef vtkPVPythonOptions_h
+#define vtkPVPythonOptions_h
 
 #include "vtkPVOptions.h"
 
@@ -28,42 +31,50 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVPythonOptions : public vtkPVOptions
 {
 public:
   static vtkPVPythonOptions* New();
-  vtkTypeMacro(vtkPVPythonOptions,vtkPVOptions);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkPVPythonOptions, vtkPVOptions);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Get the python script name.
+  //@{
+  /**
+   * Get the python script name.
+   */
   vtkGetStringMacro(PythonScriptName);
+  //@}
 
 protected:
-  // Description:
-  // Default constructor.
+  /**
+   * Default constructor.
+   */
   vtkPVPythonOptions();
 
-  // Description:
-  // Destructor.
+  /**
+   * Destructor.
+   */
   virtual ~vtkPVPythonOptions();
 
-  // Description:
-  // Synchronizes the options among root and satellites.
+  /**
+   * Synchronizes the options among root and satellites.
+   */
   void Synchronize();
 
-  // Description:
-  // After parsing, process extra option dependencies.
-  virtual int PostProcess(int argc, const char* const* argv);
+  /**
+   * After parsing, process extra option dependencies.
+   */
+  virtual int PostProcess(int argc, const char* const* argv) VTK_OVERRIDE;
 
-  // Description:
-  // This method is called when wrong argument is found. If it returns 0, then
-  // the parsing will fail.
-  virtual int WrongArgument(const char* argument);
+  /**
+   * This method is called when wrong argument is found. If it returns 0, then
+   * the parsing will fail.
+   */
+  virtual int WrongArgument(const char* argument) VTK_OVERRIDE;
 
   // Options:
   vtkSetStringMacro(PythonScriptName);
   char* PythonScriptName;
 
 private:
-  vtkPVPythonOptions(const vtkPVPythonOptions&); // Not implemented
-  void operator=(const vtkPVPythonOptions&); // Not implemented
+  vtkPVPythonOptions(const vtkPVPythonOptions&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVPythonOptions&) VTK_DELETE_FUNCTION;
 };
 
-#endif // #ifndef __vtkPVPythonOptions_h
+#endif // #ifndef vtkPVPythonOptions_h

@@ -12,12 +12,14 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSequenceAnimationPlayer
-// .SECTION Description
-//
+/**
+ * @class   vtkSequenceAnimationPlayer
+ *
+ *
+*/
 
-#ifndef __vtkSequenceAnimationPlayer_h
-#define __vtkSequenceAnimationPlayer_h
+#ifndef vtkSequenceAnimationPlayer_h
+#define vtkSequenceAnimationPlayer_h
 
 #include "vtkAnimationPlayer.h"
 #include "vtkPVAnimationModule.h" // needed for export macro
@@ -27,35 +29,35 @@ class VTKPVANIMATION_EXPORT vtkSequenceAnimationPlayer : public vtkAnimationPlay
 public:
   static vtkSequenceAnimationPlayer* New();
   vtkTypeMacro(vtkSequenceAnimationPlayer, vtkAnimationPlayer);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   vtkSetClampMacro(NumberOfFrames, int, 2, VTK_INT_MAX);
   vtkGetMacro(NumberOfFrames, int);
 
-//BTX
 protected:
   vtkSequenceAnimationPlayer();
   ~vtkSequenceAnimationPlayer();
 
-  virtual void StartLoop(double, double, double*);
-  virtual void EndLoop() {};
+  virtual void StartLoop(double, double, double*) VTK_OVERRIDE;
+  virtual void EndLoop() VTK_OVERRIDE{};
 
-  // Description:
-  // Return the next time given the current time.
-  virtual double GetNextTime(double currentime);
+  /**
+   * Return the next time given the current time.
+   */
+  virtual double GetNextTime(double currentime) VTK_OVERRIDE;
 
-  virtual double GoToNext(double start, double end, double currenttime);
-  virtual double GoToPrevious(double start, double end, double currenttime);
+  virtual double GoToNext(double start, double end, double currenttime) VTK_OVERRIDE;
+  virtual double GoToPrevious(double start, double end, double currenttime) VTK_OVERRIDE;
 
   int NumberOfFrames;
   int MaxFrameWindow;
   double StartTime;
   double EndTime;
   int FrameNo;
+
 private:
-  vtkSequenceAnimationPlayer(const vtkSequenceAnimationPlayer&); // Not implemented
-  void operator=(const vtkSequenceAnimationPlayer&); // Not implemented
-//ETX
+  vtkSequenceAnimationPlayer(const vtkSequenceAnimationPlayer&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSequenceAnimationPlayer&) VTK_DELETE_FUNCTION;
 };
 
 #endif

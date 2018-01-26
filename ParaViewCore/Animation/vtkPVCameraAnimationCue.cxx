@@ -15,16 +15,19 @@
 #include "vtkPVCameraAnimationCue.h"
 
 #include "vtkObjectFactory.h"
-#include "vtkPVRenderView.h"
 #include "vtkPVCameraCueManipulator.h"
+#include "vtkPVRenderView.h"
+#include "vtkSMProxy.h"
 
 vtkStandardNewMacro(vtkPVCameraAnimationCue);
 vtkCxxSetObjectMacro(vtkPVCameraAnimationCue, View, vtkPVRenderView);
+vtkCxxSetObjectMacro(vtkPVCameraAnimationCue, TimeKeeper, vtkSMProxy);
 //----------------------------------------------------------------------------
 vtkPVCameraAnimationCue::vtkPVCameraAnimationCue()
 {
   this->View = 0;
-  vtkPVCameraCueManipulator * manip = vtkPVCameraCueManipulator::New();
+  this->TimeKeeper = nullptr;
+  vtkPVCameraCueManipulator* manip = vtkPVCameraCueManipulator::New();
   this->SetManipulator(manip);
   manip->Delete();
 }
@@ -33,12 +36,13 @@ vtkPVCameraAnimationCue::vtkPVCameraAnimationCue()
 vtkPVCameraAnimationCue::~vtkPVCameraAnimationCue()
 {
   this->SetView(NULL);
+  this->SetTimeKeeper(nullptr);
 }
 
 //----------------------------------------------------------------------------
 vtkCamera* vtkPVCameraAnimationCue::GetCamera()
 {
-  return this->View? this->View->GetActiveCamera() : NULL;
+  return this->View ? this->View->GetActiveCamera() : NULL;
 }
 
 //----------------------------------------------------------------------------
@@ -51,16 +55,15 @@ void vtkPVCameraAnimationCue::SetMode(int mode)
 void vtkPVCameraAnimationCue::EndUpdateAnimationValues()
 {
   if (this->View)
-    {
+  {
     this->View->ResetCameraClippingRange();
-    }
+  }
 }
 
 //----------------------------------------------------------------------------
-void vtkPVCameraAnimationCue::SetDataSourceProxy(vtkSMProxy *dataSourceProxy)
+void vtkPVCameraAnimationCue::SetDataSourceProxy(vtkSMProxy* dataSourceProxy)
 {
-  vtkPVCameraCueManipulator::SafeDownCast(this->Manipulator)->
-    SetDataSourceProxy(dataSourceProxy);
+  vtkPVCameraCueManipulator::SafeDownCast(this->Manipulator)->SetDataSourceProxy(dataSourceProxy);
 }
 
 //----------------------------------------------------------------------------

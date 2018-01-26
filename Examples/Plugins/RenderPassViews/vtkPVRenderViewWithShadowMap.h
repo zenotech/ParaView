@@ -17,8 +17,8 @@
 // vtkPVRenderViewWithShadowMap is a vtkPVRenderView specialization that uses
 // shadow-map render passes for rendering shadows.
 
-#ifndef __vtkPVRenderViewWithShadowMap_h
-#define __vtkPVRenderViewWithShadowMap_h
+#ifndef vtkPVRenderViewWithShadowMap_h
+#define vtkPVRenderViewWithShadowMap_h
 
 #include "vtkPVRenderView.h"
 
@@ -32,18 +32,16 @@ public:
   // Description:
   // Initialize the view with an identifier. Unless noted otherwise, this method
   // must be called before calling any other methods on this class.
-  // @CallOnAllProcessess
+  // \note CallOnAllProcesses
   virtual void Initialize(unsigned int id);
 
-//BTX
 protected:
   vtkPVRenderViewWithShadowMap();
   ~vtkPVRenderViewWithShadowMap();
 
 private:
-  vtkPVRenderViewWithShadowMap(const vtkPVRenderViewWithShadowMap&); // Not implemented
-  void operator=(const vtkPVRenderViewWithShadowMap&); // Not implemented
-//ETX
+  vtkPVRenderViewWithShadowMap(const vtkPVRenderViewWithShadowMap&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVRenderViewWithShadowMap&) VTK_DELETE_FUNCTION;
 };
 
 #endif

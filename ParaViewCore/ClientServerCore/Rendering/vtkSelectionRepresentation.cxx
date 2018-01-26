@@ -23,8 +23,7 @@
 #include "vtkView.h"
 
 vtkStandardNewMacro(vtkSelectionRepresentation);
-vtkCxxSetObjectMacro(vtkSelectionRepresentation, LabelRepresentation,
-  vtkDataLabelRepresentation);
+vtkCxxSetObjectMacro(vtkSelectionRepresentation, LabelRepresentation, vtkDataLabelRepresentation);
 //----------------------------------------------------------------------------
 vtkSelectionRepresentation::vtkSelectionRepresentation()
 {
@@ -37,12 +36,10 @@ vtkSelectionRepresentation::vtkSelectionRepresentation()
   this->LabelRepresentation->SetPointLabelMode(VTK_LABEL_FIELD_DATA);
   this->LabelRepresentation->SetCellLabelMode(VTK_LABEL_FIELD_DATA);
 
-  vtkCommand* observer = vtkMakeMemberFunctionCommand(*this,
-    &vtkSelectionRepresentation::TriggerUpdateDataEvent);
-  this->GeometryRepresentation->AddObserver(vtkCommand::UpdateDataEvent,
-    observer);
-  this->LabelRepresentation->AddObserver(vtkCommand::UpdateDataEvent,
-    observer);
+  vtkCommand* observer =
+    vtkMakeMemberFunctionCommand(*this, &vtkSelectionRepresentation::TriggerUpdateDataEvent);
+  this->GeometryRepresentation->AddObserver(vtkCommand::UpdateDataEvent, observer);
+  this->LabelRepresentation->AddObserver(vtkCommand::UpdateDataEvent, observer);
   observer->Delete();
 }
 
@@ -54,8 +51,7 @@ vtkSelectionRepresentation::~vtkSelectionRepresentation()
 }
 
 //----------------------------------------------------------------------------
-void vtkSelectionRepresentation::SetInputConnection(
-  int port, vtkAlgorithmOutput* input)
+void vtkSelectionRepresentation::SetInputConnection(int port, vtkAlgorithmOutput* input)
 {
   this->GeometryRepresentation->SetInputConnection(port, input);
   this->LabelRepresentation->SetInputConnection(port, input);
@@ -69,8 +65,7 @@ void vtkSelectionRepresentation::SetInputConnection(vtkAlgorithmOutput* input)
 }
 
 //----------------------------------------------------------------------------
-void vtkSelectionRepresentation::AddInputConnection(
-  int port, vtkAlgorithmOutput* input)
+void vtkSelectionRepresentation::AddInputConnection(int port, vtkAlgorithmOutput* input)
 {
   this->GeometryRepresentation->AddInputConnection(port, input);
   this->LabelRepresentation->AddInputConnection(port, input);
@@ -84,25 +79,21 @@ void vtkSelectionRepresentation::AddInputConnection(vtkAlgorithmOutput* input)
 }
 
 //----------------------------------------------------------------------------
-void vtkSelectionRepresentation::RemoveInputConnection(
-  int port, vtkAlgorithmOutput* input)
+void vtkSelectionRepresentation::RemoveInputConnection(int port, vtkAlgorithmOutput* input)
 {
   this->GeometryRepresentation->RemoveInputConnection(port, input);
   this->LabelRepresentation->RemoveInputConnection(port, input);
 }
 
 //----------------------------------------------------------------------------
-void vtkSelectionRepresentation::RemoveInputConnection(
-  int port, int idx)
+void vtkSelectionRepresentation::RemoveInputConnection(int port, int idx)
 {
   this->GeometryRepresentation->RemoveInputConnection(port, idx);
   this->LabelRepresentation->RemoveInputConnection(port, idx);
 }
 
-
 //----------------------------------------------------------------------------
-int vtkSelectionRepresentation::FillInputPortInformation(
-  int vtkNotUsed(port), vtkInformation* info)
+int vtkSelectionRepresentation::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataObject");
   info->Set(vtkAlgorithm::INPUT_IS_OPTIONAL(), 1);
@@ -115,22 +106,6 @@ void vtkSelectionRepresentation::SetUpdateTime(double val)
   this->GeometryRepresentation->SetUpdateTime(val);
   this->LabelRepresentation->SetUpdateTime(val);
   this->Superclass::SetUpdateTime(val);
-}
-
-//----------------------------------------------------------------------------
-void vtkSelectionRepresentation::SetUseCache(bool val)
-{
-  this->GeometryRepresentation->SetUseCache(val);
-  this->LabelRepresentation->SetUseCache(val);
-  this->Superclass::SetUseCache(val);
-}
-
-//----------------------------------------------------------------------------
-void vtkSelectionRepresentation::SetCacheKey(double val)
-{
-  this->GeometryRepresentation->SetCacheKey(val);
-  this->LabelRepresentation->SetCacheKey(val);
-  this->Superclass::SetCacheKey(val);
 }
 
 //----------------------------------------------------------------------------
@@ -154,7 +129,7 @@ bool vtkSelectionRepresentation::AddToView(vtkView* view)
 {
   view->AddRepresentation(this->GeometryRepresentation);
   view->AddRepresentation(this->LabelRepresentation);
-  return true;
+  return this->Superclass::AddToView(view);
 }
 
 //----------------------------------------------------------------------------
@@ -162,7 +137,7 @@ bool vtkSelectionRepresentation::RemoveFromView(vtkView* view)
 {
   view->RemoveRepresentation(this->GeometryRepresentation);
   view->RemoveRepresentation(this->LabelRepresentation);
-  return true;
+  return this->Superclass::RemoveFromView(view);
 }
 
 //----------------------------------------------------------------------------
@@ -176,11 +151,11 @@ void vtkSelectionRepresentation::MarkModified()
 //----------------------------------------------------------------------------
 void vtkSelectionRepresentation::TriggerUpdateDataEvent()
 {
-  //we need to mark the geometry as always needing to be moved. The reason
-  //is that in client server mode and the first interaction with the renderer
-  //is a selection the geometryrepr is properly marked for modification.
-  //this shouldn't degrade preformance as the geometryRepr in most other
-  //cases is already dirty ( Bug #11587)
+  // we need to mark the geometry as always needing to be moved. The reason
+  // is that in client server mode and the first interaction with the renderer
+  // is a selection the geometryrepr is properly marked for modification.
+  // this shouldn't degrade preformance as the geometryRepr in most other
+  // cases is already dirty ( Bug #11587)
   this->GeometryRepresentation->MarkModified();
 
   // We fire UpdateDataEvent to notify the representation proxy that the
@@ -287,12 +262,12 @@ void vtkSelectionRepresentation::SetCellFieldDataArrayName(const char* val)
   this->LabelRepresentation->SetCellFieldDataArrayName(val);
 }
 //----------------------------------------------------------------------------
-unsigned int vtkSelectionRepresentation::Initialize(unsigned int minIdAvailable,
-                                                    unsigned int maxIdAvailable)
+unsigned int vtkSelectionRepresentation::Initialize(
+  unsigned int minIdAvailable, unsigned int maxIdAvailable)
 {
   unsigned int minId = minIdAvailable;
   minId = this->LabelRepresentation->Initialize(minId, maxIdAvailable);
   minId = this->GeometryRepresentation->Initialize(minId, maxIdAvailable);
 
-  return  this->Superclass::Initialize(minId, maxIdAvailable);
+  return this->Superclass::Initialize(minId, maxIdAvailable);
 }

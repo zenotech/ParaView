@@ -12,12 +12,14 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMDirectoryProxy
-// .SECTION Description
-// Is a utility proxy to create/delete/rename directories.
+/**
+ * @class   vtkSMDirectoryProxy
+ *
+ * Is a utility proxy to create/delete/rename directories.
+*/
 
-#ifndef __vtkSMDirectoryProxy_h
-#define __vtkSMDirectoryProxy_h
+#ifndef vtkSMDirectoryProxy_h
+#define vtkSMDirectoryProxy_h
 
 #include "vtkPVServerManagerDefaultModule.h" //needed for exports
 #include "vtkSMProxy.h"
@@ -27,33 +29,38 @@ class VTKPVSERVERMANAGERDEFAULT_EXPORT vtkSMDirectoryProxy : public vtkSMProxy
 public:
   static vtkSMDirectoryProxy* New();
   vtkTypeMacro(vtkSMDirectoryProxy, vtkSMProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Create directory.
-  bool MakeDirectory(const char* dir, vtkTypeUInt32 processes);
+  /**
+   * Create directory.
+   */
+  bool MakeDirectory(const char* dir);
 
-  // Description:
-  // Remove a directory.
-  bool DeleteDirectory(const char* dir, vtkTypeUInt32 processes);
+  /**
+   * Remove a directory.
+   */
+  bool DeleteDirectory(const char* dir);
 
-  // Description:
-  // Rename a file or directory.
-  bool Rename(const char* oldname, const char* newname, vtkTypeUInt32 processes);
+  /**
+   * Rename a file or directory.
+   */
+  bool Rename(const char* oldname, const char* newname);
 
-  // Description:
-  // List server side directory
-  void List(const char* dir);
+  /**
+   * List server side directory
+   * NEVER USED IN PARAVIEW, TODO ?
+   */
+  bool List(const char* dir);
 
-//BTX
 protected:
   vtkSMDirectoryProxy();
   ~vtkSMDirectoryProxy();
 
+  bool CallDirectoryMethod(const char* method, const char* path, const char* secondaryPath = NULL);
+
 private:
-  vtkSMDirectoryProxy(const vtkSMDirectoryProxy&); // Not implemented
-  void operator=(const vtkSMDirectoryProxy&); // Not implemented
-//ETX
+  vtkSMDirectoryProxy(const vtkSMDirectoryProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMDirectoryProxy&) VTK_DELETE_FUNCTION;
 };
 
 #endif

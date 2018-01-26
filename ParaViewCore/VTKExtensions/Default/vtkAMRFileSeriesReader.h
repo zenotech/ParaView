@@ -13,38 +13,33 @@
 
 =========================================================================*/
 
-#ifndef __vtkAMRFileSeriesReader_h
-#define __vtkAMRFileSeriesReader_h
+#ifndef vtkAMRFileSeriesReader_h
+#define vtkAMRFileSeriesReader_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkFileSeriesReader.h"
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 
 class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkAMRFileSeriesReader : public vtkFileSeriesReader
 {
 public:
   static vtkAMRFileSeriesReader* New();
   vtkTypeMacro(vtkAMRFileSeriesReader, vtkFileSeriesReader);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
-  virtual int RequestInformation(vtkInformation* request,
-                                 vtkInformationVector** inputVector,
-                                 vtkInformationVector* outputVector);
+  virtual int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
-  virtual int RequestUpdateTime (vtkInformation*,
-                                  vtkInformationVector**,
-                                 vtkInformationVector*);
+  virtual int RequestUpdateTime(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
-
-  virtual int RequestUpdateTimeDependentInformation (vtkInformation*,
-                                                     vtkInformationVector**,
-                                                     vtkInformationVector*);
-
+  virtual int RequestUpdateTimeDependentInformation(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
 private:
   vtkAMRFileSeriesReader();
-  vtkAMRFileSeriesReader(const vtkAMRFileSeriesReader&); // Not implemented.
-  void operator=(const vtkAMRFileSeriesReader&); // Not implemented.
+  vtkAMRFileSeriesReader(const vtkAMRFileSeriesReader&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkAMRFileSeriesReader&) VTK_DELETE_FUNCTION;
 };
 
 #endif

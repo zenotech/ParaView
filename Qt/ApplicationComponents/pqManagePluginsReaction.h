@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,32 +29,35 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqManagePluginsReaction_h 
-#define __pqManagePluginsReaction_h
+#ifndef pqManagePluginsReaction_h
+#define pqManagePluginsReaction_h
 
 #include "pqMasterOnlyReaction.h"
 
-/// @ingroup Reactions
-/// pqManagePluginsReaction is the reaction to pop-up the plugins manager dialog.
+/**
+* @ingroup Reactions
+* pqManagePluginsReaction is the reaction to pop-up the plugins manager dialog.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqManagePluginsReaction : public pqMasterOnlyReaction
 {
   Q_OBJECT
   typedef pqMasterOnlyReaction Superclass;
-public:
-  pqManagePluginsReaction(QAction* action): Superclass(action) { }
 
-  /// Pops-up the pqPluginDialog dialog.
+public:
+  pqManagePluginsReaction(QAction* action)
+    : Superclass(action)
+  {
+  }
+
+  /**
+  * Pops-up the pqPluginDialog dialog.
+  */
   static void managePlugins();
 
 protected:
-  virtual void onTriggered()
-    {
-    pqManagePluginsReaction::managePlugins();
-    }
+  virtual void onTriggered() { pqManagePluginsReaction::managePlugins(); }
 private:
   Q_DISABLE_COPY(pqManagePluginsReaction)
 };
 
 #endif
-
-

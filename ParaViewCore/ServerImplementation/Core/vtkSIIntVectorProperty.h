@@ -12,13 +12,14 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSIIntVectorProperty
-// .SECTION Description
-// ServerSide Property use to set int array as method argument.
+/**
+ * @class   vtkSIIntVectorProperty
+ *
+ * ServerSide Property use to set int array as method argument.
+*/
 
-
-#ifndef __vtkSIIntVectorProperty_h
-#define __vtkSIIntVectorProperty_h
+#ifndef vtkSIIntVectorProperty_h
+#define vtkSIIntVectorProperty_h
 
 #include "vtkPVServerImplementationCoreModule.h" //needed for exports
 #include "vtkSIVectorProperty.h"
@@ -35,17 +36,15 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSIIntVectorProperty : public vtkSI
 public:
   static vtkSIIntVectorProperty* New();
   vtkTypeMacro(vtkSIIntVectorProperty, vtkSIVectorProperty);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-//BTX
 protected:
   vtkSIIntVectorProperty();
   ~vtkSIIntVectorProperty();
 
 private:
-  vtkSIIntVectorProperty(const vtkSIIntVectorProperty&); // Not implemented
-  void operator=(const vtkSIIntVectorProperty&); // Not implemented
-//ETX
+  vtkSIIntVectorProperty(const vtkSIIntVectorProperty&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSIIntVectorProperty&) VTK_DELETE_FUNCTION;
 };
 
 #endif

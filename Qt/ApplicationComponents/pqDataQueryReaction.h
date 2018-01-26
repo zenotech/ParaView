@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,38 +29,44 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqDataQueryReaction_h 
-#define __pqDataQueryReaction_h
+#ifndef pqDataQueryReaction_h
+#define pqDataQueryReaction_h
 
 #include "pqReaction.h"
 
-/// @ingroup Reactions
-/// pqDataQueryReaction is the reaction that popups the Data Query Dialog/Find
-/// Data Dialog allowing the user to 'search' his data.
+/**
+* @ingroup Reactions
+* pqDataQueryReaction is the reaction that popups the Data Query Dialog/Find
+* Data Dialog allowing the user to 'search' his data.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqDataQueryReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
+
 public:
-  /// Constructor. Parent cannot be NULL.
+  /**
+  * Constructor. Parent cannot be NULL.
+  */
   pqDataQueryReaction(QAction* parent);
   virtual ~pqDataQueryReaction();
 
-  /// Show the query dialog for querying the data from the active source.
+  /**
+  * Show the query dialog for querying the data from the active source.
+  */
   void showQueryDialog();
 
 public slots:
   void showHelp();
 
 protected:
-  /// Called when the action is triggered.
-  virtual void onTriggered()
-    { pqDataQueryReaction::showQueryDialog(); }
+  /**
+  * Called when the action is triggered.
+  */
+  virtual void onTriggered() { pqDataQueryReaction::showQueryDialog(); }
 
 private:
   Q_DISABLE_COPY(pqDataQueryReaction)
 };
 
 #endif
-
-

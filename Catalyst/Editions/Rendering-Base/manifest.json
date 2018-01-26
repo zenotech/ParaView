@@ -69,6 +69,10 @@
         "type": "BOOL",
         "value": "ON"
       },
+      { "name": "Module_vtkIOExportOpenGL",
+        "type": "BOOL",
+        "value": "ON"
+      },
       { "name": "Module_vtkRenderingAnnotation",
         "type": "BOOL",
         "value": "ON"
@@ -95,6 +99,7 @@
     { "name": "vtkPVVTKExtensionsRendering",
       "path": "ParaViewCore/VTKExtensions/Rendering",
       "include": [
+        { "path": "module.cmake" },
         { "path": "vtkIceTCompositeZPassShader_fs.glsl" },
         { "path": "vtkIceTConstants.h" },
         { "path": "vtkPVStreamingMacros.h" },
@@ -114,14 +119,19 @@
         { "class": "vtkImageCompressor" },
         { "class": "vtkKdTreeGenerator" },
         { "class": "vtkKdTreeManager" },
+        { "class": "vtkLZ4Compressor" },
         { "class": "vtkMarkSelectedRows" },
         { "class": "vtkMPICompositeManager" },
         { "class": "vtkMultiSliceContextItem" },
         { "class": "vtkOrderedCompositeDistributor" },
+        { "class": "vtkPartitionOrdering" },
+        { "class": "vtkPartitionOrderingInterface" },
         { "class": "vtkPVAxesActor" },
         { "class": "vtkPVAxesWidget" },
+        { "class": "vtkPVCameraCollection" },
         { "class": "vtkPVCenterAxesActor" },
         { "class": "vtkPVDefaultPass" },
+        { "class": "vtkPVDiscretizableColorTransferFunction" },
         { "class": "vtkPVGeometryFilter" },
         { "class": "vtkPVGL2PSExporter" },
         { "class": "vtkPVInteractorStyle" },
@@ -140,6 +150,7 @@
         { "class": "vtkPVTrackballRoll" },
         { "class": "vtkPVTrackballRotate" },
         { "class": "vtkPVTrackballZoom" },
+        { "class": "vtkPVTrackballZoomToMouse" },
         { "class": "vtkPVUpdateSuppressor" },
         { "class": "vtkRedistributePolyData" },
         { "class": "vtkResampledAMRImageSource" },
@@ -156,6 +167,8 @@
         { "class": "vtkZlibImageCompressor" }
       ],
       "replace": [
+        { "path":"ParaViewCore/VTKExtensions/Rendering/CMakeLists.txt" },
+        { "path":"ParaViewCore/VTKExtensions/Rendering/module.cmake" },
         { "path": "ParaViewCore/VTKExtensions/Rendering/Rendering-Base-glsl.catalyst.cmake" }
       ],
       "cswrap": true,
@@ -195,6 +208,14 @@
       ],
       "replace": [
         { "path": "VTK/IO/Export/CMakeLists.txt" }
+      ],
+      "cswrap": true,
+      "pythonwrap": true
+    },
+    { "name": "vtkIOExportOpenGL",
+      "path": "VTK/IO/ExportOpenGL",
+      "exclude": [
+        { "path": "Testing" }
       ],
       "cswrap": true,
       "pythonwrap": true
@@ -285,6 +306,7 @@
         { "class": "vtkMergeCells" },
         { "class": "vtkMultiBlockDataGroupFilter" },
         { "class": "vtkPassArrays" },
+        { "class": "vtkPassThrough" },
         { "class": "vtkSplitColumnComponents" },
         { "class": "vtkTransformPolyDataFilter" }
       ],
@@ -306,6 +328,7 @@
     { "name": "vtkFiltersSources",
       "path": "VTK/Filters/Sources",
       "include": [
+        { "class": "vtkEllipseArcSource" },
         { "class": "vtkFrustumSource" },
         { "class": "vtkOutlineSource" }
       ],
@@ -333,6 +356,7 @@
         { "class": "vtkAssemblyNode" },
         { "class": "vtkAssemblyPath" },
         { "class": "vtkAssemblyPaths" },
+        { "class": "vtkBillboardTextActor3D" },
         { "class": "vtkCamera" },
         { "class": "vtkCellPicker" },
         { "class": "vtkColorTransferFunction" },
@@ -341,8 +365,10 @@
         { "class": "vtkCuller" },
         { "class": "vtkCullerCollection" },
         { "class": "vtkDiscretizableColorTransferFunction" },
+        { "class": "vtkFrameBufferObjectBase" },
         { "class": "vtkFollower" },
         { "class": "vtkFrustumCoverageCuller" },
+        { "class": "vtkFXAAOptions" },
         { "class": "vtkGenericRenderWindowInteractor" },
         { "class": "vtkGenericVertexAttributeMapping" },
         { "class": "vtkGlyph3DMapper" },
@@ -381,11 +407,14 @@
         { "class": "vtkPropAssembly" },
         { "class": "vtkPropCollection" },
         { "class": "vtkPropPicker" },
+        { "class": "vtkRenderPass" },
+        { "class": "vtkRenderState" },
+        { "class": "vtkRenderTimerLog" },
+        { "class": "vtkRenderWindow" },
+        { "class": "vtkRenderWindowInteractor" },
         { "class": "vtkRenderer" },
         { "class": "vtkRendererCollection" },
         { "class": "vtkRendererDelegate" },
-        { "class": "vtkRenderWindow" },
-        { "class": "vtkRenderWindowInteractor" },
         { "class": "vtkShaderDeviceAdapter2" },
         { "class": "vtkStringToImage" },
         { "class": "vtkTDxInteractorStyle" },
@@ -420,6 +449,7 @@
         { "class": "vtkAxisActor" },
         { "class": "vtkAxisFollower" },
         { "class": "vtkCubeAxesActor" },
+        { "class": "vtkPolarAxesActor" },
         { "class": "vtkProp3DAxisFollower" },
         { "class": "vtkScalarBarActor" }
       ],
@@ -489,7 +519,6 @@
         { "path": "fonts/face_times_bold_italic.cxx" },
         { "path": "fonts/face_times_italic.cxx" },
         { "class": "vtkFreeTypeTools" },
-        { "class": "vtkFreeTypeUtilities" },
         { "class": "vtkMathTextFreeTypeTextRenderer" },
         { "class": "vtkMathTextUtilities" },
         { "class": "vtkTextRendererStringToImage" },
@@ -515,21 +544,23 @@
         { "class": "vtkChartSelectionRepresentation" },
         { "class": "vtkClientServerMoveData" },
         { "class": "vtkCompositeRepresentation" },
-        { "class": "vtkCubeAxesRepresentation" },
         { "class": "vtkDataLabelRepresentation" },
         { "class": "vtkGeometryRepresentation" },
         { "class": "vtkGeometryRepresentationWithFaces" },
         { "class": "vtkGlyph3DRepresentation" },
         { "class": "vtkOutlineRepresentation" },
+        { "class": "vtkPolarAxesRepresentation" },
         { "class": "vtkPVCacheKeeper" },
         { "class": "vtkPVCacheKeeperPipeline" },
         { "class": "vtkPVClientServerSynchronizedRenderers" },
         { "class": "vtkPVCompositeRepresentation" },
+        { "class": "vtkPVContextInteractorStyle" },
         { "class": "vtkPVContextView" },
         { "class": "vtkPVDataDeliveryManager" },
         { "class": "vtkPVDataRepresentation" },
         { "class": "vtkPVDataRepresentationPipeline" },
         { "class": "vtkPVDisplayInformation" },
+        { "class": "vtkPVGridAxes3DRepresentation" },
         { "class": "vtkPVHardwareSelector" },
         { "class": "vtkPVImplicitPlaneRepresentation" },
         { "class": "vtkPVLastSelectionInformation" },
@@ -720,6 +751,7 @@
         { "class": "vtkContextScene" },
         { "class": "vtkContextTransform" },
         { "class": "vtkPen" },
+        { "class": "vtkPropItem"},
         { "class": "vtkTooltipItem" }
       ],
       "replace": [
@@ -909,11 +941,11 @@
     { "name": "vtkfreetype",
       "path": "VTK/ThirdParty/freetype"
     },
-    { "name": "vtkftgl",
-      "path": "VTK/ThirdParty/ftgl"
-    },
     { "name": "vtkgl2ps",
       "path": "VTK/ThirdParty/gl2ps"
+    },
+    { "name": "vtklibharu",
+      "path": "VTK/ThirdParty/libharu"
     }
   ],
   "proxies":[
@@ -922,6 +954,7 @@
         "DataSetSurfaceFilter",
         "ExtractHistogram",
         "IntegrateAttributes",
+        "PipelineConnection",
         "WarpScalar",
         "WarpVector"
       ]
@@ -941,13 +974,14 @@
       "proxies":[
         "AMROutlineRepresentation",
         "AMRRepresentation",
-        "CubeAxesRepresentation",
         "DataLabelRepresentation",
         "GeometryRepresentation",
         "Glyph3DRepresentation",
+        "GridAxesRepresentation",
         "ImageSliceRepresentation",
         "MoleculeRepresentation",
         "OutlineRepresentation",
+        "PolarAxesRepresentation",
         "PVRepresentationBase",
         "RenderView",
         "SelectionRepresentation",
@@ -957,7 +991,6 @@
         "SurfaceRepresentationBase",
         "UniformGridBaseRepresentation",
         "UniformGridRepresentation",
-        "UnstructuredGridBaseRepresentation",
         "UnstructuredGridRepresentation",
         "ViewBase"
       ]

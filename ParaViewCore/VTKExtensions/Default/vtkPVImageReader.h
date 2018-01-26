@@ -12,13 +12,17 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVImageReader - ImageReader that automatically switch between
-// vtkMPIImageReader or vtkImageReader based on the build setup.
-#ifndef __vtkPVImageReader_h
-#define __vtkPVImageReader_h
+/**
+ * @class   vtkPVImageReader
+ * @brief   ImageReader that automatically switch between
+ * vtkMPIImageReader or vtkImageReader based on the build setup.
+*/
 
+#ifndef vtkPVImageReader_h
+#define vtkPVImageReader_h
+
+#include "vtkPVConfig.h"                     // for PARAVIEW_USE_MPI
 #include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
-#include "vtkPVConfig.h" // for PARAVIEW_USE_MPI
 
 #ifdef PARAVIEW_USE_MPI
 #include "vtkMPIImageReader.h" // For MPI-enabled builds
@@ -28,9 +32,9 @@
 
 class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVImageReader : public
 #ifdef PARAVIEW_USE_MPI
-vtkMPIImageReader
+                                                          vtkMPIImageReader
 #else
-vtkImageReader
+                                                          vtkImageReader
 #endif
 {
 public:
@@ -42,22 +46,17 @@ public:
   vtkTypeMacro(vtkPVImageReader, vtkImageReader);
 #endif
 
-  virtual int CanReadFile(const char*)
-  {
-    return 1;
-  }
+  virtual int CanReadFile(const char*) VTK_OVERRIDE { return 1; }
 
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-//BTX
 protected:
   vtkPVImageReader();
   ~vtkPVImageReader();
 
 private:
-  vtkPVImageReader(const vtkPVImageReader&); // Not implemented.
-  void operator=(const vtkPVImageReader&); // Not implemented.
-//ETX
+  vtkPVImageReader(const vtkPVImageReader&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVImageReader&) VTK_DELETE_FUNCTION;
 };
 
 #endif

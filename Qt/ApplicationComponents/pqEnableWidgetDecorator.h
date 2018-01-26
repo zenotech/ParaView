@@ -29,32 +29,32 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqEnableWidgetDecorator_h
-#define __pqEnableWidgetDecorator_h
+#ifndef pqEnableWidgetDecorator_h
+#define pqEnableWidgetDecorator_h
 
 #include "pqApplicationComponentsModule.h"
 #include "pqBoolPropertyWidgetDecorator.h"
 #include "vtkWeakPointer.h"
 
-
-/// pqEnableWidgetDecorator can be used to enable/disable a widget based on the
-/// status of another property not directly controlled by the widget.
-class PQAPPLICATIONCOMPONENTS_EXPORT pqEnableWidgetDecorator :
-  public pqBoolPropertyWidgetDecorator
+/**
+* pqEnableWidgetDecorator can be used to enable/disable a widget based on the
+* status of another property not directly controlled by the widget.
+*/
+class PQAPPLICATIONCOMPONENTS_EXPORT pqEnableWidgetDecorator : public pqBoolPropertyWidgetDecorator
 {
   Q_OBJECT
   typedef pqBoolPropertyWidgetDecorator Superclass;
+
 public:
   pqEnableWidgetDecorator(vtkPVXMLElement* config, pqPropertyWidget* parent);
- 
-  /// overridden from pqPropertyWidget.
-  virtual bool enableWidget() const
-  {
-    return this->isBoolProperty();
-  }
+
+  /**
+  * overridden from pqPropertyWidget.
+  */
+  virtual bool enableWidget() const { return this->isBoolProperty(); }
 
 private:
-  Q_DISABLE_COPY(pqEnableWidgetDecorator);
+  Q_DISABLE_COPY(pqEnableWidgetDecorator)
 };
 
 #endif

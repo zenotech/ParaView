@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,28 +29,27 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqUndoRedoBehavior_h 
-#define __pqUndoRedoBehavior_h
+#ifndef pqUndoRedoBehavior_h
+#define pqUndoRedoBehavior_h
 
-#include <QObject>
 #include "pqApplicationComponentsModule.h"
+#include <QObject>
 
-/// @ingroup Behaviors
-/// pqUndoRedoBehavior enables application wide undo-redo.
+/**
+* @ingroup Behaviors
+* pqUndoRedoBehavior enables application wide undo-redo.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqUndoRedoBehavior : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
-  pqUndoRedoBehavior(QObject* parent=0);
+  pqUndoRedoBehavior(QObject* parent = 0);
 
 protected:
-
-
 private:
   Q_DISABLE_COPY(pqUndoRedoBehavior)
 };
 
 #endif
-
-

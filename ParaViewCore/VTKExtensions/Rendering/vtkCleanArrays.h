@@ -12,60 +12,69 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkCleanArrays - filter used to remove partial arrays across processes.
-// .SECTION Description
-// vtkCleanArrays is a filter used to remove (or fill up) partial arrays in a
-// vtkDataSet across processes. Empty dataset on any processes is ignored i.e.
-// it does not affect the arrays on any processes.
-#ifndef __vtkCleanArrays_h
-#define __vtkCleanArrays_h
+/**
+ * @class   vtkCleanArrays
+ * @brief   filter used to remove partial arrays across processes.
+ *
+ * vtkCleanArrays is a filter used to remove (or fill up) partial arrays in a
+ * vtkDataSet (or a vtkCompositeDataSet) across processes (and blocks).
+ * Empty dataset on any processes is skipped and doesn't affect the array pruned
+ * (or filled) in the output. This filter also handles certain non-composite
+ * data objects such a tables.
+ *
+*/
 
-#include "vtkDataSetAlgorithm.h"
+#ifndef vtkCleanArrays_h
+#define vtkCleanArrays_h
+
 #include "vtkPVVTKExtensionsRenderingModule.h" // needed for export macro
+#include "vtkPassInputTypeAlgorithm.h"
 
 class vtkMultiProcessController;
-
-class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkCleanArrays : public vtkDataSetAlgorithm
+class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkCleanArrays : public vtkPassInputTypeAlgorithm
 {
 public:
   static vtkCleanArrays* New();
-  vtkTypeMacro(vtkCleanArrays, vtkDataSetAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkCleanArrays, vtkPassInputTypeAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // The user can set the controller used for inter-process communication. By
-  // default set to the global communicator.
-  void SetController(vtkMultiProcessController *controller);
+  //@{
+  /**
+   * The user can set the controller used for inter-process communication. By
+   * default set to the global communicator.
+   */
+  void SetController(vtkMultiProcessController* controller);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
+  //@}
 
-  // Description:
-  // When set to true (false by default), 0 filled array will be added for
-  // missing arrays on this process (instead of removing partial arrays).
+  //@{
+  /**
+   * When set to true (false by default), 0 filled array will be added for
+   * missing arrays on this process (instead of removing partial arrays).
+   */
   vtkSetMacro(FillPartialArrays, bool);
   vtkGetMacro(FillPartialArrays, bool);
   vtkBooleanMacro(FillPartialArrays, bool);
+  //@}
 
-//BTX
 protected:
   vtkCleanArrays();
   ~vtkCleanArrays();
 
-  virtual int RequestData(vtkInformation* request,
-    vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  virtual int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   vtkMultiProcessController* Controller;
 
   bool FillPartialArrays;
+
 private:
-  vtkCleanArrays(const vtkCleanArrays&); // Not implemented
-  void operator=(const vtkCleanArrays&); // Not implemented
+  vtkCleanArrays(const vtkCleanArrays&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkCleanArrays&) VTK_DELETE_FUNCTION;
 
 public:
   class vtkArrayData;
   class vtkArraySet;
-//ETX
 };
 
 #endif
-

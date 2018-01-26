@@ -39,34 +39,39 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqApplicationSettingsReaction.h"
 #include "pqUndoStack.h"
 #include "vtkPVProxyDefinitionIterator.h"
-#include "vtkSmartPointer.h"
-#include "vtkSMProxyDefinitionManager.h"
 #include "vtkSMProxy.h"
+#include "vtkSMProxyDefinitionManager.h"
 #include "vtkSMSessionProxyManager.h"
+#include "vtkSmartPointer.h"
 
 //-----------------------------------------------------------------------------
 pqLoadPaletteReaction::pqLoadPaletteReaction(QAction* parentObject)
   : Superclass(parentObject)
 {
   QMenu* menu = new QMenu();
+  this->Menu = menu;
   menu->setObjectName("LoadPaletteMenu");
   parentObject->setMenu(menu);
   this->connect(menu, SIGNAL(aboutToShow()), SLOT(populateMenu()));
-  this->connect(&pqActiveObjects::instance(), SIGNAL(serverChanged(pqServer*)),
-    SLOT(updateEnableState()));
+  this->connect(
+    &pqActiveObjects::instance(), SIGNAL(serverChanged(pqServer*)), SLOT(updateEnableState()));
   this->connect(menu, SIGNAL(triggered(QAction*)), SLOT(actionTriggered(QAction*)));
 }
 
 //-----------------------------------------------------------------------------
 pqLoadPaletteReaction::~pqLoadPaletteReaction()
 {
+  if (QAction* pa = this->parentAction())
+  {
+    pa->setMenu(NULL);
+  }
+  delete this->Menu;
 }
 
 //-----------------------------------------------------------------------------
 void pqLoadPaletteReaction::updateEnableState()
 {
-  this->parentAction()->setEnabled(
-    pqActiveObjects::instance().activeServer() != NULL);
+  this->parentAction()->setEnabled(pqActiveObjects::instance().activeServer() != NULL);
 }
 
 //-----------------------------------------------------------------------------
@@ -83,28 +88,28 @@ void pqLoadPaletteReaction::populateMenu()
 
   // Add "DefaultBackground" as the first entry.
   if (vtkSMProxy* prototype = pxm->GetPrototypeProxy("palettes", "DefaultBackground"))
-    {
+  {
     QAction* actn = menu->addAction(prototype->GetXMLLabel());
     actn->setProperty("PV_XML_GROUP", "palettes");
     actn->setProperty("PV_XML_NAME", "DefaultBackground");
-    }
+  }
 
   vtkSmartPointer<vtkPVProxyDefinitionIterator> iter;
   iter.TakeReference(pdmgr->NewSingleGroupIterator("palettes"));
   for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem())
-    {
+  {
     if (vtkSMProxy* prototype = pxm->GetPrototypeProxy("palettes", iter->GetProxyName()))
-      {
+    {
       if (strcmp(prototype->GetXMLName(), "DefaultBackground") == 0)
-        {
+      {
         // skip DefaultBackground since already added.
         continue;
-        }
+      }
       QAction* actn = menu->addAction(prototype->GetXMLLabel());
       actn->setProperty("PV_XML_GROUP", "palettes");
       actn->setProperty("PV_XML_NAME", iter->GetProxyName());
-      }
     }
+  }
   menu->addAction("Edit Current Palette ...");
 }
 
@@ -112,14 +117,14 @@ void pqLoadPaletteReaction::populateMenu()
 void pqLoadPaletteReaction::actionTriggered(QAction* actn)
 {
   if (actn->property("PV_XML_NAME").isValid())
-    {
+  {
     vtkSMSessionProxyManager* pxm = pqActiveObjects::instance().proxyManager();
     Q_ASSERT(pxm);
 
     vtkSMProxy* paletteProxy = pxm->GetProxy("global_properties", "ColorPalette");
 
-    vtkSMProxy* palettePrototype = pxm->GetPrototypeProxy("palettes",
-      actn->property("PV_XML_NAME").toString().toLatin1().data());
+    vtkSMProxy* palettePrototype = pxm->GetPrototypeProxy(
+      "palettes", actn->property("PV_XML_NAME").toString().toLocal8Bit().data());
     Q_ASSERT(palettePrototype);
 
     BEGIN_UNDO_SET("Load color palette");
@@ -128,9 +133,9 @@ void pqLoadPaletteReaction::actionTriggered(QAction* actn)
     END_UNDO_SET();
 
     pqApplicationCore::instance()->render();
-    }
+  }
   else
-    {
+  {
     pqApplicationSettingsReaction::showApplicationSettingsDialog("Color Palette");
-    }
+  }
 }

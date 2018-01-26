@@ -12,12 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkCPGridBuilder - Abstract class for creating grids.
-// .SECTION Description
-// Abstract class for creating grids for a test driver.  
+/**
+ * @class   vtkCPGridBuilder
+ * @brief   Abstract class for creating grids.
+ *
+ * Abstract class for creating grids for a test driver.
+*/
 
-#ifndef __vtkCPGridBuilder_h
-#define __vtkCPGridBuilder_h
+#ifndef vtkCPGridBuilder_h
+#define vtkCPGridBuilder_h
 
 #include "vtkCPBaseGridBuilder.h"
 #include "vtkPVCatalystTestDriverModule.h" // needed for export macros
@@ -29,32 +32,39 @@ class VTKPVCATALYSTTESTDRIVER_EXPORT vtkCPGridBuilder : public vtkCPBaseGridBuil
 {
 public:
   vtkTypeMacro(vtkCPGridBuilder, vtkCPBaseGridBuilder);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Return a grid.  BuiltNewGrid is set to 0 if the grids
-  // that were returned were already built before.
-  // vtkCPGridBuilder will also delete the grid.
-  virtual vtkDataObject* GetGrid(unsigned long timeStep, double time,
-                                 int & builtNewGrid) = 0;
+  /**
+   * Return a grid.  BuiltNewGrid is set to 0 if the grids
+   * that were returned were already built before.
+   * vtkCPGridBuilder will also delete the grid.
+   */
+  virtual vtkDataObject* GetGrid(
+    unsigned long timeStep, double time, int& builtNewGrid) VTK_OVERRIDE = 0;
 
-  // Description:
-  // Set/get the FieldBuilder.  
+  //@{
+  /**
+   * Set/get the FieldBuilder.
+   */
   void SetFieldBuilder(vtkCPBaseFieldBuilder* fieldBuilder);
   vtkCPBaseFieldBuilder* GetFieldBuilder();
+  //@}
 
 protected:
   vtkCPGridBuilder();
   ~vtkCPGridBuilder();
 
 private:
-  vtkCPGridBuilder(const vtkCPGridBuilder&); // Not implemented
+  vtkCPGridBuilder(const vtkCPGridBuilder&) VTK_DELETE_FUNCTION;
 
-  void operator=(const vtkCPGridBuilder&); // Not implemented
-  // Description:
-  // The field builder for creating the input fields to the coprocessing 
-  // library.
+  void operator=(const vtkCPGridBuilder&) VTK_DELETE_FUNCTION;
+  //@{
+  /**
+   * The field builder for creating the input fields to the coprocessing
+   * library.
+   */
   vtkCPBaseFieldBuilder* FieldBuilder;
 };
+//@}
 
 #endif

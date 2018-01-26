@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -29,33 +29,31 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
-#ifndef __pqSectionVisibilityContextMenu_h
-#define __pqSectionVisibilityContextMenu_h
-
+#ifndef pqSectionVisibilityContextMenu_h
+#define pqSectionVisibilityContextMenu_h
 
 // In case of QTableView, or any other spreadsheet-like view, the user
-// should be provided an option to toggle the visibility of 
+// should be provided an option to toggle the visibility of
 // columns/rows. pqSectionVisibilityContextMenu is a context menu
 // that can be used for the same.
 
-
 #include "pqWidgetsModule.h"
+#include <QHeaderView>
 #include <QMenu>
 #include <QPointer>
-#include <QHeaderView>
 
 class PQWIDGETS_EXPORT pqSectionVisibilityContextMenu : public QMenu
 {
   Q_OBJECT
 public:
-  pqSectionVisibilityContextMenu(QWidget* parent=0);
+  pqSectionVisibilityContextMenu(QWidget* parent = 0);
   virtual ~pqSectionVisibilityContextMenu();
 
-  // Set the QHeaderView whose section visibility is affected by 
+  // Set the QHeaderView whose section visibility is affected by
   // this menu. This leads to clearing of any actions
   // already present in the menu and populating the menu
-  // with the section headings from the header. 
-  // This must be set before calling exec(). 
+  // with the section headings from the header.
+  // This must be set before calling exec().
   void setHeaderView(QHeaderView* header);
   QHeaderView* headerView() { return this->HeaderView; }
 
@@ -64,8 +62,6 @@ protected slots:
 
 protected:
   QPointer<QHeaderView> HeaderView;
-
 };
 
 #endif
-

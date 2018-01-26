@@ -29,11 +29,11 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __vtkVRControlSlicePositionStyle_h
-#define __vtkVRControlSlicePositionStyle_h
+#ifndef vtkVRControlSlicePositionStyle_h
+#define vtkVRControlSlicePositionStyle_h
 
-#include "vtkVRInteractorStyle.h"
 #include "vtkNew.h"
+#include "vtkVRInteractorStyle.h"
 
 class vtkTransform;
 class vtkMatrix4x4;
@@ -41,9 +41,9 @@ class vtkMatrix4x4;
 class vtkVRControlSlicePositionStyle : public vtkVRInteractorStyle
 {
 public:
-  static vtkVRControlSlicePositionStyle *New();
-  vtkTypeMacro(vtkVRControlSlicePositionStyle, vtkVRInteractorStyle)
-  void PrintSelf(ostream &os, vtkIndent indent);
+  static vtkVRControlSlicePositionStyle* New();
+  vtkTypeMacro(vtkVRControlSlicePositionStyle, vtkVRInteractorStyle) void PrintSelf(
+    ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   virtual int GetControlledPropertySize() { return 3; }
 
@@ -66,9 +66,8 @@ protected:
   vtkNew<vtkMatrix4x4> InitialInvertedPose;
 
 private:
-  // Not implemented:
-  vtkVRControlSlicePositionStyle(const vtkVRControlSlicePositionStyle&);
-  void operator=(const vtkVRControlSlicePositionStyle&);
+  vtkVRControlSlicePositionStyle(const vtkVRControlSlicePositionStyle&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkVRControlSlicePositionStyle&) VTK_DELETE_FUNCTION;
 };
 
 #endif

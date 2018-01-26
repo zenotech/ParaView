@@ -14,167 +14,196 @@
 =========================================================================*/
 #include "vtkPVCompositeRepresentation.h"
 
-#include "vtkCubeAxesRepresentation.h"
 #include "vtkInformation.h"
 #include "vtkObjectFactory.h"
+#include "vtkPVGridAxes3DRepresentation.h"
+#include "vtkPolarAxesRepresentation.h"
 #include "vtkSelectionRepresentation.h"
 #include "vtkView.h"
 
 vtkStandardNewMacro(vtkPVCompositeRepresentation);
-vtkCxxSetObjectMacro(vtkPVCompositeRepresentation, SelectionRepresentation,
-  vtkSelectionRepresentation);
-vtkCxxSetObjectMacro(vtkPVCompositeRepresentation, CubeAxesRepresentation,
-  vtkCubeAxesRepresentation);
+vtkCxxSetObjectMacro(
+  vtkPVCompositeRepresentation, SelectionRepresentation, vtkSelectionRepresentation);
+vtkCxxSetObjectMacro(
+  vtkPVCompositeRepresentation, PolarAxesRepresentation, vtkPolarAxesRepresentation);
+vtkCxxSetObjectMacro(
+  vtkPVCompositeRepresentation, GridAxesRepresentation, vtkPVGridAxes3DRepresentation);
+
 //----------------------------------------------------------------------------
 vtkPVCompositeRepresentation::vtkPVCompositeRepresentation()
 {
   this->SelectionRepresentation = vtkSelectionRepresentation::New();
-  this->CubeAxesRepresentation = vtkCubeAxesRepresentation::New();
+  this->PolarAxesRepresentation = NULL;
 
-  this->CubeAxesVisibility = false;
   this->SelectionVisibility = false;
   this->SelectionRepresentation->SetVisibility(false);
-  this->CubeAxesRepresentation->SetVisibility(false);
+
+  this->GridAxesRepresentation = vtkPVGridAxes3DRepresentation::New();
+  this->GridAxesRepresentation->SetVisibility(false);
 }
 
 //----------------------------------------------------------------------------
 vtkPVCompositeRepresentation::~vtkPVCompositeRepresentation()
 {
   this->SetSelectionRepresentation(NULL);
-  this->SetCubeAxesRepresentation(NULL);
+  this->SetPolarAxesRepresentation(NULL);
+  this->SetGridAxesRepresentation(NULL);
 }
 
 //----------------------------------------------------------------------------
 void vtkPVCompositeRepresentation::SetVisibility(bool visible)
 {
   this->Superclass::SetVisibility(visible);
-  this->SetCubeAxesVisibility(this->CubeAxesVisibility);
   this->SetSelectionVisibility(this->SelectionVisibility);
-}
-
-//----------------------------------------------------------------------------
-void vtkPVCompositeRepresentation::SetCubeAxesVisibility(bool visible)
-{
-  this->CubeAxesVisibility = visible;
-  this->CubeAxesRepresentation->SetVisibility(this->GetVisibility() && visible);
+  this->GridAxesRepresentation->SetVisibility(visible);
+  this->SetPolarAxesVisibility(visible);
 }
 
 //----------------------------------------------------------------------------
 void vtkPVCompositeRepresentation::SetSelectionVisibility(bool visible)
 {
   this->SelectionVisibility = visible;
-  this->SelectionRepresentation->SetVisibility(
-    this->GetVisibility() && visible);
+  this->SelectionRepresentation->SetVisibility(this->GetVisibility() && visible);
 }
 
 //----------------------------------------------------------------------------
-void vtkPVCompositeRepresentation::SetInputConnection(int port, vtkAlgorithmOutput* input)
+void vtkPVCompositeRepresentation::SetPolarAxesVisibility(bool visible)
 {
-  this->CubeAxesRepresentation->SetInputConnection(port, input);
-  this->Superclass::SetInputConnection(port, input);
-}
-
-//----------------------------------------------------------------------------
-void vtkPVCompositeRepresentation::SetInputConnection(vtkAlgorithmOutput* input)
-{
-  this->CubeAxesRepresentation->SetInputConnection(input);
-  this->Superclass::SetInputConnection(input);
-}
-
-//----------------------------------------------------------------------------
-void vtkPVCompositeRepresentation::AddInputConnection(
-  int port, vtkAlgorithmOutput* input)
-{
-  this->CubeAxesRepresentation->AddInputConnection(port, input);
-  this->Superclass::AddInputConnection(port, input);
-}
-
-//----------------------------------------------------------------------------
-void vtkPVCompositeRepresentation::AddInputConnection(vtkAlgorithmOutput* input)
-{
-  this->CubeAxesRepresentation->AddInputConnection(input);
-  this->Superclass::AddInputConnection(input);
-}
-
-//----------------------------------------------------------------------------
-void vtkPVCompositeRepresentation::RemoveInputConnection(int port, vtkAlgorithmOutput* input)
-{
-  this->CubeAxesRepresentation->RemoveInputConnection(port, input);
-  this->Superclass::RemoveInputConnection(port, input);
-}
-
-//----------------------------------------------------------------------------
-void vtkPVCompositeRepresentation::RemoveInputConnection(int port, int index)
-{
-  this->CubeAxesRepresentation->RemoveInputConnection(port, index);
-  this->Superclass::RemoveInputConnection(port, index);
+  if (this->PolarAxesRepresentation)
+  {
+    this->PolarAxesRepresentation->SetParentVisibility(visible);
+  }
 }
 
 //----------------------------------------------------------------------------
 bool vtkPVCompositeRepresentation::AddToView(vtkView* view)
 {
   if (!this->Superclass::AddToView(view))
-    {
+  {
     return false;
-    }
+  }
 
-  view->AddRepresentation(this->CubeAxesRepresentation);
   view->AddRepresentation(this->SelectionRepresentation);
+  view->AddRepresentation(this->GridAxesRepresentation);
+
+  if (this->PolarAxesRepresentation)
+  {
+    view->AddRepresentation(this->PolarAxesRepresentation);
+  }
+
   return true;
 }
 
 //----------------------------------------------------------------------------
 bool vtkPVCompositeRepresentation::RemoveFromView(vtkView* view)
 {
-  view->RemoveRepresentation(this->CubeAxesRepresentation);
   view->RemoveRepresentation(this->SelectionRepresentation);
+  view->RemoveRepresentation(this->GridAxesRepresentation);
+
+  if (this->PolarAxesRepresentation)
+  {
+    view->RemoveRepresentation(this->PolarAxesRepresentation);
+  }
+
   return this->Superclass::RemoveFromView(view);
 }
 
 //----------------------------------------------------------------------------
 void vtkPVCompositeRepresentation::MarkModified()
 {
-  this->CubeAxesRepresentation->MarkModified();
   this->SelectionRepresentation->MarkModified();
+  this->GridAxesRepresentation->MarkModified();
+
+  if (this->PolarAxesRepresentation)
+  {
+    this->PolarAxesRepresentation->MarkModified();
+  }
+
   this->Superclass::MarkModified();
 }
 
 //----------------------------------------------------------------------------
 void vtkPVCompositeRepresentation::SetUpdateTime(double time)
 {
-  this->CubeAxesRepresentation->SetUpdateTime(time);
   this->SelectionRepresentation->SetUpdateTime(time);
+  this->GridAxesRepresentation->SetUpdateTime(time);
+
+  if (this->PolarAxesRepresentation)
+  {
+    this->PolarAxesRepresentation->SetUpdateTime(time);
+  }
+
   this->Superclass::SetUpdateTime(time);
-}
-//----------------------------------------------------------------------------
-void vtkPVCompositeRepresentation::SetUseCache(bool val)
-{
-  this->CubeAxesRepresentation->SetUseCache(val);
-  this->SelectionRepresentation->SetUseCache(val);
-  this->Superclass::SetUseCache(val);
-}
-//----------------------------------------------------------------------------
-void vtkPVCompositeRepresentation::SetCacheKey(double val)
-{
-  this->CubeAxesRepresentation->SetCacheKey(val);
-  this->SelectionRepresentation->SetCacheKey(val);
-  this->Superclass::SetCacheKey(val);
 }
 
 //----------------------------------------------------------------------------
 void vtkPVCompositeRepresentation::SetForceUseCache(bool val)
 {
-  this->CubeAxesRepresentation->SetForceUseCache(val);
   this->SelectionRepresentation->SetForceUseCache(val);
+  this->GridAxesRepresentation->SetForceUseCache(val);
+
+  if (this->PolarAxesRepresentation)
+  {
+    this->PolarAxesRepresentation->SetForceUseCache(val);
+  }
+
   this->Superclass::SetForceUseCache(val);
 }
 
 //----------------------------------------------------------------------------
 void vtkPVCompositeRepresentation::SetForcedCacheKey(double val)
 {
-  this->CubeAxesRepresentation->SetForcedCacheKey(val);
   this->SelectionRepresentation->SetForcedCacheKey(val);
+  this->GridAxesRepresentation->SetForcedCacheKey(val);
+
+  if (this->PolarAxesRepresentation)
+  {
+    this->PolarAxesRepresentation->SetForcedCacheKey(val);
+  }
+
   this->Superclass::SetForcedCacheKey(val);
+}
+
+//----------------------------------------------------------------------------
+void vtkPVCompositeRepresentation::SetInputConnection(int port, vtkAlgorithmOutput* input)
+{
+  this->GridAxesRepresentation->SetInputConnection(port, input);
+  this->Superclass::SetInputConnection(port, input);
+}
+
+//----------------------------------------------------------------------------
+void vtkPVCompositeRepresentation::SetInputConnection(vtkAlgorithmOutput* input)
+{
+  this->GridAxesRepresentation->SetInputConnection(input);
+  this->Superclass::SetInputConnection(input);
+}
+
+//----------------------------------------------------------------------------
+void vtkPVCompositeRepresentation::AddInputConnection(int port, vtkAlgorithmOutput* input)
+{
+  this->GridAxesRepresentation->AddInputConnection(port, input);
+  this->Superclass::AddInputConnection(port, input);
+}
+
+//----------------------------------------------------------------------------
+void vtkPVCompositeRepresentation::AddInputConnection(vtkAlgorithmOutput* input)
+{
+  this->GridAxesRepresentation->AddInputConnection(input);
+  this->Superclass::AddInputConnection(input);
+}
+
+//----------------------------------------------------------------------------
+void vtkPVCompositeRepresentation::RemoveInputConnection(int port, vtkAlgorithmOutput* input)
+{
+  this->GridAxesRepresentation->RemoveInputConnection(port, input);
+  this->Superclass::RemoveInputConnection(port, input);
+}
+
+//----------------------------------------------------------------------------
+void vtkPVCompositeRepresentation::RemoveInputConnection(int port, int idx)
+{
+  this->GridAxesRepresentation->RemoveInputConnection(port, idx);
+  this->Superclass::RemoveInputConnection(port, idx);
 }
 
 //----------------------------------------------------------------------------
@@ -195,12 +224,15 @@ void vtkPVCompositeRepresentation::PrintSelf(ostream& os, vtkIndent indent)
   this->Superclass::PrintSelf(os, indent);
 }
 //----------------------------------------------------------------------------
-unsigned int vtkPVCompositeRepresentation::Initialize(unsigned int minIdAvailable,
-                                                    unsigned int maxIdAvailable)
+unsigned int vtkPVCompositeRepresentation::Initialize(
+  unsigned int minIdAvailable, unsigned int maxIdAvailable)
 {
   unsigned int minId = minIdAvailable;
-  minId = this->CubeAxesRepresentation->Initialize(minId, maxIdAvailable);
   minId = this->SelectionRepresentation->Initialize(minId, maxIdAvailable);
-
-  return  this->Superclass::Initialize(minId, maxIdAvailable);
+  minId = this->GridAxesRepresentation->Initialize(minId, maxIdAvailable);
+  if (this->PolarAxesRepresentation)
+  {
+    minId = this->PolarAxesRepresentation->Initialize(minId, maxIdAvailable);
+  }
+  return this->Superclass::Initialize(minId, maxIdAvailable);
 }

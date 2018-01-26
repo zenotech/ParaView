@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,32 +29,35 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqVCRToolbar_h 
-#define __pqVCRToolbar_h
+#ifndef pqVCRToolbar_h
+#define pqVCRToolbar_h
 
-#include <QToolBar>
 #include "pqApplicationComponentsModule.h"
+#include <QToolBar>
 
 class pqVCRController;
 
-/// pqVCRToolbar is the toolbar with VCR controls.
-/// Simply instantiate this and put it in your application UI file or
-/// QMainWindow to use it.
+/**
+* pqVCRToolbar is the toolbar with VCR controls.
+* Simply instantiate this and put it in your application UI file or
+* QMainWindow to use it.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqVCRToolbar : public QToolBar
 {
   Q_OBJECT
   typedef QToolBar Superclass;
+
 public:
-  pqVCRToolbar(const QString& title, QWidget* parentObject=0)
+  pqVCRToolbar(const QString& title, QWidget* parentObject = 0)
     : Superclass(title, parentObject)
-    {
+  {
     this->constructor();
-    }
-  pqVCRToolbar(QWidget* parentObject=0)
+  }
+  pqVCRToolbar(QWidget* parentObject = 0)
     : Superclass(parentObject)
-    {
+  {
     this->constructor();
-    }
+  }
   ~pqVCRToolbar();
 
 protected slots:
@@ -63,7 +66,7 @@ protected slots:
 
 private:
   Q_DISABLE_COPY(pqVCRToolbar)
-  
+
   void constructor();
 
   class pqInternals;
@@ -73,5 +76,3 @@ private:
 };
 
 #endif
-
-

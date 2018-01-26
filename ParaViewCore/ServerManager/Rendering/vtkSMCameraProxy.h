@@ -12,13 +12,16 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMCameraProxy - proxy for a camera.
-// .SECTION Description
-// This a proxy for a vtkCamera. This class optimizes UpdatePropertyInformation
-// to use the client side object.
+/**
+ * @class   vtkSMCameraProxy
+ * @brief   proxy for a camera.
+ *
+ * This a proxy for a vtkCamera. This class optimizes UpdatePropertyInformation
+ * to use the client side object.
+*/
 
-#ifndef __vtkSMCameraProxy_h
-#define __vtkSMCameraProxy_h
+#ifndef vtkSMCameraProxy_h
+#define vtkSMCameraProxy_h
 
 #include "vtkPVServerManagerRenderingModule.h" //needed for exports
 #include "vtkSMProxy.h"
@@ -28,22 +31,27 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMCameraProxy : public vtkSMProxy
 public:
   static vtkSMCameraProxy* New();
   vtkTypeMacro(vtkSMCameraProxy, vtkSMProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Updates all property informations by calling UpdateInformation()
-  // and populating the values.
-  virtual void UpdatePropertyInformation();
-  virtual void UpdatePropertyInformation(vtkSMProperty* prop)
-    { this->Superclass::UpdatePropertyInformation(prop); }
+  //@{
+  /**
+   * Updates all property informations by calling UpdateInformation()
+   * and populating the values.
+   */
+  virtual void UpdatePropertyInformation() VTK_OVERRIDE;
+  virtual void UpdatePropertyInformation(vtkSMProperty* prop) VTK_OVERRIDE
+  {
+    this->Superclass::UpdatePropertyInformation(prop);
+  }
+
 protected:
   vtkSMCameraProxy();
   ~vtkSMCameraProxy();
+  //@}
 
 private:
-  vtkSMCameraProxy(const vtkSMCameraProxy&); // Not implemented.
-  void operator=(const vtkSMCameraProxy&); // Not implemented.
+  vtkSMCameraProxy(const vtkSMCameraProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMCameraProxy&) VTK_DELETE_FUNCTION;
 };
 
 #endif
-

@@ -29,48 +29,58 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqCopyReaction_h
-#define __pqCopyReaction_h
+#ifndef pqCopyReaction_h
+#define pqCopyReaction_h
 
 #include "pqReaction.h"
 
 class vtkSMProxy;
-/// @ingroup Reactions
-/// Reaction for copying sources/filters.
+/**
+* @ingroup Reactions
+* Reaction for copying sources/filters.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqCopyReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
+
 public:
-  pqCopyReaction(QAction* parent, bool paste_mode=false);
+  pqCopyReaction(QAction* parent, bool paste_mode = false);
   virtual ~pqCopyReaction();
 
-  /// Copy all properties from source to dest. Uses the property names as the
-  /// key for matching properties.
+  /**
+  * Copy all properties from source to dest. Uses the property names as the
+  * key for matching properties.
+  */
   static void copy(vtkSMProxy* dest, vtkSMProxy* source);
 
   static void copy();
   static void paste();
 
 public slots:
-  /// Updates the enabled state. Applications need not explicitly call
-  /// this.
+  /**
+  * Updates the enabled state. Applications need not explicitly call
+  * this.
+  */
   void updateEnableState();
 
 protected:
-  /// Called when the action is triggered.
+  /**
+  * Called when the action is triggered.
+  */
   virtual void onTriggered()
-    {
+  {
     if (this->Paste)
-      {
+    {
       pqCopyReaction::paste();
-      }
-    else
-      {
-      pqCopyReaction::copy();
-      }
     }
+    else
+    {
+      pqCopyReaction::copy();
+    }
+  }
   bool Paste;
+
 private:
   Q_DISABLE_COPY(pqCopyReaction)
 };

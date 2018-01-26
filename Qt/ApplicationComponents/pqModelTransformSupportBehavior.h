@@ -29,38 +29,42 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqModelTransformSupportBehavior_h
-#define __pqModelTransformSupportBehavior_h
+#ifndef pqModelTransformSupportBehavior_h
+#define pqModelTransformSupportBehavior_h
 
-#include <QObject>
 #include "pqApplicationComponentsModule.h"
 #include "vtkStdString.h"
 #include "vtkTuple.h"
+#include <QObject>
 
 class pqView;
 class vtkSMSourceProxy;
 
-/// @ingroup Behaviors
-/// pqModelTransformSupportBehavior is designed for supporting ChangeOfBasis
-/// matrix for MantId.
+/**
+* @ingroup Behaviors
+* pqModelTransformSupportBehavior is designed for supporting ChangeOfBasis
+* matrix for MantId.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqModelTransformSupportBehavior : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
-  pqModelTransformSupportBehavior(QObject* parent=0);
+  pqModelTransformSupportBehavior(QObject* parent = 0);
   virtual ~pqModelTransformSupportBehavior();
 
   static vtkTuple<double, 16> getChangeOfBasisMatrix(
-    vtkSMSourceProxy*, int outputPort=0, bool* isvalid=NULL);
+    vtkSMSourceProxy*, int outputPort = 0, bool* isvalid = NULL);
   static vtkTuple<double, 6> getBoundingBoxInModelCoordinates(
-    vtkSMSourceProxy*, int outputPort=0, bool* isvalid=NULL);
+    vtkSMSourceProxy*, int outputPort = 0, bool* isvalid = NULL);
   static vtkTuple<vtkStdString, 3> getAxisTitles(
-    vtkSMSourceProxy*, int outputPort=0, bool* isvalid=NULL);
+    vtkSMSourceProxy*, int outputPort = 0, bool* isvalid = NULL);
 
 protected slots:
   virtual void viewAdded(pqView*);
   virtual void viewUpdated();
+
 protected:
   virtual void enableModelTransform(pqView*, vtkSMSourceProxy*);
   virtual void disableModelTransform(pqView*);

@@ -12,19 +12,23 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMCameraConfigurationReader - A reader for XML camera configuration.
-//
-// .SECTION Description
-// A reader for XML camera configuration. Reades camera configuration files.
-// writen by the vtkSMCameraConfigurationWriter.
-//
-// .SECTION See Also
-// vtkSMCameraConfigurationWriter, vtkSMProxyConfigurationReader
-//
-// .SECTION Thanks
-// This class was contributed by SciberQuest Inc.
-#ifndef __vtkSMCameraConfigurationReader_h
-#define __vtkSMCameraConfigurationReader_h
+/**
+ * @class   vtkSMCameraConfigurationReader
+ * @brief   A reader for XML camera configuration.
+ *
+ *
+ * A reader for XML camera configuration. Reades camera configuration files.
+ * writen by the vtkSMCameraConfigurationWriter.
+ *
+ * @sa
+ * vtkSMCameraConfigurationWriter, vtkSMProxyConfigurationReader
+ *
+ * @par Thanks:
+ * This class was contributed by SciberQuest Inc.
+*/
+
+#ifndef vtkSMCameraConfigurationReader_h
+#define vtkSMCameraConfigurationReader_h
 
 #include "vtkPVServerManagerDefaultModule.h" //needed for exports
 #include "vtkSMProxyConfigurationReader.h"
@@ -32,29 +36,30 @@
 class vtkSMProxy;
 class vtkPVXMLElement;
 
-class VTKPVSERVERMANAGERDEFAULT_EXPORT vtkSMCameraConfigurationReader : public vtkSMProxyConfigurationReader
+class VTKPVSERVERMANAGERDEFAULT_EXPORT vtkSMCameraConfigurationReader
+  : public vtkSMProxyConfigurationReader
 {
 public:
-  vtkTypeMacro(vtkSMCameraConfigurationReader,vtkSMProxyConfigurationReader);
-  void PrintSelf(ostream& os, vtkIndent indent);
-  static vtkSMCameraConfigurationReader *New();
+  vtkTypeMacro(vtkSMCameraConfigurationReader, vtkSMProxyConfigurationReader);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
+  static vtkSMCameraConfigurationReader* New();
 
-  // Description:
-  // Set the render view proxy to extract camera properties from.
-  void SetRenderViewProxy(vtkSMProxy *rvProxy);
+  /**
+   * Set the render view proxy to extract camera properties from.
+   */
+  void SetRenderViewProxy(vtkSMProxy* rvProxy);
 
-
-  // Description:
-  // Read the named file, and push the properties into the underying
-  // managed render view proxy. This will make sure the renderview is
-  // updated after the read.
-  virtual int ReadConfiguration(const char *filename);
-  virtual int ReadConfiguration(vtkPVXMLElement *x);
+  //@{
+  /**
+   * Read the named file, and push the properties into the underying
+   * managed render view proxy. This will make sure the renderview is
+   * updated after the read.
+   */
+  virtual int ReadConfiguration(const char* filename) VTK_OVERRIDE;
+  virtual int ReadConfiguration(vtkPVXMLElement* x) VTK_OVERRIDE;
   // unhide
-  virtual int ReadConfiguration()
-    {
-    return this->Superclass::ReadConfiguration();
-    }
+  virtual int ReadConfiguration() VTK_OVERRIDE { return this->Superclass::ReadConfiguration(); }
+  //@}
 
 protected:
   vtkSMCameraConfigurationReader();
@@ -62,12 +67,11 @@ protected:
 
   // Protect the superclass's SetProxy, clients are forced to use
   // SetRenderViewProxy
-  void SetProxy(vtkSMProxy *){ vtkErrorMacro("Use SetRenderViewProxy."); }
+  void SetProxy(vtkSMProxy*) VTK_OVERRIDE { vtkErrorMacro("Use SetRenderViewProxy."); }
 
 private:
-  vtkSMCameraConfigurationReader(const vtkSMCameraConfigurationReader&);  // Not implemented.
-  void operator=(const vtkSMCameraConfigurationReader&);  // Not implemented.
+  vtkSMCameraConfigurationReader(const vtkSMCameraConfigurationReader&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMCameraConfigurationReader&) VTK_DELETE_FUNCTION;
 };
 
 #endif
-

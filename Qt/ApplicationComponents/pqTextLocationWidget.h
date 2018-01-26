@@ -29,18 +29,19 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqTextWindowLocationWidget_h
-#define __pqTextWindowLocationWidget_h
+#ifndef pqTextWindowLocationWidget_h
+#define pqTextWindowLocationWidget_h
 
 #include "pqApplicationComponentsModule.h"
 #include "pqPropertyWidget.h"
 
 class vtkSMPropertyGroup;
 
-/// pqTextLocationWidget is a pqPropertyWidget that can be used to set
-/// the location of the a text representation relative to the viewport.
-class PQAPPLICATIONCOMPONENTS_EXPORT pqTextLocationWidget :
-  public pqPropertyWidget
+/**
+* pqTextLocationWidget is a pqPropertyWidget that can be used to set
+* the location of the a text representation relative to the viewport.
+*/
+class PQAPPLICATIONCOMPONENTS_EXPORT pqTextLocationWidget : public pqPropertyWidget
 {
   Q_OBJECT
   Q_PROPERTY(QString windowLocation READ windowLocation WRITE setWindowLocation)
@@ -48,7 +49,7 @@ class PQAPPLICATIONCOMPONENTS_EXPORT pqTextLocationWidget :
   typedef pqPropertyWidget Superclass;
 
 public:
-  pqTextLocationWidget(vtkSMProxy* proxy, vtkSMPropertyGroup* smgroup, QWidget* parent=0);
+  pqTextLocationWidget(vtkSMProxy* proxy, vtkSMPropertyGroup* smgroup, QWidget* parent = 0);
   virtual ~pqTextLocationWidget();
 
   QString windowLocation() const;
@@ -70,4 +71,4 @@ private:
   pqInternals* Internals;
 };
 
-#endif //__pqTextWindowLocationWidget_h
+#endif // pqTextWindowLocationWidget_h

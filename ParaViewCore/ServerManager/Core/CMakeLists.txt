@@ -64,6 +64,7 @@ set (Module_SRCS
   vtkSMGlobalPropertiesLinkUndoElement.cxx
   vtkSMGlobalPropertiesProxy.cxx
   vtkSMIdTypeVectorProperty.cxx
+  vtkSMIndexSelectionDomain.cxx
   vtkSMInputArrayDomain.cxx
   vtkSMInputProperty.cxx
   vtkSMInsituStateLoader.cxx
@@ -86,10 +87,12 @@ set (Module_SRCS
   vtkSMPropertyGroup.cxx
   vtkSMPropertyHelper.cxx
   vtkSMPropertyIterator.cxx
+  vtkSMNullProxy.cxx
   vtkSMPropertyLink.cxx
   vtkSMProxy.cxx
   vtkSMProxyDefinitionManager.cxx
   vtkSMProxyGroupDomain.cxx
+  vtkSMProxyInitializationHelper.cxx
   vtkSMProxyIterator.cxx
   vtkSMProxyLink.cxx
   vtkSMProxyListDomain.cxx
@@ -101,29 +104,30 @@ set (Module_SRCS
   vtkSMReaderFactory.cxx
   vtkSMRemoteObject.cxx
   vtkSMRemoteObjectUpdateUndoElement.cxx
+  vtkSMSILDomain.cxx
+  vtkSMSILModel.cxx
+  vtkSMSelfGeneratingSourceProxy.cxx
   vtkSMServerStateLocator.cxx
-  vtkSMSessionClient.cxx
   vtkSMSession.cxx
+  vtkSMSessionClient.cxx
   vtkSMSessionObject.cxx
   vtkSMSessionProxyManager.cxx
   vtkSMSettings.cxx
   vtkSMSettingsProxy.cxx
-  vtkSMSILDomain.cxx
-  vtkSMSILModel.cxx
   vtkSMSourceProxy.cxx
   vtkSMStateLoader.cxx
   vtkSMStateLocator.cxx
   vtkSMStateVersionController.cxx
   vtkSMStringListDomain.cxx
   vtkSMStringVectorProperty.cxx
-  vtkSMUncheckedPropertyHelper.cxx
-  vtkSMUndoElement.cxx
-  vtkSMUndoStackBuilder.cxx
-  vtkSMUndoStack.cxx
-  vtkSMNullProxy.cxx
   vtkSMTimeKeeper.cxx
   vtkSMTimeKeeperProxy.cxx
+  vtkSMTimeStepIndexDomain.cxx
   vtkSMTrace.cxx
+  vtkSMUncheckedPropertyHelper.cxx
+  vtkSMUndoElement.cxx
+  vtkSMUndoStack.cxx
+  vtkSMUndoStackBuilder.cxx
   vtkSMVectorProperty.cxx
   vtkSMWriterFactory.cxx
   vtkSMWriterProxy.cxx
@@ -134,6 +138,7 @@ SET_SOURCE_FILES_PROPERTIES(
   vtkSMDomain
   vtkSMLink
   vtkSMPropertyHelper
+  vtkSMProxyInitializationHelper
   vtkSMProxyManager  # since New() is protected.
   vtkSMRangeDomainTemplate
   vtkSMRemoteObject
@@ -151,4 +156,8 @@ SET_SOURCE_FILES_PROPERTIES(
   vtkSMUncheckedPropertyHelper
   WRAP_EXCLUDE)
 
+# OpenGL2 specific definitions
+if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL2")
+  add_definitions(-DVTKGL2)
+endif()
 vtk_module_library(vtkPVServerManagerCore ${Module_SRCS})

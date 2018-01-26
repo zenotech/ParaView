@@ -27,12 +27,12 @@
 // .SECTION See Also
 // vtkStreamingParticlesRepresentation, vtkAMRStreamingPriorityQueue
 
-#ifndef __vtkStreamingParticlesPriorityQueue_h
-#define __vtkStreamingParticlesPriorityQueue_h
+#ifndef vtkStreamingParticlesPriorityQueue_h
+#define vtkStreamingParticlesPriorityQueue_h
 
-#include "vtkPVClientServerCoreRenderingModule.h" // for export macros
 #include "vtkObject.h"
-#include <set> // needed for set
+#include "vtkPVClientServerCoreRenderingModule.h" // for export macros
+#include <set>                                    // needed for set
 
 class vtkMultiBlockDataSet;
 class vtkMultiProcessController;
@@ -42,7 +42,7 @@ class vtkStreamingParticlesPriorityQueue : public vtkObject
 public:
   static vtkStreamingParticlesPriorityQueue* New();
   vtkTypeMacro(vtkStreamingParticlesPriorityQueue, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Description:
   // If the controller is specified, the queue can be used in parallel. So long
@@ -92,34 +92,29 @@ public:
   // vtkPGenericIOMultiBlockReader::BLOCK_AMOUNT_OF_DETAIL information, use this
   // information to determine the blocks to load, otherwise use a default selection
   // method.  Defaults to false.
-  vtkGetMacro(UseBlockDetailInformation,bool)
-  vtkBooleanMacro(UseBlockDetailInformation,bool)
-  vtkSetMacro(UseBlockDetailInformation,bool)
+  vtkGetMacro(UseBlockDetailInformation, bool) vtkBooleanMacro(UseBlockDetailInformation, bool)
+    vtkSetMacro(UseBlockDetailInformation, bool)
 
-  // Description:
-  // If this variable is set to true then the priority queue will internally manage
-  // round-robining the blocks across the processes.  If this is set to false, then
-  // the dataset should have the vtkCompositeData::CURRENT_PROCESS_CAN_LOAD_BLOCK
-  // key on each block's metadata to indicate which process can load each block and
-  // this information will be used to determine the process to use for each block.
-  // Defaults to true.
-  vtkGetMacro(AnyProcessCanLoadAnyBlock,bool)
-  vtkBooleanMacro(AnyProcessCanLoadAnyBlock,bool)
-  vtkSetMacro(AnyProcessCanLoadAnyBlock,bool)
+    // Description:
+    // If this variable is set to true then the priority queue will internally manage
+    // round-robining the blocks across the processes.  If this is set to false, then
+    // the dataset should have the vtkCompositeData::CURRENT_PROCESS_CAN_LOAD_BLOCK
+    // key on each block's metadata to indicate which process can load each block and
+    // this information will be used to determine the process to use for each block.
+    // Defaults to true.
+    vtkGetMacro(AnyProcessCanLoadAnyBlock, bool) vtkBooleanMacro(AnyProcessCanLoadAnyBlock, bool)
+      vtkSetMacro(AnyProcessCanLoadAnyBlock, bool)
 
-  // Description:
-  // When UseBlockDetailInformation is on, this variable controls the minimum level of
-  // detail a block can have and still be loaded.  More specifically, the value from
-  // vtkPGenericIOMultiBlockReader::BLOCK_AMOUNT_OF_DETAIL is used with the distance to
-  // the block to compute approximate distance between features in the dataset.  This
-  // computed distance is compared with this value.  Default: 8.5e-5 seems to work
-  // well with point clouds where the BLOCK_AMOUNT_OF_DETAIL is the number of points.
-  vtkGetMacro(DetailLevelToLoad,double)
-  vtkSetMacro(DetailLevelToLoad,double)
+    // Description:
+    // When UseBlockDetailInformation is on, this variable controls the minimum level of
+    // detail a block can have and still be loaded.  More specifically, the value from
+    // vtkPGenericIOMultiBlockReader::BLOCK_AMOUNT_OF_DETAIL is used with the distance to
+    // the block to compute approximate distance between features in the dataset.  This
+    // computed distance is compared with this value.  Default: 8.5e-5 seems to work
+    // well with point clouds where the BLOCK_AMOUNT_OF_DETAIL is the number of points.
+    vtkGetMacro(DetailLevelToLoad, double) vtkSetMacro(DetailLevelToLoad, double)
 
-//BTX
-protected:
-  vtkStreamingParticlesPriorityQueue();
+      protected : vtkStreamingParticlesPriorityQueue();
   ~vtkStreamingParticlesPriorityQueue();
 
   // Description:
@@ -133,12 +128,11 @@ protected:
   double DetailLevelToLoad;
 
 private:
-  vtkStreamingParticlesPriorityQueue(const vtkStreamingParticlesPriorityQueue&); // Not implemented
-  void operator=(const vtkStreamingParticlesPriorityQueue&); // Not implemented
+  vtkStreamingParticlesPriorityQueue(const vtkStreamingParticlesPriorityQueue&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkStreamingParticlesPriorityQueue&) VTK_DELETE_FUNCTION;
 
   class vtkInternals;
   vtkInternals* Internals;
-//ETX
 };
 
 #endif

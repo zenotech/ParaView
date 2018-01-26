@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -29,96 +29,116 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
-// .NAME vtkPVPlotMatrixRepresentation - vtkChartRepresentation subclass for
-// scatter-plot-matrix representation.
-// .SECTION Description:
-// vtkPVPlotMatrixRepresentation manages representations in a
-// vtkScatterPlotMatrix view. It exposes API that affects how the matrix is
-// rendered as well as API to control which of the columns in the input vtkTable
-// are to be plotted in the matrix.
-//
-// vtkPVPlotMatrixRepresentation currently does not support multiblock of tables
-// and only the first table is rendered.
-#ifndef _vtkPVPlotMatrixRepresentation_h
-#define _vtkPVPlotMatrixRepresentation_h
+/**
+ * @class   vtkPVPlotMatrixRepresentation
+ * @brief   vtkChartRepresentation subclass for
+ * scatter-plot-matrix representation.
+ *
+ * vtkPVPlotMatrixRepresentation manages representations in a
+ * vtkScatterPlotMatrix view. It exposes API that affects how the matrix is
+ * rendered as well as API to control which of the columns in the input vtkTable
+ * are to be plotted in the matrix.
+ *
+ * vtkPVPlotMatrixRepresentation currently does not support multiblock of tables
+ * and only the first table is rendered.
+*/
 
-#include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
+#ifndef vtkPVPlotMatrixRepresentation_h
+#define vtkPVPlotMatrixRepresentation_h
+
 #include "vtkChartRepresentation.h"
-#include "vtkColor.h" // for ivars
+#include "vtkColor.h"                             // for ivars
+#include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 
 class vtkScatterPlotMatrix;
 class vtkStringArray;
 
-class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVPlotMatrixRepresentation : public vtkChartRepresentation
+class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVPlotMatrixRepresentation
+  : public vtkChartRepresentation
 {
 public:
   static vtkPVPlotMatrixRepresentation* New();
   vtkTypeMacro(vtkPVPlotMatrixRepresentation, vtkChartRepresentation);
-  void PrintSelf(ostream &os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Sets the visibility for the plot matrix representation.
-  virtual void SetVisibility(bool visible);
+  /**
+   * Sets the visibility for the plot matrix representation.
+   */
+  virtual void SetVisibility(bool visible) VTK_OVERRIDE;
 
-  // Description:
-  // Set series visibility given its name. The order in which
-  // SetSeriesVisibility is called is used to determine the order for each of
-  // the plots in the grid.
+  //@{
+  /**
+   * Set series visibility given its name. The order in which
+   * SetSeriesVisibility is called is used to determine the order for each of
+   * the plots in the grid.
+   */
   void SetSeriesVisibility(const char* series, bool visibility);
   void ClearSeriesVisibilities();
+  //@}
 
-  // Description:
-  // Sets the color for the scatter plots in the plot matrix.
+  /**
+   * Sets the color for the scatter plots in the plot matrix.
+   */
   void SetColor(double r, double g, double b);
 
-  // Description:
-  // Sets the color for the active plot.
+  /**
+   * Sets the color for the active plot.
+   */
   void SetActivePlotColor(double r, double g, double b);
 
-  // Description:
-  // Sets the color for the histograms.
+  /**
+   * Sets the color for the histograms.
+   */
   void SetHistogramColor(double r, double g, double b);
 
-  // Description:
-  // Sets the marker style for the scatter plots.
+  /**
+   * Sets the marker style for the scatter plots.
+   */
   void SetMarkerStyle(int style);
 
-  // Description:
-  // Sets the marker style for the active plot.
+  /**
+   * Sets the marker style for the active plot.
+   */
   void SetActivePlotMarkerStyle(int style);
 
-  // Description:
-  // Sets the marker size for the scatter plots.
+  /**
+   * Sets the marker size for the scatter plots.
+   */
   void SetMarkerSize(double size);
 
-  // Description:
-  // Sets the marker size for the active plots.
+  /**
+   * Sets the marker size for the active plots.
+   */
   void SetActivePlotMarkerSize(double size);
 
-  // Description:
-  // Returns the scatter plot matrix.
+  /**
+   * Returns the scatter plot matrix.
+   */
   vtkScatterPlotMatrix* GetPlotMatrix() const;
 
 protected:
   vtkPVPlotMatrixRepresentation();
   ~vtkPVPlotMatrixRepresentation();
 
-  // Description:
-  // Overridden to pass information about changes to series visibility etc. to
-  // the plot-matrix.
-  virtual void PrepareForRendering();
+  /**
+   * Overridden to pass information about changes to series visibility etc. to
+   * the plot-matrix.
+   */
+  virtual void PrepareForRendering() VTK_OVERRIDE;
 
-  // Description:
-  // Add the plot matrix representation to the view.
-  virtual bool AddToView(vtkView *view);
+  /**
+   * Add the plot matrix representation to the view.
+   */
+  virtual bool AddToView(vtkView* view) VTK_OVERRIDE;
 
-  // Description:
-  // Remove the plot matrix representation from the view.
-  virtual bool RemoveFromView(vtkView *view);
+  /**
+   * Remove the plot matrix representation from the view.
+   */
+  virtual bool RemoveFromView(vtkView* view) VTK_OVERRIDE;
 
 private:
-  vtkPVPlotMatrixRepresentation(const vtkPVPlotMatrixRepresentation&); // Not implemented
-  void operator=(const vtkPVPlotMatrixRepresentation&); // Not implemented
+  vtkPVPlotMatrixRepresentation(const vtkPVPlotMatrixRepresentation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVPlotMatrixRepresentation&) VTK_DELETE_FUNCTION;
 
   class vtkInternals;
   vtkInternals* Internals;

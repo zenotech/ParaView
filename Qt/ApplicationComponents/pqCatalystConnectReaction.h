@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,36 +29,44 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqCatalystConnectReaction_h 
-#define __pqCatalystConnectReaction_h
+#ifndef pqCatalystConnectReaction_h
+#define pqCatalystConnectReaction_h
 
 #include "pqReaction.h"
 #include <QPointer>
 
 class pqLiveInsituVisualizationManager;
 
-/// Reaction for connecting to Catalyst CoProcessing Engine for Live-Data
-/// Visualization.
-/// @ingroup Reactions
-/// @ingroup LiveInsitu
+/**
+* Reaction for connecting to Catalyst CoProcessing Engine for Live-Data
+* Visualization.
+* @ingroup Reactions
+* @ingroup LiveInsitu
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqCatalystConnectReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
+
 public:
-  pqCatalystConnectReaction(QAction* parent=0);
+  pqCatalystConnectReaction(QAction* parent = 0);
   virtual ~pqCatalystConnectReaction();
 
-  /// Connect to Catalyst 
+  /**
+  * Connect to Catalyst
+  */
   bool connect();
 
 protected:
-  /// Called when the action is triggered.
-  virtual void onTriggered()
-    { this->connect(); }
+  /**
+  * Called when the action is triggered.
+  */
+  virtual void onTriggered() { this->connect(); }
 
-  /// reaction disabled when already connected to a catalyst server or in
-  /// collaboration mode.
+  /**
+  * reaction disabled when already connected to a catalyst server or in
+  * collaboration mode.
+  */
   virtual void updateEnableState();
 
 private:

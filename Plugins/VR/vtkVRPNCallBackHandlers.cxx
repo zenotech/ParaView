@@ -14,43 +14,43 @@
 =========================================================================*/
 #include "vtkVRPNCallBackHandlers.h"
 
-#include <vrpn_Tracker.h>
-#include <vrpn_Button.h>
+#include "pqActiveObjects.h"
+#include "pqVRPNConnection.h"
+#include "pqView.h"
+#include "vtkMath.h"
+#include "vtkSMDoubleVectorProperty.h"
+#include "vtkSMPropertyHelper.h"
+#include "vtkSMRenderViewProxy.h"
+#include "vtkSMRepresentationProxy.h"
+#include <iostream>
+#include <pqDataRepresentation.h>
+#include <vector>
 #include <vrpn_Analog.h>
+#include <vrpn_Button.h>
 #include <vrpn_Dial.h>
 #include <vrpn_Text.h>
-#include "vtkMath.h"
-#include "pqActiveObjects.h"
-#include "pqView.h"
-#include <pqDataRepresentation.h>
-#include "vtkSMRenderViewProxy.h"
-#include "vtkSMDoubleVectorProperty.h"
-#include "vtkSMRepresentationProxy.h"
-#include "vtkSMPropertyHelper.h"
-#include "pqVRPNConnection.h"
+#include <vrpn_Tracker.h>
 #include <vtkCamera.h>
-#include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
-#include <vector>
-#include <iostream>
+#include <vtkRenderer.h>
 
 // ----------------------------------------------------------------------------
 void VRPN_CALLBACK handleAnalogChange(void* userdata, const vrpn_ANALOGCB b)
 {
-  pqVRPNConnection *self = static_cast<pqVRPNConnection*> ( userdata );
-  self->newAnalogValue( b );
+  pqVRPNConnection* self = static_cast<pqVRPNConnection*>(userdata);
+  self->newAnalogValue(b);
 }
 
 // ----------------------------------------------------------------------------
 void VRPN_CALLBACK handleButtonChange(void* userdata, vrpn_BUTTONCB b)
 {
-  pqVRPNConnection *self = static_cast<pqVRPNConnection*> ( userdata );
-  self->newButtonValue( b );
+  pqVRPNConnection* self = static_cast<pqVRPNConnection*>(userdata);
+  self->newButtonValue(b);
 }
 
 // ----------------------------------------------------------------------------
-void VRPN_CALLBACK handleTrackerChange(void *userdata, const vrpn_TRACKERCB t)
+void VRPN_CALLBACK handleTrackerChange(void* userdata, const vrpn_TRACKERCB t)
 {
-  pqVRPNConnection *self = static_cast<pqVRPNConnection*> ( userdata );
-  self->newTrackerValue( t );
+  pqVRPNConnection* self = static_cast<pqVRPNConnection*>(userdata);
+  self->newTrackerValue(t);
 }

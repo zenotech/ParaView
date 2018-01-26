@@ -18,14 +18,14 @@
 // vtkStreamingParticlesRepresentation is a simple representation for multiblock
 // datasets that with streaming capabilities.
 
-#ifndef __vtkStreamingParticlesRepresentation_h
-#define __vtkStreamingParticlesRepresentation_h
+#ifndef vtkStreamingParticlesRepresentation_h
+#define vtkStreamingParticlesRepresentation_h
 
+#include "vtkBoundingBox.h" // needed for vtkBoundingBox.
 #include "vtkPVDataRepresentation.h"
 #include "vtkSmartPointer.h" // for smart pointer.
-#include "vtkWeakPointer.h" // for weak pointer.
-#include "vtkBoundingBox.h" // needed for vtkBoundingBox.
-#include <vector> // needed for std::vector
+#include "vtkWeakPointer.h"  // for weak pointer.
+#include <vector>            // needed for std::vector
 
 class vtkCompositePolyDataMapper2;
 class vtkMultiBlockDataSet;
@@ -38,40 +38,39 @@ class vtkStreamingParticlesRepresentation : public vtkPVDataRepresentation
 public:
   static vtkStreamingParticlesRepresentation* New();
   vtkTypeMacro(vtkStreamingParticlesRepresentation, vtkPVDataRepresentation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Description:
   // Set the input data arrays that this algorithm will process. Overridden to
   // pass the array selection to the mapper.
-  virtual void SetInputArrayToProcess(int idx, int port, int connection,
-    int fieldAssociation, const char *name);
-  virtual void SetInputArrayToProcess(int idx, int port, int connection,
-    int fieldAssociation, int fieldAttributeType)
-    {
+  virtual void SetInputArrayToProcess(
+    int idx, int port, int connection, int fieldAssociation, const char* name) VTK_OVERRIDE;
+  virtual void SetInputArrayToProcess(
+    int idx, int port, int connection, int fieldAssociation, int fieldAttributeType) VTK_OVERRIDE
+  {
     this->Superclass::SetInputArrayToProcess(
       idx, port, connection, fieldAssociation, fieldAttributeType);
-    }
-  virtual void SetInputArrayToProcess(int idx, vtkInformation *info)
-    {
+  }
+  virtual void SetInputArrayToProcess(int idx, vtkInformation* info) VTK_OVERRIDE
+  {
     this->Superclass::SetInputArrayToProcess(idx, info);
-    }
+  }
   virtual void SetInputArrayToProcess(int idx, int port, int connection,
-                              const char* fieldAssociation,
-                              const char* attributeTypeorName)
-    {
-    this->Superclass::SetInputArrayToProcess(idx, port, connection,
-      fieldAssociation, attributeTypeorName);
-    }
+    const char* fieldAssociation, const char* attributeTypeorName) VTK_OVERRIDE
+  {
+    this->Superclass::SetInputArrayToProcess(
+      idx, port, connection, fieldAssociation, attributeTypeorName);
+  }
 
   // Description:
   // Overridden to handle various view passes.
-  virtual int ProcessViewRequest(vtkInformationRequestKey* request_type,
-    vtkInformation* inInfo, vtkInformation* outInfo);
+  virtual int ProcessViewRequest(vtkInformationRequestKey* request_type, vtkInformation* inInfo,
+    vtkInformation* outInfo) VTK_OVERRIDE;
 
   // Description:
   // Get/Set the visibility for this representation. When the visibility of
   // representation of false, all view passes are ignored.
-  virtual void SetVisibility(bool val);
+  virtual void SetVisibility(bool val) VTK_OVERRIDE;
 
   // Description:
   // Set the number of blocks to request at a given time on a single process
@@ -94,20 +93,20 @@ public:
   // Defaults to false.
   void SetUseBlockDetailInformation(bool newVal);
   bool GetUseBlockDetailInformation() const;
-  vtkBooleanMacro(UseBlockDetailInformation,bool)
+  vtkBooleanMacro(UseBlockDetailInformation, bool)
 
-  // Description:
-  // Should be true if any server process can load any block.  This is not true
-  // for all data formats.  Defaults to true.
-  void SetProcessesCanLoadAnyBlock(bool newVal);
+    // Description:
+    // Should be true if any server process can load any block.  This is not true
+    // for all data formats.  Defaults to true.
+    void SetProcessesCanLoadAnyBlock(bool newVal);
   bool GetProcessesCanLoadAnyBlock() const;
-  vtkBooleanMacro(ProcessesCanLoadAnyBlock,bool)
+  vtkBooleanMacro(ProcessesCanLoadAnyBlock, bool)
 
-  // Description:
-  // Used in conjunction with SetUseBlockDetailInformation.  This determines how
-  // far from the camera highly detailed blocks are loaded.  Units: 1 = block diagonal.
-  // Defaults to 2
-  void SetDetailLevelToLoad(double level);
+    // Description:
+    // Used in conjunction with SetUseBlockDetailInformation.  This determines how
+    // far from the camera highly detailed blocks are loaded.  Units: 1 = block diagonal.
+    // Defaults to 2
+    void SetDetailLevelToLoad(double level);
   double GetDetailLevelToLoad();
 
   //---------------------------------------------------------------------------
@@ -116,36 +115,33 @@ public:
   //---------------------------------------------------------------------------
   void SetLookupTable(vtkScalarsToColors*);
   void SetPointSize(double val);
-    
-//BTX
+
 protected:
   vtkStreamingParticlesRepresentation();
   ~vtkStreamingParticlesRepresentation();
-
 
   // Description:
   // Adds the representation to the view.  This is called from
   // vtkView::AddRepresentation().  Subclasses should override this method.
   // Returns true if the addition succeeds.
-  virtual bool AddToView(vtkView* view);
+  virtual bool AddToView(vtkView* view) VTK_OVERRIDE;
 
   // Description:
   // Removes the representation to the view.  This is called from
   // vtkView::RemoveRepresentation().  Subclasses should override this method.
   // Returns true if the removal succeeds.
-  virtual bool RemoveFromView(vtkView* view);
+  virtual bool RemoveFromView(vtkView* view) VTK_OVERRIDE;
 
   // Description:
   // Fill input port information.
-  int FillInputPortInformation(int port, vtkInformation* info);
+  int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   // Description:
   // Overridden to check if the input pipeline is streaming capable. This method
   // should check if streaming is enabled i.e. vtkPVView::GetEnableStreaming()
   // and the input pipeline provides necessary AMR meta-data.
-  virtual int RequestInformation(vtkInformation *rqst,
-    vtkInformationVector **inputVector,
-    vtkInformationVector *outputVector);
+  virtual int RequestInformation(vtkInformation* rqst, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   // Description:
   // Setup the block request. During StreamingUpdate, this will request the
@@ -153,17 +149,15 @@ protected:
   // otherwise it doesn't make any specific request. AMR sources can treat the
   // absence of specific block request to mean various things. It's expected
   // that read only the root block (or a few more) in that case.
-  virtual int RequestUpdateExtent(vtkInformation* request,
-    vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector);
+  virtual int RequestUpdateExtent(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   // Description:
   // Generate the outline for the current input.
   // When not in StreamingUpdate, this also initializes the priority queue since
   // the input AMR may have totally changed, including its structure.
-  virtual int RequestData(vtkInformation *rqst,
-    vtkInformationVector **inputVector,
-    vtkInformationVector *outputVector);
+  virtual int RequestData(vtkInformation* rqst, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   // Description:
   // Returns true when the input pipeline supports streaming. It is set in
@@ -180,7 +174,7 @@ protected:
   // and then call Update() on the representation, making it reexecute and
   // regenerate the outline for the next "piece" of data.
   bool StreamingUpdate(const double view_planes[24]);
-  
+
   // Description:
   // Called in StreamingUpdate() to determine the blocks to stream in the
   // current pass. Returns false if no blocks need to be streaming currently.
@@ -188,13 +182,13 @@ protected:
 
   // Description:
   // This is the data object generated processed by the most recent call to
-  // RequestData() while not streaming. 
+  // RequestData() while not streaming.
   // This is non-empty only on the data-server nodes.
   vtkSmartPointer<vtkMultiBlockDataSet> ProcessedData;
 
   // Description:
   // This is the data object generated processed by the most recent call to
-  // RequestData() while streaming. 
+  // RequestData() while streaming.
   // This is non-empty only on the data-server nodes.
   vtkSmartPointer<vtkDataObject> ProcessedPiece;
 
@@ -223,8 +217,9 @@ protected:
   bool UseOutline;
 
 private:
-  vtkStreamingParticlesRepresentation(const vtkStreamingParticlesRepresentation&); // Not implemented
-  void operator=(const vtkStreamingParticlesRepresentation&); // Not implemented
+  vtkStreamingParticlesRepresentation(
+    const vtkStreamingParticlesRepresentation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkStreamingParticlesRepresentation&) VTK_DELETE_FUNCTION;
 
   // Description:
   // This flag is set to true if the input pipeline is streaming capable in
@@ -240,7 +235,6 @@ private:
   // and we need to clear our streaming buffers since the streamed data is no
   // longer valid.
   bool InStreamingUpdate;
-//ETX
 };
 
 #endif

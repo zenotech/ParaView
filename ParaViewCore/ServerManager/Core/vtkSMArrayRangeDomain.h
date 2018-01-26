@@ -12,17 +12,20 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMArrayRangeDomain - double range domain based on array range
-// .SECTION Description
-// vtkSMArrayRangeDomain is a sub-class of vtkSMDoubleRangeDomain. In it's
-// Update(), it sets min/max values based on the range of an input array.
-// It requires Input (vtkSMProxyProperty) and ArraySelection
-// (vtkSMStringVectorProperty) properties.
-// .SECTION See Also
-// vtkSMDoubleRangeDomain vtkSMProxyProperty vtkSMStringVectorProperty
+/**
+ * @class   vtkSMArrayRangeDomain
+ * @brief   double range domain based on array range
+ *
+ * vtkSMArrayRangeDomain is a sub-class of vtkSMDoubleRangeDomain. In it's
+ * Update(), it sets min/max values based on the range of an input array.
+ * It requires Input (vtkSMProxyProperty) and ArraySelection
+ * (vtkSMStringVectorProperty) properties.
+ * @sa
+ * vtkSMDoubleRangeDomain vtkSMProxyProperty vtkSMStringVectorProperty
+*/
 
-#ifndef __vtkSMArrayRangeDomain_h
-#define __vtkSMArrayRangeDomain_h
+#ifndef vtkSMArrayRangeDomain_h
+#define vtkSMArrayRangeDomain_h
 
 #include "vtkPVServerManagerCoreModule.h" //needed for exports
 #include "vtkSMDoubleRangeDomain.h"
@@ -34,27 +37,28 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMArrayRangeDomain : public vtkSMDoubleRa
 public:
   static vtkSMArrayRangeDomain* New();
   vtkTypeMacro(vtkSMArrayRangeDomain, vtkSMDoubleRangeDomain);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Updates the range based on the scalar range of the currently selected
-  // array. This requires Input (vtkSMProxyProperty) and ArraySelection
-  // (vtkSMStringVectorProperty) properties. Currently, this uses
-  // only the first component of the array.
-  virtual void Update(vtkSMProperty* prop);
+  /**
+   * Updates the range based on the scalar range of the currently selected
+   * array. This requires Input (vtkSMProxyProperty) and ArraySelection
+   * (vtkSMStringVectorProperty) properties. Currently, this uses
+   * only the first component of the array.
+   */
+  virtual void Update(vtkSMProperty* prop) VTK_OVERRIDE;
 
 protected:
   vtkSMArrayRangeDomain();
   ~vtkSMArrayRangeDomain();
 
   void Update(
-    const char* arrayName, int fieldAssociation,
-    vtkSMSourceProxy* producer, int producerPort);
+    const char* arrayName, int fieldAssociation, vtkSMSourceProxy* producer, int producerPort);
+
+  friend class vtkSMBoundsDomain;
 
 private:
-
-  vtkSMArrayRangeDomain(const vtkSMArrayRangeDomain&); // Not implemented
-  void operator=(const vtkSMArrayRangeDomain&); // Not implemented
+  vtkSMArrayRangeDomain(const vtkSMArrayRangeDomain&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMArrayRangeDomain&) VTK_DELETE_FUNCTION;
 };
 
 #endif

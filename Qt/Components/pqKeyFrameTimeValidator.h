@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -29,11 +29,11 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
-#ifndef __pqKeyFrameTimeValidator_h
-#define __pqKeyFrameTimeValidator_h
+#ifndef pqKeyFrameTimeValidator_h
+#define pqKeyFrameTimeValidator_h
 
-#include <QDoubleValidator>
 #include "pqComponentsModule.h"
+#include <QDoubleValidator>
 
 class pqAnimationScene;
 class vtkSMDomain;
@@ -42,12 +42,13 @@ class PQCOMPONENTS_EXPORT pqKeyFrameTimeValidator : public QDoubleValidator
 {
   Q_OBJECT
   typedef QDoubleValidator Superclass;
+
 public:
   pqKeyFrameTimeValidator(QObject* parent);
   virtual ~pqKeyFrameTimeValidator();
 
   // Set the AnimationScene. The ClockTimeRange from the time
-  // keeper is used to determine the scale factor for the 
+  // keeper is used to determine the scale factor for the
   // range for this validator.
   void setAnimationScene(pqAnimationScene* timekeeper);
 
@@ -64,4 +65,3 @@ private:
 };
 
 #endif
-

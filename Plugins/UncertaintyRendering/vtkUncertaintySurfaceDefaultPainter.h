@@ -13,8 +13,8 @@
 
 =========================================================================*/
 
-#ifndef __vtkUncertaintySurfaceDefaultPainter_h
-#define __vtkUncertaintySurfaceDefaultPainter_h
+#ifndef vtkUncertaintySurfaceDefaultPainter_h
+#define vtkUncertaintySurfaceDefaultPainter_h
 
 #include "vtkDefaultPainter.h"
 
@@ -24,16 +24,15 @@ class VTK_EXPORT vtkUncertaintySurfaceDefaultPainter : public vtkDefaultPainter
 {
 public:
   static vtkUncertaintySurfaceDefaultPainter* New();
-  vtkTypeMacro(vtkUncertaintySurfaceDefaultPainter, vtkDefaultPainter)
-  void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkUncertaintySurfaceDefaultPainter, vtkDefaultPainter);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Description:
   // Get/Set the uncertainty surface painter.
   void SetUncertaintySurfacePainter(vtkUncertaintySurfacePainter*);
   vtkGetObjectMacro(UncertaintySurfacePainter, vtkUncertaintySurfacePainter)
 
-protected:
-  vtkUncertaintySurfaceDefaultPainter();
+    protected : vtkUncertaintySurfaceDefaultPainter();
   ~vtkUncertaintySurfaceDefaultPainter();
 
   // Description:
@@ -44,4 +43,4 @@ private:
   vtkUncertaintySurfacePainter* UncertaintySurfacePainter;
 };
 
-#endif // __vtkUncertaintySurfaceDefaultPainter_h
+#endif // vtkUncertaintySurfaceDefaultPainter_h

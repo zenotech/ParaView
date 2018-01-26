@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -33,13 +33,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _pqDockWindowInterface_h
 #define _pqDockWindowInterface_h
 
+#include "pqComponentsModule.h"
 #include <QString>
 #include <QtPlugin>
-#include "pqComponentsModule.h"
 class QDockWidget;
 class QWidget;
 
-/// interface class for plugins that add a QDockWindow
+/**
+* interface class for plugins that add a QDockWindow
+*/
 class PQCOMPONENTS_EXPORT pqDockWindowInterface
 {
 public:
@@ -48,8 +50,11 @@ public:
 
   virtual QString dockArea() const = 0;
 
-  /// Creates a dock window with the given parent
+  /**
+  * Creates a dock window with the given parent
+  */
   virtual QDockWidget* dockWindow(QWidget* p) = 0;
+
 private:
   Q_DISABLE_COPY(pqDockWindowInterface)
 };

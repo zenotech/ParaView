@@ -12,12 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkCPCellFieldBuilder - Class for specifying cell fields over grids.
-// .SECTION Description
-// Class for specifying cell data fields over grids for a test driver.  
+/**
+ * @class   vtkCPCellFieldBuilder
+ * @brief   Class for specifying cell fields over grids.
+ *
+ * Class for specifying cell data fields over grids for a test driver.
+*/
 
-#ifndef __vtkCPCellFieldBuilder_h
-#define __vtkCPCellFieldBuilder_h
+#ifndef vtkCPCellFieldBuilder_h
+#define vtkCPCellFieldBuilder_h
 
 #include "vtkCPFieldBuilder.h"
 #include "vtkPVCatalystTestDriverModule.h" // needed for export macros
@@ -27,24 +30,25 @@ class VTKPVCATALYSTTESTDRIVER_EXPORT vtkCPCellFieldBuilder : public vtkCPFieldBu
 public:
   static vtkCPCellFieldBuilder* New();
   vtkTypeMacro(vtkCPCellFieldBuilder, vtkCPFieldBuilder);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Return a field on Grid. 
-  virtual void BuildField(unsigned long TimeStep, double Time,
-                          vtkDataSet* Grid);
+  /**
+   * Return a field on Grid.
+   */
+  virtual void BuildField(unsigned long TimeStep, double Time, vtkDataSet* Grid) VTK_OVERRIDE;
 
-  // Description:
-  // Return the highest order of discretization of the field.
-  //virtual unsigned int GetHighestFieldOrder();
+  /**
+   * Return the highest order of discretization of the field.
+   * virtual unsigned int GetHighestFieldOrder();
+   */
 
 protected:
   vtkCPCellFieldBuilder();
   ~vtkCPCellFieldBuilder();
 
 private:
-  vtkCPCellFieldBuilder(const vtkCPCellFieldBuilder&); // Not implemented
-  void operator=(const vtkCPCellFieldBuilder&); // Not implemented
+  vtkCPCellFieldBuilder(const vtkCPCellFieldBuilder&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkCPCellFieldBuilder&) VTK_DELETE_FUNCTION;
 };
 
 #endif

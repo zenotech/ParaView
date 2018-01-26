@@ -12,13 +12,16 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMDeserializerXMLCache - deserializes proxies from their XML states.
-// .SECTION Description
-// vtkSMDeserializerXMLCache is used to deserialize proxies from previously
-// stored XML states.
+/**
+ * @class   vtkSMDeserializerXMLCache
+ * @brief   deserializes proxies from their XML states.
+ *
+ * vtkSMDeserializerXMLCache is used to deserialize proxies from previously
+ * stored XML states.
+*/
 
-#ifndef __vtkSMDeserializerXMLCache_h
-#define __vtkSMDeserializerXMLCache_h
+#ifndef vtkSMDeserializerXMLCache_h
+#define vtkSMDeserializerXMLCache_h
 
 #include "vtkPVServerManagerCoreModule.h" //needed for exports
 #include "vtkSMDeserializerXML.h"
@@ -33,13 +36,13 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMDeserializerXMLCache : public vtkSMDese
 public:
   static vtkSMDeserializerXMLCache* New();
   vtkTypeMacro(vtkSMDeserializerXMLCache, vtkSMDeserializerXML);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Allow to register a given XML state for a given proxy GlobalId
+  /**
+   * Allow to register a given XML state for a given proxy GlobalId
+   */
   virtual void CacheXMLProxyState(vtkTypeUInt32 id, vtkPVXMLElement* xml);
 
-//BTX
 protected:
   vtkSMDeserializerXMLCache();
   ~vtkSMDeserializerXMLCache();
@@ -47,17 +50,17 @@ protected:
   // Friend to access NewProxy().
   friend class vtkSMProxyLocator;
 
-  // Description:
-  // Locate the XML for the proxy with the given id.
-  virtual vtkPVXMLElement* LocateProxyElement(vtkTypeUInt32 id);
+  /**
+   * Locate the XML for the proxy with the given id.
+   */
+  virtual vtkPVXMLElement* LocateProxyElement(vtkTypeUInt32 id) VTK_OVERRIDE;
 
 private:
-  vtkSMDeserializerXMLCache(const vtkSMDeserializerXMLCache&); // Not implemented
-  void operator=(const vtkSMDeserializerXMLCache&); // Not implemented
+  vtkSMDeserializerXMLCache(const vtkSMDeserializerXMLCache&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMDeserializerXMLCache&) VTK_DELETE_FUNCTION;
 
   class vtkInternal;
   vtkInternal* Internals;
-//ETX
 };
 
 #endif

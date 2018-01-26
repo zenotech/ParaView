@@ -12,13 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkDistributedTrivialProducer
-// .SECTION Description
-// Extend vtkPVTrivialProducer to allow distributed code to easily populate
-// a trivial producer with local DataObject while using a regular Proxy Model.
+/**
+ * @class   vtkDistributedTrivialProducer
+ *
+ * Extend vtkPVTrivialProducer to allow distributed code to easily populate
+ * a trivial producer with local DataObject while using a regular Proxy Model.
+*/
 
-#ifndef __vtkDistributedTrivialProducer_h
-#define __vtkDistributedTrivialProducer_h
+#ifndef vtkDistributedTrivialProducer_h
+#define vtkDistributedTrivialProducer_h
 
 #include "vtkPVTrivialProducer.h"
 #include "vtkPVVTKExtensionsCoreModule.h" // needed for export macro"
@@ -30,34 +32,35 @@ class VTKPVVTKEXTENSIONSCORE_EXPORT vtkDistributedTrivialProducer : public vtkPV
 public:
   static vtkDistributedTrivialProducer* New();
   vtkTypeMacro(vtkDistributedTrivialProducer, vtkPVTrivialProducer);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Provide a global method to store a data object accross processes and allow
-  // a given instance of TrivialProducer to use it based on its registred key.
+  /**
+   * Provide a global method to store a data object accross processes and allow
+   * a given instance of TrivialProducer to use it based on its registred key.
+   */
   static void SetGlobalOutput(const char* key, vtkDataObject* output);
 
-  // Description:
-  // Release a given Global output if a valid key (not NULL) is provided,
-  // otherwise the global output map will be cleared.
+  /**
+   * Release a given Global output if a valid key (not NULL) is provided,
+   * otherwise the global output map will be cleared.
+   */
   static void ReleaseGlobalOutput(const char* key);
 
-  // Description:
-  // Update the current instance to use a previously registred global data object
-  // as current output.
+  /**
+   * Update the current instance to use a previously registred global data object
+   * as current output.
+   */
   virtual void UpdateFromGlobal(const char* key);
 
-//BTX
 protected:
   vtkDistributedTrivialProducer();
   ~vtkDistributedTrivialProducer();
 
 private:
-  vtkDistributedTrivialProducer(const vtkDistributedTrivialProducer&); // Not implemented
-  void operator=(const vtkDistributedTrivialProducer&); // Not implemented
+  vtkDistributedTrivialProducer(const vtkDistributedTrivialProducer&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkDistributedTrivialProducer&) VTK_DELETE_FUNCTION;
 
   static vtkPVTrivialProducerStaticInternal* InternalStatic;
-//ETX
 };
 
 #endif

@@ -12,11 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVDisplayInformation -
-// .SECTION Description
+/**
+ * @class   vtkPVDisplayInformation
+ * @brief   provides information about the rendering
+ * display and OpenGL context.
+ *
+*/
 
-#ifndef __vtkPVDisplayInformation_h
-#define __vtkPVDisplayInformation_h
+#ifndef vtkPVDisplayInformation_h
+#define vtkPVDisplayInformation_h
 
 #include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 #include "vtkPVInformation.h"
@@ -25,39 +29,66 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVDisplayInformation : public vtk
 public:
   static vtkPVDisplayInformation* New();
   vtkTypeMacro(vtkPVDisplayInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Returns if the display can be opened up on the current processes.
+  /**
+   * Returns if the display can be opened up on the current processes.
+   */
   static bool CanOpenDisplayLocally();
 
-  // Description:
-  // Transfer information about a single object into this object.
-  virtual void CopyFromObject(vtkObject*);
+  /**
+   * Returns true if OpenGL context supports core features required for
+   * rendering.
+   */
+  static bool SupportsOpenGLLocally();
 
-  // Description:
-  // Merge another information object. Calls AddInformation(info, 0).
-  virtual void AddInformation(vtkPVInformation* info);
+  /**
+   * Transfer information about a single object into this object.
+   */
+  virtual void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
-  // Description:
-  // Manage a serialized version of the information.
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
+  /**
+   * Merge another information object. Calls AddInformation(info, 0).
+   */
+  virtual void AddInformation(vtkPVInformation* info) VTK_OVERRIDE;
 
-  // Description:
-  // CanOpenDisplay is set to 1 if a window can be opened on
-  // the display.
+  //@{
+  /**
+   * Manage a serialized version of the information.
+   */
+  virtual void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  virtual void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
+  //@}
+
+  //@{
+  /**
+   * CanOpenDisplay is set to 1 if a window can be opened on
+   * the display.
+   */
   vtkGetMacro(CanOpenDisplay, int);
+  //@}
+
+  //@{
+  /**
+   * SupportsOpenGL is set to 1 if the OpenGL context available supports core
+   * features needed for rendering.
+   */
+  vtkGetMacro(SupportsOpenGL, int);
+  //@}
 
 protected:
   vtkPVDisplayInformation();
   ~vtkPVDisplayInformation();
 
   int CanOpenDisplay;
+  int SupportsOpenGL;
 
 private:
-  vtkPVDisplayInformation(const vtkPVDisplayInformation&); // Not implemented
-  void operator=(const vtkPVDisplayInformation&); // Not implemented
+  vtkPVDisplayInformation(const vtkPVDisplayInformation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVDisplayInformation&) VTK_DELETE_FUNCTION;
+
+  static int GlobalCanOpenDisplayLocally;
+  static int GlobalSupportsOpenGL;
 };
 
 #endif

@@ -1,6 +1,6 @@
 
-#include <QWidget>
 #include <QPointer>
+#include <QWidget>
 class QPushButton;
 class QLabel;
 class QComboBox;
@@ -8,7 +8,6 @@ class QLineEdit;
 
 class pqServer;
 #include "pqTestUtility.h"
-
 
 class pqFileDialogTestUtility : public pqTestUtility
 {
@@ -40,12 +39,12 @@ public slots:
   void emittedFiles(const QList<QStringList>& files);
 
 protected:
-  QComboBox*   FileMode;
-  QComboBox*   ConnectionMode;
-  QLineEdit*   FileFilter;
+  QComboBox* FileMode;
+  QComboBox* ConnectionMode;
+  QLineEdit* FileFilter;
   QPushButton* OpenButton;
-  QLabel*      EmitLabel;
-  QLabel*      ReturnLabel;
+  QLabel* EmitLabel;
+  QLabel* ReturnLabel;
   QPointer<pqServer> Server;
   pqFileDialogTestUtility TestUtility;
 };

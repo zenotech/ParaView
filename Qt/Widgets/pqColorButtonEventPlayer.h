@@ -29,28 +29,31 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqColorButtonEventPlayer_h
-#define __pqColorButtonEventPlayer_h
+#ifndef pqColorButtonEventPlayer_h
+#define pqColorButtonEventPlayer_h
 
 #include "pqWidgetEventPlayer.h"
 #include "pqWidgetsModule.h" // needed for EXPORT macro.
 
-/// pqColorButtonEventPlayer is the player for pqColorChooserButton.
+/**
+* pqColorButtonEventPlayer is the player for pqColorChooserButton.
+*/
 class PQWIDGETS_EXPORT pqColorButtonEventPlayer : public pqWidgetEventPlayer
 {
   Q_OBJECT
   typedef pqWidgetEventPlayer Superclass;
+
 public:
-  pqColorButtonEventPlayer(QObject* parent=0);
+  pqColorButtonEventPlayer(QObject* parent = 0);
   ~pqColorButtonEventPlayer();
 
-  bool playEvent(QObject* object, const QString& command, const QString&
-    arguments, bool& error);
+  using Superclass::playEvent;
+  bool playEvent(QObject* object, const QString& command, const QString& arguments, bool& error);
 
-  static const QString &EVENT_NAME();
+  static const QString& EVENT_NAME();
+
 private:
-  pqColorButtonEventPlayer(const pqColorButtonEventPlayer&); // Not implemented.
-  void operator=(const pqColorButtonEventPlayer&); // Not implemented.
+  Q_DISABLE_COPY(pqColorButtonEventPlayer)
 };
 
 #endif

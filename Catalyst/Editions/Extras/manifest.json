@@ -8,7 +8,8 @@
   ],
   "cmake":{
     "cache":[
-      { "name":"Module_vtkPVVTKExtensionsRendering",
+      {
+        "name":"Module_vtkPVVTKExtensionsCore",
         "type":"BOOL",
         "value":"ON"
       },
@@ -29,6 +30,10 @@
         "value":"ON"
       },
       { "name":"Module_vtkFiltersGeometry",
+        "type":"BOOL",
+        "value":"ON"
+      },
+      { "name":"Module_vtkFiltersParallel",
         "type":"BOOL",
         "value":"ON"
       },
@@ -59,12 +64,10 @@
         { "class":"vtkExtractCells" },
         { "class":"vtkExtractSelectedBlock" },
         { "class":"vtkExtractSelectedIds" },
-        { "class":"vtkExtractSelectedFrustum" },
         { "class":"vtkExtractSelectedLocations" },
         { "class":"vtkExtractSelectedThresholds" },
         { "class":"vtkExtractSelectedRows" },
         { "class":"vtkExtractSelection" },
-        { "class":"vtkExtractSelectionBase" },
         { "class":"vtkProbeSelectedLocations" }
       ],
       "cswrap":true,
@@ -83,6 +86,18 @@
       ],
       "cswrap":true,
       "pythonwrap":true
+    },
+    { "name": "vtkFiltersParallel",
+      "path": "VTK/Filters/Parallel",
+      "include": [
+        { "class": "vtkAggregateDataSetFilter" }
+      ],
+      "replace": [
+        { "path": "VTK/Filters/Parallel/module.cmake" },
+        { "path": "VTK/Filters/Parallel/CMakeLists.txt" }
+      ],
+      "cswrap": true,
+      "pythonwrap": true
     },
     { "name":"vtkFiltersSources",
       "path":"VTK/Filters/Sources",
@@ -105,6 +120,8 @@
     { "name":"vtkFiltersGeneral",
       "path":"VTK/Filters/General",
       "include":[
+        { "class":"vtkExtractSelectedFrustum" },
+        { "class":"vtkExtractSelectionBase" },
         { "class":"vtkImageDataToPointSet" },
         { "class":"vtkRectilinearGridToPointSet" },
         { "class":"vtkTransformFilter" },
@@ -114,8 +131,8 @@
       "cswrap":true,
       "pythonwrap":true
     },
-    { "name":"vtkPVVTKExtensionsDefault",
-      "path":"ParaViewCore/VTKExtensions/Default",
+    { "name":"vtkPVVTKExtensionsCore",
+      "path":"ParaViewCore/VTKExtensions/Core",
       "include":[
         { "class":"vtkAttributeDataReductionFilter" },
         { "class":"vtkExtractHistogram" },
@@ -124,7 +141,9 @@
         { "class":"vtkParallelSerialWriter" },
         { "class":"vtkPExtractHistogram" },
         { "class":"vtkPVNullSource" },
-        { "class":"vtkPVTransform" }
+        { "class":"vtkPVTransform" },
+        { "class":"vtkReductionFilter" },
+        { "class":"vtkSelectionSerializer" }
       ],
       "cswrap":true,
       "pythonwrap":true
@@ -182,6 +201,8 @@
         { "path": "vtkXMLOffsetsManager.h" },
         { "path": "vtkXMLReaderVersion.h" },
         { "class": "vtkXMLCompositeDataWriter" },
+        { "class": "vtkXMLDataSetWriter" },
+        { "class": "vtkXMLHyperOctreeWriter" },
         { "class": "vtkXMLImageDataWriter" },
         { "class": "vtkXMLMultiBlockDataWriter" },
         { "class": "vtkXMLPolyDataWriter" },
@@ -218,21 +239,6 @@
       ],
       "cswrap": true,
       "pythonwrap": true
-    },
-    { "name":"vtkPVVTKExtensionsRendering",
-      "path":"ParaViewCore/VTKExtensions/Rendering",
-      "include":[
-        { "path":"module.cmake" },
-        { "class":"vtkPVArrowSource" },
-        { "class":"vtkReductionFilter" },
-        { "class":"vtkSelectionSerializer" }
-      ],
-      "replace":[
-        { "path":"ParaViewCore/VTKExtensions/Rendering/CMakeLists.txt" },
-        { "path":"ParaViewCore/VTKExtensions/Rendering/module.cmake" }
-      ],
-      "cswrap":true,
-      "pythonwrap":true
     }
   ],
   "proxies":[

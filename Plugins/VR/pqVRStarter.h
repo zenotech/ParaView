@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqVRStarter_h
-#define __pqVRStarter_h
+#ifndef pqVRStarter_h
+#define pqVRStarter_h
 #include <QObject>
 
 class QTimer;
@@ -52,7 +52,7 @@ class pqVRStarter : public QObject
   typedef QObject Superclass;
 
 public:
-  pqVRStarter(QObject* p=0);
+  pqVRStarter(QObject* p = 0);
   ~pqVRStarter();
 
   /// Creates and initiates the vtkVRConnectionManager thread the vtkVRQueue and
@@ -64,7 +64,7 @@ public:
   void onShutdown();
 
 private:
-  Q_DISABLE_COPY(pqVRStarter);
+  Q_DISABLE_COPY(pqVRStarter)
   class pqInternals;
   pqInternals* Internals;
   bool IsShutdown;

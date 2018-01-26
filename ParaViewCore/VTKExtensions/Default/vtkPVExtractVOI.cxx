@@ -14,6 +14,7 @@
 =========================================================================*/
 #include "vtkPVExtractVOI.h"
 
+#include "vtkCompositeDataPipeline.h"
 #include "vtkExtentTranslator.h"
 #include "vtkGarbageCollector.h"
 #include "vtkImageData.h"
@@ -26,13 +27,13 @@
 
 #include "vtkPVConfig.h"
 #ifdef PARAVIEW_USE_MPI
-# include "vtkPExtractGrid.h"
-# include "vtkPExtractVOI.h"
-# include "vtkPExtractRectilinearGrid.h"
+#include "vtkPExtractGrid.h"
+#include "vtkPExtractRectilinearGrid.h"
+#include "vtkPExtractVOI.h"
 #else
-# include "vtkExtractGrid.h"
-# include "vtkExtractVOI.h"
-# include "vtkExtractRectilinearGrid.h"
+#include "vtkExtractGrid.h"
+#include "vtkExtractRectilinearGrid.h"
+#include "vtkExtractVOI.h"
 #endif
 
 vtkStandardNewMacro(vtkPVExtractVOI);
@@ -50,39 +51,36 @@ vtkPVExtractVOI::vtkPVExtractVOI()
 
 #ifdef PARAVIEW_USE_MPI
   this->ExtractGrid = vtkPExtractGrid::New();
-  this->ExtractVOI  = vtkPExtractVOI::New();
-  this->ExtractRG   = vtkPExtractRectilinearGrid::New();
+  this->ExtractVOI = vtkPExtractVOI::New();
+  this->ExtractRG = vtkPExtractRectilinearGrid::New();
 #else
   this->ExtractGrid = vtkExtractGrid::New();
-  this->ExtractVOI  = vtkExtractVOI::New();
-  this->ExtractRG   = vtkExtractRectilinearGrid::New();
+  this->ExtractVOI = vtkExtractVOI::New();
+  this->ExtractRG = vtkExtractRectilinearGrid::New();
 #endif
 }
 
 //----------------------------------------------------------------------------
 vtkPVExtractVOI::~vtkPVExtractVOI()
 {
-  if(this->ExtractVOI)
-    {
+  if (this->ExtractVOI)
+  {
     this->ExtractVOI->Delete();
-    }
-  if(this->ExtractGrid)
-    {
+  }
+  if (this->ExtractGrid)
+  {
     this->ExtractGrid->Delete();
-    }
-  if(this->ExtractRG)
-    {
+  }
+  if (this->ExtractRG)
+  {
     this->ExtractRG->Delete();
-    }
+  }
 }
 
 //----------------------------------------------------------------------------
 template <class FilterType>
-void vtkPVExtractVOIProcessRequest(
-  FilterType* filter, vtkPVExtractVOI* self,
-  vtkInformation*request, 
-  vtkInformationVector** inputVector, 
-  vtkInformationVector* outputVector  )
+void vtkPVExtractVOIProcessRequest(FilterType* filter, vtkPVExtractVOI* self,
+  vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   filter->SetVOI(self->GetVOI());
   filter->SetSampleRate(self->GetSampleRate());
@@ -90,40 +88,24 @@ void vtkPVExtractVOIProcessRequest(
 }
 
 //----------------------------------------------------------------------------
-int vtkPVExtractVOI::RequestUpdateExtent(vtkInformation* request, 
-                                         vtkInformationVector** inputVector, 
-                                         vtkInformationVector* outputVector)
+int vtkPVExtractVOI::RequestUpdateExtent(
+  vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
   vtkDataObject* output = outInfo->Get(vtkDataObject::DATA_OBJECT());
 
   if (output->GetDataObjectType() == VTK_IMAGE_DATA)
-    {
-    vtkPVExtractVOIProcessRequest(
-      this->ExtractVOI, 
-      this,
-      request,
-      inputVector,
-      outputVector);
-    }
+  {
+    vtkPVExtractVOIProcessRequest(this->ExtractVOI, this, request, inputVector, outputVector);
+  }
   else if (output->GetDataObjectType() == VTK_STRUCTURED_GRID)
-    {
-    vtkPVExtractVOIProcessRequest(
-      this->ExtractGrid, 
-      this,
-      request,
-      inputVector,
-      outputVector);
-    }
+  {
+    vtkPVExtractVOIProcessRequest(this->ExtractGrid, this, request, inputVector, outputVector);
+  }
   else if (output->GetDataObjectType() == VTK_RECTILINEAR_GRID)
-    {
-    vtkPVExtractVOIProcessRequest(
-      this->ExtractRG, 
-      this,
-      request,
-      inputVector,
-      outputVector);
-    }
+  {
+    vtkPVExtractVOIProcessRequest(this->ExtractRG, this, request, inputVector, outputVector);
+  }
 
   // We can handle anything.
   vtkInformation* info = inputVector[0]->GetInformationObject(0);
@@ -133,84 +115,63 @@ int vtkPVExtractVOI::RequestUpdateExtent(vtkInformation* request,
 }
 
 //----------------------------------------------------------------------------
-int vtkPVExtractVOI::RequestInformation(vtkInformation* request, 
-                                        vtkInformationVector** inputVector, 
-                                        vtkInformationVector* outputVector)
+int vtkPVExtractVOI::RequestInformation(
+  vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
   vtkDataObject* output = outInfo->Get(vtkDataObject::DATA_OBJECT());
 
   if (output->GetDataObjectType() == VTK_IMAGE_DATA)
-    {
-    vtkPVExtractVOIProcessRequest(
-      this->ExtractVOI, 
-      this,
-      request,
-      inputVector,
-      outputVector);
-    }
+  {
+    vtkPVExtractVOIProcessRequest(this->ExtractVOI, this, request, inputVector, outputVector);
+  }
   else if (output->GetDataObjectType() == VTK_STRUCTURED_GRID)
-    {
+  {
     this->ExtractGrid->SetIncludeBoundary(this->IncludeBoundary);
-    vtkPVExtractVOIProcessRequest(
-      this->ExtractGrid, 
-      this,
-      request,
-      inputVector,
-      outputVector);
-    }
+    vtkPVExtractVOIProcessRequest(this->ExtractGrid, this, request, inputVector, outputVector);
+  }
   else if (output->GetDataObjectType() == VTK_RECTILINEAR_GRID)
-    {
+  {
     this->ExtractRG->SetIncludeBoundary(this->IncludeBoundary);
-    vtkPVExtractVOIProcessRequest(
-      this->ExtractRG, 
-      this,
-      request,
-      inputVector,
-      outputVector);
-    }
+    vtkPVExtractVOIProcessRequest(this->ExtractRG, this, request, inputVector, outputVector);
+  }
 
   return 1;
 }
 
 //----------------------------------------------------------------------------
-int vtkPVExtractVOI::RequestData(vtkInformation* request, 
-                                 vtkInformationVector** inputVector, 
-                                 vtkInformationVector* outputVector)
+int vtkPVExtractVOI::RequestData(
+  vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
+  // This filter does not support subsampling composite datasets. Detect and
+  // fail gracefully when this happens:
+  bool isSubSampling =
+    this->SampleRate[0] != 1 || this->SampleRate[1] != 1 || this->SampleRate[2] != 1;
+  vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
+  if (isSubSampling && inInfo->Has(vtkCompositeDataPipeline::COMPOSITE_DATA_META_DATA()))
+  {
+    vtkErrorMacro("The Extract Subset filter does not support subsampling on "
+                  "composite datasets.");
+    return 1;
+  }
+
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
-  vtkDataSet* output = 
-    vtkDataSet::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
+  vtkDataSet* output = vtkDataSet::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
   if (output->GetDataObjectType() == VTK_IMAGE_DATA)
-    {
-    vtkPVExtractVOIProcessRequest(
-      this->ExtractVOI, 
-      this,
-      request,
-      inputVector,
-      outputVector);
-    }
+  {
+    vtkPVExtractVOIProcessRequest(this->ExtractVOI, this, request, inputVector, outputVector);
+  }
   else if (output->GetDataObjectType() == VTK_STRUCTURED_GRID)
-    {
+  {
     this->ExtractGrid->SetIncludeBoundary(this->IncludeBoundary);
-    vtkPVExtractVOIProcessRequest(
-      this->ExtractGrid, 
-      this,
-      request,
-      inputVector,
-      outputVector);
-    }
+    vtkPVExtractVOIProcessRequest(this->ExtractGrid, this, request, inputVector, outputVector);
+  }
   else if (output->GetDataObjectType() == VTK_RECTILINEAR_GRID)
-    {
+  {
     this->ExtractRG->SetIncludeBoundary(this->IncludeBoundary);
-    vtkPVExtractVOIProcessRequest(
-      this->ExtractRG, 
-      this,
-      request,
-      inputVector,
-      outputVector);
-    }
+    vtkPVExtractVOIProcessRequest(this->ExtractRG, this, request, inputVector, outputVector);
+  }
 
   return 1;
 }
@@ -219,10 +180,10 @@ int vtkPVExtractVOI::RequestData(vtkInformation* request,
 void vtkPVExtractVOI::SetSampleRateI(int ratei)
 {
   if (this->SampleRate[0] == ratei)
-    {
+  {
     return;
-    }
-  
+  }
+
   this->SampleRate[0] = ratei;
   this->Modified();
 }
@@ -231,10 +192,10 @@ void vtkPVExtractVOI::SetSampleRateI(int ratei)
 void vtkPVExtractVOI::SetSampleRateJ(int ratej)
 {
   if (this->SampleRate[1] == ratej)
-    {
+  {
     return;
-    }
-  
+  }
+
   this->SampleRate[1] = ratej;
   this->Modified();
 }
@@ -243,10 +204,10 @@ void vtkPVExtractVOI::SetSampleRateJ(int ratej)
 void vtkPVExtractVOI::SetSampleRateK(int ratek)
 {
   if (this->SampleRate[2] == ratek)
-    {
+  {
     return;
-    }
-  
+  }
+
   this->SampleRate[2] = ratek;
   this->Modified();
 }
@@ -263,20 +224,15 @@ void vtkPVExtractVOI::ReportReferences(vtkGarbageCollector* collector)
 //----------------------------------------------------------------------------
 void vtkPVExtractVOI::PrintSelf(ostream& os, vtkIndent indent)
 {
-  this->Superclass::PrintSelf(os,indent);
+  this->Superclass::PrintSelf(os, indent);
 
   os << indent << "VOI: \n";
-  os << indent << "  Imin,Imax: (" << this->VOI[0] << ", " 
-     << this->VOI[1] << ")\n";
-  os << indent << "  Jmin,Jmax: (" << this->VOI[2] << ", " 
-     << this->VOI[3] << ")\n";
-  os << indent << "  Kmin,Kmax: (" << this->VOI[4] << ", " 
-     << this->VOI[5] << ")\n";
+  os << indent << "  Imin,Imax: (" << this->VOI[0] << ", " << this->VOI[1] << ")\n";
+  os << indent << "  Jmin,Jmax: (" << this->VOI[2] << ", " << this->VOI[3] << ")\n";
+  os << indent << "  Kmin,Kmax: (" << this->VOI[4] << ", " << this->VOI[5] << ")\n";
 
-  os << indent << "Sample Rate: (" << this->SampleRate[0] << ", "
-               << this->SampleRate[1] << ", "
-               << this->SampleRate[2] << ")\n";
+  os << indent << "Sample Rate: (" << this->SampleRate[0] << ", " << this->SampleRate[1] << ", "
+     << this->SampleRate[2] << ")\n";
 
-  os << indent << "Include Boundary: " 
-     << (this->IncludeBoundary ? "On\n" : "Off\n");
+  os << indent << "Include Boundary: " << (this->IncludeBoundary ? "On\n" : "Off\n");
 }

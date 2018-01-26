@@ -15,16 +15,15 @@
 // Create a simple driver for the co-processing library by
 // setting the desired classes inside of other classes.
 
+#include "vtkCPLinearScalarFieldFunction.h"
 #include "vtkCPNodalFieldBuilder.h"
 #include "vtkCPTestDriver.h"
 #include "vtkCPUniformGridBuilder.h"
-#include "vtkCPLinearScalarFieldFunction.h"
 
-int SimpleDriver(int, char*[])
+int SimpleDriver(int, char* [])
 {
   // Specify how the field varies over space and time.
-  vtkCPLinearScalarFieldFunction* fieldFunction = 
-    vtkCPLinearScalarFieldFunction::New();
+  vtkCPLinearScalarFieldFunction* fieldFunction = vtkCPLinearScalarFieldFunction::New();
   fieldFunction->SetConstant(2.);
   fieldFunction->SetTimeMultiplier(.1);
   fieldFunction->SetYMultiplier(23.);
@@ -37,11 +36,11 @@ int SimpleDriver(int, char*[])
 
   // Set the type of grid we are building.
   vtkCPUniformGridBuilder* gridBuilder = vtkCPUniformGridBuilder::New();
-  int dimensions[3] = {50, 50, 50};
+  int dimensions[3] = { 50, 50, 50 };
   gridBuilder->SetDimensions(dimensions);
-  double spacing[3] = {.2, .2, .3};
+  double spacing[3] = { .2, .2, .3 };
   gridBuilder->SetSpacing(spacing);
-  double origin[3] = {10,20,300};
+  double origin[3] = { 10, 20, 300 };
   gridBuilder->SetOrigin(origin);
   gridBuilder->SetFieldBuilder(fieldBuilder);
   fieldBuilder->Delete();

@@ -12,16 +12,18 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSIProxyProperty
-// .SECTION Description
-// ServerSide Property use to set Object array as method argument.
-// Those object could be either SMProxy instance or their SIProxy instance
-// or the VTK object managed by the SIProxy instance. The type of object is
-// specified inside the XML definition of the property with the attribute
-// argument_type=[VTK, SMProxy, SIProxy].
+/**
+ * @class   vtkSIProxyProperty
+ *
+ * ServerSide Property use to set Object array as method argument.
+ * Those object could be either SMProxy instance or their SIProxy instance
+ * or the VTK object managed by the SIProxy instance. The type of object is
+ * specified inside the XML definition of the property with the attribute
+ * argument_type=[VTK, SMProxy, SIProxy].
+*/
 
-#ifndef __vtkSIProxyProperty_h
-#define __vtkSIProxyProperty_h
+#ifndef vtkSIProxyProperty_h
+#define vtkSIProxyProperty_h
 
 #include "vtkPVServerImplementationCoreModule.h" //needed for exports
 #include "vtkSIProperty.h"
@@ -31,53 +33,66 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSIProxyProperty : public vtkSIProp
 public:
   static vtkSIProxyProperty* New();
   vtkTypeMacro(vtkSIProxyProperty, vtkSIProperty);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Command that can be used to remove inputs. If set, this
-  // command is called before the main Command is called with
-  // all the arguments.
+  //@{
+  /**
+   * Command that can be used to remove inputs. If set, this
+   * command is called before the main Command is called with
+   * all the arguments.
+   */
   vtkGetStringMacro(CleanCommand);
+  //@}
 
-  // Description:
-  // Remove command is the command called to remove the VTK
-  // object on the server-side. If set, CleanCommand is ignored.
-  // Instead for every proxy that was absent from the proxies
-  // previously pushed, the RemoveCommand is invoked.
+  //@{
+  /**
+   * Remove command is the command called to remove the VTK
+   * object on the server-side. If set, CleanCommand is ignored.
+   * Instead for every proxy that was absent from the proxies
+   * previously pushed, the RemoveCommand is invoked.
+   */
   vtkGetStringMacro(RemoveCommand);
+  //@}
 
   // When set to true, the property will push a NULL i.e. 0 when there are no
   // proxies in the property. Not used when CleanCommand or RemoveCommand is
   // set. Default is false.
   vtkGetMacro(NullOnEmpty, bool);
 
-//BTX
 protected:
   vtkSIProxyProperty();
   ~vtkSIProxyProperty();
 
-  // Description:
-  // Push a new state to the underneath implementation
-  virtual bool Push(vtkSMMessage*, int);
+  /**
+   * Push a new state to the underneath implementation
+   */
+  virtual bool Push(vtkSMMessage*, int) VTK_OVERRIDE;
 
-  // Description:
-  // Parse the xml for the property.
-  virtual bool ReadXMLAttributes(vtkSIProxy* proxyhelper, vtkPVXMLElement* element);
+  /**
+   * Parse the xml for the property.
+   */
+  virtual bool ReadXMLAttributes(vtkSIProxy* proxyhelper, vtkPVXMLElement* element) VTK_OVERRIDE;
 
-  // Description:
-  // Command that can be used to remove inputs. If set, this
-  // command is called before the main Command is called with
-  // all the arguments.
+  //@{
+  /**
+   * Command that can be used to remove inputs. If set, this
+   * command is called before the main Command is called with
+   * all the arguments.
+   */
   vtkSetStringMacro(CleanCommand);
   char* CleanCommand;
+  //@}
 
-  // Description:
-  // Remove command is the command called to remove the VTK
-  // object on the server-side. If set, CleanCommand is ignored.
-  // Instead for every proxy that was absent from the proxies
-  // previously pushed, the RemoveCommand is invoked.
+  //@{
+  /**
+   * Remove command is the command called to remove the VTK
+   * object on the server-side. If set, CleanCommand is ignored.
+   * Instead for every proxy that was absent from the proxies
+   * previously pushed, the RemoveCommand is invoked.
+   */
   vtkSetStringMacro(RemoveCommand);
   char* RemoveCommand;
+  //@}
 
   // When set to true, the property will push a NULL i.e. 0 when there are no
   // proxies in the property. Not used when CleanCommand or RemoveCommand is
@@ -85,10 +100,12 @@ protected:
   vtkSetMacro(NullOnEmpty, bool);
   bool NullOnEmpty;
 
-
-  enum TypeArg {
-    VTK, SMProxy, SIProxy
-    };
+  enum TypeArg
+  {
+    VTK,
+    SMProxy,
+    SIProxy
+  };
 
   // Proxy type: VTK (default), SMProxy, Kernel,
   // In the XML we expect argument_type="VTK"     (default value if not set)
@@ -103,14 +120,13 @@ protected:
   bool IsValidNull(vtkTypeUInt32 globalId);
 
 private:
-  vtkSIProxyProperty(const vtkSIProxyProperty&); // Not implemented
-  void operator=(const vtkSIProxyProperty&); // Not implemented
+  vtkSIProxyProperty(const vtkSIProxyProperty&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSIProxyProperty&) VTK_DELETE_FUNCTION;
   class InternalCache;
-  InternalCache *Cache;
+  InternalCache* Cache;
 
   class vtkObjectCache;
   vtkObjectCache* ObjectCache;
-//ETX
 };
 
 #endif

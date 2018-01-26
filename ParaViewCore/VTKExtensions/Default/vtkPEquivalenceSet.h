@@ -12,34 +12,37 @@
   the U.S. Government retains certain rights in this software.
 
 =========================================================================*/
-// .NAME vtkPEquivalenceSet - distributed method of Equivalence
-// .SECTION Description
-// Same as EquivalenceSet, but resolving is a global operation.
-// .SEE vtkEquivalenceSet
+/**
+ * @class   vtkPEquivalenceSet
+ * @brief   distributed method of Equivalence
+ *
+ * Same as EquivalenceSet, but resolving is a global operation.
+ * .SEE vtkEquivalenceSet
+*/
 
-#ifndef __vtkPEquivalenceSet_h
-#define __vtkPEquivalenceSet_h
+#ifndef vtkPEquivalenceSet_h
+#define vtkPEquivalenceSet_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkEquivalenceSet.h"
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 
 class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPEquivalenceSet : public vtkEquivalenceSet
 {
 public:
-  vtkTypeMacro(vtkPEquivalenceSet,vtkEquivalenceSet);
-  void PrintSelf(ostream& os, vtkIndent indent);
-  static vtkPEquivalenceSet *New();
+  vtkTypeMacro(vtkPEquivalenceSet, vtkEquivalenceSet);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
+  static vtkPEquivalenceSet* New();
 
   // Globally equivalent set IDs are reassigned to be sequential.
-  virtual int ResolveEquivalences ();
+  virtual int ResolveEquivalences() VTK_OVERRIDE;
 
 protected:
   vtkPEquivalenceSet();
   ~vtkPEquivalenceSet();
 
 private:
-  vtkPEquivalenceSet(const vtkPEquivalenceSet&);  // Not implemented.
-  void operator=(const vtkPEquivalenceSet&);  // Not implemented.
+  vtkPEquivalenceSet(const vtkPEquivalenceSet&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPEquivalenceSet&) VTK_DELETE_FUNCTION;
 };
 
-#endif /* __vtkPEquivalenceSet_h */
+#endif /* vtkPEquivalenceSet_h */

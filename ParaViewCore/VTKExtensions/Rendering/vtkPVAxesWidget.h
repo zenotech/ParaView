@@ -12,14 +12,22 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVAxesWidget - A widget to manipulate an axe
-//
-// .SECTION Description
-// This widget creates and manages its own vtkPVAxesActor.
+/**
+ * @class   vtkPVAxesWidget
+ * @brief   A widget to manipulate vtkPVAxesWidget.
+ *
+ *
+ * This widget creates and manages its own vtkPVAxesActor. To use this widget,
+ * make sure you call SetParentRenderer and SetInteractor (if interactivity is
+ * needed). Use `SetEnabled` to enable/disable interactivity and `SetVisibility`
+ * to show/hide the axes.
+ *
+ * @note This is an old class that uses old style for create widgets. Please
+ * don't use it as a reference for creating similar elements.
+*/
 
-
-#ifndef __vtkPVAxesWidget_h
-#define __vtkPVAxesWidget_h
+#ifndef vtkPVAxesWidget_h
+#define vtkPVAxesWidget_h
 
 #include "vtkInteractorObserver.h"
 #include "vtkPVVTKExtensionsRenderingModule.h" // needed for export macro
@@ -28,7 +36,6 @@ class vtkActor2D;
 class vtkKWApplication;
 class vtkPolyData;
 class vtkPVAxesActor;
-class vtkPVAxesWidgetObserver;
 class vtkRenderer;
 
 class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkPVAxesWidget : public vtkInteractorObserver
@@ -36,88 +43,105 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkPVAxesWidget : public vtkInteractorO
 public:
   static vtkPVAxesWidget* New();
   vtkTypeMacro(vtkPVAxesWidget, vtkInteractorObserver);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Layer number to use for the internal renderer created by vtkPVAxesWidget.
+  /**
+   * Layer number to use for the internal renderer created by vtkPVAxesWidget.
+   */
   static const int RendererLayer = 1;
 
-  // Description:
-  // Set/get the axes actor to be displayed in this 3D widget.
-  void SetAxesActor(vtkPVAxesActor *actor);
+  //@{
+  /**
+   * Set/get the axes actor to be displayed in this 3D widget.
+   */
+  void SetAxesActor(vtkPVAxesActor* actor);
   vtkGetObjectMacro(AxesActor, vtkPVAxesActor);
+  //@}
 
-  // Description:
-  // Enable the 3D widget.
-  virtual void SetEnabled(int);
-
-  //BTX
-  // Description:
-  // Set the renderer this 3D widget will be contained in.
-  void SetParentRenderer(vtkRenderer *ren);
+  //@{
+  /**
+   * Set the renderer this 3D widget will be contained in.
+   */
+  void SetParentRenderer(vtkRenderer* ren);
   vtkRenderer* GetParentRenderer();
+  //@}
 
-  // Description:
-  // Get the renderer.
+  /**
+   * Overridden to add interaction observers.
+   */
+  void SetInteractor(vtkRenderWindowInteractor* iren) VTK_OVERRIDE;
+
+  /**
+   * Get the renderer.
+   */
   vtkGetObjectMacro(Renderer, vtkRenderer);
 
-  //ETX
+  /**
+   * Overridden to update this->Enabled and hide outline when disabled.
+   * Use this method to enable/disable interactivity.
+   */
+  void SetEnabled(int) VTK_OVERRIDE;
 
-  // Description:
-  // Callback to keep the camera for the axes actor up to date with the
-  // camera in the parent renderer
-  void ExecuteEvent(vtkObject *o, unsigned long event, void *calldata);
+  //@{
+  /**
+   * Get/Set the visibility. Note if visibility is off, Enabled state is ignored
+   * and assumed off.
+   */
+  void SetVisibility(bool val);
+  bool GetVisibility();
+  //@}
 
-  // Description:
-  // Set/get whether to allow this 3D widget to be interactively moved/scaled.
-  void SetInteractive(int state);
-  vtkGetMacro(Interactive, int);
-  vtkBooleanMacro(Interactive, int);
-
-  // Description:
-  // Set/get the color of the outline of this widget.  The outline is visible
-  // when (in interactive mode) the cursor is over this 3D widget.
+  //@{
+  /**
+   * Set/get the color of the outline of this widget.  The outline is visible
+   * when (in interactive mode) the cursor is over this 3D widget.
+   */
   void SetOutlineColor(double r, double g, double b);
-  double *GetOutlineColor();
+  double* GetOutlineColor();
+  //@}
 
-  // Description:
-  // Set/get the color of the axis labels of this widget.
+  //@{
+  /**
+   * Set/get the color of the axis labels of this widget.
+   */
   void SetAxisLabelColor(double r, double g, double b);
-  double *GetAxisLabelColor();
+  double* GetAxisLabelColor();
+  //@}
 
-  // Description:
-  // Set/get the viewport to position/size this 3D widget.
+  //@{
+  /**
+   * Set/get the viewport to position/size this 3D widget.
+   */
   void SetViewport(double minX, double minY, double maxX, double maxY);
   double* GetViewport();
+  //@}
 
-//BTX
 protected:
   vtkPVAxesWidget();
   ~vtkPVAxesWidget();
 
-  vtkRenderer *Renderer;
-  vtkRenderer *ParentRenderer;
+  vtkRenderer* Renderer;
+  vtkRenderer* ParentRenderer;
 
-  vtkPVAxesActor *AxesActor;
-  vtkPolyData *Outline;
-  vtkActor2D *OutlineActor;
+  vtkPVAxesActor* AxesActor;
+  vtkPolyData* Outline;
+  vtkActor2D* OutlineActor;
 
-  static void ProcessEvents(vtkObject *object, unsigned long event,
-                            void *clientdata, void *calldata);
+  static void ProcessEvents(
+    vtkObject* object, unsigned long event, void* clientdata, void* calldata);
 
-  vtkPVAxesWidgetObserver *Observer;
-  int StartTag;
+  /**
+   * Callback to keep the camera for the axes actor up to date with the
+   * camera in the parent renderer
+   */
+  void UpdateCameraFromParentRenderer();
 
   int MouseCursorState;
   int Moving;
   int StartPosition[2];
 
-  int Interactive;
-
   void UpdateCursorIcon();
   void SetMouseCursor(int cursorState);
-
-  int State;
 
   enum AxesWidgetState
   {
@@ -132,20 +156,18 @@ protected:
   void OnButtonPress();
   void OnMouseMove();
   void OnButtonRelease();
-
   void MoveWidget();
   void ResizeTopLeft();
   void ResizeTopRight();
   void ResizeBottomLeft();
   void ResizeBottomRight();
-
   void SquareRenderer();
 
   unsigned long StartEventObserverId;
+
 private:
-  vtkPVAxesWidget(const vtkPVAxesWidget&);  // Not implemented
-  void operator=(const vtkPVAxesWidget&);  // Not implemented
-//ETX
+  vtkPVAxesWidget(const vtkPVAxesWidget&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVAxesWidget&) VTK_DELETE_FUNCTION;
 };
 
 #endif

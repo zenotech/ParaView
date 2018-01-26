@@ -19,8 +19,8 @@
 // ColorMaterial behaviour of the default OpenGL pipeline. Look at
 // vtkPVColorMaterialHelper_s for available GLSL functions.
 
-#ifndef __vtkPVColorMaterialHelper_h
-#define __vtkPVColorMaterialHelper_h
+#ifndef vtkPVColorMaterialHelper_h
+#define vtkPVColorMaterialHelper_h
 
 #include "vtkObject.h"
 
@@ -37,8 +37,8 @@ public:
   vtkGetObjectMacro(Shader, vtkShaderProgram2);
 
   // Description:
-  // Prepares the shader i.e. reads color material paramters state from OpenGL. 
-  // This must be called before the shader is bound. 
+  // Prepares the shader i.e. reads color material paramters state from OpenGL.
+  // This must be called before the shader is bound.
   void PrepareForRendering();
 
   // Description:
@@ -46,7 +46,6 @@ public:
   // after the shader has been bound, but before rendering the geometry.
   void Render();
 
-//BTX
 protected:
   vtkPVColorMaterialHelper();
   ~vtkPVColorMaterialHelper();
@@ -55,20 +54,19 @@ protected:
   vtkShaderProgram2* Shader;
 
   enum eMaterialParamater
-    {
+  {
     DISABLED = 0,
     AMBIENT = 1,
     DIFFUSE = 2,
     SPECULAR = 3,
     AMBIENT_AND_DIFFUSE = 4,
     EMISSION = 5
-    };
+  };
   eMaterialParamater Mode;
 
 private:
-  vtkPVColorMaterialHelper(const vtkPVColorMaterialHelper&); // Not implemented.
-  void operator=(const vtkPVColorMaterialHelper&); // Not implemented.
-//ETX
+  vtkPVColorMaterialHelper(const vtkPVColorMaterialHelper&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVColorMaterialHelper&) VTK_DELETE_FUNCTION;
 };
 
 #endif

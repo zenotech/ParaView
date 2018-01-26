@@ -12,12 +12,14 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSITimeRangeProperty
-// .SECTION Description
-// SIProperty that deals with TimeRange on Algorithm object type
+/**
+ * @class   vtkSITimeRangeProperty
+ *
+ * SIProperty that deals with TimeRange on Algorithm object type
+*/
 
-#ifndef __vtkSITimeStepsProperty_h
-#define __vtkSITimeStepsProperty_h
+#ifndef vtkSITimeStepsProperty_h
+#define vtkSITimeStepsProperty_h
 
 #include "vtkPVServerImplementationCoreModule.h" //needed for exports
 #include "vtkSIProperty.h"
@@ -27,23 +29,22 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSITimeStepsProperty : public vtkSI
 public:
   static vtkSITimeStepsProperty* New();
   vtkTypeMacro(vtkSITimeStepsProperty, vtkSIProperty);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-//BTX
 protected:
   vtkSITimeStepsProperty();
   ~vtkSITimeStepsProperty();
 
   friend class vtkSIProxy;
 
-  // Description:
-  // Pull the current state of the underneath implementation
-  virtual bool Pull(vtkSMMessage*);
+  /**
+   * Pull the current state of the underneath implementation
+   */
+  virtual bool Pull(vtkSMMessage*) VTK_OVERRIDE;
 
 private:
-  vtkSITimeStepsProperty(const vtkSITimeStepsProperty&); // Not implemented
-  void operator=(const vtkSITimeStepsProperty&); // Not implemented
-//ETX
+  vtkSITimeStepsProperty(const vtkSITimeStepsProperty&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSITimeStepsProperty&) VTK_DELETE_FUNCTION;
 };
 
 #endif

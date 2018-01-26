@@ -12,20 +12,25 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVFileInformation - Information object that can
-// be used to obtain information about a file/directory.
-// .SECTION Description
-// vtkPVFileInformation can be used to collect information about file
-// or directory. vtkPVFileInformation can collect information
-// from a vtkPVFileInformationHelper object alone.
-// .SECTION See Also
-// vtkPVFileInformationHelper
+/**
+ * @class   vtkPVFileInformation
+ * @brief   Information object that can
+ * be used to obtain information about a file/directory.
+ *
+ * vtkPVFileInformation can be used to collect information about file
+ * or directory. vtkPVFileInformation can collect information
+ * from a vtkPVFileInformationHelper object alone.
+ * @sa
+ * vtkPVFileInformationHelper
+*/
 
-#ifndef __vtkPVFileInformation_h
-#define __vtkPVFileInformation_h
+#ifndef vtkPVFileInformation_h
+#define vtkPVFileInformation_h
 
 #include "vtkPVClientServerCoreDefaultModule.h" //needed for exports
 #include "vtkPVInformation.h"
+
+#include <string> // Needed for std::string
 
 class vtkCollection;
 class vtkPVFileInformationSet;
@@ -36,22 +41,25 @@ class VTKPVCLIENTSERVERCOREDEFAULT_EXPORT vtkPVFileInformation : public vtkPVInf
 public:
   static vtkPVFileInformation* New();
   vtkTypeMacro(vtkPVFileInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Transfer information about a single object into this object.
-  // The object must be a vtkPVFileInformationHelper.
-  virtual void CopyFromObject(vtkObject* object);
+  /**
+   * Transfer information about a single object into this object.
+   * The object must be a vtkPVFileInformationHelper.
+   */
+  virtual void CopyFromObject(vtkObject* object) VTK_OVERRIDE;
 
-  //BTX
-  // Description:
-  // Manage a serialized version of the information.
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
+  //@{
+  /**
+   * Manage a serialized version of the information.
+   */
+  virtual void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  virtual void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
+  //@}
 
   enum FileTypes
-    {
-    INVALID=0,
+  {
+    INVALID = 0,
     SINGLE_FILE,
     SINGLE_FILE_LINK,
     DIRECTORY,
@@ -62,57 +70,79 @@ public:
     NETWORK_DOMAIN,
     NETWORK_SERVER,
     NETWORK_SHARE
-    };
+  };
 
-  // Description:
-  // Helper that returns whether a FileType is a
-  // directory (DIRECTORY, DRIVE, NETWORK_ROOT, etc...)
-  // Or in other words, a type that we can do a DirectoryListing on.
+  /**
+   * Helper that returns whether a FileType is a
+   * directory (DIRECTORY, DRIVE, NETWORK_ROOT, etc...)
+   * Or in other words, a type that we can do a DirectoryListing on.
+   */
   static bool IsDirectory(int t);
 
-  //ETX
-
-  // Description:
-  // Initializes the information object.
+  /**
+   * Initializes the information object.
+   */
   void Initialize();
 
-  // Description:
-  // Get the name of the file/directory whose information is
-  // represented by this object.
+  //@{
+  /**
+   * Get the name of the file/directory whose information is
+   * represented by this object.
+   */
   vtkGetStringMacro(Name);
+  //@}
 
-  // Description:
-  // Get the full path of the file/directory whose information is
-  // represented by this object.
+  //@{
+  /**
+   * Get the full path of the file/directory whose information is
+   * represented by this object.
+   */
   vtkGetStringMacro(FullPath);
+  //@}
 
-  // Description:
-  // Get the type of this file object.
+  //@{
+  /**
+   * Get the type of this file object.
+   */
   vtkGetMacro(Type, int);
+  //@}
 
-  // Description:
-  // Get the state of the hidden flag for the file/directory.
-  vtkGetMacro(Hidden,bool);
+  //@{
+  /**
+   * Get the state of the hidden flag for the file/directory.
+   */
+  vtkGetMacro(Hidden, bool);
+  //@}
 
-  // Description:
-  // Get the Contents for this directory.
-  // Returns a collection with vtkPVFileInformation objects
-  // for the contents of this directory if Type = DIRECTORY
-  // or the contents of this file group if Type ==FILE_GROUP.
+  //@{
+  /**
+   * Get the Contents for this directory.
+   * Returns a collection with vtkPVFileInformation objects
+   * for the contents of this directory if Type = DIRECTORY
+   * or the contents of this file group if Type ==FILE_GROUP.
+   */
   vtkGetObjectMacro(Contents, vtkCollection);
-//BTX
+  vtkGetStringMacro(Extension);
+  vtkGetMacro(Size, long long);
+  vtkGetMacro(ModificationTime, time_t);
+  //@}
+
 protected:
   vtkPVFileInformation();
   ~vtkPVFileInformation();
 
   vtkCollection* Contents;
-  vtkFileSequenceParser * SequenceParser;
+  vtkFileSequenceParser* SequenceParser;
 
-  char* Name;     // Name of this file/directory.
-  char* FullPath; // Full path for this file/directory.
-  int Type;       // Type i.e. File/Directory/FileGroup.
-  bool Hidden;    // If file/directory is hidden
+  char* Name;              // Name of this file/directory.
+  char* FullPath;          // Full path for this file/directory.
+  int Type;                // Type i.e. File/Directory/FileGroup.
+  bool Hidden;             // If file/directory is hidden
+  char* Extension;         // File extension
+  long long Size;          // File size
+  time_t ModificationTime; // File modification time
 
+  vtkSetStringMacro(Extension);
   vtkSetStringMacro(Name);
   vtkSetStringMacro(FullPath);
 
@@ -125,14 +155,15 @@ protected:
 
   bool DetectType();
   void GetSpecialDirectories();
-  void SetHiddenFlag( );
+  void SetHiddenFlag();
   int FastFileTypeDetection;
+  bool ReadDetailedFileInformation;
+
 private:
-  vtkPVFileInformation(const vtkPVFileInformation&); // Not implemented.
-  void operator=(const vtkPVFileInformation&); // Not implemented.
+  vtkPVFileInformation(const vtkPVFileInformation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVFileInformation&) VTK_DELETE_FUNCTION;
 
   struct vtkInfo;
-//ETX
 };
 
 #endif

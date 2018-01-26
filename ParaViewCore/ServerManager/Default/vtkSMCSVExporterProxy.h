@@ -12,13 +12,18 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMCSVExporterProxy - exporter used to export the spreadsheet view as
-// a CSV file.
-// .SECTION Description
-// vtkSMCSVExporterProxy is used to export the spreadsheet view as a CSV file.
+/**
+ * @class   vtkSMCSVExporterProxy
+ * @brief   exporter used to export the spreadsheet view
+ * and supported chart views as to a CSV file.
+ *
+ * vtkSMCSVExporterProxy is used to export the certain views to a CSV file.
+ * Currently, we support vtkSpreadSheetView and vtkPVXYChartView (which includes
+ * Bar/Line/Quartile/Parallel Coordinates views).
+*/
 
-#ifndef __vtkSMCSVExporterProxy_h
-#define __vtkSMCSVExporterProxy_h
+#ifndef vtkSMCSVExporterProxy_h
+#define vtkSMCSVExporterProxy_h
 
 #include "vtkPVServerManagerDefaultModule.h" //needed for exports
 #include "vtkSMExporterProxy.h"
@@ -28,27 +33,26 @@ class VTKPVSERVERMANAGERDEFAULT_EXPORT vtkSMCSVExporterProxy : public vtkSMExpor
 public:
   static vtkSMCSVExporterProxy* New();
   vtkTypeMacro(vtkSMCSVExporterProxy, vtkSMExporterProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Exports the view.
-  virtual void Write();
+  /**
+   * Exports the view.
+   */
+  virtual void Write() VTK_OVERRIDE;
 
-  // Description:
-  // Returns if the view can be exported. 
-  // Default implementation return true if the view is a render view.
-  virtual bool CanExport(vtkSMProxy*);
+  /**
+   * Returns if the view can be exported.
+   * Default implementation return true if the view is a render view.
+   */
+  virtual bool CanExport(vtkSMProxy*) VTK_OVERRIDE;
 
-//BTX
 protected:
   vtkSMCSVExporterProxy();
   ~vtkSMCSVExporterProxy();
 
 private:
-  vtkSMCSVExporterProxy(const vtkSMCSVExporterProxy&); // Not implemented
-  void operator=(const vtkSMCSVExporterProxy&); // Not implemented
-//ETX
+  vtkSMCSVExporterProxy(const vtkSMCSVExporterProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMCSVExporterProxy&) VTK_DELETE_FUNCTION;
 };
 
 #endif
-

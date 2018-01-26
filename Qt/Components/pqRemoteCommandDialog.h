@@ -12,8 +12,8 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#ifndef __pqRemoteCommandDialog_h
-#define __pqRemoteCommandDialog_h
+#ifndef pqRemoteCommandDialog_h
+#define pqRemoteCommandDialog_h
 
 // .NAME pqRemoteCommandDialog - Dialog for configuring remote commands
 // .SECTION Description
@@ -32,14 +32,10 @@ class pqRemoteCommandDialogUI;
 
 class pqRemoteCommandDialog : public QDialog
 {
-Q_OBJECT
+  Q_OBJECT
 
 public:
-  pqRemoteCommandDialog(
-        QWidget *parent,
-        Qt::WindowFlags f,
-        int clientHostType,
-        int serverHostType);
+  pqRemoteCommandDialog(QWidget* parent, Qt::WindowFlags f, int clientHostType, int serverHostType);
 
   ~pqRemoteCommandDialog();
 
@@ -71,7 +67,7 @@ private:
   string LocateFile();
 
 private:
-  pqRemoteCommandDialogUI *Ui;
+  pqRemoteCommandDialogUI* Ui;
 
   string CommandSetName;
   QStringList CommandSet;

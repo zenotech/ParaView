@@ -12,12 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSIArraySelectionProperty - InformationOnly property
-// .SECTION Description
-// SIProperty that deals with ArraySelection object
+/**
+ * @class   vtkSIArraySelectionProperty
+ * @brief   InformationOnly property
+ *
+ * SIProperty that deals with ArraySelection object
+*/
 
-#ifndef __vtkSIArraySelectionProperty_h
-#define __vtkSIArraySelectionProperty_h
+#ifndef vtkSIArraySelectionProperty_h
+#define vtkSIArraySelectionProperty_h
 
 #include "vtkPVServerImplementationCoreModule.h" //needed for exports
 #include "vtkSIProperty.h"
@@ -27,23 +30,22 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSIArraySelectionProperty : public 
 public:
   static vtkSIArraySelectionProperty* New();
   vtkTypeMacro(vtkSIArraySelectionProperty, vtkSIProperty);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-//BTX
 protected:
   vtkSIArraySelectionProperty();
   ~vtkSIArraySelectionProperty();
 
   friend class vtkSIProxy;
 
-  // Description:
-  // Pull the current state of the underneath implementation
-  virtual bool Pull(vtkSMMessage*);
+  /**
+   * Pull the current state of the underneath implementation
+   */
+  virtual bool Pull(vtkSMMessage*) VTK_OVERRIDE;
 
 private:
-  vtkSIArraySelectionProperty(const vtkSIArraySelectionProperty&); // Not implemented
-  void operator=(const vtkSIArraySelectionProperty&); // Not implemented
-//ETX
+  vtkSIArraySelectionProperty(const vtkSIArraySelectionProperty&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSIArraySelectionProperty&) VTK_DELETE_FUNCTION;
 };
 
 #endif

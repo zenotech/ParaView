@@ -91,6 +91,20 @@
     <bool>true</bool>
    </property>
   </action>
+  <action name="actionReloadFiles">
+   <property name="text">
+     <string>Reload Files</string>
+   </property>
+   <property name="iconText">
+    <string>Reload Files</string>
+   </property>
+   <property name="toolTip">
+    <string>Reload data files in case they were changed externally.</string>
+   </property>
+   <property name="shortcut">
+    <string>F5</string>
+   </property>
+  </action>
   <action name="actionFileOpen">
    <property name="icon">
     <iconset resource="../../../Components/Resources/pqComponents.qrc">
@@ -147,8 +161,24 @@
     <string>Load window layout from a file</string>
    </property>
   </action>
+  <action name="actionFileImportCinemaDatabase">
+   <property name="icon">
+    <iconset resource="../../../Components/Resources/pqComponents.qrc">
+     <normaloff>:/pqWidgets/Icons/cinemascience_mark.png</normaloff>:/pqWidgets/Icons/cinemascience_mark.png</iconset>
+   </property>
+   <property name="text">
+    <string>Import Cinema Database...</string>
+   </property>
+   <property name="toolTip">
+    <string>Import a Cinema Database file</string>
+   </property>
+   <property name="statusTip">
+    <string>Import a Cinema Database file</string>
+   </property>
+  </action>
   <addaction name="actionFileOpen"/>
   <addaction name="menuRecentFiles"/>
+  <addaction name="actionReloadFiles"/>
   <addaction name="separator"/>
   <addaction name="actionFileLoadServerState"/>
   <addaction name="actionFileSaveServerState"/>
@@ -159,6 +189,8 @@
   <addaction name="separator"/>
   <addaction name="actionFileSaveAnimation"/>
   <addaction name="actionFileSaveGeometry"/>
+  <addaction name="separator"/>
+  <addaction name="actionFileImportCinemaDatabase"/>
   <addaction name="separator"/>
   <addaction name="actionFileLoadWindowLayout"/>
   <addaction name="actionFileSaveWindowLayout"/>

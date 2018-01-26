@@ -12,12 +12,14 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMInsituStateLoader
-// .SECTION Description
-//
+/**
+ * @class   vtkSMInsituStateLoader
+ *
+ *
+*/
 
-#ifndef __vtkSMInsituStateLoader_h
-#define __vtkSMInsituStateLoader_h
+#ifndef vtkSMInsituStateLoader_h
+#define vtkSMInsituStateLoader_h
 
 #include "vtkPVServerManagerCoreModule.h" //needed for exports
 #include "vtkSMStateLoader.h"
@@ -27,21 +29,20 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMInsituStateLoader : public vtkSMStateLo
 public:
   static vtkSMInsituStateLoader* New();
   vtkTypeMacro(vtkSMInsituStateLoader, vtkSMStateLoader);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-//BTX
 protected:
   vtkSMInsituStateLoader();
   ~vtkSMInsituStateLoader();
 
-  // Description:
-  // Overridden to try to reuse existing proxies as much as possible.
-  virtual vtkSMProxy* NewProxy(vtkTypeUInt32 id, vtkSMProxyLocator* locator);
+  /**
+   * Overridden to try to reuse existing proxies as much as possible.
+   */
+  virtual vtkSMProxy* NewProxy(vtkTypeUInt32 id, vtkSMProxyLocator* locator) VTK_OVERRIDE;
 
 private:
-  vtkSMInsituStateLoader(const vtkSMInsituStateLoader&); // Not implemented
-  void operator=(const vtkSMInsituStateLoader&); // Not implemented
-//ETX
+  vtkSMInsituStateLoader(const vtkSMInsituStateLoader&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMInsituStateLoader&) VTK_DELETE_FUNCTION;
 };
 
 #endif

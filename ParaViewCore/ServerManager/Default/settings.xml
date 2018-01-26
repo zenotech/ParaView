@@ -8,12 +8,25 @@
         Collection of general setting for ParaView.
       </Documentation>
 
-      <IntVectorProperty name="ShowSplashScreen"
+      <IntVectorProperty name="ShowWelcomeDialog"
         number_of_elements="1"
         default_values="1"
         panel_visibility="advanced">
         <Documentation>
-          Show splash screen at startup.
+          Show welcome screen at startup.
+        </Documentation>
+        <BooleanDomain name="bool" />
+        <Hints>
+          <SaveInQSettings />
+        </Hints>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="ShowSaveStateOnExit"
+        number_of_elements="1"
+        default_values="0"
+        panel_visibility="advanced">
+        <Documentation>
+          Prompt to save state when exiting ParaView.
         </Documentation>
         <BooleanDomain name="bool" />
         <Hints>
@@ -35,6 +48,33 @@
         </Hints>
       </IntVectorProperty>
 
+      <IntVectorProperty name="GUIOverrideFont"
+        label="Override Font"
+        command="SetGUIOverrideFont"
+        default_values="0"
+        number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Override the GUI font size. Uncheck to use system default.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="GUIFontSize"
+        label="Font Size"
+        command="SetGUIFontSize"
+        number_of_elements="1"
+        default_values="8">
+        <Documentation>
+          Specify the font size in points.
+        </Documentation>
+        <IntRangeDomain name="range" min="8" max="32" />
+        <Hints>
+          <PropertyWidgetDecorator type="ShowWidgetDecorator">
+            <Property name="GUIOverrideFont" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </IntVectorProperty>
+
       <StringVectorProperty name="DefaultViewType"
         number_of_elements="1"
         default_values="RenderView"
@@ -45,6 +85,17 @@
           Set the view to create when ParaView starts up.
         </Documentation>
       </StringVectorProperty>
+
+      <IntVectorProperty name="ScreenPixelsPerInch"
+        number_of_elements="1"
+        default_values="96"
+        panel_visibility="advanced">
+        <IntRangeDomain name="range" min="80" />
+        <Documentation>
+          Set pixels per inch on the current screen/monitor. This is used for determining
+          pixel sizes for fonts and other 2D annotations.
+        </Documentation>
+      </IntVectorProperty>
 
       <IntVectorProperty name="AutoApply"
         number_of_elements="1"
@@ -74,6 +125,26 @@
         <BooleanDomain name="bool" />
       </IntVectorProperty>
 
+      <IntVectorProperty name="LoadAllVariables"
+        number_of_elements="1"
+        default_values="0"
+        command="SetLoadAllVariables">
+        <Documentation>
+          Load all variables when loading a data set.
+        </Documentation>
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <IntVectorProperty name="LoadNoChartVariables"
+        number_of_elements="1"
+        default_values="0"
+        command="SetLoadNoChartVariables">
+        <Documentation>
+          Do not load any variables when loading a 2D chart.
+        </Documentation>
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
       <IntVectorProperty name="PropertiesPanelMode"
         command="SetPropertiesPanelMode"
         number_of_elements="1"
@@ -91,6 +162,20 @@
         </EnumerationDomain>
         <Hints>
           <RestartRequired />
+        </Hints>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="LockPanels"
+        command="SetLockPanels"
+        number_of_elements="1"
+        default_values="0"
+        panel_visibility="advanced">
+        <Documentation>
+          Prevent movement of dockable control panels to other positions.
+        </Documentation>
+        <BooleanDomain name="bool" />
+        <Hints>
+          <SaveInQSettings/>
         </Hints>
       </IntVectorProperty>
 
@@ -231,43 +316,17 @@
         </Hints>
       </IntVectorProperty>
 
-      <DoubleVectorProperty name="MultiViewImageBorderColor"
-        command="SetMultiViewImageBorderColor"
-        number_of_elements="3"
-        default_values="0 0 0"
-        panel_visibility="advanced"
-        panel_widget="color_selector_with_palette">
-        <DoubleRangeDomain name="range" min="0 0 0" max="1 1 1" />
-        <Documentation>
-          Select the color to use for the separator between views when saving screenshots
-          and animation images with multiple views.
-        </Documentation>
-      </DoubleVectorProperty>
-
-      <IntVectorProperty name="MultiViewImageBorderWidth"
-        command="SetMultiViewImageBorderWidth"
+      <IntVectorProperty name="AnimationTimePrecision"
         number_of_elements="1"
-        default_values="0"
+        default_values="6"
+        command="SetAnimationTimePrecision"
         panel_visibility="advanced">
-        <IntRangeDomain name="range" min="0" max="10" />
         <Documentation>
-          Specify the width of border (in pixels) to use around views when saving screenshots
-          and animation images with multiple views.
+          Set the number of significant digits displayed for the time in the animation
+          toolbar.
         </Documentation>
+        <IntRangeDomain min="1" max="17" />
       </IntVectorProperty>
-
-      <IntVectorProperty name="TransparentBackground"
-        command="SetTransparentBackground"
-        number_of_elements="1"
-        default_values="0"
-        panel_visibility="advanced">
-        <BooleanDomain name="bool" />
-        <Documentation>
-           Set whether screenshots use an alpha channel to make the background
-           transparent.
-        </Documentation>
-      </IntVectorProperty>
-
 
       <IntVectorProperty name="InheritRepresentationProperties"
         command="SetInheritRepresentationProperties"
@@ -283,19 +342,41 @@
         </Documentation>
       </IntVectorProperty>
 
+      <IntVectorProperty name="MaximumNumberOfDataRepresentationLabels"
+        number_of_elements="1"
+        default_values="100"
+        panel_visibility="advanced">
+        <IntRangeDomain min="1"
+                        name="range" />
+        <Documentation>
+          Set how many points should be labeled when labeling points with data.  If there
+          are more point than this then only a subset will be labeled.  This helps when many
+          points are selected and the number of labels would make then unreadable.
+        </Documentation>
+      </IntVectorProperty>
 
       <PropertyGroup label="General Options">
-        <Property name="ShowSplashScreen" />
+        <Property name="ShowWelcomeDialog" />
+        <Property name="ShowSaveStateOnExit" />
         <Property name="CrashRecovery" />
+        <Property name="GUIFontSize" />
       </PropertyGroup>
 
-      <PropertyGroup label="Default View">
+      <PropertyGroup label="GUI Font">
+        <Property name="GUIOverrideFont"/>
+        <Property name="GUIFontSize" />
+      </PropertyGroup>
+
+      <PropertyGroup label="View Options">
         <Property name="DefaultViewType" />
+        <Property name="ScreenPixelsPerInch" />
       </PropertyGroup>
 
       <PropertyGroup label="Properties Panel Options">
         <Property name="AutoApply" />
         <Property name="AutoApplyActiveOnly" />
+        <Property name="LoadAllVariables" />
+        <Property name="LoadNoChartVariables" />
       </PropertyGroup>
 
       <PropertyGroup label="Color/Opacity Map Range Options">
@@ -320,11 +401,7 @@
       <PropertyGroup label="Animation">
         <Property name="CacheGeometryForAnimation" />
         <Property name="AnimationGeometryCacheLimit" />
-      </PropertyGroup>
-
-      <PropertyGroup label="Screenshot Options">
-        <Property name="MultiViewImageBorderColor" />
-        <Property name="MultiViewImageBorderWidth" />
+        <Property name="AnimationTimePrecision" />
       </PropertyGroup>
 
       <PropertyGroup label="Miscellaneous">
@@ -349,7 +426,8 @@
         default_values="1">
         <BooleanDomain name="bool" />
         <Documentation>
-          Enable use of display lists when rendering surface meshes.
+          Enable use of display lists when rendering surface meshes
+          (only applicable for builds with legacy rendering backend).
         </Documentation>
         <Hints>
           <RestartRequired />
@@ -428,6 +506,116 @@
         <Hints>
           <PropertyWidgetDecorator type="EnableWidgetDecorator">
             <Property name="DepthPeeling" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="UseFXAA"
+                         default_values="1"
+                         number_of_elements="1"
+                         panel_visibility="default">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Enable FXAA antialiasing on 3D geometry.
+        </Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty name="FXAARelativeContrastThreshold"
+                            default_values="0.125"
+                            label="Relative Contrast Threshold"
+                            panel_visibility="advanced"
+                            number_of_elements="1">
+        <Documentation>
+          Contrast threshold for applying FXAA to a pixel, relative to max
+          luminance. Lower values will affect more edges. Default is 0.125.
+        </Documentation>
+        <DoubleRangeDomain name="range" min="0.0625" max="0.333333333" />
+        <Hints>
+          <PropertyWidgetDecorator type="EnableWidgetDecorator">
+            <Property name="UseFXAA" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </DoubleVectorProperty>
+      <!-- The hard contrast threshold is reduced to 0.045 by default. This
+           ensures that the the red arrow of the orientation axes is
+           antialiased. -->
+      <DoubleVectorProperty name="FXAAHardContrastThreshold"
+                            default_values="0.045"
+                            label="Hard Contrast Threshold"
+                            panel_visibility="advanced"
+                            number_of_elements="1">
+        <Documentation>
+          Hard contrast threshold for applying FXAA to a pixel. Lower values
+          will affect more edges. Default is 0.045.
+        </Documentation>
+        <DoubleRangeDomain name="range" min="0.03125" max="0.08333333" />
+        <Hints>
+          <PropertyWidgetDecorator type="EnableWidgetDecorator">
+            <Property name="UseFXAA" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty name="FXAASubpixelBlendLimit"
+                            default_values="0.75"
+                            label="Subpixel Blend Limit"
+                            panel_visibility="advanced"
+                            number_of_elements="1">
+        <Documentation>
+          Maximum amount of lowpass filtering to apply to the final pixel color
+          to correct subpixel aliasing. Default value is 0.75.
+        </Documentation>
+        <DoubleRangeDomain name="range" min="0." max="1." />
+        <Hints>
+          <PropertyWidgetDecorator type="EnableWidgetDecorator">
+            <Property name="UseFXAA" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty name="FXAASubpixelContrastThreshold"
+                            default_values="0.25"
+                            label="Subpixel Contrast Threshold"
+                            panel_visibility="advanced"
+                            number_of_elements="1">
+        <Documentation>
+          Contrast threshold for subpixel aliasing detection. Higher values
+          decrease sensitivity to subpixel aliasing. Default value is 0.25.
+        </Documentation>
+        <DoubleRangeDomain name="range" min="0." max="0.5" />
+        <Hints>
+          <PropertyWidgetDecorator type="EnableWidgetDecorator">
+            <Property name="UseFXAA" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </DoubleVectorProperty>
+      <IntVectorProperty name="FXAAUseHighQualityEndpoints"
+                         default_values="1"
+                         label="Improve Single Pixel Lines"
+                         panel_visibility="advanced"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          When enabled, a more sensitive endpoint detection method is used.
+          Disabling this will improve performance, but single-pixel lines will
+          have noticeable artifacts. Default is On.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="EnableWidgetDecorator">
+            <Property name="UseFXAA" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </IntVectorProperty>
+      <IntVectorProperty name="FXAAEndpointSearchIterations"
+                         default_values="12"
+                         label="Endpoint Search Iterations"
+                         panel_visibility="advanced"
+                         number_of_elements="1">
+        <Documentation>
+          Endpoint detection radius. Higher values will provide higher quality
+          aliasing for long edges, but performance will suffer. Default is 12.
+        </Documentation>
+        <IntRangeDomain name="range" min="0" max="100" />
+        <Hints>
+          <PropertyWidgetDecorator type="EnableWidgetDecorator">
+            <Property name="UseFXAA" />
           </PropertyWidgetDecorator>
         </Hints>
       </IntVectorProperty>
@@ -522,7 +710,7 @@
       </IntVectorProperty>
 
       <StringVectorProperty name="CompressorConfig"
-        default_values="vtkSquirtCompressor 0 3"
+        default_values="vtkLZ4Compressor 0 3"
         number_of_elements="1"
         panel_visibility="advanced"
         panel_widget="image_compressor_config">
@@ -530,6 +718,9 @@
           Set the compression method used when transferring rendered images from
           the server to the client.
         </Documentation>
+        <Hints>
+          <SupportsLZ4/>
+        </Hints>
       </StringVectorProperty>
 
       <IntVectorProperty name="OutlineThreshold"
@@ -578,6 +769,22 @@
         </Documentation>
       </IntVectorProperty>
 
+      <IntVectorProperty name="DisableIceT"
+                         label="Disable IceT"
+                         command="SetDisableIceT"
+                         default_values="0"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Set to disable IceT (default is unchecked). This is not common and only provided
+          for special rendering modes/mappers.
+        </Documentation>
+        <Hints>
+          <RestartRequired />
+        </Hints>
+      </IntVectorProperty>
+
       <PropertyGroup label="Geometry Mapper Options">
         <Property name="UseDisplayLists" />
         <Property name="ResolveCoincidentTopology" />
@@ -588,6 +795,16 @@
       <PropertyGroup label="Translucent Rendering Options">
         <Property name="DepthPeeling" />
         <Property name="MaximumNumberOfPeels" />
+      </PropertyGroup>
+
+      <PropertyGroup label="Antialiasing Options">
+        <Property name="UseFXAA" />
+        <Property name="FXAARelativeContrastThreshold" />
+        <Property name="FXAAHardContrastThreshold" />
+        <Property name="FXAASubpixelBlendLimit" />
+        <Property name="FXAASubpixelContrastThreshold" />
+        <Property name="FXAAUseHighQualityEndpoints" />
+        <Property name="FXAAEndpointSearchIterations" />
       </PropertyGroup>
 
       <PropertyGroup label="Interactive Rendering Options">
@@ -611,6 +828,7 @@
         <Property name="OutlineThreshold" />
         <Property name="UseOffscreenRenderingForScreenshots" />
         <Property name="ShowAnnotation" />
+        <Property name="DisableIceT" />
       </PropertyGroup>
       <Hints>
         <UseDocumentationForLabels />
@@ -621,8 +839,9 @@
     <SettingsProxy name="RenderViewInteractionSettings" label="Camera"
       processes="client|dataserver|renderserver">
       <IntVectorProperty name="Camera3DManipulators"
+        label="Camera 3D Manipulators"
         number_of_elements="9"
-        default_values="4 1 2 3 4 1 2 4 2"
+        default_values="4 1 2 3 4 1 2 4 6"
         panel_widget="camera_manipulator">
         <!-- For now, we are marking this property is_internal so that it won't
         get saved in state files. -->
@@ -636,11 +855,24 @@
           <Entry text="Roll" value="3" />
           <Entry text="Rotate" value="4" />
           <Entry text="Multi-Rotate" value="5" />
+          <Entry text="ZoomToMouse" value="6" />
         </EnumerationDomain>
       </IntVectorProperty>
+      <DoubleVectorProperty command="SetCamera3DMouseWheelMotionFactor"
+                            default_values="1"
+                            name="Camera3DMouseWheelMotionFactor"
+                            label="3D Mouse Wheel Factor"
+                            number_of_elements="1">
+        <DoubleRangeDomain max="10"
+                           min="0"
+                           name="range"
+                           resolution="0.01" />
+        <Documentation>Set the wheel motion factor for 3D interaction.</Documentation>
+      </DoubleVectorProperty>
       <IntVectorProperty name="Camera2DManipulators"
+        label="Camera 2D Manipulators"
         number_of_elements="9"
-        default_values="1 3 2 2 2 2 3 1 4"
+        default_values="1 3 2 2 2 6 3 1 4"
         panel_widget="camera_manipulator">
         <!-- For now, we are marking this property is_internal so that it won't
         get saved in state files. -->
@@ -653,13 +885,27 @@
           <Entry text="Zoom" value="2" />
           <Entry text="Roll" value="3" />
           <Entry text="Rotate" value="4" />
+          <Entry text="ZoomToMouse" value="6" />
         </EnumerationDomain>
       </IntVectorProperty>
+      <DoubleVectorProperty command="SetCamera2DMouseWheelMotionFactor"
+                            default_values="1"
+                            name="Camera2DMouseWheelMotionFactor"
+                            label="2D Mouse Wheel Factor"
+                            number_of_elements="1">
+        <DoubleRangeDomain max="10"
+                           min="0"
+                           name="range"
+                           resolution="0.01" />
+        <Documentation>Set the wheel motion factor for 2D interaction.</Documentation>
+      </DoubleVectorProperty>
       <PropertyGroup label="2D Interaction Options">
         <Property name="Camera2DManipulators" />
+        <Property name="Camera2DMouseWheelMotionFactor" />
       </PropertyGroup>
       <PropertyGroup label="3D Interaction Options">
         <Property name="Camera3DManipulators" />
+        <Property name="Camera3DMouseWheelMotionFactor" />
       </PropertyGroup>
       <Hints>
         <UseDocumentationForLabels />

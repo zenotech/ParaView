@@ -33,42 +33,45 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _pqSelectReaderDialog_h
 #define _pqSelectReaderDialog_h
 
-#include <QDialog>
 #include "pqComponentsModule.h"
+#include <QDialog>
 
 class pqServer;
 class vtkSMReaderFactory;
 class vtkStringList;
 
-/// a dialog that prompts for a reader type to open a file
+/**
+* a dialog that prompts for a reader type to open a file
+*/
 class PQCOMPONENTS_EXPORT pqSelectReaderDialog : public QDialog
 {
   Q_OBJECT
 public:
-  /// constructor
-  pqSelectReaderDialog(const QString& file,
-                       pqServer* s,
-                       vtkSMReaderFactory* factory,
-                       QWidget* p = 0);
+  /**
+  * constructor
+  */
+  pqSelectReaderDialog(
+    const QString& file, pqServer* s, vtkSMReaderFactory* factory, QWidget* p = 0);
 
-  pqSelectReaderDialog(const QString& file,
-                       pqServer* s,
-                       vtkStringList* list,
-                       QWidget* p = 0);
-  /// destructor
+  pqSelectReaderDialog(const QString& file, pqServer* s, vtkStringList* list, QWidget* p = 0);
+  /**
+  * destructor
+  */
   ~pqSelectReaderDialog();
 
-  /// get the reader that was chosen to read a file
+  /**
+  * get the reader that was chosen to read a file
+  */
   QString getReader() const;
 
-  /// get the group for the chosen reader.
+  /**
+  * get the group for the chosen reader.
+  */
   QString getGroup() const;
 
 protected:
   class pqInternal;
   pqInternal* Internal;
-
 };
 
 #endif
-

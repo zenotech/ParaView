@@ -12,13 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVDisableStackTraceSignalHandler
-// .SECTION Description
-// When run on the process it enables a stacktrace signal handler for
-// common errors.
+/**
+ * @class   vtkPVDisableStackTraceSignalHandler
+ *
+ * When run on the process it enables a stacktrace signal handler for
+ * common errors.
+*/
 
-#ifndef __vtkPVDisableStackTraceSignalHandler_h
-#define __vtkPVDisableStackTraceSignalHandler_h
+#ifndef vtkPVDisableStackTraceSignalHandler_h
+#define vtkPVDisableStackTraceSignalHandler_h
 
 #include "vtkPVInformation.h"
 
@@ -29,28 +31,32 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVDisableStackTraceSignalHandler : pub
 public:
   static vtkPVDisableStackTraceSignalHandler* New();
   vtkTypeMacro(vtkPVDisableStackTraceSignalHandler, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Transfer information about a single object into this object.
-  virtual void CopyFromObject(vtkObject*);
+  /**
+   * Transfer information about a single object into this object.
+   */
+  virtual void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
-  // Description:
-  // Merge another information object.
-  virtual void AddInformation(vtkPVInformation*){}
+  /**
+   * Merge another information object.
+   */
+  virtual void AddInformation(vtkPVInformation*) VTK_OVERRIDE {}
 
-  // Description:
-  // Manage a serialized version of the information.
-  virtual void CopyToStream(vtkClientServerStream*){}
-  virtual void CopyFromStream(const vtkClientServerStream*){}
+  /**
+   * Manage a serialized version of the information.
+   */
+  virtual void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE {}
+  virtual void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE {}
 
 protected:
-  vtkPVDisableStackTraceSignalHandler(){}
-  ~vtkPVDisableStackTraceSignalHandler(){}
+  vtkPVDisableStackTraceSignalHandler() {}
+  ~vtkPVDisableStackTraceSignalHandler() {}
 
 private:
-  vtkPVDisableStackTraceSignalHandler(const vtkPVDisableStackTraceSignalHandler&); // Not implemented
-  void operator=(const vtkPVDisableStackTraceSignalHandler&); // Not implemented
+  vtkPVDisableStackTraceSignalHandler(
+    const vtkPVDisableStackTraceSignalHandler&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVDisableStackTraceSignalHandler&) VTK_DELETE_FUNCTION;
 };
 
 #endif

@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -32,13 +32,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "vtkPython.h"
 
-#include "pqPythonQtPlugin.h"
 #include "pqPluginDecorators.h"
+#include "pqPythonQtPlugin.h"
 #include "pqPythonQtWrapperFactory.h"
 
 #include <pqPVApplicationCore.h>
-#include <pqPythonManager.h>
 #include <pqPythonDialog.h>
+#include <pqPythonManager.h>
 #include <pqPythonShell.h>
 
 #include <PythonQt.h>
@@ -50,23 +50,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class pqPythonQtPlugin::pqInternal
 {
 public:
-
 };
 
 //-----------------------------------------------------------------------------
-pqPythonQtPlugin::pqPythonQtPlugin(QWidget* p) : QObject(p)
+pqPythonQtPlugin::pqPythonQtPlugin(QWidget* p)
+  : QObject(p)
 {
   this->Internal = new pqInternal;
 
-/*
-  pqPythonManager* pythonManager = pqPVApplicationCore::instance()->pythonManager();
-  this->connect(pythonManager, SIGNAL(paraviewPythonModulesImported()), SLOT(initialize()));
+  /*
+    pqPythonManager* pythonManager = pqPVApplicationCore::instance()->pythonManager();
+    this->connect(pythonManager, SIGNAL(paraviewPythonModulesImported()), SLOT(initialize()));
 
-  if (pythonManager->interpreterIsInitialized())
-    {
-    this->initialize();
-    }
-*/
+    if (pythonManager->interpreterIsInitialized())
+      {
+      this->initialize();
+      }
+  */
   this->initialize();
 }
 
@@ -89,10 +89,11 @@ void pqPythonQtPlugin::shutdown()
 //-----------------------------------------------------------------------------
 void pqPythonQtPlugin::initialize()
 {
-  //pqPythonManager* pythonManager = pqPVApplicationCore::instance()->pythonManager();
-  //this->disconnect(pythonManager, SIGNAL(paraviewPythonModulesImported()), this, SLOT(initialize()));
+  // pqPythonManager* pythonManager = pqPVApplicationCore::instance()->pythonManager();
+  // this->disconnect(pythonManager, SIGNAL(paraviewPythonModulesImported()), this,
+  // SLOT(initialize()));
 
-  //pqPythonShell* shell = pythonManager->pythonShellDialog()->shell();
+  // pqPythonShell* shell = pythonManager->pythonShellDialog()->shell();
 
   vtkPythonInterpreter::Initialize();
 

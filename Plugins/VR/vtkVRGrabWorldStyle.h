@@ -29,11 +29,11 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __vtkVRGrabWorldStyle_h_
-#define __vtkVRGrabWorldStyle_h_
+#ifndef vtkVRGrabWorldStyle_h_
+#define vtkVRGrabWorldStyle_h_
 
-#include "vtkVRTrackStyle.h"
 #include "vtkNew.h"
+#include "vtkVRTrackStyle.h"
 
 class vtkCamera;
 class vtkMatrix4x4;
@@ -45,16 +45,16 @@ struct vtkVREventData;
 class vtkVRGrabWorldStyle : public vtkVRTrackStyle
 {
 public:
-  static vtkVRGrabWorldStyle *New();
-  vtkTypeMacro(vtkVRGrabWorldStyle, vtkVRTrackStyle)
-  void PrintSelf(ostream &os, vtkIndent indent);
+  static vtkVRGrabWorldStyle* New();
+  vtkTypeMacro(vtkVRGrabWorldStyle, vtkVRTrackStyle);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkVRGrabWorldStyle();
   ~vtkVRGrabWorldStyle();
 
-  virtual void HandleButton( const vtkVREventData& data );
-  virtual void HandleTracker( const vtkVREventData& data );
+  virtual void HandleButton(const vtkVREventData& data);
+  virtual void HandleTracker(const vtkVREventData& data);
 
   bool EnableTranslate;
   bool EnableRotate;
@@ -69,10 +69,10 @@ protected:
   vtkNew<vtkMatrix4x4> CachedRotMatrix;
 
 private:
-  vtkVRGrabWorldStyle(const vtkVRGrabWorldStyle&); // Not implemented.
-  void operator=(const vtkVRGrabWorldStyle&); // Not implemented.
+  vtkVRGrabWorldStyle(const vtkVRGrabWorldStyle&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkVRGrabWorldStyle&) VTK_DELETE_FUNCTION;
 
-  float GetSpeedFactor(vtkCamera *cam);
+  float GetSpeedFactor(vtkCamera* cam);
 };
 
-#endif //__vtkVRGrabWorldStyle.h_
+#endif // vtkVRGrabWorldStyle.h_

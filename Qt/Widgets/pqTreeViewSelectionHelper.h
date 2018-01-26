@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,12 +29,12 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqTreeViewSelectionHelper_h 
-#define __pqTreeViewSelectionHelper_h
+#ifndef pqTreeViewSelectionHelper_h
+#define pqTreeViewSelectionHelper_h
 
-#include <QObject>
 #include "pqWidgetsModule.h"
 #include <QItemSelection>
+#include <QObject>
 #include <QTreeView>
 
 // pqTreeViewSelectionHelper is analogous to pqTreeWidgetSelectionHelper.
@@ -44,19 +44,19 @@ class PQWIDGETS_EXPORT pqTreeViewSelectionHelper : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
   pqTreeViewSelectionHelper(QTreeView* view);
   virtual ~pqTreeViewSelectionHelper();
 
 protected slots:
-  void onClicked (QModelIndex idx);
-  void onPressed (QModelIndex idx); 
+  void onClicked(QModelIndex idx);
+  void onPressed(QModelIndex idx);
   void showContextMenu(const QPoint&);
   void saveSelection();
 
 private:
-  pqTreeViewSelectionHelper(const pqTreeViewSelectionHelper&); // Not implemented.
-  void operator=(const pqTreeViewSelectionHelper&); // Not implemented.
+  Q_DISABLE_COPY(pqTreeViewSelectionHelper)
 
   void setSelectedItemsCheckState(Qt::CheckState state);
 
@@ -67,5 +67,3 @@ private:
 };
 
 #endif
-
-

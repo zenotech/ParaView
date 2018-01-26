@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -29,19 +29,21 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
-#ifndef __pqIntRangeWidget_h
-#define __pqIntRangeWidget_h
+#ifndef pqIntRangeWidget_h
+#define pqIntRangeWidget_h
 
-#include <QWidget>
 #include "pqComponentsModule.h"
 #include "vtkSmartPointer.h"
-  
+#include <QWidget>
+
 class QSlider;
 class pqLineEdit;
 class vtkSMIntRangeDomain;
 class vtkEventQtSlotConnect;
 
-/// a widget with a tied slider and line edit for editing a int property
+/**
+* a widget with a tied slider and line edit for editing a int property
+*/
 class PQCOMPONENTS_EXPORT pqIntRangeWidget : public QWidget
 {
   Q_OBJECT
@@ -50,36 +52,47 @@ class PQCOMPONENTS_EXPORT pqIntRangeWidget : public QWidget
   Q_PROPERTY(int maximum READ maximum WRITE setMaximum)
   Q_PROPERTY(bool strictRange READ strictRange WRITE setStrictRange)
 public:
-  /// constructor requires the proxy, property
+  /**
+  * constructor requires the proxy, property
+  */
   pqIntRangeWidget(QWidget* parent = NULL);
   ~pqIntRangeWidget();
 
-  /// get the value
+  /**
+  * get the value
+  */
   int value() const;
-  
+
   // get the min range value
   int minimum() const;
   // get the max range value
   int maximum() const;
-  
-  // returns whether the line edit is also limited 
+
+  // returns whether the line edit is also limited
   bool strictRange() const;
 
   // Sets the range domain to monitor. This will automatically update
   // the widgets range when the domain changes.
-  void setDomain(vtkSMIntRangeDomain *domain);
-  
+  void setDomain(vtkSMIntRangeDomain* domain);
+
 signals:
-  /// signal the value changed
+  /**
+  * signal the value changed
+  */
   void valueChanged(int);
 
-  /// signal the value was edited
-  /// this means the user is done changing text
-  /// or the slider was moved
+  /**
+  * signal the value was edited
+  * this means the user is done changing text
+  * or the user is done moving the slider. It implies
+  * value was changed and editing has finished.
+  */
   void valueEdited(int);
 
 public slots:
-  /// set the value
+  /**
+  * set the value
+  */
   void setValue(int);
 
   // set the min range value
@@ -97,6 +110,10 @@ private slots:
   void editingFinished();
   void updateValidator();
   void domainChanged();
+  void emitValueEdited();
+  void emitIfDeferredValueEdited();
+  void sliderPressed();
+  void sliderReleased();
 
 private:
   int Value;
@@ -107,7 +124,9 @@ private:
   bool BlockUpdate;
   bool StrictRange;
   vtkSmartPointer<vtkSMIntRangeDomain> Domain;
-  vtkEventQtSlotConnect *DomainConnection;
+  vtkEventQtSlotConnect* DomainConnection;
+  bool InteractingWithSlider;
+  bool DeferredValueEdited;
 };
 
 #endif

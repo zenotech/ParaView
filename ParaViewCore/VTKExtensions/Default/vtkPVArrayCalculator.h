@@ -12,24 +12,27 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVArrayCalculator - perform mathematical operations on data 
-//  in field data arrays
-//
-// .SECTION Description
-//  vtkPVArrayCalculator performs operations on vectors or scalars in field
-//  data arrays.
-//  vtkArrayCalculator provides API for users to add scalar/vector fields and
-//  their mapping with the input fields. We extend vtkArrayCalculator to
-//  automatically add scalar/vector fields mapping using the array available in
-//  the input.
-// .SECTION See Also
-//  vtkArrayCalculator vtkFunctionParser
+/**
+ * @class   vtkPVArrayCalculator
+ * @brief   perform mathematical operations on data
+ *  in field data arrays
+ *
+ *
+ *  vtkPVArrayCalculator performs operations on vectors or scalars in field
+ *  data arrays.
+ *  vtkArrayCalculator provides API for users to add scalar/vector fields and
+ *  their mapping with the input fields. We extend vtkArrayCalculator to
+ *  automatically add scalar/vector fields mapping using the array available in
+ *  the input.
+ * @sa
+ *  vtkArrayCalculator vtkFunctionParser
+*/
 
-#ifndef __vtkPVArrayCalculator_h
-#define __vtkPVArrayCalculator_h
+#ifndef vtkPVArrayCalculator_h
+#define vtkPVArrayCalculator_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkArrayCalculator.h"
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 
 class vtkDataObject;
 class vtkDataSetAttributes;
@@ -37,31 +40,34 @@ class vtkDataSetAttributes;
 class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVArrayCalculator : public vtkArrayCalculator
 {
 public:
-  vtkTypeMacro( vtkPVArrayCalculator,vtkArrayCalculator );
-  void   PrintSelf( ostream & os, vtkIndent indent );
+  vtkTypeMacro(vtkPVArrayCalculator, vtkArrayCalculator);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  static vtkPVArrayCalculator * New();
+  static vtkPVArrayCalculator* New();
 
 protected:
   vtkPVArrayCalculator();
   ~vtkPVArrayCalculator();
 
-  virtual int RequestData( vtkInformation *, vtkInformationVector **, 
-                           vtkInformationVector *);
-  
-  // Description:
-  // This function updates the (scalar and vector arrays / variables) names 
-  // to make them consistent with those of the upstream calculator(s). This
-  // addresses the scenarios where the user modifies the name of a calculator
-  // whose output is the input of a (some) subsequent calculator(s) or the user
-  // changes the input of a downstream calculator. Argument inDataAttrs refers
-  // to the attributes of the input dataset. This function should be called by 
-  // RequestData() only.
-  void    UpdateArrayAndVariableNames( vtkDataObject        * theInputObj, 
-                                       vtkDataSetAttributes * inDataAttrs );
+  virtual int RequestData(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
+
+  //@{
+  /**
+   * This function updates the (scalar and vector arrays / variables) names
+   * to make them consistent with those of the upstream calculator(s). This
+   * addresses the scenarios where the user modifies the name of a calculator
+   * whose output is the input of a (some) subsequent calculator(s) or the user
+   * changes the input of a downstream calculator. Argument inDataAttrs refers
+   * to the attributes of the input dataset. This function should be called by
+   * RequestData() only.
+   */
+  void UpdateArrayAndVariableNames(vtkDataObject* theInputObj, vtkDataSetAttributes* inDataAttrs);
+
 private:
-  vtkPVArrayCalculator( const vtkPVArrayCalculator & ); // Not implemented.
-  void operator = ( const vtkPVArrayCalculator & );     // Not implemented.
+  vtkPVArrayCalculator(const vtkPVArrayCalculator&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVArrayCalculator&) VTK_DELETE_FUNCTION;
 };
+//@}
 
 #endif

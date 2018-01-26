@@ -45,7 +45,7 @@ Before you begin, perform initial setup:
     "Subscribe to this project" on the right of ParaView.
 
 [GitLab Access]: https://gitlab.kitware.com/users/sign_in
-[Fork ParaView]: https://gitlab.kitware.com/paraview/paraview/fork/new
+[Fork ParaView]: https://gitlab.kitware.com/paraview/paraview/forks/new
 [developer setup script]: /Utilities/SetupForDevelopment.sh
 
 Workflow
@@ -88,11 +88,18 @@ Create a Topic
 
 All new work must be committed on topic branches.
 Name topics like you might name functions: concise but precise.
-A reader should have a general idea of the feature or fix to be developed given just the branch name.
+A reader should have a general idea of the feature or fix to be developed given
+just the branch name. Additionally, it is preferred to have an issue associated with
+every topic. The issue can document the bug or feature to be developed. In such
+cases, being your topic name with the issue number.
 
 1.  To start a new topic branch:
 
         $ git fetch origin
+
+    If there is an issue associated with the topic, assign the issue to yourself
+    using the "**Assignee**" field, and add the
+    `workflow:active-development` label to it.
 
 2.  For new development, start the topic from `origin/master`:
 
@@ -116,6 +123,15 @@ A reader should have a general idea of the feature or fix to be developed given 
     Caveats:
     * To add data follow [these instructions](https://gitlab.kitware.com/vtk/vtk/blob/master/Documentation/dev/git/data.md),
       from VTK.
+
+    Commit messages must contain a brief description as the first line
+    and a more detailed description of what the commit contains. If
+    the commit contains a new feature, the detailed message must
+    describe the new feature and why it is needed. If the commit
+    contains a bug fix, the detailed message must describe the bug
+    behavior, its underlying cause, and the approach to fix it. If the
+    bug is described in the bug tracker, the commit message must
+    contain a reference to the bug number.
 
 Share a Topic
 -------------
@@ -226,6 +242,15 @@ Comments use [GitLab Flavored Markdown][] for formatting.  See GitLab
 documentation on [Special GitLab References][] to add links to things
 like merge requests and commits in other repositories.
 
+When a merge request is ready for review, developers can use the
+`triage:ready-for-review` to indicate the same to the reviewers. If reviewers
+deems that it needs more work, they can add the `triage:needswork` label.
+This can be repeated as many times as needed adding/removing labels as
+appropriate.
+
+If a merge request is waiting on dashboards, use the `triage:pending-dashboards`
+label.
+
 [GitLab Flavored Markdown]: https://gitlab.kitware.com/help/markdown/markdown
 [Special GitLab References]: https://gitlab.kitware.com/help/markdown/markdown#special-gitlab-references
 
@@ -285,14 +310,13 @@ There are a few options for checking out the changes in a work tree:
 
         $ git cherry-pick ..FETCH_HEAD
 
-
 ### Robot Reviews ###
 
 The "Kitware Robot" automatically performs basic checks on the commits
 and adds a comment acknowledging or rejecting the topic.  This will be
 repeated automatically whenever the topic is pushed to your fork again.
-A re-check may be explicitly requested by adding a comment with the
-trailing line:
+A re-check may be explicitly requested by adding a comment with a single
+[*trailing* line](#trailing-lines):
 
     Do: check
 
@@ -304,10 +328,49 @@ succeeds.
 ParaView has a [buildbot](http://buildbot.net) instance watching for merge requests
 to test.  A developer must issue a command to buildbot to enable builds:
 
-    @buildbot test
+    Do: test
 
 The buildbot user (@buildbot) will respond with a comment linking to the CDash
 results when it schedules builds.
+
+The `Do: test` command accepts the following arguments:
+
+  * `--oneshot`
+        only build the *current* hash of the branch; updates will not be built
+        using this command
+  * `--stop`
+        clear the list of commands for the merge request
+  * `--superbuild`
+        build the superbuilds related to the project
+  * `--clear`
+        clear previous commands before adding this command
+  * `--regex-include <arg>` or `-i <arg>`
+        only build on builders matching `<arg>` (a Python regular expression)
+  * `--regex-exclude <arg>` or `-e <arg>`
+        excludes builds on builders matching `<arg>` (a Python regular
+        expression)
+
+Multiple `Do: test` commands may be given in separate comments. A new `Do: test`
+command must be explicitly issued for each branch update for which testing is
+desired. Buildbot may skip tests for older branch updates that have not started
+before a test for a new update is requested.
+
+Builder names always follow this pattern:
+
+        project-host-os-libtype-buildtype+feature1+feature2
+
+  * project: always `paraview` for paraview
+  * host: the buildbot host
+  * os: one of `windows`, `osx`, or `linux`
+  * libtype: `shared` or `static`
+  * buildtype: `release` or `debug`
+  * feature: alphabetical list of features enabled for the build
+
+For a list of all builders, see:
+
+  * [paraview-expected](https://buildbot.kitware.com/builders?category=paraview-expected)
+  * [paraview-superbuild](https://buildbot.kitware.com/builders?category=paraview-superbuild)
+  * [paraview-experimental](https://buildbot.kitware.com/builders?category=paraview-experimental)
 
 Revise a Topic
 --------------
@@ -342,17 +405,21 @@ convention, do not request a merge if any `-1` or `Rejected-by:`
 review comments have not been resolved and superseded by at least
 `+1` or `Acked-by:` review comments from the same user.
 
-Caveats:
-* Currently, developers authorized to do a merge request will be limited to those
-who have **Master** privileges on the ParaView Gitlab repository. This preserves the
-spirit of **Gatekeeper Review** in the previous development workflow. This decision
-may be reevaluated in the future and lifted to encourage a more open development
-community.
+Developers are encouraged to merge their own merge requests on review. However,
+please do not merge unless you are available to address any dashboard issues that may
+arise. Developers who repeatedly ignore dashboard issues following their merges may
+loose developer privileges to the repository temporarily (or permanently)!
 
 ### Merge Success ###
 
 If the merge succeeds the topic will appear in the upstream repository
 `master` branch and the Merge Request will be closed automatically.
+Any issues associated with the Merge Request will generally get closed
+automatically. If not, the developer merging the changes should close such issues
+and add a `workflow:customer-review` tag to the issue(s) addressed by the change.
+Reporters and testers can then review the fix. Try to add enough information to
+the Issue or the Merge Request to indicate how to test the functionality if not
+obvious from the original Issue.
 
 ### Merge Failure ###
 
@@ -396,8 +463,18 @@ Contribute VTK Changes
 
 If you have any VTK changes, then you are required to get your changes
 incorporated into VTK using [VTK's development workflow][]. Once your VTK topic has
-been approved and merged into VTK, add your VTK topic head (or the latest VTK
-origin/master which includes your VTK topic head) to commit in a
-[ParaView topic](#create-a-topic) and follow the process documented earlier.
+been approved and merged into VTK, then:
+
+1. Create a [ParaView topic](#create-a-topic) if you haven't already.
+2. Add your VTK topic head (or the latest VTK
+   origin/master which includes your VTK topic head).
+
+        $ cd VTK
+        $ git checkout master
+        $ cd ..
+        $ git add VTK
+        $ git commit
+
+3. Follow the merge process documented earlier.
 
 [VTK's development workflow]: https://gitlab.kitware.com/vtk/vtk/tree/master/Documentation/dev/git

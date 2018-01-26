@@ -33,7 +33,7 @@
 // .SECTION Inputs and Outputs
 // The input to the filter must be a triangle mesh. The output is the same mesh
 // with a point data attribute capturing the distance field from the user
-// specified seed(s) via SetSeedList.
+// specified seed(s) via SetSeedList or SetSeedsFromNonZeroField.
 //
 // .SECTION Termination Criteria
 // The fast marching may be prematurely terminated via any of the optional
@@ -70,8 +70,8 @@
 //    Remeshing and Parameterization", Progress in Nonlinear Differential
 //    Equations and Their Applications, 2005.
 
-#ifndef __vtkFastMarchingGeodesicDistance_h
-#define __vtkFastMarchingGeodesicDistance_h
+#ifndef vtkFastMarchingGeodesicDistance_h
+#define vtkFastMarchingGeodesicDistance_h
 
 #include "vtkPolyDataGeodesicDistance.h"
 
@@ -82,50 +82,49 @@ class vtkGeodesicMeshInternals;
 class VTK_EXPORT vtkFastMarchingGeodesicDistance : public vtkPolyDataGeodesicDistance
 {
 public:
-
-  static vtkFastMarchingGeodesicDistance *New();
+  static vtkFastMarchingGeodesicDistance* New();
 
   // Description:
   // Standard methids for printing and determining type information.
-  vtkTypeMacro(vtkFastMarchingGeodesicDistance,vtkPolyDataGeodesicDistance);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkFastMarchingGeodesicDistance, vtkPolyDataGeodesicDistance);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Description:
   // The maximum distance this filter has marched from the seeds.
-  vtkGetMacro( MaximumDistance, float );
+  vtkGetMacro(MaximumDistance, float);
 
   // Description:
   // Set the value to set as the point attribute data for vertices that
   // haven't been visited (perhaps due to a termination criterion) by the
   // fast marching. Defaults to -1.
-  vtkSetMacro( NotVisitedValue, float );
-  vtkGetMacro( NotVisitedValue, float );
+  vtkSetMacro(NotVisitedValue, float);
+  vtkGetMacro(NotVisitedValue, float);
 
   // Description:
   // Get the number of points visited by fast marching
-  vtkGetMacro( NumberOfVisitedPoints, vtkIdType );
+  vtkGetMacro(NumberOfVisitedPoints, vtkIdType);
 
   // Description:
   // Optionally stopping criteria may be specified. This method may be used to
   // restrict fast marching to a 'distance' radius from the seed(s). The
   // default is -1 which implies no stopping criteria.
-  vtkSetMacro(DistanceStopCriterion, float );
-  vtkGetMacro(DistanceStopCriterion, float );
+  vtkSetMacro(DistanceStopCriterion, float);
+  vtkGetMacro(DistanceStopCriterion, float);
 
   // Description:
   // Optionally stopping criteria may be specified. This method may be used to
   // stop fast marching when a specifc destination vertex (or vertices) have
   // been reached. The default is to have no stopping criteria.
-  virtual void SetDestinationVertexStopCriterion( vtkIdList *vertices );
-  vtkGetObjectMacro( DestinationVertexStopCriterion, vtkIdList );
+  virtual void SetDestinationVertexStopCriterion(vtkIdList* vertices);
+  vtkGetObjectMacro(DestinationVertexStopCriterion, vtkIdList);
 
   // Description:
   // Optionally, an exclusion region may be specified. Vertices with ids that
   // are in the exclusion list are ommitted from inclusion in the fast marching
   // front. This can be used to prevent fast from bleeding into certain regions
   // by supplying the point ids of the region boundary/boundaries.
-  virtual void SetExclusionPointIds( vtkIdList *vertices );
-  vtkGetObjectMacro( ExclusionPointIds, vtkIdList );
+  virtual void SetExclusionPointIds(vtkIdList* vertices);
+  vtkGetObjectMacro(ExclusionPointIds, vtkIdList);
 
   // Description:
   // Optionally, point weights may be specified. This amounts to specifying a
@@ -135,39 +134,44 @@ public:
   // curvature. The size of the weights array must be the same as that of the
   // surface mesh. If weights aren't specified, it amounts to having a constant
   // propagation weight of 1 everywhere.
-  virtual void SetPropagationWeights(vtkDataArray *);
-  vtkGetObjectMacro( PropagationWeights, vtkDataArray );
+  virtual void SetPropagationWeights(vtkDataArray*);
+  vtkGetObjectMacro(PropagationWeights, vtkDataArray);
 
   // Description:
   // Events invoked by the filter
-  //BTX
-  enum { IterationEvent = 10590 };
-  //ETX
+
+  enum
+  {
+    IterationEvent = 10590
+  };
 
 protected:
   vtkFastMarchingGeodesicDistance();
   ~vtkFastMarchingGeodesicDistance();
 
-  virtual int RequestData(vtkInformation *, vtkInformationVector **,
-                          vtkInformationVector *);
+  virtual int RequestData(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   // Create GW_GeodesicMesh given an instance of a vtkPolyData
-  void SetupGeodesicMesh( vtkPolyData *in );
+  void SetupGeodesicMesh(vtkPolyData* in);
 
   // Setup the optional termination criteria, if set
   void SetupCallbacks();
 
   // Do the fast marching
-  virtual int Compute();
+  virtual int Compute() VTK_OVERRIDE;
 
   // Add the seeds
-  virtual void AddSeeds();
+  virtual void AddSeedsInternal();
+
+  // Add the seeds based on the non-zero values of a nonZeroField
+  void SetSeedsFromNonZeroField(vtkDataArray* nonZeroField);
 
   // Copy the resulting distance field from GeoMesh into the float array
-  void CopyDistanceField( vtkPolyData *pd );
+  void CopyDistanceField(vtkPolyData* pd);
 
   // The internal GW_GeodsicMesh structure
-  vtkGeodesicMeshInternals * Internals;
+  vtkGeodesicMeshInternals* Internals;
 
   // Time the GW_GeodesicMesh datastructure was last built from a vtkPolyData
   vtkTimeStamp GeodesicMeshBuildTime;
@@ -185,27 +189,25 @@ protected:
   float DistanceStopCriterion;
 
   // Destination vertex stop criteria
-  vtkIdList * DestinationVertexStopCriterion;
+  vtkIdList* DestinationVertexStopCriterion;
 
   // Exclusion regions
-  vtkIdList * ExclusionPointIds;
+  vtkIdList* ExclusionPointIds;
 
   // Propagation, ie speed function weights
-  vtkDataArray * PropagationWeights;
+  vtkDataArray* PropagationWeights;
 
-  //BTX
   friend class vtkFastMarchingGeodesicPath;
   friend class vtkGeodesicMeshInternals;
-  void *GetGeodesicMesh();
-  //ETX
+  void* GetGeodesicMesh();
 
   // Counter to invoke iteration events every N fast marching steps
   unsigned long FastMarchingIterationEventResolution;
   unsigned long IterationIndex;
 
 private:
-  vtkFastMarchingGeodesicDistance(const vtkFastMarchingGeodesicDistance&);  // Not implemented.
-  void operator=(const vtkFastMarchingGeodesicDistance&);  // Not implemented.
+  vtkFastMarchingGeodesicDistance(const vtkFastMarchingGeodesicDistance&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkFastMarchingGeodesicDistance&) VTK_DELETE_FUNCTION;
 };
 
 #endif

@@ -12,44 +12,47 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMBagChartSeriesListDomain - extends vtkSMChartSeriesListDomain to
-// setup defaults specific for bag plot representations.
-// .SECTION Description
-// vtkSMBagChartSeriesListDomain extends vtkSMChartSeriesListDomain to
-// setup defaults specific for bag plot representations.
-#ifndef __vtkSMBagChartSeriesListDomain_h
-#define __vtkSMBagChartSeriesListDomain_h
+/**
+ * @class   vtkSMBagChartSeriesListDomain
+ * @brief   extends vtkSMChartSeriesListDomain to
+ * setup defaults specific for bag plot representations.
+ *
+ * vtkSMBagChartSeriesListDomain extends vtkSMChartSeriesListDomain to
+ * setup defaults specific for bag plot representations.
+*/
 
-#include "vtkSMChartSeriesListDomain.h"
+#ifndef vtkSMBagChartSeriesListDomain_h
+#define vtkSMBagChartSeriesListDomain_h
+
 #include "vtkPVServerManagerRenderingModule.h" // needed for exports
+#include "vtkSMChartSeriesListDomain.h"
 
 class vtkPVDataInformation;
 
-class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMBagChartSeriesListDomain :
-  public vtkSMChartSeriesListDomain
+class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMBagChartSeriesListDomain
+  : public vtkSMChartSeriesListDomain
 {
 public:
   static vtkSMBagChartSeriesListDomain* New();
   vtkTypeMacro(vtkSMBagChartSeriesListDomain, vtkSMChartSeriesListDomain);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Set the default values for the property.
-  virtual int SetDefaultValues(vtkSMProperty*, bool use_unchecked_values);
+  /**
+   * Set the default values for the property.
+   */
+  virtual int SetDefaultValues(vtkSMProperty*, bool use_unchecked_values) VTK_OVERRIDE;
 
-//BTX
 protected:
   vtkSMBagChartSeriesListDomain();
   ~vtkSMBagChartSeriesListDomain();
 
-  virtual int ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement* element);
+  virtual int ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement* element) VTK_OVERRIDE;
 
   int ArrayType;
 
 private:
-  vtkSMBagChartSeriesListDomain(const vtkSMBagChartSeriesListDomain&); // Not implemented
-  void operator=(const vtkSMBagChartSeriesListDomain&); // Not implemented
-//ETX
+  vtkSMBagChartSeriesListDomain(const vtkSMBagChartSeriesListDomain&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMBagChartSeriesListDomain&) VTK_DELETE_FUNCTION;
 };
 
 #endif

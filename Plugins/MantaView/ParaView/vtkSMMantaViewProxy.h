@@ -65,8 +65,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // also initializes the client server wrapped vtkManta library for
 // paraview.
 
-#ifndef __vtkSMMantaViewProxy_h
-#define __vtkSMMantaViewProxy_h
+#ifndef vtkSMMantaViewProxy_h
+#define vtkSMMantaViewProxy_h
 
 #include "vtkSMRenderViewProxy.h"
 
@@ -82,8 +82,7 @@ public:
   // Description:
   // Create a default representation for the given output port of source proxy.
   // Returns a new proxy.
-  virtual vtkSMRepresentationProxy* CreateDefaultRepresentation(
-    vtkSMProxy*, int opport);
+  virtual vtkSMRepresentationProxy* CreateDefaultRepresentation(vtkSMProxy*, int opport);
 
   // Description:
   // Manta view's can not participate in selection so disable it.
@@ -101,7 +100,6 @@ public:
   // Call to make an different light active so the user can control it.
   void NextLight();
 
-//BTX
 protected:
   vtkSMMantaViewProxy();
   ~vtkSMMantaViewProxy();
@@ -109,14 +107,11 @@ protected:
   virtual void CreateVTKObjects();
 
 private:
-
-  vtkSMMantaViewProxy(const vtkSMMantaViewProxy&); // Not implemented.
-  void operator=(const vtkSMMantaViewProxy&); // Not implemented.
+  vtkSMMantaViewProxy(const vtkSMMantaViewProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMMantaViewProxy&) VTK_DELETE_FUNCTION;
 
   class Internal;
-  Internal *Internals;
-//ETX
+  Internal* Internals;
 };
-
 
 #endif

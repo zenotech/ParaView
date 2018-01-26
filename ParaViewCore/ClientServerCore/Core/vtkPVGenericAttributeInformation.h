@@ -12,39 +12,43 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVGenericAttributeInformation - Generic attribute information like type.
-// .SECTION Description
-// This objects is for eliminating direct access to vtkDataObjects
-// by the "client".  Only vtkPVPart and vtkPVProcessModule should access
-// the data directly.  At the moment, this object is only a container
-// and has no useful methods for operating on data.
+/**
+ * @class   vtkPVGenericAttributeInformation
+ * @brief   Generic attribute information like type.
+ *
+ * This objects is for eliminating direct access to vtkDataObjects
+ * by the "client".  Only vtkPVPart and vtkPVProcessModule should access
+ * the data directly.  At the moment, this object is only a container
+ * and has no useful methods for operating on data.
+*/
 
-#ifndef __vtkPVGenericAttributeInformation_h
-#define __vtkPVGenericAttributeInformation_h
+#ifndef vtkPVGenericAttributeInformation_h
+#define vtkPVGenericAttributeInformation_h
 
-#include "vtkPVClientServerCoreCoreModule.h" //needed for exports
 #include "vtkPVArrayInformation.h"
+#include "vtkPVClientServerCoreCoreModule.h" //needed for exports
 
 class vtkClientServerStream;
 
-class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVGenericAttributeInformation : public vtkPVArrayInformation
+class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVGenericAttributeInformation
+  : public vtkPVArrayInformation
 {
 public:
   static vtkPVGenericAttributeInformation* New();
   vtkTypeMacro(vtkPVGenericAttributeInformation, vtkPVArrayInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-
-  // Description:
-  // Transfer information about a single object into this object.
-  virtual void CopyFromObject(vtkObject*);
+  /**
+   * Transfer information about a single object into this object.
+   */
+  virtual void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
 protected:
   vtkPVGenericAttributeInformation();
   ~vtkPVGenericAttributeInformation();
 
-  vtkPVGenericAttributeInformation(const vtkPVGenericAttributeInformation&); // Not implemented
-  void operator=(const vtkPVGenericAttributeInformation&); // Not implemented
+  vtkPVGenericAttributeInformation(const vtkPVGenericAttributeInformation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVGenericAttributeInformation&) VTK_DELETE_FUNCTION;
 };
 
 #endif

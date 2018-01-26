@@ -12,69 +12,79 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMRepresentedArrayListDomain - extends vtkSMArrayListDomain to add
-// support for arrays from represented data information.
-// .SECTION Description
-// Representations often add new arrays on top of the ones provided by the
-// inputs to the representations. In that case, the domains for properties that
-// allow users to pick one of those newly added arrays need to show those
-// arrays e.g. "ColorArrayName" property of geometry representations. This
-// domain extends vtkSMArrayListDomain to add arrays from represented data
-// for representations.
-#ifndef __vtkSMRepresentedArrayListDomain_h
-#define __vtkSMRepresentedArrayListDomain_h
+/**
+ * @class   vtkSMRepresentedArrayListDomain
+ * @brief   extends vtkSMArrayListDomain to add
+ * support for arrays from represented data information.
+ *
+ * Representations often add new arrays on top of the ones provided by the
+ * inputs to the representations. In that case, the domains for properties that
+ * allow users to pick one of those newly added arrays need to show those
+ * arrays e.g. "ColorArrayName" property of geometry representations. This
+ * domain extends vtkSMArrayListDomain to add arrays from represented data
+ * for representations.
+*/
+
+#ifndef vtkSMRepresentedArrayListDomain_h
+#define vtkSMRepresentedArrayListDomain_h
 
 #include "vtkPVServerManagerRenderingModule.h" //needed for exports
 #include "vtkSMArrayListDomain.h"
 #include "vtkWeakPointer.h" // needed for vtkWeakPointer.
 
 class vtkSMRepresentationProxy;
-class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMRepresentedArrayListDomain : public vtkSMArrayListDomain
+class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMRepresentedArrayListDomain
+  : public vtkSMArrayListDomain
 {
 public:
   static vtkSMRepresentedArrayListDomain* New();
   vtkTypeMacro(vtkSMRepresentedArrayListDomain, vtkSMArrayListDomain);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Update the domain.
-  virtual void Update(vtkSMProperty*);
+  /**
+   * Update the domain.
+   */
+  virtual void Update(vtkSMProperty*) VTK_OVERRIDE;
 
-  // Description:
-  // Set this to true (default) to let this domain use the
-  // represented-data-information from the outer  most representation proxy.
-  // This ensures that for composite representations where user is provided with
-  // a selection between multiple representations, the represented array list
-  // domain fills its values up based on the currently active representation
-  // type, rather than the representation subproxy from which the property was
-  // exposed.
-  // In XML, use 'use_true_parent' attribute on the domain element to set this
-  // value.
+  //@{
+  /**
+   * Set this to true (default) to let this domain use the
+   * represented-data-information from the outer  most representation proxy.
+   * This ensures that for composite representations where user is provided with
+   * a selection between multiple representations, the represented array list
+   * domain fills its values up based on the currently active representation
+   * type, rather than the representation subproxy from which the property was
+   * exposed.
+   * In XML, use 'use_true_parent' attribute on the domain element to set this
+   * value.
+   */
   vtkGetMacro(UseTrueParentForRepresentatedDataInformation, bool);
+  //@}
 
-//BTX
 protected:
   vtkSMRepresentedArrayListDomain();
   ~vtkSMRepresentedArrayListDomain();
 
-  // Description:
-  // Overridden to process "use_true_parent".
-  virtual int ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement* elem);
+  /**
+   * Overridden to process "use_true_parent".
+   */
+  virtual int ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement* elem) VTK_OVERRIDE;
 
-
-  // Description:
-  // Returns true if an array should be filtered out based on its name or number
-  // of tuples (for field data arrays).
-  // This implementation returns true if the array name matches
-  // an expression in the vtkPVColorArrayListSettings singleton.
+  /**
+   * Returns true if an array should be filtered out based on its name or number
+   * of tuples (for field data arrays).
+   * This implementation returns true if the array name matches
+   * an expression in the vtkPVColorArrayListSettings singleton.
+   */
   virtual bool IsFilteredArray(
-    vtkPVDataInformation* info, int association, const char* arrayName);
+    vtkPVDataInformation* info, int association, const char* arrayName) VTK_OVERRIDE;
 
-  // Description:
-  // HACK: Provides a temporary mechanism for subclasses to provide an
-  // "additional" vtkPVDataInformation instance to get available arrays list
-  // from.
-  virtual vtkPVDataInformation* GetExtraDataInformation();
+  /**
+   * HACK: Provides a temporary mechanism for subclasses to provide an
+   * "additional" vtkPVDataInformation instance to get available arrays list
+   * from.
+   */
+  virtual vtkPVDataInformation* GetExtraDataInformation() VTK_OVERRIDE;
 
   void SetRepresentationProxy(vtkSMRepresentationProxy*);
   void OnRepresentationDataUpdated();
@@ -86,9 +96,8 @@ protected:
   bool UseTrueParentForRepresentatedDataInformation;
 
 private:
-  vtkSMRepresentedArrayListDomain(const vtkSMRepresentedArrayListDomain&); // Not implemented
-  void operator=(const vtkSMRepresentedArrayListDomain&); // Not implemented
-//ETX
+  vtkSMRepresentedArrayListDomain(const vtkSMRepresentedArrayListDomain&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMRepresentedArrayListDomain&) VTK_DELETE_FUNCTION;
 };
 
 #endif

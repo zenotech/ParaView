@@ -19,8 +19,8 @@
 // to default OpenGL pipeline. Look at vtkPVLightingHelper_s for available
 // GLSL functions.
 
-#ifndef __vtkPVLightingHelper_h
-#define __vtkPVLightingHelper_h
+#ifndef vtkPVLightingHelper_h
+#define vtkPVLightingHelper_h
 
 #include "vtkObject.h"
 #include "vtkShader2.h" // for vtkShader2Type
@@ -39,29 +39,24 @@ public:
   // mode = VTK_SHADER_TYPE_VERTEX or VTK_SHADER_TYPE_FRAGMENT
   // depending on whether the vertex lighting or fragment lighting is to be
   // used.
-  void Initialize(vtkShaderProgram2 *shader, 
-                  vtkShader2Type mode);
+  void Initialize(vtkShaderProgram2* shader, vtkShader2Type mode);
   vtkGetObjectMacro(Shader, vtkShaderProgram2);
 
   // Description:
-  // Updates any lighting specific information needed. 
+  // Updates any lighting specific information needed.
   // This must be called before the shader program is bound.
   void PrepareForRendering();
 
-//BTX
 protected:
   vtkPVLightingHelper();
   ~vtkPVLightingHelper();
 
-  void SetShader(vtkShaderProgram2 *shader);
-  vtkShaderProgram2 *Shader;
+  void SetShader(vtkShaderProgram2* shader);
+  vtkShaderProgram2* Shader;
 
 private:
-  vtkPVLightingHelper(const vtkPVLightingHelper&); // Not implemented.
-  void operator=(const vtkPVLightingHelper&); // Not implemented.
-//ETX
+  vtkPVLightingHelper(const vtkPVLightingHelper&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVLightingHelper&) VTK_DELETE_FUNCTION;
 };
 
 #endif
-
-

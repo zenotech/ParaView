@@ -30,61 +30,75 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
 
+#include <string>
+
 #include "pqCinemaTrack.h"
 
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
 #include <vtksys/SystemTools.hxx>
 
-#include <vtkSMProxy.h>
-#include <vtkSMProperty.h>
-#include <vtkSMDoubleRangeDomain.h>
 #include <pqPipelineFilter.h>
 #include <pqScalarValueListPropertyWidget.h>
+#include <vtkSMDoubleRangeDomain.h>
+#include <vtkSMProperty.h>
+#include <vtkSMProxy.h>
 
 #include "ui_pqCinemaTrack.h"
 
-//widget and state for a cinema property track
+// widget and state for a cinema property track
 
 //-----------------------------------------------------------------------------
 pqCinemaTrack::pqCinemaTrack(
-  QWidget *parentObject, Qt::WindowFlags parentFlags,
-  pqPipelineFilter* filter):
-  QWidget(parentObject, parentFlags),
-  Track(new Ui::CinemaTrack())
+  QWidget* parentObject, Qt::WindowFlags parentFlags, pqPipelineFilter* filter)
+  : QWidget(parentObject, parentFlags)
+  , Track(new Ui::CinemaTrack())
+  , valsWidget(NULL)
 {
-  this->valsWidget = NULL;
   this->Track->setupUi(this);
 
-  vtkSMProxy *prox = filter->getProxy();
-  //"ContourValues" because slice and isocontour happen to use same name
-  vtkSMProperty *prop = prox->GetProperty("ContourValues");
+  vtkSMProxy* prox = filter->getProxy();
+  std::string vtkClassName = prox->GetVTKClassName();
+
+  // only the following are currently supported by cinema
+  std::pair<std::string, std::string> tags;
+  if (vtkClassName == "vtkPVMetaSliceDataSet")
+  {
+    tags.first = "ContourValues";
+    tags.second = "bounds";
+  }
+  else if (vtkClassName == "vtkPVContourFilter")
+  {
+    tags.first = "ContourValues";
+    tags.second = "scalar_range";
+  }
+  else if (vtkClassName == "vtkPVMetaClipDataSet")
+  {
+    tags.first = "Value";
+    tags.second = "range";
+  }
+
+  vtkSMProperty* prop = prox->GetProperty(tags.first.c_str());
   if (prop)
-    {
-    vtkSMDoubleRangeDomain *dom = vtkSMDoubleRangeDomain::SafeDownCast(prop->GetDomain("bounds"));
-    if (!dom)
-      {
-      dom = vtkSMDoubleRangeDomain::SafeDownCast(prop->GetDomain("scalar_range"));
-      }
+  {
+    vtkSMDoubleRangeDomain* dom =
+      vtkSMDoubleRangeDomain::SafeDownCast(prop->GetDomain(tags.second.c_str()));
+
     if (dom)
-      {
-      this->Track->label->setText(filter->getSMName().toLower());
-      this->Track->radioButton->setEnabled(true);
-      this->Track->radioButton->setChecked(false);
-      QObject::connect(this->Track->radioButton, SIGNAL(toggled(bool)),
-                       this, SLOT(toggleTrack(bool)));
+    {
+      this->Track->label->setText(filter->getSMName());
 
-      pqScalarValueListPropertyWidget *vals = new pqScalarValueListPropertyWidget(prop, prox, this);
-      vals->setFixedHeight(200);
-      this->valsWidget = vals;
-
+      pqScalarValueListPropertyWidget* vals = new pqScalarValueListPropertyWidget(prop, prox, this);
       vals->setRangeDomain(dom);
       vals->setEnabled(false);
-      QVBoxLayout *valsLayout = new QVBoxLayout(this->Track->scrollAreaWidgetContents_2);
-      valsLayout->addWidget(vals);
-      valsLayout->insertSpacing(-1, 100);
-      }
+      vals->setMinimumHeight(100);
+      vals->setFixedHeight(100);
+      vals->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+      this->layout()->addWidget(vals);
+      this->valsWidget = vals;
+      this->valsWidget->setEnabled(true);
     }
+  }
 };
 
 //-----------------------------------------------------------------------------
@@ -93,17 +107,9 @@ pqCinemaTrack::~pqCinemaTrack()
 }
 
 //-----------------------------------------------------------------------------
-void pqCinemaTrack::toggleTrack(bool checked)
-{
-  this->valsWidget->setEnabled(checked);
-}
-
-//-----------------------------------------------------------------------------
 bool pqCinemaTrack::explore() const
 {
-  return (this->Track->radioButton->isChecked() && 
-          this->valsWidget &&
-          !this->valsWidget->scalars().isEmpty());
+  return (this->valsWidget && !this->valsWidget->scalars().isEmpty());
 }
 
 //-----------------------------------------------------------------------------
@@ -116,4 +122,10 @@ QVariantList pqCinemaTrack::scalars() const
 QString pqCinemaTrack::filterName() const
 {
   return this->Track->label->text();
+}
+
+//-----------------------------------------------------------------------------
+void pqCinemaTrack::setFilterName(QString const& name)
+{
+  this->Track->label->setText(name);
 }

@@ -12,12 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkCPVector3FieldFunction - Abstract class for specifying vectors at points.
-// .SECTION Description
-// Abstract class for specifying vector values at specified points.  
+/**
+ * @class   vtkCPVector3FieldFunction
+ * @brief   Abstract class for specifying vectors at points.
+ *
+ * Abstract class for specifying vector values at specified points.
+*/
 
-#ifndef __vtkCPVector3FieldFunction_h
-#define __vtkCPVector3FieldFunction_h
+#ifndef vtkCPVector3FieldFunction_h
+#define vtkCPVector3FieldFunction_h
 
 #include "vtkCPTensorFieldFunction.h"
 #include "vtkPVCatalystTestDriverModule.h" // needed for export macros
@@ -26,24 +29,26 @@ class VTKPVCATALYSTTESTDRIVER_EXPORT vtkCPVector3FieldFunction : public vtkCPTen
 {
 public:
   vtkTypeMacro(vtkCPVector3FieldFunction, vtkCPTensorFieldFunction);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Get the NumberOfComponents.  
-  virtual unsigned int GetNumberOfComponents() {return 3;};
+  /**
+   * Get the NumberOfComponents.
+   */
+  virtual unsigned int GetNumberOfComponents() VTK_OVERRIDE { return 3; };
 
-  // Description:
-  // Compute the field value at Point.
-  virtual double ComputeComponenentAtPoint(unsigned int component, double point[3],
-                                           unsigned long timeStep, double time) = 0;
+  /**
+   * Compute the field value at Point.
+   */
+  virtual double ComputeComponenentAtPoint(
+    unsigned int component, double point[3], unsigned long timeStep, double time) VTK_OVERRIDE = 0;
 
 protected:
   vtkCPVector3FieldFunction();
   ~vtkCPVector3FieldFunction();
 
 private:
-  vtkCPVector3FieldFunction(const vtkCPVector3FieldFunction&); // Not implemented
-  void operator=(const vtkCPVector3FieldFunction&); // Not implemented
+  vtkCPVector3FieldFunction(const vtkCPVector3FieldFunction&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkCPVector3FieldFunction&) VTK_DELETE_FUNCTION;
 };
 
 #endif

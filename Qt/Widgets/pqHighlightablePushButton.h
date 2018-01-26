@@ -29,32 +29,37 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqHighlightablePushButton_h
-#define __pqHighlightablePushButton_h
+#ifndef pqHighlightablePushButton_h
+#define pqHighlightablePushButton_h
 
+#include "pqWidgetsModule.h"
 #include <QPushButton>
 #include <QScopedPointer>
-#include "pqWidgetsModule.h"
 
-/// pqHighlightablePushButton extents QPushButton to add support for
-/// highlighting the button.
+/**
+* pqHighlightablePushButton extents QPushButton to add support for
+* highlighting the button.
+*/
 class PQWIDGETS_EXPORT pqHighlightablePushButton : public QPushButton
 {
   Q_OBJECT
   typedef QPushButton Superclass;
+
 public:
-  pqHighlightablePushButton(QWidget *parent=0);
-  pqHighlightablePushButton(const QString &text, QWidget *parent=0);
-  pqHighlightablePushButton(const QIcon &icon, const QString &text, QWidget *parent=0);
+  pqHighlightablePushButton(QWidget* parent = 0);
+  pqHighlightablePushButton(const QString& text, QWidget* parent = 0);
+  pqHighlightablePushButton(const QIcon& icon, const QString& text, QWidget* parent = 0);
   virtual ~pqHighlightablePushButton();
 
 public slots:
-  /// Slots to highlight (or clear the highlight).
-  void highlight(bool clear=false);
+  /**
+  * Slots to highlight (or clear the highlight).
+  */
+  void highlight(bool clear = false);
   void clear() { this->highlight(true); }
 
 private:
-  Q_DISABLE_COPY(pqHighlightablePushButton);
+  Q_DISABLE_COPY(pqHighlightablePushButton)
   class pqInternals;
   const QScopedPointer<pqInternals> Internals;
 };

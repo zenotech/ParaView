@@ -12,15 +12,18 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMWidgetRepresentationProxy - proxy for a widget representation
-// .SECTION Description
-// vtkSMWidgetRepresentationProxy is a specialized proxy that represents
-// VTK widget representation. It adds the capability of syncing the 
-// appearance of server-side representation to the client-side 
-// representation
+/**
+ * @class   vtkSMWidgetRepresentationProxy
+ * @brief   proxy for a widget representation
+ *
+ * vtkSMWidgetRepresentationProxy is a specialized proxy that represents
+ * VTK widget representation. It adds the capability of syncing the
+ * appearance of server-side representation to the client-side
+ * representation
+*/
 
-#ifndef __vtkSMWidgetRepresentationProxy_h
-#define __vtkSMWidgetRepresentationProxy_h
+#ifndef vtkSMWidgetRepresentationProxy_h
+#define vtkSMWidgetRepresentationProxy_h
 
 #include "vtkPVServerManagerRenderingModule.h" //needed for exports
 #include "vtkSMProxy.h"
@@ -30,14 +33,17 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMWidgetRepresentationProxy : public
 public:
   static vtkSMWidgetRepresentationProxy* New();
   vtkTypeMacro(vtkSMWidgetRepresentationProxy, vtkSMProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // These method forward the representation state of the client side
-  // widget representation to the server.
+  //@{
+  /**
+   * These method forward the representation state of the client side
+   * widget representation to the server.
+   */
   virtual void OnStartInteraction();
   virtual void OnEndInteraction();
   virtual void OnInteraction();
+  //@}
 
 protected:
   vtkSMWidgetRepresentationProxy();
@@ -48,8 +54,8 @@ protected:
   int RepresentationState;
 
 private:
-  vtkSMWidgetRepresentationProxy(const vtkSMWidgetRepresentationProxy&); // Not implemented
-  void operator=(const vtkSMWidgetRepresentationProxy&); // Not implemented
+  vtkSMWidgetRepresentationProxy(const vtkSMWidgetRepresentationProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMWidgetRepresentationProxy&) VTK_DELETE_FUNCTION;
 };
 
 #endif

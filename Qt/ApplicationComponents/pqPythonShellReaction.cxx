@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -31,22 +31,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ========================================================================*/
 #include "pqPythonShellReaction.h"
 
-#include "vtkPVConfig.h"
+#include "pqCoreUtilities.h"
 #include "pqPVApplicationCore.h"
+#include "vtkPVConfig.h"
 
 #ifdef PARAVIEW_ENABLE_PYTHON
-#include "pqPythonManager.h"
 #include "pqPythonDialog.h"
+#include "pqPythonManager.h"
 #endif
 
 //-----------------------------------------------------------------------------
 pqPythonShellReaction::pqPythonShellReaction(QAction* parentObject)
   : Superclass(parentObject)
 {
-  parentObject->setEnabled(false);
-#ifdef PARAVIEW_ENABLE_PYTHON
   parentObject->setEnabled(true);
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -55,16 +53,18 @@ void pqPythonShellReaction::showPythonShell()
 #ifdef PARAVIEW_ENABLE_PYTHON
   pqPythonManager* manager = pqPVApplicationCore::instance()->pythonManager();
   if (manager)
-    {
+  {
     pqPythonDialog* dialog = manager->pythonShellDialog();
     dialog->show();
     dialog->raise();
     dialog->activateWindow();
-    return;
-    }
+  }
+#else
+  pqCoreUtilities::promptUser("pqPythonShellReaction::NoPython", QMessageBox::Critical,
+    tr("Python support not enabled"), tr("Python support is required to use the Python shell, but "
+                                         "Python is not available in this build."),
+    QMessageBox::Ok | QMessageBox::Save);
 #endif
-
-  qCritical("Python support not enabled.");
 }
 
 //-----------------------------------------------------------------------------
@@ -73,13 +73,14 @@ void pqPythonShellReaction::executeScript(const char* filename)
 #ifdef PARAVIEW_ENABLE_PYTHON
   pqPythonManager* manager = pqPVApplicationCore::instance()->pythonManager();
   if (manager)
-    {
+  {
     manager->executeScript(filename);
-    return;
-    }
+  }
+#else
+  Q_UNUSED(filename);
+  pqCoreUtilities::promptUser("pqPythonShellReaction::NoPythonExecuteScript", QMessageBox::Critical,
+    tr("Python support not enabled"), tr("Python support is required to execute Python script, but "
+                                         "Python is not available in this build."),
+    QMessageBox::Ok | QMessageBox::Save);
 #endif
-
-  (void)filename;
-  qCritical("Python support not enabled.");
 }
-

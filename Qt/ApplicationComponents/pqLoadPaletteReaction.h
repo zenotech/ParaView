@@ -33,17 +33,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define pqLoadPaletteReaction_h
 
 #include "pqReaction.h"
+#include <QPointer>
 
-/// @ingroup Reactions
-/// pqLoadPaletteReaction is used to setup an action that allows the user to
-/// load a palette. It setups up menu on the parent action which is populated
-/// with available palettes.
+class QMenu;
+
+/**
+* @ingroup Reactions
+* pqLoadPaletteReaction is used to setup an action that allows the user to
+* load a palette. It setups up menu on the parent action which is populated
+* with available palettes.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqLoadPaletteReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
+
 public:
-  pqLoadPaletteReaction(QAction* parent=0);
+  pqLoadPaletteReaction(QAction* parent = 0);
   virtual ~pqLoadPaletteReaction();
 
 protected:
@@ -54,7 +60,8 @@ private slots:
   void actionTriggered(QAction* actn);
 
 private:
-  Q_DISABLE_COPY(pqLoadPaletteReaction);
+  Q_DISABLE_COPY(pqLoadPaletteReaction)
+  QPointer<QMenu> Menu;
 };
 
 #endif

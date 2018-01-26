@@ -12,17 +12,21 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMIntRangeDomain - type specific extension to
-// vtkSMRangeDomainTemplate for ints.
-// .SECTION Description
-// vtkSMIntRangeDomain is a type specific extension to
-// vtkSMRangeDomainTemplate for ints.
-#ifndef __vtkSMIntRangeDomain_h
-#define __vtkSMIntRangeDomain_h
+/**
+ * @class   vtkSMIntRangeDomain
+ * @brief   type specific extension to
+ * vtkSMRangeDomainTemplate for ints.
+ *
+ * vtkSMIntRangeDomain is a type specific extension to
+ * vtkSMRangeDomainTemplate for ints.
+*/
+
+#ifndef vtkSMIntRangeDomain_h
+#define vtkSMIntRangeDomain_h
 
 // Tell the template header how to give our superclass a DLL interface.
-#if !defined(__vtkSMIntRangeDomain_cxx)
-# define VTK_DATA_ARRAY_TEMPLATE_TYPE int
+#if !defined(vtkSMIntRangeDomain_cxx)
+#define VTK_DATA_ARRAY_TEMPLATE_TYPE int
 #endif
 
 #include "vtkPVServerManagerCoreModule.h" //needed for exports
@@ -40,51 +44,61 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMIntRangeDomain : public vtkSMDomain
 public:
   static vtkSMIntRangeDomain* New();
   vtkTypeMacro(vtkSMIntRangeDomain, vtkSMDomain);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Return a min. value if it exists. If the min. exists
-  // exists is set to 1. Otherwise, it is set to 0.
-  // An unspecified min. is equivalent to -inf
+  /**
+   * Return a min. value if it exists. If the min. exists
+   * exists is set to 1. Otherwise, it is set to 0.
+   * An unspecified min. is equivalent to -inf
+   */
   int GetMinimum(unsigned int idx, int& exists)
-    { return this->RealSuperclass::GetMinimum(idx, exists); }
+  {
+    return this->RealSuperclass::GetMinimum(idx, exists);
+  }
 
-  // Description:
-  // Return a max. value if it exists. If the max. exists
-  // exists is set to 1. Otherwise, it is set to 0.
-  // An unspecified max. is equivalent to +inf
+  /**
+   * Return a max. value if it exists. If the max. exists
+   * exists is set to 1. Otherwise, it is set to 0.
+   * An unspecified max. is equivalent to +inf
+   */
   int GetMaximum(unsigned int idx, int& exists)
-    { return this->RealSuperclass::GetMaximum(idx, exists); }
+  {
+    return this->RealSuperclass::GetMaximum(idx, exists);
+  }
 
-  // Description:
-  // Returns if minimum/maximum bound is set for the domain.
+  /**
+   * Returns if minimum/maximum bound is set for the domain.
+   */
   int GetMinimumExists(unsigned int idx)
-    { return this->RealSuperclass::GetMinimumExists(idx)? 1: 0; }
+  {
+    return this->RealSuperclass::GetMinimumExists(idx) ? 1 : 0;
+  }
   int GetMaximumExists(unsigned int idx)
-    { return this->RealSuperclass::GetMaximumExists(idx)? 1: 0; }
+  {
+    return this->RealSuperclass::GetMaximumExists(idx) ? 1 : 0;
+  }
 
-  // Description:
-  // Returns the minimum/maximum value, is exists, otherwise
-  // 0 is returned. Use GetMaximumExists() GetMaximumExists() to make sure that
-  // the bound is set.
-  int GetMinimum(unsigned int idx)
-    { return this->RealSuperclass::GetMinimum(idx); }
-  int GetMaximum(unsigned int idx)
-    { return this->RealSuperclass::GetMaximum(idx); }
+  /**
+   * Returns the minimum/maximum value, is exists, otherwise
+   * 0 is returned. Use GetMaximumExists() GetMaximumExists() to make sure that
+   * the bound is set.
+   */
+  int GetMinimum(unsigned int idx) { return this->RealSuperclass::GetMinimum(idx); }
+  int GetMaximum(unsigned int idx) { return this->RealSuperclass::GetMaximum(idx); }
 
 protected:
   vtkSMIntRangeDomain();
   ~vtkSMIntRangeDomain();
 
 private:
-  vtkSMIntRangeDomain(const vtkSMIntRangeDomain&); // Not implemented
-  void operator=(const vtkSMIntRangeDomain&); // Not implemented
+  vtkSMIntRangeDomain(const vtkSMIntRangeDomain&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMIntRangeDomain&) VTK_DELETE_FUNCTION;
 
   typedef vtkSMRangeDomainTemplate<int> RealSuperclass;
 };
 
-#if !defined(__vtkSMIntRangeDomain_cxx)
-# undef VTK_DATA_ARRAY_TEMPLATE_TYPE
+#if !defined(vtkSMIntRangeDomain_cxx)
+#undef VTK_DATA_ARRAY_TEMPLATE_TYPE
 #endif
 
 #endif

@@ -12,11 +12,11 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#ifndef __FortranAdaptorAPI_h
-#define __FortranAdaptorAPI_h
+#ifndef FortranAdaptorAPI_h
+#define FortranAdaptorAPI_h
 
-#include "vtkPVPythonCatalystModule.h"
 #include "FortranPythonAdaptorAPIMangling.h"
+#include "vtkPVPythonCatalystModule.h"
 
 // This code is meant to be used as an API for C simulation
 // codes. To use with C codes, include this header file. Call the

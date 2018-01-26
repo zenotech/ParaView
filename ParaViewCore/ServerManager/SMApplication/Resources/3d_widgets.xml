@@ -28,29 +28,6 @@
       </SubProxy>
     </NewWidgetRepresentationProxy>
     <!-- ================================================================== -->
-    <NewWidgetRepresentationProxy base_proxygroup="representations"
-                                  base_proxyname="HandleWidgetRepresentation"
-                                  class="vtk3DWidgetRepresentation"
-                                  name="PointSourceWidgetRepresentation">
-      <!--
-        This is same as handle widget except that it provides
-        dummy properties for the radius/number of points in a point
-        source.
-      -->
-      <DoubleVectorProperty default_values="1.0"
-                            name="Radius"
-                            number_of_elements="1">
-        <DoubleRangeDomain min="0"
-                           name="range" />
-      </DoubleVectorProperty>
-      <IntVectorProperty default_values="1"
-                         name="NumberOfPoints"
-                         number_of_elements="1">
-        <IntRangeDomain min="1"
-                        name="range" />
-      </IntVectorProperty>
-    </NewWidgetRepresentationProxy>
-    <!-- ================================================================== -->
     <NewWidgetRepresentationProxy class="vtk3DWidgetRepresentation"
                                   name="LineWidgetRepresentation">
       <IntVectorProperty command="SetEnabled"
@@ -66,11 +43,11 @@
                proxyname="LineRepresentation"></Proxy>
         <ExposedProperties>
           <Property name="Visibility" />
+          <Property name="DirectionalLine" />
           <Property name="Point1WorldPositionInfo" />
           <Property name="Point1WorldPosition" />
           <Property name="Point2WorldPositionInfo" />
           <Property name="Point2WorldPosition" />
-          <Property name="PlaceWidget" />
           <Property name="LineColor" />
         </ExposedProperties>
       </SubProxy>
@@ -103,7 +80,7 @@
     <NewWidgetRepresentationProxy class="vtk3DWidgetRepresentation"
                                   name="ImplicitPlaneWidgetRepresentation">
       <IntVectorProperty command="SetEnabled"
-                         default_values="0"
+                         default_values="1"
                          name="Enabled"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
@@ -115,11 +92,13 @@
                proxyname="ImplicitPlaneRepresentation"></Proxy>
         <ExposedProperties>
           <Property name="DrawPlane" />
+          <Property name="ConstrainToWidgetBounds" />
+          <Property name="OutlineTranslation" />
           <Property name="OriginInfo" />
           <Property name="Origin" />
           <Property name="NormalInfo" />
           <Property name="Normal" />
-          <Property name="PlaceWidget" />
+          <Property name="WidgetBounds" />
           <Property name="Visibility" />
           <Property name="PlaceFactor" />
           <Property name="Reset" />
@@ -199,6 +178,12 @@
         <Proxy name="Widget"
                proxygroup="3d_widgets"
                proxyname="BoxWidget2"></Proxy>
+        <ExposedProperties>
+          <Property name="TranslationEnabled" />
+          <Property name="ScalingEnabled" />
+          <Property name="RotationEnabled" />
+          <Property name="MoveFacesEnabled" />
+        </ExposedProperties>
       </SubProxy>
       <!-- End of BoxWidgetRepresentation -->
     </NewWidgetRepresentationProxy>
@@ -229,6 +214,7 @@
           <Property name="RadiusInfo" />
           <Property name="HandleVisibility" />
           <Property name="RadialLine" />
+          <Property name="CenterCursor" />
           <Property name="HandleDirection" />
         </ExposedProperties>
       </SubProxy>
@@ -236,6 +222,48 @@
         <Proxy name="Widget"
                proxygroup="3d_widgets"
                proxyname="SphereWidget2"></Proxy>
+      </SubProxy>
+      <!-- End of SphereWidgetRepresentation -->
+    </NewWidgetRepresentationProxy>
+    <!-- ================================================================== -->
+    <NewWidgetRepresentationProxy class="vtk3DWidgetRepresentation"
+                                  name="ImplicitCylinderWidgetRepresentation">
+      <Documentation>Representation proxy for the the sphere widget. This
+      includes the widget/representation proxies for the sphere 3D
+      widget.</Documentation>
+      <IntVectorProperty command="SetEnabled"
+                         default_values="0"
+                         name="Enabled"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Enable/Disable widget interaction.</Documentation>
+      </IntVectorProperty>
+      <SubProxy>
+        <Proxy name="Prop"
+               proxygroup="3d_widget_representations"
+               proxyname="ImplicitCylinderRepresentation"></Proxy>
+        <ExposedProperties>
+          <Property name="Visibility" />
+          <Property name="ConstrainToWidgetBounds" />
+          <Property name="WidgetBounds" />
+          <Property name="PlaceFactor" />
+          <Property name="Center" />
+          <Property name="CenterInfo" />
+          <Property name="Axis" />
+          <Property name="AxisInfo" />
+          <Property name="Radius" />
+          <Property name="RadiusInfo" />
+          <Property name="DrawCylinder" />
+          <Property name="Tubing" />
+          <Property name="OutlineTranslation" />
+          <Property name="OutsideBounds" />
+          <Property name="ScaleEnabled" />
+        </ExposedProperties>
+      </SubProxy>
+      <SubProxy>
+        <Proxy name="Widget"
+               proxygroup="3d_widgets"
+               proxyname="ImplicitCylinderWidget"></Proxy>
       </SubProxy>
       <!-- End of SphereWidgetRepresentation -->
     </NewWidgetRepresentationProxy>
@@ -417,22 +445,22 @@
                proxyname="ScalarBarRepresentation"></Proxy>
         <ExposedProperties>
           <Property name="Visibility" panel_visibility="never"/>
-          <Property name="Position" panel_visibility="never"/>
-          <Property name="Position2" panel_visibility="never"/>
-          <Property name="AutoOrientInfo" />
-          <Property name="PositionInfo" />
-          <Property name="Position2Info" />
-          <Property name="OrientationInfo" />
           <PropertyGroup label="Layout">
             <Property name="AutoOrient" />
+            <Property name="AutoOrientInfo" />
             <Property name="Orientation" />
+            <Property name="OrientationInfo" />
+            <Property name="WindowLocation" />
           </PropertyGroup>
+          <Property name="Position" panel_visibility="never"/>
+          <Property name="PositionInfo" />
         </ExposedProperties>
       </SubProxy>
       <SubProxy>
         <Proxy name="Prop2DActor"
                proxygroup="annotations"
                proxyname="ScalarBarActor"></Proxy>
+
         <ExposedProperties>
           <Property name="LookupTable" panel_visibility="never"/>
           <PropertyGroup label="Title Texts">
@@ -451,10 +479,11 @@
             <Property name="TitleItalic" function="Italics"/>
             <Property name="TitleShadow" function="Shadow" />
             <Property name="TitleFontSize" function="Size"
-                      number_of_elements="1" default_values="7" />
+                      number_of_elements="1" default_values="16" />
           </PropertyGroup>
 
           <!-- properties for Label -->
+
           <PropertyGroup label="Text/Annotation Font Properties"
                          panel_widget="FontEditor">
             <Property name="LabelColor" function="Color"/>
@@ -464,31 +493,30 @@
             <Property name="LabelItalic" function="Italics" />
             <Property name="LabelShadow" function="Shadow" />
             <Property name="LabelFontSize" function="Size"
-                      number_of_elements="1" default_values="7"/>
+                      number_of_elements="1" default_values="16"/>
           </PropertyGroup>
 
           <PropertyGroup label="Labels">
-            <Property name="AutomaticLabelFormat" />
-            <Property name="LabelFormat" />
-            <Property name="NumberOfLabels" />
-            <Property name="DrawTickMarks" />
-            <Property name="DrawSubTickMarks" />
-            <Property name="DrawTickLabels" />
-            <Property name="AddRangeLabels" />
-            <Property name="RangeLabelFormat" />
+            <Property name="AutomaticLabelFormat" panel_visibility="advanced" />
+            <Property name="LabelFormat" panel_visibility="advanced" />
+            <Property name="DrawTickMarks" panel_visibility="advanced" />
+            <Property name="DrawTickLabels" panel_visibility="advanced" />
+            <Property name="UseCustomLabels" panel_visibility="advanced" />
+            <Property name="CustomLabels" panel_visibility="advanced" />
+            <Property name="AddRangeLabels" panel_visibility="advanced" />
+            <Property name="RangeLabelFormat" panel_visibility="advanced" />
+
           </PropertyGroup>
 
           <PropertyGroup label="Annotations">
             <Property name="DrawAnnotations" />
-            <Property name="AddRangeAnnotations" />
-            <Property name="AutomaticAnnotations" />
-            <Property name="DrawNanAnnotation" />
-            <Property name="NanAnnotation" />
+            <Property name="AddRangeAnnotations" panel_visibility="advanced" />
+            <Property name="AutomaticAnnotations" panel_visibility="advanced" />
+            <Property name="DrawNanAnnotation" panel_visibility="advanced" />
+            <Property name="NanAnnotation" panel_visibility="advanced" />
             <Property name="TextPosition" />
-          </PropertyGroup>
-
-          <PropertyGroup label="Miscellaneous">
-            <Property name="AspectRatio" />
+            <Property name="ScalarBarThickness" />
+            <Property name="ScalarBarLength" />
           </PropertyGroup>
         </ExposedProperties>
       </SubProxy>
@@ -572,6 +600,51 @@
       </SubProxy>
       <!-- End of TextWidgetRepresentation -->
     </TextWidgetRepresentationProxy>
+    <!-- ================================================================== -->
+    <NewWidgetRepresentationProxy class="vtk3DWidgetRepresentation"
+                                   name="ProgressBarWidgetRepresentation">
+      <Documentation>ProgressBarWidgetRepresentation is a representation for progress bar
+      widget as well as the representation for the progress bar shown in the
+      widget.</Documentation>
+      <IntVectorProperty command="SetEnabled"
+                         default_values="1"
+                         name="Enabled"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Enable/Disable widget interaction.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetUseNonCompositedRenderer"
+                         default_values="1"
+                         name="UseNonCompositedRenderer"
+                         number_of_elements="1"></IntVectorProperty>
+      <SubProxy>
+        <Proxy name="Prop2D"
+               proxygroup="3d_widget_representations"
+               proxyname="ProgressBarRepresentation"></Proxy>
+        <ExposedProperties>
+          <Property name="Visibility" />
+          <Property name="ProgressRate" />
+          <Property name="Position" />
+          <Property name="Position2" />
+          <Property name="PositionInfo" />
+          <Property name="Position2Info" />
+          <Property name="ProgressBarColor"/>
+          <Property name="SecondaryProgressBarColor"/>
+          <Property name="DrawBackground"/>
+        </ExposedProperties>
+      </SubProxy>
+      <SubProxy>
+        <Proxy name="Widget"
+               proxygroup="3d_widgets"
+               proxyname="ProgressBarWidget"></Proxy>
+        <ExposedProperties>
+          <Property name="ProcessEvents" />
+          <Property name="Selectable" />
+          <Property name="Resizable" />
+        </ExposedProperties>
+      </SubProxy>
+      <!-- End of ProgressBarWidgetRepresentation -->
+    </NewWidgetRepresentationProxy>
   </ProxyGroup>
   <!-- ****************************************************************** -->
   <ProxyGroup name="3d_widget_representations">
@@ -927,6 +1000,14 @@
         <Documentation>Enable/disable a radial line segment that joins the
         center of the outer sphere and the handle.</Documentation>
       </IntVectorProperty>
+      <IntVectorProperty command="SetCenterCursor"
+                         default_values="1"
+                         name="CenterCursor"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Enable/disable a cursor that is shown at the
+        center of the sphere.</Documentation>
+      </IntVectorProperty>
       <DoubleVectorProperty default_values="0 0 1"
                             name="HandleDirection"
                             number_of_elements="3">
@@ -978,6 +1059,140 @@
       </SubProxy>
       <!-- End of BoxRepresentation -->
     </BoxRepresentationProxy>
+    <!-- ================================================================== -->
+    <Proxy class="vtkPVImplicitCylinderRepresentation"
+           name="ImplicitCylinderRepresentation">
+      <Documentation>Proxy for vtkImplicitCylinderWidget. Don't confuse this with
+      the vtkSMRepresentation proxy for the cylinder widget (which is the
+      ImplicitCylinderWidget).</Documentation>
+      <IntVectorProperty animateable="1"
+                         command="SetVisibility"
+                         default_values="1"
+                         name="Visibility"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <IntVectorProperty command="SetConstrainToWidgetBounds"
+                         default_values="0"
+                         name="ConstrainToWidgetBounds"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <DoubleVectorProperty argument_is_array="1"
+                            command="SetWidgetBounds"
+                            default_values="none"
+                            name="WidgetBounds"
+                            number_of_elements="6">
+        <DoubleRangeDomain name="range" />
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetPlaceFactor"
+                            default_values="1.2"
+                            name="PlaceFactor"
+                            number_of_elements="1">
+        <DoubleRangeDomain min="0.01"
+                           name="range" />
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetCenter"
+                            default_values="0.0 0.0 0.0"
+                            information_property="CenterInfo"
+                            name="Center"
+                            number_of_elements="3">
+        <DoubleRangeDomain name="range" />
+        <Documentation>The center of the cylinder. The center is located along the
+        cylinder axis.</Documentation>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="GetCenter"
+                            information_only="1"
+                            name="CenterInfo">
+        <SimpleDoubleInformationHelper />
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetAxis"
+                            default_values="0.0 0.0 1.0"
+                            information_property="AxisInfo"
+                            name="Axis"
+                            number_of_elements="3">
+        <DoubleRangeDomain name="range" />
+        <Documentation>The axis of rotation for the cylinder. If the axis is not
+        specified as a unit vector, it will be normalized.</Documentation>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="GetAxis"
+                            information_only="1"
+                            name="AxisInfo">
+        <SimpleDoubleInformationHelper />
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetRadius"
+                            default_values="0.5"
+                            information_property="RadiusInfo"
+                            name="Radius"
+                            number_of_elements="1">
+        <DoubleRangeDomain min="0.0"
+                           name="range" />
+        <Documentation>The radius of the cylinder. Note that if the radius is
+        too big the cylinder will be outside of the bounding box.</Documentation>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="GetRadius"
+                            information_only="1"
+                            name="RadiusInfo">
+        <SimpleDoubleInformationHelper />
+      </DoubleVectorProperty>
+      <IntVectorProperty command="SetDrawCylinder"
+                         default_values="1"
+                         name="DrawCylinder"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Enable/disable the drawing of the cylinder. In some cases
+        the cylinder interferes with the object that it is operating on (e.g.,
+        the cylinder interferes with the cut surface it produces resulting in
+        z-buffer artifacts.) By default it is on.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetResolution"
+                         default_values="128"
+                         name="Resolution"
+                         number_of_elements="1">
+        <IntRangeDomain min="8"
+                        max="2048"
+                        name="range" />
+        <Documentation>This is the number of polygonal facets used to approximate
+        the curved cylindrical surface (for rendering purposes). An vtkCylinder
+        is used under the hood to provide an exact surface representation.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetTubing"
+                         default_values="1"
+                         name="Tubing"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Enable/disable tubing of the wire outline of the cylinder
+        intersecton (against the bounding box). The tube thickens the
+        line by wrapping with a vtkTubeFilter..</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetOutlineTranslation"
+                         default_values="0"
+                         name="OutlineTranslation"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Enable/disable the ability to translate the bounding box by
+        moving it with the mouse.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetOutsideBounds"
+                         default_values="1"
+                         name="OutsideBounds"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Enable/disable the ability to move the widget outside of
+        the bounds specified in the initial PlaceWidget() invocation.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetScaleEnabled"
+                            default_values="1"
+                            name="ScaleEnabled"
+                            number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Enable/disable the ability to scale the widget with the
+        mouse.</Documentation>
+      </IntVectorProperty>
+      <!-- End of SphereRepresentation -->
+    </Proxy>
     <!-- ================================================================== -->
     <Proxy class="vtkDistanceRepresentation2D"
            name="DistanceRepresentation2D"
@@ -1037,42 +1252,54 @@
       </IntVectorProperty>
       <IntVectorProperty animateable="1"
                          command="SetDrawPlane"
-                         default_values="1"
+                         default_values="0"
                          name="DrawPlane"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <IntVectorProperty command="SetConstrainToWidgetBounds"
+                         default_values="0"
+                         name="ConstrainToWidgetBounds"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <IntVectorProperty command="SetOutlineTranslation"
+                         default_values="0"
+                         name="OutlineTranslation"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
       </IntVectorProperty>
       <Property command="Reset"
                 name="Reset"></Property>
-      <DoubleVectorProperty command="SetTransformedOrigin"
+      <DoubleVectorProperty command="SetOrigin"
                             default_values="0 0 0"
                             information_property="OriginInfo"
                             name="Origin"
                             number_of_elements="3">
         <DoubleRangeDomain name="range" />
       </DoubleVectorProperty>
-      <DoubleVectorProperty command="GetTransformedOrigin"
+      <DoubleVectorProperty command="GetOrigin"
                             information_only="1"
                             name="OriginInfo">
         <SimpleDoubleInformationHelper />
       </DoubleVectorProperty>
-      <DoubleVectorProperty command="SetTransformedNormal"
+      <DoubleVectorProperty command="SetNormal"
                             default_values="1 0 0"
                             information_property="NormalInfo"
                             name="Normal"
                             number_of_elements="3">
         <DoubleRangeDomain name="range" />
       </DoubleVectorProperty>
-      <DoubleVectorProperty command="GetTransformedNormal"
+      <DoubleVectorProperty command="GetNormal"
                             information_only="1"
                             name="NormalInfo">
         <SimpleDoubleInformationHelper />
       </DoubleVectorProperty>
       <DoubleVectorProperty argument_is_array="1"
-                            command="PlaceTransformedWidget"
+                            command="SetWidgetBounds"
                             default_values="none"
                             is_internal="1"
-                            name="PlaceWidget"
+                            name="WidgetBounds"
                             number_of_elements="6">
         <DoubleRangeDomain name="range" />
       </DoubleVectorProperty>
@@ -1090,6 +1317,12 @@
                          command="SetVisibility"
                          default_values="1"
                          name="Visibility"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <IntVectorProperty command="SetDirectionalLine"
+                         default_values="1"
+                         name="DirectionalLine"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
       </IntVectorProperty>
@@ -1118,40 +1351,6 @@
                             information_only="1"
                             name="Point2WorldPositionInfo">
         <SimpleDoubleInformationHelper />
-      </DoubleVectorProperty>
-      <DoubleVectorProperty argument_is_array="1"
-                            command="SetPoint1DisplayPosition"
-                            default_values="0 0 0"
-                            information_property="Point1DisplayPositionInfo"
-                            name="Point1DisplayPosition"
-                            number_of_elements="3">
-        <DoubleRangeDomain name="range" />
-      </DoubleVectorProperty>
-      <DoubleVectorProperty command="GetPoint1DisplayPosition"
-                            information_only="1"
-                            name="Point1DisplayPositionInfo">
-        <SimpleDoubleInformationHelper />
-      </DoubleVectorProperty>
-      <DoubleVectorProperty argument_is_array="1"
-                            command="SetPoint2DisplayPosition"
-                            default_values="0 0 0"
-                            information_property="Point2DisplayPositionInfo"
-                            name="Point2DisplayPosition"
-                            number_of_elements="3">
-        <DoubleRangeDomain name="range" />
-      </DoubleVectorProperty>
-      <DoubleVectorProperty command="GetPoint2DisplayPosition"
-                            information_only="1"
-                            name="Point2DisplayPositionInfo">
-        <SimpleDoubleInformationHelper />
-      </DoubleVectorProperty>
-      <DoubleVectorProperty argument_is_array="1"
-                            command="PlaceWidget"
-                            default_values="0 1 0 1 0 1"
-                            is_internal="1"
-                            name="PlaceWidget"
-                            number_of_elements="6">
-        <DoubleRangeDomain name="range" />
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetLineColor"
                             default_values="1.0 1.0 1.0"
@@ -1187,7 +1386,7 @@
       </DoubleVectorProperty>
     </Proxy>
     <!-- ================================================================== -->
-    <Proxy class="vtkScalarBarRepresentation"
+    <Proxy class="vtkPVScalarBarRepresentation"
            name="ScalarBarRepresentation">
       <IntVectorProperty animateable="1"
                          command="SetVisibility"
@@ -1197,7 +1396,7 @@
         <BooleanDomain name="bool" />
       </IntVectorProperty>
       <DoubleVectorProperty command="SetPosition"
-                            default_values="0.85 0.05"
+                            default_values="0.89 0.02"
                             information_property="PositionInfo"
                             name="Position"
                             number_of_elements="2">
@@ -1208,20 +1407,6 @@
       <DoubleVectorProperty command="GetPosition"
                             information_only="1"
                             name="PositionInfo">
-        <SimpleDoubleInformationHelper />
-      </DoubleVectorProperty>
-      <DoubleVectorProperty command="SetPosition2"
-                            default_values="0.12 0.43"
-                            information_property="Position2Info"
-                            name="Position2"
-                            number_of_elements="2">
-        <DoubleRangeDomain max="1 1"
-                           min="0 0"
-                           name="range" />
-      </DoubleVectorProperty>
-      <DoubleVectorProperty command="GetPosition2"
-                            information_only="1"
-                            name="Position2Info">
         <SimpleDoubleInformationHelper />
       </DoubleVectorProperty>
       <IntVectorProperty command="SetAutoOrient"
@@ -1260,6 +1445,28 @@
                          information_only="1"
                          name="OrientationInfo">
         <SimpleIntInformationHelper />
+      </IntVectorProperty>
+      <IntVectorProperty command="SetWindowLocation"
+                         default_values="2"
+                         name="WindowLocation"
+                         number_of_elements="1">
+        <EnumerationDomain name="enum">
+          <Entry text="AnyLocation"
+                 value="0" />
+          <Entry text="LowerLeftCorner"
+                 value="1" />
+          <Entry text="LowerRightCorner"
+                 value="2" />
+          <Entry text="LowerCenter"
+                 value="3" />
+          <Entry text="UpperLeftCorner"
+                 value="4" />
+          <Entry text="UpperRightCorner"
+                 value="5" />
+          <Entry text="UpperCenter"
+                 value="6" />
+        </EnumerationDomain>
+        <Documentation>Specify placement of the scalar bar actor.</Documentation>
       </IntVectorProperty>
       <ProxyProperty command="SetScalarBarActor"
                      name="ScalarBarActor">
@@ -1312,7 +1519,7 @@
                             name="Text"></StringVectorProperty>
       <IntVectorProperty animateable="0"
                          command="SetWindowLocation"
-                         default_values="0"
+                         default_values="4"
                          name="WindowLocation"
                          number_of_elements="1">
         <EnumerationDomain name="enum">
@@ -1338,6 +1545,84 @@
           <Group name="props" />
         </ProxyGroupDomain>
       </ProxyProperty>
+    </Proxy>
+    <!-- ================================================================== -->
+    <Proxy class="vtkProgressBarRepresentation"
+           name="ProgressBarRepresentation">
+      <IntVectorProperty animateable="1"
+                         command="SetVisibility"
+                         default_values="1"
+                         name="Visibility"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <DoubleVectorProperty command="SetPosition"
+                            default_values="0.25 0.05"
+                            information_property="PositionInfo"
+                            name="Position"
+                            number_of_elements="2">
+        <DoubleRangeDomain max="1 1"
+                           min="0 0"
+                           name="range" />
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="GetPosition"
+                            information_only="1"
+                            name="PositionInfo">
+        <SimpleDoubleInformationHelper />
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetPosition2"
+                            default_values="0.5 0.06"
+                            information_property="Position2Info"
+                            name="Position2"
+                            number_of_elements="2">
+        <DoubleRangeDomain max="1 1"
+                           min="0 0"
+                           name="range" />
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="GetPosition2"
+                            information_only="1"
+                            name="Position2Info">
+        <SimpleDoubleInformationHelper />
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetProgressRate"
+                            default_values="0"
+                            immediate_update="1"
+                            name="ProgressRate">
+      </DoubleVectorProperty>
+      <DoubleVectorProperty animateable="0"
+                            argument_is_array="1"
+                            command="SetProgressBarColor"
+                            default_values="0.0 1.0 0.0"
+                            name="ProgressBarColor"
+                            panel_widget="color_selector_with_palette"
+                            number_of_elements="3">
+        <DoubleRangeDomain max="1 1 1"
+                           min="0 0 0"
+                           name="range" />
+        <Hints>
+          <GlobalPropertyLink type="ColorPalette" property="InteractiveWidgetColor" />
+        </Hints>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty animateable="0"
+                            command="SetBackgroundColor"
+                            default_values="1 1 1"
+                            name="SecondaryProgressBarColor"
+                            panel_widget="color_selector_with_palette"
+                            number_of_elements="3">
+        <DoubleRangeDomain max="1 1 1"
+                           min="0 0 0"
+                           name="range" />
+        <Hints>
+          <GlobalPropertyLink type="ColorPalette" property="ForegroundColor" />
+        </Hints>
+      </DoubleVectorProperty>
+      <IntVectorProperty animateable="1"
+                         command="SetDrawBackground"
+                         default_values="0"
+                         name="DrawBackground"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
     </Proxy>
   </ProxyGroup>
   <!-- ****************************************************************** -->
@@ -1483,15 +1768,78 @@
     </Proxy>
     <Proxy base_proxygroup="3d_widgets"
            base_proxyname="WidgetBase"
+           class="vtkProgressBarWidget"
+           name="ProgressBarWidget">
+      <IntVectorProperty command="SetSelectable"
+                         default_values="0"
+                         name="Selectable"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <IntVectorProperty animateable="0"
+                         command="SetResizable"
+                         default_values="1"
+                         name="Resizable"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <IntVectorProperty command="SetProcessEvents"
+                         default_values="1"
+                         name="ProcessEvents"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <!-- End of ProgressBarWidget -->
+    </Proxy>
+    <Proxy base_proxygroup="3d_widgets"
+           base_proxyname="WidgetBase"
            class="vtkBoxWidget2"
            name="BoxWidget2">
       <Documentation>Proxy for vtkBoxWidget2.</Documentation>
+      <IntVectorProperty command="SetTranslationEnabled"
+                         default_values="1"
+                         name="TranslationEnabled"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Set whether to allow this 3D widget to be interactively
+        translated.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetScalingEnabled"
+                         default_values="1"
+                         name="ScalingEnabled"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Set whether to allow this 3D widget to be interactively
+        sclaed.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetRotationEnabled"
+                         default_values="1"
+                         name="RotationEnabled"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Set whether to allow this 3D widget to be interactively
+        rotated.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetMoveFacesEnabled"
+                         default_values="1"
+                         name="MoveFacesEnabled"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Set whether to allow interactive face movement to be
+          performed on this 3D widget.</Documentation>
+      </IntVectorProperty>
     </Proxy>
     <Proxy base_proxygroup="3d_widgets"
            base_proxyname="WidgetBase"
            class="vtkSphereWidget2"
            name="SphereWidget2">
       <Documentation>Proxy for vtkSphereWidget2.</Documentation>
+    </Proxy>
+    <Proxy base_proxygroup="3d_widgets"
+           base_proxyname="WidgetBase"
+           class="vtkImplicitCylinderWidget"
+           name="ImplicitCylinderWidget">
+      <Documentation>Proxy for vtkImplicitCylinderWidget.</Documentation>
     </Proxy>
     <Proxy class="vtkPVAxesWidget"
            name="AxesWidget"

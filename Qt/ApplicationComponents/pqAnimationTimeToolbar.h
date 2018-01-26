@@ -29,40 +29,46 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqAnimationTimeToolbar_h
-#define __pqAnimationTimeToolbar_h
+#ifndef pqAnimationTimeToolbar_h
+#define pqAnimationTimeToolbar_h
 
 #include "pqApplicationComponentsModule.h"
-#include <QToolBar>
 #include <QPointer>
+#include <QToolBar>
 
 class pqAnimationTimeWidget;
 class pqAnimationScene;
 
-
-/// pqAnimationTimeToolbar is a QToolBar containing a pqAnimationTimeWidget.
-/// pqAnimationTimeToolbar also ensures that the pqAnimationTimeWidget is
-/// tracking the animation scene on the active session.
+/**
+* pqAnimationTimeToolbar is a QToolBar containing a pqAnimationTimeWidget.
+* pqAnimationTimeToolbar also ensures that the pqAnimationTimeWidget is
+* tracking the animation scene on the active session.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqAnimationTimeToolbar : public QToolBar
 {
   Q_OBJECT
   typedef QToolBar Superclass;
-public:
-  pqAnimationTimeToolbar(const QString &_title, QWidget *_parent = 0)
-    : Superclass(_title, _parent)
-    {
-    this->constructor();
-    }
-  pqAnimationTimeToolbar(QWidget *_parent = 0)
-    : Superclass(_parent)
-    {
-    this->constructor();
-    }
 
-  /// Provides access to the pqAnimationTimeWidget used.
+public:
+  pqAnimationTimeToolbar(const QString& _title, QWidget* _parent = 0)
+    : Superclass(_title, _parent)
+  {
+    this->constructor();
+  }
+  pqAnimationTimeToolbar(QWidget* _parent = 0)
+    : Superclass(_parent)
+  {
+    this->constructor();
+  }
+
+  /**
+  * Provides access to the pqAnimationTimeWidget used.
+  */
   pqAnimationTimeWidget* animationTimeWidget() const;
 private slots:
   void setAnimationScene(pqAnimationScene* scene);
+
+  void updateTimePrecision();
 
 private:
   Q_DISABLE_COPY(pqAnimationTimeToolbar)
@@ -71,5 +77,3 @@ private:
 };
 
 #endif
-
-

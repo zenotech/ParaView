@@ -16,18 +16,60 @@
 #include "vtkXYChartRepresentationInternals.h"
 
 #include "vtkCommand.h"
+#include "vtkCompositeDataIterator.h"
 #include "vtkContextView.h"
+#include "vtkDataSetAttributes.h"
+#include "vtkInformation.h"
 #include "vtkMultiBlockDataSet.h"
+#include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPVContextView.h"
+#include "vtkPVXYChartView.h"
 #include "vtkScalarsToColors.h"
+#include "vtkSmartPointer.h"
+#include "vtkSortFieldData.h"
+#include "vtkTableAlgorithm.h"
 #include "vtkWeakPointer.h"
 
 #include <map>
 #include <string>
 
+class vtkXYChartRepresentation::SortTableFilter : public vtkTableAlgorithm
+{
+private:
+  char* ArrayToSortBy;
+
+protected:
+  SortTableFilter()
+    : ArrayToSortBy(NULL)
+  {
+  }
+  ~SortTableFilter() {}
+public:
+  static SortTableFilter* New();
+  int RequestData(
+    vtkInformation*, vtkInformationVector** inVector, vtkInformationVector* outVector) VTK_OVERRIDE
+  {
+    vtkTable* in = vtkTable::GetData(inVector[0], 0);
+    vtkTable* out = vtkTable::GetData(outVector, 0);
+    if (!this->ArrayToSortBy)
+    {
+      vtkErrorMacro(<< "The array name to sort by must be set.");
+      return 0;
+    }
+    out->DeepCopy(in);
+    vtkSortFieldData::Sort(out->GetRowData(), this->ArrayToSortBy, 0, 0);
+    return 1;
+  }
+
+  vtkGetStringMacro(ArrayToSortBy);
+  vtkSetStringMacro(ArrayToSortBy);
+};
+
+vtkStandardNewMacro(vtkXYChartRepresentation::SortTableFilter);
+
 //-----------------------------------------------------------------------------
-#define vtkCxxSetChartTypeMacro(_name, _value) \
+#define vtkCxxSetChartTypeMacro(_name, _value)                                                     \
   void vtkXYChartRepresentation::SetChartTypeTo##_name() { this->SetChartType(_value); }
 vtkCxxSetChartTypeMacro(Line, vtkChart::LINE);
 vtkCxxSetChartTypeMacro(Points, vtkChart::POINTS);
@@ -39,11 +81,13 @@ vtkCxxSetChartTypeMacro(Area, vtkChart::AREA);
 vtkStandardNewMacro(vtkXYChartRepresentation);
 //----------------------------------------------------------------------------
 vtkXYChartRepresentation::vtkXYChartRepresentation()
-  : Internals(new vtkXYChartRepresentation::vtkInternals()),
-  ChartType(vtkChart::LINE),
-  XAxisSeriesName(NULL),
-  UseIndexForXAxis(true),
-  PlotDataHasChanged(false)
+  : Internals(new vtkXYChartRepresentation::vtkInternals())
+  , ChartType(vtkChart::LINE)
+  , XAxisSeriesName(NULL)
+  , UseIndexForXAxis(true)
+  , SortDataByXAxis(false)
+  , PlotDataHasChanged(false)
+  , SeriesLabelPrefix(NULL)
 {
   this->SelectionColor[0] = 1.;
   this->SelectionColor[1] = 0.;
@@ -54,21 +98,22 @@ vtkXYChartRepresentation::vtkXYChartRepresentation()
 vtkXYChartRepresentation::~vtkXYChartRepresentation()
 {
   if (this->GetChart())
-    {
+  {
     this->Internals->RemoveAllPlots(this->GetChart());
-    }
+  }
   delete this->Internals;
   this->Internals = NULL;
   this->SetXAxisSeriesName(NULL);
+  this->SetSeriesLabelPrefix(NULL);
 }
 
 //----------------------------------------------------------------------------
 bool vtkXYChartRepresentation::RemoveFromView(vtkView* view)
 {
   if ((this->ContextView.GetPointer() == view) && (this->GetChart() != NULL))
-    {
+  {
     this->Internals->RemoveAllPlots(this->GetChart());
-    }
+  }
   return this->Superclass::RemoveFromView(view);
 }
 
@@ -79,27 +124,37 @@ void vtkXYChartRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 }
 
 //----------------------------------------------------------------------------
+void vtkXYChartRepresentation::SetSortDataByXAxis(bool val)
+{
+  if (this->SortDataByXAxis == val)
+  {
+    return;
+  }
+  this->SortDataByXAxis = val;
+  this->MarkModified();
+}
+//----------------------------------------------------------------------------
 void vtkXYChartRepresentation::SetVisibility(bool visible)
 {
   this->Superclass::SetVisibility(visible);
   if (this->GetChart() && !visible)
-    {
+  {
     // Hide all plots.
     this->Internals->HideAllPlots();
-    }
+  }
 }
 
 //----------------------------------------------------------------------------
 vtkChartXY* vtkXYChartRepresentation::GetChart()
 {
   if (this->ContextView)
-    {
+  {
     return vtkChartXY::SafeDownCast(this->ContextView->GetContextItem());
-    }
+  }
   else
-    {
+  {
     return 0;
-    }
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -135,8 +190,7 @@ void vtkXYChartRepresentation::SetColor(const char* seriesname, double r, double
 }
 
 //----------------------------------------------------------------------------
-void vtkXYChartRepresentation::SetUseColorMapping(const char* seriesname,
-                                                  bool useColorMapping)
+void vtkXYChartRepresentation::SetUseColorMapping(const char* seriesname, bool useColorMapping)
 {
   assert(seriesname != NULL);
   this->Internals->UseColorMapping[seriesname] = useColorMapping;
@@ -144,14 +198,12 @@ void vtkXYChartRepresentation::SetUseColorMapping(const char* seriesname,
 }
 
 //----------------------------------------------------------------------------
-void vtkXYChartRepresentation::SetLookupTable(const char* seriesname,
-                                              vtkScalarsToColors* lut)
+void vtkXYChartRepresentation::SetLookupTable(const char* seriesname, vtkScalarsToColors* lut)
 {
   assert(seriesname != NULL);
   this->Internals->Lut[seriesname] = lut;
   this->Modified();
 }
-
 
 //----------------------------------------------------------------------------
 void vtkXYChartRepresentation::SetAxisCorner(const char* seriesname, int corner)
@@ -181,11 +233,10 @@ void vtkXYChartRepresentation::SetLabel(const char* seriesname, const char* labe
 const char* vtkXYChartRepresentation::GetLabel(const char* seriesname) const
 {
   assert(seriesname != NULL);
-  return (this->Internals->Labels.find(seriesname) !=
-          this->Internals->Labels.end()) ?
-    this->Internals->Labels[seriesname].c_str() : NULL;
+  return (this->Internals->Labels.find(seriesname) != this->Internals->Labels.end())
+    ? this->Internals->Labels[seriesname].c_str()
+    : NULL;
 }
-
 
 //----------------------------------------------------------------------------
 void vtkXYChartRepresentation::ClearSeriesVisibilities()
@@ -237,21 +288,52 @@ void vtkXYChartRepresentation::ClearLabels()
 }
 
 //----------------------------------------------------------------------------
-int vtkXYChartRepresentation::RequestData(vtkInformation *request,
-  vtkInformationVector **inputVector, vtkInformationVector *outputVector)
+int vtkXYChartRepresentation::ProcessViewRequest(
+  vtkInformationRequestKey* request_type, vtkInformation* inInfo, vtkInformation* outInfo)
+{
+  if (request_type == vtkPVView::REQUEST_UPDATE())
+  {
+    vtkPVXYChartView* view = vtkPVXYChartView::SafeDownCast(inInfo->Get(vtkPVView::VIEW()));
+    if (view)
+    {
+      this->SetSortDataByXAxis(view->GetSortByXAxis());
+    }
+  }
+  return Superclass::ProcessViewRequest(request_type, inInfo, outInfo);
+}
+
+//----------------------------------------------------------------------------
+int vtkXYChartRepresentation::RequestData(
+  vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   if (!this->Superclass::RequestData(request, inputVector, outputVector))
-    {
+  {
     return 0;
-    }
+  }
 
   if (!this->LocalOutput)
-    {
+  {
     return 1;
-    }
+  }
 
   this->PlotDataHasChanged = true;
   return 1;
+}
+
+//----------------------------------------------------------------------------
+vtkSmartPointer<vtkDataObject> vtkXYChartRepresentation::TransformTable(
+  vtkSmartPointer<vtkDataObject> data)
+{
+  if (!(this->SortDataByXAxis && this->XAxisSeriesName))
+  {
+    return Superclass::TransformTable(data);
+  }
+  vtkNew<SortTableFilter> sorter;
+  sorter->SetInputDataObject(data);
+  sorter->SetArrayToSortBy(this->XAxisSeriesName);
+  sorter->Update();
+  vtkSmartPointer<vtkDataObject> sortedTable = sorter->GetOutputDataObject(0);
+  return sortedTable;
 }
 
 //----------------------------------------------------------------------------
@@ -264,30 +346,37 @@ void vtkXYChartRepresentation::PrepareForRendering()
 
   vtkChartRepresentation::MapOfTables tables;
   if (!this->GetLocalOutput(tables))
-    {
+  {
     this->Internals->HideAllPlots();
     return;
-    }
+  }
 
   if (this->UseIndexForXAxis == false &&
     (this->XAxisSeriesName == NULL || this->XAxisSeriesName[0] == 0))
-    {
+  {
     vtkErrorMacro("Missing XAxisSeriesName.");
     this->Internals->HideAllPlots();
     return;
-    }
+  }
 
   this->PlotDataHasChanged = false;
 
   if (this->GetChartType() == vtkChart::FUNCTIONALBAG)
-    {
+  {
     chartXY->SetSelectionMethod(vtkChart::SELECTION_COLUMNS);
-    }
-  chartXY->SetSelectionMethod(
-    this->GetChartType() == vtkChart::FUNCTIONALBAG ?
-      vtkChart::SELECTION_COLUMNS : vtkChart::SELECTION_ROWS);
+  }
+  chartXY->SetSelectionMethod(this->GetChartType() == vtkChart::FUNCTIONALBAG
+      ? vtkChart::SELECTION_COLUMNS
+      : vtkChart::SELECTION_ROWS);
   // Update plots. This will create new vtkPlot if needed.
   this->Internals->UpdatePlots(this, tables);
   this->Internals->UpdatePlotProperties(this);
   assert(this->UseIndexForXAxis == true || this->XAxisSeriesName != NULL);
+}
+
+//----------------------------------------------------------------------------
+bool vtkXYChartRepresentation::Export(vtkCSVExporter* exporter)
+{
+  assert(this->GetVisibility() == true);
+  return this->Internals->Export(this, exporter);
 }

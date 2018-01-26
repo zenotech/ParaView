@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -30,10 +30,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
 
-#include "vtkPVConfig.h"
 #include "pqComponentsInit.h"
 #include "pqCoreInit.h"
-#include <QObject>  // for Q_INIT_RESOURCE
+#include "vtkPVConfig.h"
+#include <QObject> // for Q_INIT_RESOURCE
 
 void pqComponentsInit()
 {
@@ -45,6 +45,4 @@ void pqComponentsInit()
   Q_INIT_RESOURCE(pqComponents);
 
 #endif
-
 }
-

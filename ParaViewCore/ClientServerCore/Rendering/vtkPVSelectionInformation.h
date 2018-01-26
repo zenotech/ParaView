@@ -12,15 +12,18 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVSelectionInformation - Used to gather selection information
-// .SECTION Description
-// Used to get information about selection from server to client.
-// The results are stored in a vtkSelection. 
-// .SECTION See Also
-// vtkSelection
+/**
+ * @class   vtkPVSelectionInformation
+ * @brief   Used to gather selection information
+ *
+ * Used to get information about selection from server to client.
+ * The results are stored in a vtkSelection.
+ * @sa
+ * vtkSelection
+*/
 
-#ifndef __vtkPVSelectionInformation_h
-#define __vtkPVSelectionInformation_h
+#ifndef vtkPVSelectionInformation_h
+#define vtkPVSelectionInformation_h
 
 #include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 #include "vtkPVInformation.h"
@@ -34,27 +37,33 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVSelectionInformation : public v
 public:
   static vtkPVSelectionInformation* New();
   vtkTypeMacro(vtkPVSelectionInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Copy information from a selection to internal datastructure.
-  virtual void CopyFromObject(vtkObject*);
+  /**
+   * Copy information from a selection to internal datastructure.
+   */
+  virtual void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
-  // Description:
-  // Merge another information object.
-  virtual void AddInformation(vtkPVInformation*);
+  /**
+   * Merge another information object.
+   */
+  virtual void AddInformation(vtkPVInformation*) VTK_OVERRIDE;
 
-  //BTX
-  // Description:
-  // Manage a serialized version of the information.
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
-  //ETX
+  //@{
+  /**
+   * Manage a serialized version of the information.
+   */
+  virtual void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  virtual void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
+  //@}
 
-  // Description:
-  // Returns the selection. Selection is created and populated
-  // at the end of GatherInformation.
+  //@{
+  /**
+   * Returns the selection. Selection is created and populated
+   * at the end of GatherInformation.
+   */
   vtkGetObjectMacro(Selection, vtkSelection);
+  //@}
 
 protected:
   vtkPVSelectionInformation();
@@ -64,8 +73,8 @@ protected:
   vtkSelection* Selection;
 
 private:
-  vtkPVSelectionInformation(const vtkPVSelectionInformation&); // Not implemented
-  void operator=(const vtkPVSelectionInformation&); // Not implemented
+  vtkPVSelectionInformation(const vtkPVSelectionInformation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVSelectionInformation&) VTK_DELETE_FUNCTION;
 };
 
 #endif

@@ -12,68 +12,81 @@
   the U.S. Government retains certain rights in this software.
 
 =========================================================================*/
-// .NAME vtkPVAMRFragmentIntegration - Generates fragment analysis from an
-// amr volume and a previously run contour on that volume
-//
-// .SECTION Description
-//
-// .SEE vtkAMRFragmentIntegration
-//
+/**
+ * @class   vtkPVAMRFragmentIntegration
+ * @brief   Generates fragment analysis from an
+ * amr volume and a previously run contour on that volume
+ *
+ *
+ *
+ * .SEE vtkAMRFragmentIntegration
+ *
+*/
 
-#ifndef __vtkPVAMRFragmentIntegration_h
-#define __vtkPVAMRFragmentIntegration_h
+#ifndef vtkPVAMRFragmentIntegration_h
+#define vtkPVAMRFragmentIntegration_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkAMRFragmentIntegration.h"
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 
 // Forware declaration.
 class vtkPVAMRFragmentIntegrationInternal;
 
-class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVAMRFragmentIntegration : public vtkAMRFragmentIntegration
+class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVAMRFragmentIntegration
+  : public vtkAMRFragmentIntegration
 {
 public:
   static vtkPVAMRFragmentIntegration* New();
-  vtkTypeMacro(vtkPVAMRFragmentIntegration,vtkAMRFragmentIntegration);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkPVAMRFragmentIntegration, vtkAMRFragmentIntegration);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   vtkPVAMRFragmentIntegration();
   virtual ~vtkPVAMRFragmentIntegration();
 
-  // Description:
-  // Add to list of volume arrays which are used for generating contours.
+  //@{
+  /**
+   * Add to list of volume arrays which are used for generating contours.
+   */
   void AddInputVolumeArrayToProcess(const char* name);
   void ClearInputVolumeArrayToProcess();
+  //@}
 
-  // Description:
-  // Add to list of mass arrays 
+  //@{
+  /**
+   * Add to list of mass arrays
+   */
   void AddInputMassArrayToProcess(const char* name);
   void ClearInputMassArrayToProcess();
+  //@}
 
-  // Description:
-  // Add to list of volume weighted arrays 
+  //@{
+  /**
+   * Add to list of volume weighted arrays
+   */
   void AddInputVolumeWeightedArrayToProcess(const char* name);
   void ClearInputVolumeWeightedArrayToProcess();
+  //@}
 
-  // Description:
-  // Add to list of mass weighted arrays 
+  //@{
+  /**
+   * Add to list of mass weighted arrays
+   */
   void AddInputMassWeightedArrayToProcess(const char* name);
   void ClearInputMassWeightedArrayToProcess();
+  //@}
 
-  void SetContourConnection (vtkAlgorithmOutput*);
+  void SetContourConnection(vtkAlgorithmOutput*);
 
-  //BTX
-  virtual int RequestData(vtkInformation*, vtkInformationVector**,
-                          vtkInformationVector*);
+  virtual int RequestData(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
 private:
-  vtkPVAMRFragmentIntegration(const vtkPVAMRFragmentIntegration&);  // Not implemented.
-  void operator=(const vtkPVAMRFragmentIntegration&);    // Not implemented.
-
-  //ETX
+  vtkPVAMRFragmentIntegration(const vtkPVAMRFragmentIntegration&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVAMRFragmentIntegration&) VTK_DELETE_FUNCTION;
 
 protected:
   double VolumeFractionSurfaceValue;
   vtkPVAMRFragmentIntegrationInternal* Implementation;
 };
 
-#endif // __vtkPVAMRFragmentIntegration_h
+#endif // vtkPVAMRFragmentIntegration_h

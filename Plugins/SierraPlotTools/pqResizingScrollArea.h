@@ -19,14 +19,14 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
-#ifndef __pqResizingScrollArea_H
-#define __pqResizingScrollArea_H
+#ifndef pqResizingScrollArea_h
+#define pqResizingScrollArea_h
 
 #include <QScrollArea>
 
 //
 // This class provides a scroll area that can resize (to a point) as widgets are
-// added to the contents 
+// added to the contents
 //
 
 class pqResizingScrollArea : public QScrollArea
@@ -34,9 +34,9 @@ class pqResizingScrollArea : public QScrollArea
   Q_OBJECT;
 
 public:
-  pqResizingScrollArea(QWidget *parent = 0);
+  pqResizingScrollArea(QWidget* parent = 0);
 
   QSize sizeHint() const;
 };
 
-#endif //__pqResizingScrollArea_H
+#endif // pqResizingScrollArea_h

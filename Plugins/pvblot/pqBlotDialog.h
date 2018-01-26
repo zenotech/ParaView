@@ -19,8 +19,8 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
-#ifndef __pqBlotDialog_h
-#define __pqBlotDialog_h
+#ifndef pqBlotDialog_h
+#define pqBlotDialog_h
 
 #include <QDialog>
 
@@ -39,27 +39,26 @@ class pqBlotDialog : public QDialog
   Q_OBJECT;
 
 public:
-  pqBlotDialog(QWidget *p);
+  pqBlotDialog(QWidget* p);
   ~pqBlotDialog();
 
-  virtual pqServer *activeServer() const;
-  virtual void setActiveServer(pqServer *server);
+  virtual pqServer* activeServer() const;
+  virtual void setActiveServer(pqServer* server);
 
 public slots:
   virtual void open();
-  virtual void open(const QString &filename);
+  virtual void open(const QString& filename);
   virtual void runScript();
-  virtual void runScript(const QStringList &files);
+  virtual void runScript(const QStringList& files);
 
 protected slots:
-  virtual void open(const QStringList &filenames);
+  virtual void open(const QStringList& filenames);
 
 private:
-  pqBlotDialog(const pqBlotDialog &);   // Not implemented
-  void operator=(const pqBlotDialog &); // Not implemented
+  Q_DISABLE_COPY(pqBlotDialog)
 
   class UI;
-  UI *ui;
+  UI* ui;
 };
 
 /**
@@ -70,19 +69,18 @@ class pqBlotDialogExecuteAction : QObject
   Q_OBJECT;
 
 public:
-  pqBlotDialogExecuteAction(QObject *parent, const QString &command);
+  pqBlotDialogExecuteAction(QObject* parent, const QString& command);
 
-  static pqBlotDialogExecuteAction *connect(QAction *action,
-                                            pqBlotShell *shell);
+  static pqBlotDialogExecuteAction* connect(QAction* action, pqBlotShell* shell);
 
 public slots:
   virtual void trigger();
 
 signals:
-  void triggered(const QString &command);
+  void triggered(const QString& command);
 
 protected:
   QString Command;
 };
 
-#endif //__pqBlotDialog_h
+#endif // pqBlotDialog_h

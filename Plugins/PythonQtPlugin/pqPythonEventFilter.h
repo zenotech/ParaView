@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -29,30 +29,26 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
-#ifndef __pqPythonEventFilter_h
-#define __pqPythonEventFilter_h
+#ifndef pqPythonEventFilter_h
+#define pqPythonEventFilter_h
 
-#include <QObject>
 #include <QEvent>
+#include <QObject>
 
-class  pqPythonEventFilter : public QObject
+class pqPythonEventFilter : public QObject
 {
   Q_OBJECT
 
 public slots:
 
-  void setEventHandlerResult(bool result)
-  {
-    this->EventHandlerResult = result;
-  }
+  void setEventHandlerResult(bool result) { this->EventHandlerResult = result; }
 
 signals:
 
   void handleEvent(QObject* obj, QEvent* event);
 
 protected:
-
-  bool eventFilter(QObject *obj, QEvent *event)
+  bool eventFilter(QObject* obj, QEvent* event)
   {
     emit this->handleEvent(obj, event);
     return this->EventHandlerResult;

@@ -12,42 +12,43 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMSpreadSheetRepresentationProxy
-// .SECTION Description
-// vtkSMSpreadSheetRepresentationProxy is a representation proxy used for
-// spreadsheet view. This class overrides vtkSMRepresentationProxy to ensure
-// that the selection inputs are setup correctly.
+/**
+ * @class   vtkSMSpreadSheetRepresentationProxy
+ *
+ * vtkSMSpreadSheetRepresentationProxy is a representation proxy used for
+ * spreadsheet view. This class overrides vtkSMRepresentationProxy to ensure
+ * that the selection inputs are setup correctly.
+*/
 
-#ifndef __vtkSMSpreadSheetRepresentationProxy_h
-#define __vtkSMSpreadSheetRepresentationProxy_h
+#ifndef vtkSMSpreadSheetRepresentationProxy_h
+#define vtkSMSpreadSheetRepresentationProxy_h
 
 #include "vtkPVServerManagerRenderingModule.h" //needed for exports
 #include "vtkSMRepresentationProxy.h"
 
-class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMSpreadSheetRepresentationProxy : public vtkSMRepresentationProxy
+class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMSpreadSheetRepresentationProxy
+  : public vtkSMRepresentationProxy
 {
 public:
   static vtkSMSpreadSheetRepresentationProxy* New();
-  vtkTypeMacro(vtkSMSpreadSheetRepresentationProxy,
-    vtkSMRepresentationProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkSMSpreadSheetRepresentationProxy, vtkSMRepresentationProxy);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-//BTX
 protected:
   vtkSMSpreadSheetRepresentationProxy();
   ~vtkSMSpreadSheetRepresentationProxy();
 
-  // Description:
-  // Overridden to ensure that whenever "Input" property changes, we update the
-  // "Input" properties for all internal representations (including setting up
-  // of the link to the extract-selection representation).
-  virtual void SetPropertyModifiedFlag(const char* name, int flag);
+  /**
+   * Overridden to ensure that whenever "Input" property changes, we update the
+   * "Input" properties for all internal representations (including setting up
+   * of the link to the extract-selection representation).
+   */
+  virtual void SetPropertyModifiedFlag(const char* name, int flag) VTK_OVERRIDE;
 
 private:
-  vtkSMSpreadSheetRepresentationProxy(const vtkSMSpreadSheetRepresentationProxy&); // Not implemented
-  void operator=(const vtkSMSpreadSheetRepresentationProxy&); // Not implemented
-//ETX
+  vtkSMSpreadSheetRepresentationProxy(
+    const vtkSMSpreadSheetRepresentationProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMSpreadSheetRepresentationProxy&) VTK_DELETE_FUNCTION;
 };
 
 #endif
-

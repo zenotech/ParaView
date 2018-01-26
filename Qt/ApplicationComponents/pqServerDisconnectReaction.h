@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,43 +29,53 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqServerDisconnectReaction_h 
-#define __pqServerDisconnectReaction_h
+#ifndef pqServerDisconnectReaction_h
+#define pqServerDisconnectReaction_h
 
 #include "pqReaction.h"
 #include "pqTimer.h" // needed for pqTimer.
 
-/// @ingroup Reactions
-/// Reaction to disconnect from a server.
+/**
+* @ingroup Reactions
+* Reaction to disconnect from a server.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqServerDisconnectReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
+
 public:
-  /// Constructor. Parent cannot be NULL.
+  /**
+  * Constructor. Parent cannot be NULL.
+  */
   pqServerDisconnectReaction(QAction* parent);
 
-  /// Disconnects from active server.
-  /// Note that this method is static. Applications can simply use this without
-  /// having to create a reaction instance.
+  /**
+  * Disconnects from active server.
+  * Note that this method is static. Applications can simply use this without
+  * having to create a reaction instance.
+  */
   static void disconnectFromServer();
 
-  /// Disconnects from active server with a warning message to the user to
-  /// confirm that active proxies will be destroyed, if any. Returns true if
-  /// disconnect happened, false if not i.e. the user cancelled the operation.
+  /**
+  * Disconnects from active server with a warning message to the user to
+  * confirm that active proxies will be destroyed, if any. Returns true if
+  * disconnect happened, false if not i.e. the user cancelled the operation.
+  */
   static bool disconnectFromServerWithWarning();
 private slots:
   void updateState();
 
 protected:
-  /// Called when the action is triggered.
+  /**
+  * Called when the action is triggered.
+  */
   virtual void onTriggered();
 
   pqTimer UpdateTimer;
+
 private:
   Q_DISABLE_COPY(pqServerDisconnectReaction)
 };
 
 #endif
-
-

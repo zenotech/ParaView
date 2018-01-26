@@ -1,74 +1,5 @@
 <ServerManagerConfiguration>
   <ProxyGroup name="lookup_tables">
-    <Proxy class="vtkLookupTable"
-           name="LookupTable"
-           post_push="Build"
-           processes="dataserver|renderserver|client">
-      <IntVectorProperty command="SetNumberOfTableValues"
-                         default_values="256"
-                         name="NumberOfTableValues"
-                         number_of_elements="1">
-        <IntRangeDomain min="1"
-                        name="range" />
-      </IntVectorProperty>
-      <DoubleVectorProperty command="SetHueRange"
-                            default_values="0 0.66667"
-                            name="HueRange"
-                            number_of_elements="2">
-        <DoubleRangeDomain max="1 1"
-                           min="0 0"
-                           name="range" />
-      </DoubleVectorProperty>
-      <DoubleVectorProperty command="SetSaturationRange"
-                            default_values="1 1"
-                            name="SaturationRange"
-                            number_of_elements="2">
-        <DoubleRangeDomain max="1 1"
-                           min="0 0"
-                           name="range" />
-      </DoubleVectorProperty>
-      <DoubleVectorProperty command="SetValueRange"
-                            default_values="1 1"
-                            name="ValueRange"
-                            number_of_elements="2">
-        <DoubleRangeDomain max="1 1"
-                           min="0 0"
-                           name="range" />
-      </DoubleVectorProperty>
-      <DoubleVectorProperty command="SetTableRange"
-                            default_values="0 1"
-                            name="ScalarRange"
-                            number_of_elements="2"></DoubleVectorProperty>
-      <IntVectorProperty command="SetVectorComponent"
-                         default_values="0"
-                         name="VectorComponent"
-                         number_of_elements="1">
-        <EnumerationDomain name="enum">
-          <Entry text="X"
-                 value="0" />
-          <Entry text="Y"
-                 value="1" />
-          <Entry text="Z"
-                 value="2" />
-        </EnumerationDomain>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetVectorMode"
-                         default_values="1"
-                         name="VectorMode"
-                         number_of_elements="1">
-        <EnumerationDomain name="enum">
-          <Entry text="Magnitude"
-                 value="0" />
-          <Entry text="Component"
-                 value="1" />
-        </EnumerationDomain>
-      </IntVectorProperty>
-      <StringVectorProperty command="SetArrayName"
-                            default_values=""
-                            name="ArrayName"
-                            number_of_elements="1"></StringVectorProperty>
-    </Proxy>
-
     <TransferFunctionProxy class="vtkPVDiscretizableColorTransferFunction"
                            name="PVLookupTable"
                            post_push="Build"
@@ -79,13 +10,9 @@
                          number_of_elements="1">
         <BooleanDomain name="bool" />
         <Documentation>
-          When enabled, data range is locked, meaning that the
-          application will not be permitted to automatically update
-          the color map to fit the data range. To change when the
-          application will update the color map, see the application
-          setting General -> Transfer Function Reset Mode.
+          Uncheck to automatically update color map to fit data range for all
+          filters.
         </Documentation>
-
       </IntVectorProperty>
       <IntVectorProperty name="IndexedLookup"
                          command="SetIndexedLookup"
@@ -397,20 +324,10 @@
                          number_of_elements="1">
         <BooleanDomain name="bool" />
       </IntVectorProperty>
-      <Hints>
-        <!-- Hints are metadata associated with the proxy.
-             As far as the ServerManager is concerned, Hints have no
-             significance. GUI is free to interpret the hints as
-             it chooses. Hints provide a mechanism to add some GUI
-             pertinant information to the server manager XML.
-        -->
-        <PropertyGroup type="Spline">
-          <Property function="HandlePositions"
-                    name="Points" />
-          <Property function="Closed"
-                    name="Closed" />
-        </PropertyGroup>
-      </Hints>
+      <PropertyGroup label="Spline Parameters" panel_widget="InteractiveSpline">
+        <Property function="HandlePositions" name="Points" />
+        <Property function="Closed" name="Closed" />
+      </PropertyGroup>
       <!-- end of Spline -->
     </Proxy>
   </ProxyGroup>
@@ -558,8 +475,93 @@
                   show="0" />
       </Hints>
     </Proxy>
+    <!-- incremental point locators end -->
   </ProxyGroup>
-  <!-- incremental point locators end -->
+
+  <ProxyGroup name="point_locators">
+    <Proxy name="StaticPointLocator" label="Static Point Locator" class="vtkStaticPointLocator">
+      <Documentation>
+        This uses a spatial search object to quickly locate points
+        in 3D.  This locator works by dividing a specified region of
+        space into a regular array of cuboid buckets, and then keeping a
+        list of points that lie in each bucket. Typical operation involves giving
+        a position in 3D and finding the closest point; or finding the N closest
+        points.
+
+        This locator is an accelerated version of a point locator. It is
+        threaded (via vtkSMPTools), and supports one-time static construction
+        (i.e., incremental point insertion is not supported).
+      </Documentation>
+
+      <IntVectorProperty name="Automatic"
+        command="SetAutomatic"
+        number_of_elements="1"
+        default_values="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Controls whether the locator resolution is computed automatically or not.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty command="SetDivisions"
+        default_values="50 50 50"
+        name="Divisions"
+        number_of_elements="3">
+        <Documentation>Specify the number of divisions in each axis / direction
+          (x, y, z) for creating a search structure of uniform fixed-resolution
+          bins / buckets.
+        </Documentation>
+        <IntRangeDomain name="range" min="1 1 1" />
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+            mode="enabled_state"
+            property="Automatic"
+            value="0" />
+        </Hints>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="NumberOfPointsPerBucket"
+        command="SetNumberOfPointsPerBucket"
+        number_of_elements="1"
+        default_values="5">
+        <IntRangeDomain name="range" min="1" />
+        <Documentation>
+          Specify the average number of points in each bucket. This is
+          used in conjunction with the **Automatic** (if enabled) to
+          determine the number of locator x-y-z divisions.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+            mode="enabled_state"
+            property="Automatic"
+            value="1" />
+        </Hints>
+      </IntVectorProperty>
+
+      <PropertyGroup label="Locator Parameters">
+        <Property name="Automatic" />
+        <Property name="Divisions" />
+        <Property name="NumberOfPointsPerBucket" />
+      </PropertyGroup>
+    </Proxy>
+
+  </ProxyGroup>
+
+  <ProxyGroup name="cell_locators">
+     <Proxy class="vtkCellLocator"
+            name="CellLocator"
+            label="Cell Locator"/>
+     <Proxy class="vtkCellTreeLocator"
+            name="CellTreeLocator"
+            label="Tree Cell Locator"/>
+     <Proxy class="vtkModifiedBSPTree"
+            name="ModifiedBSPTree"
+            label="BSP Tree Cell Locator"/>
+     <Proxy class="vtkOBBTree"
+            name="OBBTree"
+            label="OBB Tree Cell Locator"/>
+  </ProxyGroup>
+
   <ProxyGroup name="implicit_functions">
     <NullProxy name="None"></NullProxy>
     <NullProxy name="Scalar"></NullProxy>
@@ -592,6 +594,13 @@
                             name="Offset"
                             number_of_elements="1">
       </DoubleVectorProperty>
+
+      <PropertyGroup label="Plane Parameters" panel_widget="InteractivePlane">
+        <Property function="Origin" name="Origin" />
+        <Property function="Normal" name="Normal" />
+        <Property function="Input" name="Input" />
+      </PropertyGroup>
+
       <Hints>
         <!-- Hints are metadata associated with the proxy.
              As far as the ServerManager is concerned, Hints have no
@@ -599,12 +608,7 @@
              it chooses. Hints provide a mechanism to add some GUI
              pertinant information to the server manager XML.
         -->
-        <PropertyGroup type="Plane">
-          <Property function="Origin"
-                    name="Origin" />
-          <Property function="Normal"
-                    name="Normal" />
-        </PropertyGroup>
+
         <ProxyList>
           <!--
             ProxyList hints are used when this proxy
@@ -634,8 +638,8 @@
         </ProxyGroupDomain>
       </ProxyProperty>
     </Proxy>
-    <Proxy class="vtkPVBox"
-           name="Box">
+    <Proxy class="vtkPVBox" name="Box">
+      <InputProperty is_internal="1" name="Input" />
       <DoubleVectorProperty command="SetBounds"
                             default_values="0 1 0 1 0 1"
                             name="Bounds"
@@ -661,77 +665,93 @@
                             number_of_elements="3">
         <DoubleRangeDomain name="range" />
       </DoubleVectorProperty>
+      <PropertyGroup label="Box Parameters" panel_widget="InteractiveBox">
+        <Property function="Position" name="Position" />
+        <Property function="Rotation" name="Rotation" />
+        <Property function="Scale" name="Scale" />
+        <Property function="PlaceWidget" name="Bounds" />
+        <Property function="Input" name="Input" />
+      </PropertyGroup>
       <Hints>
-        <!-- Hints are metadata associated with the proxy.
-             As far as the ServerManager is concerned, Hints have no
-             significance. GUI is free to interpret the hints as
-             it chooses. Hints provide a mechanism to add some GUI
-             pertinant information to the server manager XML.
-        -->
-        <PropertyGroup type="Box">
-          <Property function="Position"
-                    name="Position" />
-          <Property function="Rotation"
-                    name="Rotation" />
-          <Property function="Scale"
-                    name="Scale" />
-          <Property function="PlaceWidget"
-                    name="Bounds" />
-        </PropertyGroup>
+        <ProxyList>
+          <Link name="Input" with_property="Input" />
+        </ProxyList>
       </Hints>
       <!-- End of Box -->
     </Proxy>
-    <Proxy class="vtkSphere"
-           name="Sphere">
+    <Proxy class="vtkSphere" name="Sphere">
+      <InputProperty is_internal="1" name="Input" />
       <DoubleVectorProperty command="SetCenter"
-                            default_values="none"
+                            default_values="0 0 0"
                             name="Center"
                             number_of_elements="3">
-        <DoubleRangeDomain name="range" />
+        <BoundsDomain default_mode="mid" mode="normal" name="range">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetRadius"
-                            default_values="none"
+                            default_values="1"
                             name="Radius"
                             number_of_elements="1">
-        <DoubleRangeDomain min="0"
-                           name="range" />
+        <BoundsDomain name="range" mode="scaled_extent" scale_factor="0.5" default_mode="max">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
       </DoubleVectorProperty>
+      <PropertyGroup label="Sphere Parameters" panel_widget="InteractiveSphere">
+        <Property function="Center" name="Center" />
+        <Property function="Radius" name="Radius" />
+        <Property function="Input" name="Input" />
+      </PropertyGroup>
       <Hints>
-        <!-- Hints are metadata associated with the proxy.
-             As far as the ServerManager is concerned, Hints have no
-             significance. GUI is free to interpret the hints as
-             it chooses. Hints provide a mechanism to add some GUI
-             pertinant information to the server manager XML.
-        -->
-        <PropertyGroup type="Sphere">
-          <Property function="Center"
-                    name="Center" />
-          <Property function="Radius"
-                    name="Radius" />
-        </PropertyGroup>
+        <ProxyList>
+          <Link name="Input" with_property="Input" />
+        </ProxyList>
       </Hints>
+      <!-- End of Sphere -->
     </Proxy>
-    <Proxy class="vtkPVCylinder"
-           name="Cylinder">
+    <Proxy class="vtkPVCylinder" name="Cylinder">
+      <InputProperty is_internal="1" name="Input" />
       <DoubleVectorProperty command="SetCenter"
-                            default_values="none"
+                            default_values="0 0 0"
                             name="Center"
                             number_of_elements="3">
-        <DoubleRangeDomain name="range" />
+        <BoundsDomain default_mode="mid" mode="normal" name="range">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
       </DoubleVectorProperty>
-      <DoubleVectorProperty command="SetAxis"
+      <DoubleVectorProperty command="SetOrientedAxis"
                             default_values="0. 1. 0."
                             name="Axis"
                             number_of_elements="3">
-        <DoubleRangeDomain name="range" />
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetRadius"
                             default_values="0.5"
                             name="Radius"
                             number_of_elements="1">
-        <DoubleRangeDomain min="0"
-                           name="range" />
+        <BoundsDomain name="range" mode="scaled_extent" scale_factor="0.5" default_mode="max">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
       </DoubleVectorProperty>
+      <PropertyGroup label="Cylinder Parameters" panel_widget="InteractiveCylinder">
+        <Property function="Center" name="Center" />
+        <Property function="Axis" name="Axis" />
+        <Property function="Radius" name="Radius" />
+        <Property function="Input" name="Input" />
+      </PropertyGroup>
+      <Hints>
+        <ProxyList>
+          <Link name="Input" with_property="Input" />
+        </ProxyList>
+      </Hints>
+      <!-- End of Cylinder -->
     </Proxy>
   </ProxyGroup>
   <ProxyGroup name="transforms">
@@ -878,7 +898,7 @@
     </TransferFunctionProxy>
   </ProxyGroup>
   <ProxyGroup name="annotations">
-    <Proxy class="vtkPVScalarBarActor"
+    <Proxy class="vtkContext2DScalarBarActor"
            name="ScalarBarActor" >
       <ProxyProperty command="SetLookupTable"
                      name="LookupTable"
@@ -894,25 +914,20 @@
                          number_of_elements="1">
         <BooleanDomain name="bool" />
       </IntVectorProperty>
-      <DoubleVectorProperty command="SetAspectRatio"
-                            default_values="20"
-                            name="AspectRatio"
-                            number_of_elements="1">
-        <DoubleRangeDomain min="0.001"
-                           name="range" />
-      </DoubleVectorProperty>
       <StringVectorProperty animateable="0"
                             command="SetTitle"
                             default_values="Name"
                             no_custom_default="1"
                             name="Title"
-                            number_of_elements="1"></StringVectorProperty>
+                            number_of_elements="1">
+      </StringVectorProperty>
       <StringVectorProperty animateable="0"
                             command="SetComponentTitle"
                             default_values="Component"
                             no_custom_default="1"
                             name="ComponentTitle"
-                            number_of_elements="1"></StringVectorProperty>
+                            number_of_elements="1">
+      </StringVectorProperty>
       <IntVectorProperty animateable="0"
                          command="SetTitleJustification"
                          default_values="1"
@@ -928,6 +943,27 @@
         </EnumerationDomain>
         <Documentation>Sets the justification of the title text with respect to the scalar color bar.</Documentation>
       </IntVectorProperty>
+      <IntVectorProperty command="SetScalarBarThickness"
+                         default_values="16"
+                         name="ScalarBarThickness"
+                         label="Color Bar Thickness"
+                         number_of_elements="1">
+        <Documentation>
+          Sets the width of the scalar bar when vertically oriented
+          and the height when horizontally oriented.
+        </Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty command="SetScalarBarLength"
+                         default_values="0.33"
+                         name="ScalarBarLength"
+                         label="Color Bar Length"
+                         number_of_elements="1">
+        <Documentation>
+          Sets the length of the scalar bar. The length is defined as a
+          fraction of window width or height when the color legend is
+          horizontal or vertical, respectively.
+        </Documentation>
+      </DoubleVectorProperty>
       <IntVectorProperty command="SetAutomaticLabelFormat"
                          default_values="1"
                          name="AutomaticLabelFormat"
@@ -942,33 +978,6 @@
         <Hints>
           <PropertyWidgetDecorator type="EnableWidgetDecorator">
             <Property name="AutomaticLabelFormat" function="boolean_invert" index="0" />
-          </PropertyWidgetDecorator>
-        </Hints>
-      </StringVectorProperty>
-      <IntVectorProperty command="SetNumberOfLabels"
-                         default_values="5"
-                         name="NumberOfLabels"
-                         label="Maximum Number of Labels"
-                         number_of_elements="1">
-        <IntRangeDomain min="2"
-                        name="range" />
-      </IntVectorProperty>
-      <IntVectorProperty command="SetAddRangeLabels"
-                         number_of_elements="1"
-                         default_values="1"
-                         name="AddRangeLabels"
-                         label="Add Range Labels">
-        <BooleanDomain name="bool" />
-      </IntVectorProperty>
-      <StringVectorProperty animateable="0"
-                            command="SetRangeLabelFormat"
-                            number_of_elements="1"
-                            default_values="%4.3e"
-                            name="RangeLabelFormat"
-                            label="Range Label Format">
-        <Hints>
-          <PropertyWidgetDecorator type="EnableWidgetDecorator">
-            <Property name="AddRangeLabels" function="boolean" index="0" />
           </PropertyWidgetDecorator>
         </Hints>
       </StringVectorProperty>
@@ -1004,6 +1013,25 @@
           of colors shown on the scalar bar.
         </Documentation>
       </IntVectorProperty>
+      <IntVectorProperty command="SetAddRangeLabels"
+                         number_of_elements="1"
+                         default_values="1"
+                         name="AddRangeLabels"
+                         label="Add Range Labels">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <StringVectorProperty animateable="0"
+                            command="SetRangeLabelFormat"
+                            number_of_elements="1"
+                            default_values="%-#6.1e"
+                            name="RangeLabelFormat"
+                            label="Range Label Format">
+        <Hints>
+          <PropertyWidgetDecorator type="EnableWidgetDecorator">
+            <Property name="AddRangeLabels" function="boolean" index="0" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </StringVectorProperty>
       <StringVectorProperty animateable="0"
                             command="SetNanAnnotation"
                             default_values="NaN"
@@ -1024,19 +1052,6 @@
         <Documentation>Enable/disable drawing the color legend tick marks.</Documentation>
       </IntVectorProperty>
       <IntVectorProperty animateable="0"
-                         command="SetDrawSubTickMarks"
-                         default_values="1"
-                         name="DrawSubTickMarks"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation>Enable/disable drawing the color legend sub-tick marks.</Documentation>
-        <Hints>
-          <PropertyWidgetDecorator type="EnableWidgetDecorator">
-            <Property name="DrawTickMarks" function="boolean" index="0" />
-          </PropertyWidgetDecorator>
-        </Hints>
-      </IntVectorProperty>
-      <IntVectorProperty animateable="0"
                          command="SetDrawTickLabels"
                          default_values="1"
                          name="DrawTickLabels"
@@ -1044,6 +1059,27 @@
         <BooleanDomain name="bool" />
         <Documentation>Enable/disable drawing the color legend labels for tick marks.</Documentation>
       </IntVectorProperty>
+      <IntVectorProperty animateable="0"
+                         command="SetUseCustomLabels"
+                         name="UseCustomLabels"
+                         number_of_elements="1"
+                         default_values="0" >
+        <BooleanDomain name="bool" />
+        <Documentation>Enable the use of custom label values.</Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty command="SetCustomLabel"
+                            name="CustomLabels"
+                            set_number_command="SetNumberOfCustomLabels"
+                            number_of_elements="0"
+                            number_of_elements_per_command="1"
+                            repeat_command="1"
+                            use_index="1" >
+        <Hints>
+          <PropertyWidgetDecorator type="ShowWidgetDecorator">
+            <Property name="UseCustomLabels" function="boolean" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </DoubleVectorProperty>
       <IntVectorProperty animateable="0"
                          command="SetTextPosition"
                          default_values="1"
@@ -1058,6 +1094,7 @@
         </EnumerationDomain>
         <Documentation>Determines where the tick labels are drawn.</Documentation>
       </IntVectorProperty>
+
       <!--label text property -->
       <SubProxy command="SetLabelTextProperty">
         <Proxy name="LabelTextProperty"
@@ -1111,11 +1148,11 @@
       <Documentation>
         GridAxes3DActor can be used to render a grid in a render view.
       </Documentation>
-
       <IntVectorProperty name="Visibility"
                          command="SetVisibility"
                          number_of_elements="1"
-                         default_values="0">
+                         default_values="0"
+                         panel_visibility="advanced">
         <BooleanDomain name="bool" />
         <Documentation>
           Show/hide the axes grid.
@@ -1664,9 +1701,34 @@
         </Hints>
       </DoubleVectorProperty>
 
+      <DoubleVectorProperty name="DataBoundsInflateFactor"
+                            command="SetDataBoundsInflateFactor"
+                            number_of_elements="1"
+                            default_values="0.0008"
+                            panel_visibility="advanced">
+        <DoubleRangeDomain name="range" min="0" max="1"/>
+        <Documentation>
+          After the data bounds have been computed, this property enables to inflate the
+          bounds used to generate the axes grid, so it will be slightly larger than the
+          data bounds. It inflates the axes grid bounds using the diagonal length of the
+          bounding box multiplied by this factor.
+          Data bounds are not modified, only the aspect of the AxesGrid is modified.
+          The default value (0.0008) ensures that there is no concident lines drawn when
+          zooming close enough to the model.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="enabled_state"
+                                   property="UseModelTransform"
+                                   value="0"/>
+          <!-- disable this when UseModelTransform is true -->
+        </Hints>
+
+      </DoubleVectorProperty>
       <PropertyGroup label="Data Transform">
         <Property name="DataScale" />
         <Property name="DataPosition" />
+        <Property name="DataBoundsInflateFactor" />
       </PropertyGroup>
 
       <DoubleVectorProperty name="ModelTransformMatrix"
@@ -1817,18 +1879,14 @@
                      name="DummyInput">
         <!-- Used when this source is added to a proxy list domain. -->
       </InputProperty>
+     <PropertyGroup label="Line Parameters" panel_widget="InteractiveLine">
+          <Property function="Point1WorldPosition" name="Point1" />
+          <Property function="Point2WorldPosition" name="Point2" />
+          <Property function="Input" name="DummyInput" />
+      </PropertyGroup>
       <Hints>
-        <PropertyGroup type="LineSource">
-          <Property function="Point1WorldPosition"
-                    name="Point1" />
-          <Property function="Point2WorldPosition"
-                    name="Point2" />
-          <Property function="Resolution"
-                    name="Resolution" />
-        </PropertyGroup>
         <ProxyList>
-          <Link name="DummyInput"
-                with_property="Input" />
+          <Link name="DummyInput" with_property="Input" />
         </ProxyList>
       </Hints>
       <!-- End LineSource -->
@@ -1865,28 +1923,23 @@
         </BoundsDomain>
       </DoubleVectorProperty>
       <IntVectorProperty command="SetResolution"
-                         default_values="100"
+                         default_values="1000"
                          name="Resolution"
                          number_of_elements="1">
         <IntRangeDomain min="1"
                         name="range" />
       </IntVectorProperty>
-      <InputProperty is_internal="1"
-                     name="DummyInput">
+      <InputProperty is_internal="1" name="DummyInput">
         <!-- Used when this source is added to a proxy list domain. -->
       </InputProperty>
+      <PropertyGroup label="Line Parameters" panel_widget="InteractiveLine">
+          <Property function="Point1WorldPosition" name="Point1" />
+          <Property function="Point2WorldPosition" name="Point2" />
+          <Property function="Input" name="DummyInput" />
+      </PropertyGroup>
       <Hints>
-        <PropertyGroup type="LineSource">
-          <Property function="Point1WorldPosition"
-                    name="Point1" />
-          <Property function="Point2WorldPosition"
-                    name="Point2" />
-          <Property function="Resolution"
-                    name="Resolution" />
-        </PropertyGroup>
         <ProxyList>
-          <Link name="DummyInput"
-                with_property="Input" />
+          <Link name="DummyInput" with_property="Input" />
         </ProxyList>
       </Hints>
       <!-- End HighResLineSource -->
@@ -1934,18 +1987,14 @@
                      name="DummyInput">
         <!-- Used when this source is added to a proxy list domain. -->
       </InputProperty>
+      <PropertyGroup label="Sphere Parameters" panel_widget="InteractiveSphere">
+        <Property function="Center" name="Center" />
+        <Property function="Radius" name="Radius" />
+        <Property function="Input" name="DummyInput" />
+      </PropertyGroup>
       <Hints>
-        <PropertyGroup type="PointSource">
-          <Property function="WorldPosition"
-                    name="Center" />
-          <Property function="Radius"
-                    name="Radius" />
-          <Property function="NumberOfPoints"
-                    name="NumberOfPoints" />
-        </PropertyGroup>
         <ProxyList>
-          <Link name="DummyInput"
-                with_property="Input" />
+          <Link name="DummyInput" with_property="Input" />
         </ProxyList>
       </Hints>
       <!-- End PointSource -->
@@ -1987,18 +2036,14 @@
                      name="DummyInput">
         <!-- Used when this source is added to a proxy list domain. -->
       </InputProperty>
+      <PropertyGroup label="Sphere Parameters" panel_widget="InteractiveSphere">
+        <Property function="Center" name="Center" />
+        <Property function="Radius" name="Radius" />
+        <Property function="Input" name="DummyInput" />
+      </PropertyGroup>
       <Hints>
-        <PropertyGroup type="PointSource">
-          <Property function="WorldPosition"
-                    name="Center" />
-          <Property function="Radius"
-                    name="Radius" />
-          <Property function="NumberOfPoints"
-                    name="NumberOfPoints" />
-        </PropertyGroup>
         <ProxyList>
-          <Link name="DummyInput"
-                with_property="Input" />
+          <Link name="DummyInput" with_property="Input" />
         </ProxyList>
       </Hints>
       <!-- End PointSource -->
@@ -2092,20 +2137,17 @@
                             information_only="1"
                             name="ScaleInfo"
                             number_of_elements="3" />
+      <InputProperty is_internal="1" name="DummyInput" />
+      <PropertyGroup panel_widget="InteractiveBox">
+        <Property function="Position" name="Position" />
+        <Property function="Rotation" name="Rotation" />
+        <Property function="Scale" name="Scale" />
+        <Property function="Input" name="DummyInput" />
+      </PropertyGroup>
       <Hints>
-        <PropertyGroup type="Box">
-          <Property function="Position"
-                    name="Position" />
-          <Property function="Rotation"
-                    name="Rotation" />
-          <Property function="Scale"
-                    name="Scale" />
-        </PropertyGroup>
-        <!--
          <ProxyList>
            <Link name="DummyInput" with_property="Input" />
          </ProxyList>
-         -->
       </Hints>
     </Proxy>
   </ProxyGroup>
@@ -2153,8 +2195,65 @@
         <Documentation>Override the working directory used to resolve relative
         paths.</Documentation>
       </StringVectorProperty>
+      <IntVectorProperty command="SetReadDetailedFileInformation"
+                         name="ReadDetailedFileInformation"
+                         number_of_elements="1"
+                         default_values="0">
+        <Documentation>Whether to read full file information.  This is slow when there are many files
+        in a directory so this defaults to false.</Documentation>
+        <BooleanDomain name="bool"/>
+      </IntVectorProperty>
       <!-- End of FileInformationHelper -->
     </Proxy>
+    <Proxy class="vtkPVFilePathEncodingHelper"
+           name="FilePathEncodingHelper">
+      <IntVectorProperty command="MakeDirectory"
+                         information_only="1"
+                         name="MakeDirectory">
+        <SimpleIntInformationHelper />
+      </IntVectorProperty>
+      <IntVectorProperty command="DeleteDirectory"
+                         information_only="1"
+                         name="DeleteDirectory">
+        <SimpleIntInformationHelper />
+      </IntVectorProperty>
+      <IntVectorProperty command="OpenDirectory"
+                         information_only="1"
+                         name="OpenDirectory">
+        <SimpleIntInformationHelper />
+      </IntVectorProperty>
+      <IntVectorProperty command="RenameDirectory"
+                         information_only="1"
+                         name="RenameDirectory">
+        <SimpleIntInformationHelper />
+      </IntVectorProperty>
+      <IntVectorProperty command="GetActiveFileIsReadable"
+                         information_only="1"
+                         name="ActiveFileIsReadable">
+        <SimpleIntInformationHelper />
+      </IntVectorProperty>
+      <StringVectorProperty command="SetPath"
+                            name="ActiveFileName"
+                            number_of_elements="1">
+        <Documentation>Set the filename we need to use.
+        </Documentation>
+      </StringVectorProperty>
+      <StringVectorProperty command="SetSecondaryPath"
+                            name="SecondaryFileName"
+                            number_of_elements="1">
+        <Documentation>Set the secondary filename we may
+        need to use.</Documentation>
+      </StringVectorProperty>
+
+      <IntVectorProperty command="SetActiveGlobalId"
+                            name="ActiveGlobalId"
+                            default_values="0"
+                            number_of_elements="1">
+        <Documentation>Set the globalId of the vtkObject to use
+        </Documentation>
+      </IntVectorProperty>
+    </Proxy>
+
     <Proxy class="vtkPVEnvironmentInformationHelper"
            name="EnvironmentInformationHelper">
       <StringVectorProperty command="SetVariable"
@@ -2337,6 +2436,16 @@
                            name="range" />
         <Documentation>Color used for showing interactive selection.</Documentation>
       </DoubleVectorProperty>
+      <DoubleVectorProperty default_values="0.0 1.0 0.0"
+                            label="Interactive Widget"
+                            name="InteractiveWidgetColor"
+                            number_of_elements="3"
+                            panel_widget="color_selector">
+        <DoubleRangeDomain max="1 1 1"
+                           min="0 0 0"
+                           name="range" />
+        <Documentation>Color used for showing interactive widget.</Documentation>
+      </DoubleVectorProperty>
       <IntVectorProperty name="UseGradientBackground"
                          label="Use Gradient Background"
                          number_of_elements="1"
@@ -2481,8 +2590,15 @@
     </Proxy>
     <ViewLayoutProxy name="ViewLayout"
                      processes="client">
-      <Documentation>Proxy used to manage layout for mutliple
-      views.</Documentation>
+      <Documentation>Proxy used to manage layout for mutliple views.</Documentation>
+      <IntVectorProperty name="ShowWindowDecorations"
+        number_of_elements="1"
+        default_values="1">
+        <Documentation>
+          Set whether the UI should show extra decorations for the layout
+          e.g. view frames, view toolbars etc.
+        </Documentation>
+      </IntVectorProperty>
     </ViewLayoutProxy>
     <Proxy class="vtkViewLayout"
            name="InternalViewLayoutHelper"
@@ -2712,6 +2828,12 @@
                             number_of_elements="1">
         <Documentation>Name of the file to be written.</Documentation>
       </StringVectorProperty>
+      <IntVectorProperty command="SetFilterColumnsByVisibility"
+                         default_values="0"
+                         name="FilterColumnsByVisibility"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
       <!-- End of VRMLExporter -->
     </CSVExporterProxy>
     <RenderViewExporterProxy class="vtkPOVExporter"
@@ -2729,7 +2851,45 @@
       </StringVectorProperty>
       <!-- End of POVExporter -->
     </RenderViewExporterProxy>
+    <RenderViewExporterProxy class="vtkCinemaExporter"
+                             file_extension="cdb"
+                             name="CinemaExporter">
+      <Documentation long_help="Export view to a Cinema Database"
+                     short_help="Cinema Database">CinemaExporter is a render window
+                     exporter which writes out the renderered scene as a
+                     Cinema database.</Documentation>
+      <StringVectorProperty name="FileName"
+                            command="SetFileName"
+                            number_of_elements="1">
+        <Documentation>Name of the file to be written.</Documentation>
+      </StringVectorProperty>
 
+      <StringVectorProperty name="ViewSelection"
+                            command="SetViewSelection"
+                            number_of_elements="1">
+        <Documentation>Script string defining the view selection.</Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty name="TrackSelection"
+                            command="SetTrackSelection"
+                            number_of_elements="1">
+        <Documentation>Script string defining the track selection.</Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty name="ArraySelection"
+                            command="SetArraySelection"
+                            number_of_elements="1">
+        <Documentation>Script string defining the arrays selected in an item.</Documentation>
+      </StringVectorProperty>
+
+      <PropertyGroup label="Cinema Configuration"
+                     panel_widget="cinema_export_selector">
+        <Property name="ViewSelection"/>
+        <Property name="TrackSelection"/>
+        <Property name="ArraySelection"/>
+      </PropertyGroup>
+      <!-- End of Cinema Exporter -->
+    </RenderViewExporterProxy>
     <!-- GL2PS exporter, shared options between render and context views: -->
     <GL2PSExporterProxy class="not-used"
                         viewtype="none"
@@ -3295,6 +3455,12 @@
         <IntRangeDomain name="range" min="1" />
       </IntVectorProperty>
 
+      <IntVectorProperty name="PaddingAmount"
+        number_of_elements="1"
+        default_values="0">
+        <IntRangeDomain name="range" min="0" />
+      </IntVectorProperty>
+
      <Hints>
       <!-- TODO: this doesn't work yet -->
       <PipelineIcon name=":pqComponents/pqSave32.png" />
@@ -3329,6 +3495,12 @@
         number_of_elements="1"
         default_values="1">
         <IntRangeDomain name="range" min="1" />
+      </IntVectorProperty>
+
+      <IntVectorProperty name="PaddingAmount"
+        number_of_elements="1"
+        default_values="0">
+        <IntRangeDomain name="range" min="0" />
       </IntVectorProperty>
 
      <Hints>
@@ -3367,6 +3539,12 @@
         <IntRangeDomain name="range" min="1" />
       </IntVectorProperty>
 
+      <IntVectorProperty name="PaddingAmount"
+        number_of_elements="1"
+        default_values="0">
+        <IntRangeDomain name="range" min="0" />
+      </IntVectorProperty>
+
      <Hints>
       <!-- TODO: this doesn't work yet -->
       <PipelineIcon name=":pqComponents/pqSave32.png" />
@@ -3401,6 +3579,12 @@
         number_of_elements="1"
         default_values="1">
         <IntRangeDomain name="range" min="1" />
+      </IntVectorProperty>
+
+      <IntVectorProperty name="PaddingAmount"
+        number_of_elements="1"
+        default_values="0">
+        <IntRangeDomain name="range" min="0" />
       </IntVectorProperty>
 
      <Hints>
@@ -3439,6 +3623,12 @@
         <IntRangeDomain name="range" min="1" />
       </IntVectorProperty>
 
+      <IntVectorProperty name="PaddingAmount"
+        number_of_elements="1"
+        default_values="0">
+        <IntRangeDomain name="range" min="0" />
+      </IntVectorProperty>
+
      <Hints>
       <!-- TODO: this doesn't work yet -->
       <PipelineIcon name=":pqComponents/pqSave32.png" />
@@ -3475,6 +3665,12 @@
         <IntRangeDomain name="range" min="1" />
       </IntVectorProperty>
 
+      <IntVectorProperty name="PaddingAmount"
+        number_of_elements="1"
+        default_values="0">
+        <IntRangeDomain name="range" min="0" />
+      </IntVectorProperty>
+
      <Hints>
       <!-- TODO: this doesn't work yet -->
       <PipelineIcon name=":pqComponents/pqSave32.png" />
@@ -3493,7 +3689,7 @@
             <Group name="filters" />
           </ProxyGroupDomain>
           <DataTypeDomain name="input_type">
-            <DataType value="vtkHierarchicalBoxDataSet" />
+            <DataType value="vtkOverlappingAMR" />
           </DataTypeDomain>
           <Documentation>
             The input.
@@ -3509,6 +3705,12 @@
         number_of_elements="1"
         default_values="1">
         <IntRangeDomain name="range" min="1" />
+      </IntVectorProperty>
+
+      <IntVectorProperty name="PaddingAmount"
+        number_of_elements="1"
+        default_values="0">
+        <IntRangeDomain name="range" min="0" />
       </IntVectorProperty>
 
      <Hints>
@@ -3545,6 +3747,12 @@
         number_of_elements="1"
         default_values="1">
         <IntRangeDomain name="range" min="1" />
+      </IntVectorProperty>
+
+      <IntVectorProperty name="PaddingAmount"
+        number_of_elements="1"
+        default_values="0">
+        <IntRangeDomain name="range" min="0" />
       </IntVectorProperty>
 
      <Hints>
@@ -3586,6 +3794,12 @@
         <IntRangeDomain name="range" min="1" />
       </IntVectorProperty>
 
+      <IntVectorProperty name="PaddingAmount"
+        number_of_elements="1"
+        default_values="0">
+        <IntRangeDomain name="range" min="0" />
+      </IntVectorProperty>
+
       <Hints>
         <!-- TODO: this doesn't work yet -->
         <PipelineIcon name=":pqComponents/pqSave32.png" />
@@ -3594,6 +3808,51 @@
         <WriterProxy group="writers" name="ADIOSWriter" />
       </Hints>
       <!-- End of ADIOSWriter -->
+    </SourceProxy>
+
+    <SourceProxy name="ExodusIIWriter" class="vtkPVNullSource"
+                 label="ExodusII Writer">
+      <InputProperty name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain composite_data_supported="1"
+                        name="input_type">
+          <DataType value="vtkImageData" />
+          <DataType value="vtkPolyData" />
+          <DataType value="vtkUnstructuredGrid" />
+        </DataTypeDomain>
+
+        <Documentation>
+          The input.
+        </Documentation>
+      </InputProperty>
+
+      <StringVectorProperty name="FileName"
+                            number_of_elements="1"
+                            default_values="filename.e-s">
+      </StringVectorProperty>
+      <IntVectorProperty name="WriteFrequency"
+        number_of_elements="1"
+        default_values="1">
+        <IntRangeDomain name="range" min="1" />
+      </IntVectorProperty>
+
+      <IntVectorProperty name="PaddingAmount"
+        number_of_elements="1"
+        default_values="5">
+        <IntRangeDomain name="range" min="0" />
+      </IntVectorProperty>
+
+      <Hints>
+        <!-- TODO: this doesn't work yet -->
+        <PipelineIcon name=":pqComponents/pqSave32.png" />
+
+        <!-- This will help us when exporting the script state -->
+        <WriterProxy group="writers" name="ExodusIIWriter" />
+      </Hints>
+      <!-- End of ExodusIIWriter -->
     </SourceProxy>
   </ProxyGroup>
 
@@ -3683,4 +3942,229 @@
     </Proxy>
   </ProxyGroup>
 
+  <ProxyGroup name="seed_sources">
+    <Proxy group="extended_sources"
+           name="PointSource"/>
+    <Proxy group="extended_sources"
+           name="HighResLineSource"/>
+  </ProxyGroup>
+  <ProxyGroup name="integrators">
+    <Proxy class="vtkRungeKutta2"
+           name="RungeKutta2"
+           label="Runge Kutta 2">
+    </Proxy>
+    <Proxy class="vtkRungeKutta4"
+           name="RungeKutta4"
+           label="Runge Kutta 4">
+    </Proxy>
+    <Proxy class="vtkRungeKutta45"
+           name="RungeKutta45"
+           label="Runge Kutta 4/5">
+    </Proxy>
+  </ProxyGroup>
+
+  <ProxyGroup name="misc">
+    <SaveScreenshotProxy name="SaveScreenshot" processes="client">
+      <Documentation>
+        Proxy used to save screenshots from view(s) or layouts.
+      </Documentation>
+      <ProxyProperty name="Layout" panel_visibility="never" />
+      <ProxyProperty name="View" panel_visibility="never" />
+
+      <IntVectorProperty name="SaveAllViews"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          When checked, all views in the active layout will be saved in the image.
+          Otherwise only the active view will be saved.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="ImageResolution"
+        number_of_elements="2"
+        default_values="none"
+        panel_widget="view_resolution" >
+        <ViewResolutionDomain name="range" default_mode="max">
+          <RequiredProperties>
+            <Property name="SaveAllViews" function="UseLayout" />
+            <Property name="Layout"       function="Layout" />
+            <Property name="View"         function="View" />
+          </RequiredProperties>
+        </ViewResolutionDomain>
+        <Documentation>
+          Choose the image resolution in pixels.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="FontScaling"
+        number_of_elements="1"
+        default_values="0"
+        panel_visibility="advanced">
+        <EnumerationDomain name="enum">
+          <Entry value="0" text="Scale fonts proportionally" />
+          <Entry value="1" text="Do not scale fonts" />
+        </EnumerationDomain>
+        <Documentation>
+          Select how fonts are to be scaled when saving images at different
+          resolution than the current size.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="SeparatorWidth"
+        number_of_elements="1"
+        default_values="0"
+        panel_visibility="advanced">
+        <IntRangeDomain name="range" min="0" max="10" />
+        <Documentation>
+          Specify the width of border (in pixels) to use around views when
+          **Save All Views** is checked.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="enabled_state"
+                                   property="SaveAllViews"
+                                   value="1" />
+        </Hints>
+      </IntVectorProperty>
+
+      <DoubleVectorProperty name="SeparatorColor"
+        number_of_elements="3"
+        default_values="0 0 0"
+        panel_widget="color_selector_with_palette"
+        panel_visibility="advanced">
+        <DoubleRangeDomain name="range" min="0 0 0" max="1 1 1" />
+        <Documentation>
+          Select the separator color.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="enabled_state"
+                                   property="SaveAllViews"
+                                   value="1" />
+        </Hints>
+      </DoubleVectorProperty>
+
+      <StringVectorProperty name="OverrideColorPalette"
+        number_of_elements="1"
+        default_values=""
+        panel_widget="color_palette_selector" >
+        <StringListDomain name="list" />
+        <Documentation>
+          Choose the color palette to load before saving the image.
+        </Documentation>
+      </StringVectorProperty>
+
+      <IntVectorProperty name="StereoMode"
+        number_of_elements="1"
+        default_values="-1"
+        panel_visibility="advanced">
+        <Documentation>
+          Select a stereo mode, as needed.
+        </Documentation>
+        <EnumerationDomain name="enum">
+          <Entry text="No change" value="-1" />
+          <Entry text="No stereo" value="0" />
+          <Entry text="Red-Blue" value="2" />
+          <Entry text="Interlaced" value="3" />
+          <Entry text="Left Eye Only" value="4" />
+          <Entry text="Right Eye Only" value="5" />
+          <Entry text="Dresden" value="6" />
+          <Entry text="Anaglyph" value="7" />
+          <Entry text="Checkerboard" value="8" />
+          <Entry text="Side-by-Side Horizontal" value="9" />
+        </EnumerationDomain>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="TransparentBackground"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+           Set whether to use a transparent background.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="ImageQuality"
+        number_of_elements="1"
+        default_values="100"
+        panel_visibility="advanced">
+        <IntRangeDomain name="range" min="0" max="100" />
+        <Documentation>
+          Specify output image quality (or compression), if applicable.
+          **0** - low quality, **100** - high quality.
+        </Documentation>
+      </IntVectorProperty>
+
+      <PropertyGroup label="Size and Scaling">
+        <Property name="SaveAllViews" />
+        <Property name="ImageResolution" />
+        <Property name="FontScaling" />
+      </PropertyGroup>
+
+      <PropertyGroup label="Separator Options" >
+        <Property name="SeparatorWidth" />
+        <Property name="SeparatorColor" />
+      </PropertyGroup>
+
+      <PropertyGroup label="Coloring">
+        <Property name="OverrideColorPalette" />
+        <Property name="StereoMode" />
+        <Property name="TransparentBackground" />
+      </PropertyGroup>
+
+      <PropertyGroup label="Compression Options">
+        <Property name="ImageQuality" />
+      </PropertyGroup>
+
+    </SaveScreenshotProxy>
+  </ProxyGroup>
+
+  <ProxyGroup name="options">
+    <LoadStateOptionsProxy class="vtkLoadStateOptions"
+                           name="LoadStateOptions">
+      <Documentation>
+        Options proxy used to prompt user for options when loading pvsm state files.
+      </Documentation>
+
+      <IntVectorProperty name="LoadStateDataFileOptions"
+        default_values="0"
+        number_of_elements="1">
+        <Documentation>
+          Decide how to locate data files in loaded state.
+        </Documentation>
+        <EnumerationDomain name="enum">
+          <Entry text="Use File Names From State" value="0" />
+          <Entry text="Search files under specified directory" value="1" />
+          <Entry text="Choose File Names" value="2" />
+        </EnumerationDomain>
+      </IntVectorProperty>
+
+      <StringVectorProperty name="DataDirectory"
+                            command="SetDataDirectory"
+                            number_of_elements="1"
+                            default_values="">
+        <FileListDomain name="files" />
+        <Documentation>
+          Directory to look for data files under. Defaults to the state file's directory.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator" mode="visibility" property="LoadStateDataFileOptions" value="1">
+          </PropertyWidgetDecorator>
+          <UseDirectoryName />
+        </Hints>
+      </StringVectorProperty>
+      <IntVectorProperty name="OnlyUseFilesInDataDirectory" number_of_elements="1" default_values="0">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          When this is set to true, 'Search files under specified directory' mode will fail when a file is not in the
+          data directory rather than defaulting back to the absolute path in the state file.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator" mode="visibility" property="LoadStateDataFileOptions" value="1">
+          </PropertyWidgetDecorator>
+        </Hints>
+      </IntVectorProperty>
+    </LoadStateOptionsProxy>
+  </ProxyGroup>
 </ServerManagerConfiguration>

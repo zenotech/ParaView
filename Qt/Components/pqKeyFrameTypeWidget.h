@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
-#ifndef __pqKeyFrameTypeWidget_h
-#define __pqKeyFrameTypeWidget_h
+#ifndef pqKeyFrameTypeWidget_h
+#define pqKeyFrameTypeWidget_h
 
 #include "pqComponentsModule.h"
 #include <QWidget>
@@ -40,11 +40,11 @@ class PQCOMPONENTS_EXPORT pqKeyFrameTypeWidget : public QWidget
 {
   Q_OBJECT
   Q_PROPERTY(QString type READ type WRITE setType)
-  
+
   Q_PROPERTY(QString base READ base WRITE setBase)
   Q_PROPERTY(QString startPower READ startPower WRITE setStartPower)
   Q_PROPERTY(QString endPower READ endPower WRITE setEndPower)
-  
+
   Q_PROPERTY(double phase READ phase WRITE setPhase)
   Q_PROPERTY(QString offset READ offset WRITE setOffset)
   Q_PROPERTY(QString frequency READ frequency WRITE setFrequency)
@@ -52,7 +52,6 @@ class PQCOMPONENTS_EXPORT pqKeyFrameTypeWidget : public QWidget
 public:
   pqKeyFrameTypeWidget(QWidget* parent = NULL);
   virtual ~pqKeyFrameTypeWidget();
-
 
 public slots:
   void setType(const QString& text);
@@ -89,8 +88,6 @@ protected slots:
 private:
   class pqInternal;
   pqInternal* Internal;
-
 };
 
 #endif
-

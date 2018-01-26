@@ -12,13 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSIDoubleMapProperty
-// .SECTION Description
-// Map property that manage double value to be set through a method
-// on a vtkObject.
+/**
+ * @class   vtkSIDoubleMapProperty
+ *
+ * Map property that manage double value to be set through a method
+ * on a vtkObject.
+*/
 
-#ifndef __vtkSIDoubleMapProperty_h
-#define __vtkSIDoubleMapProperty_h
+#ifndef vtkSIDoubleMapProperty_h
+#define vtkSIDoubleMapProperty_h
 
 #include "vtkPVServerImplementationCoreModule.h" //needed for exports
 #include "vtkSIProperty.h"
@@ -28,24 +30,22 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSIDoubleMapProperty : public vtkSI
 public:
   static vtkSIDoubleMapProperty* New();
   vtkTypeMacro(vtkSIDoubleMapProperty, vtkSIProperty);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  vtkGetStringMacro(CleanCommand)
-  vtkSetStringMacro(CleanCommand)
+  vtkGetStringMacro(CleanCommand) vtkSetStringMacro(CleanCommand)
 
-protected:
-  vtkSIDoubleMapProperty();
+    protected : vtkSIDoubleMapProperty();
   ~vtkSIDoubleMapProperty();
 
-  virtual bool Push(vtkSMMessage*, int);
-  virtual bool ReadXMLAttributes(vtkSIProxy* parent, vtkPVXMLElement* element);
+  virtual bool Push(vtkSMMessage*, int) VTK_OVERRIDE;
+  virtual bool ReadXMLAttributes(vtkSIProxy* parent, vtkPVXMLElement* element) VTK_OVERRIDE;
 
   unsigned int NumberOfComponents;
-  char *CleanCommand;
+  char* CleanCommand;
 
 private:
-  vtkSIDoubleMapProperty(const vtkSIDoubleMapProperty&); // Not implemented
-  void operator=(const vtkSIDoubleMapProperty&); // Not implemented
+  vtkSIDoubleMapProperty(const vtkSIDoubleMapProperty&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSIDoubleMapProperty&) VTK_DELETE_FUNCTION;
 };
 
 #endif

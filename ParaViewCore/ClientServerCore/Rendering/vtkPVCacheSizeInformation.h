@@ -12,13 +12,16 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVCacheSizeInformation - information obeject to 
-// collect cache size information from a vtkCacheSizeKeeper.
-// .SECTION Description
-// Gather information about cache size from vtkCacheSizeKeeper.
+/**
+ * @class   vtkPVCacheSizeInformation
+ * @brief   information obeject to
+ * collect cache size information from a vtkCacheSizeKeeper.
+ *
+ * Gather information about cache size from vtkCacheSizeKeeper.
+*/
 
-#ifndef __vtkPVCacheSizeInformation_h
-#define __vtkPVCacheSizeInformation_h
+#ifndef vtkPVCacheSizeInformation_h
+#define vtkPVCacheSizeInformation_h
 
 #include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 #include "vtkPVInformation.h"
@@ -28,34 +31,38 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVCacheSizeInformation : public v
 public:
   static vtkPVCacheSizeInformation* New();
   vtkTypeMacro(vtkPVCacheSizeInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Transfer information about a single object into this object.
-  virtual void CopyFromObject(vtkObject*);
+  /**
+   * Transfer information about a single object into this object.
+   */
+  virtual void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
-  // Description:
-  // Merge another information object.
-  virtual void AddInformation(vtkPVInformation*);
+  /**
+   * Merge another information object.
+   */
+  virtual void AddInformation(vtkPVInformation*) VTK_OVERRIDE;
 
-  //BTX
-  // Description:
-  // Manage a serialized version of the information.
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
-  //ETX
+  //@{
+  /**
+   * Manage a serialized version of the information.
+   */
+  virtual void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  virtual void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
+  //@}
 
   vtkGetMacro(CacheSize, unsigned long);
   vtkSetMacro(CacheSize, unsigned long);
+
 protected:
   vtkPVCacheSizeInformation();
   ~vtkPVCacheSizeInformation();
 
   unsigned long CacheSize;
+
 private:
-  vtkPVCacheSizeInformation(const vtkPVCacheSizeInformation&); // Not implemented.
-  void operator=(const vtkPVCacheSizeInformation&); // Not implemented.
+  vtkPVCacheSizeInformation(const vtkPVCacheSizeInformation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVCacheSizeInformation&) VTK_DELETE_FUNCTION;
 };
 
 #endif
-

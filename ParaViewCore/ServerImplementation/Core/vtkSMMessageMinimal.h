@@ -21,13 +21,13 @@
 #ifndef vtkSMMessageMinimal_h
 #define vtkSMMessageMinimal_h
 
-#include "vtkSystemIncludes.h"
 #include "vtkPVServerImplementationCoreModule.h"
+#include "vtkSystemIncludes.h"
 
 namespace paraview_protobuf
 {
-  class Message;
-  class MessageCollection;
+class Message;
+class MessageCollection;
 }
 
 typedef paraview_protobuf::Message vtkSMMessage;

@@ -29,10 +29,6 @@
 #
 #==========================================================================
 set(Module_SRCS
-  ctkRangeSlider.h
-  ctkRangeSlider.cpp
-  ctkDoubleRangeSlider.h
-  ctkDoubleRangeSlider.cpp
   pqAnimationKeyFrame.cxx
   pqAnimationKeyFrame.h
   pqAnimationModel.cxx
@@ -49,23 +45,23 @@ set(Module_SRCS
   pqCollapsedGroup.cxx
   pqCollapsedGroup.h
   pqColorButtonEventPlayer.cxx
-  pqColorDialogEventPlayer.cxx
-  pqColorDialogEventPlayer.h
-  pqColorDialogEventTranslator.cxx
-  pqColorDialogEventTranslator.h
   pqColorButtonEventPlayer.h
   pqColorButtonEventTranslator.cxx
   pqColorButtonEventTranslator.h
   pqColorChooserButton.cxx
   pqColorChooserButton.h
+  pqColorDialogEventPlayer.cxx
+  pqColorDialogEventPlayer.h
+  pqColorDialogEventTranslator.cxx
+  pqColorDialogEventTranslator.h
   pqConnect.cxx
   pqConnect.h
   pqConsoleWidget.cxx
-  pqConsoleWidget.h
   pqConsoleWidgetEventPlayer.cxx
   pqConsoleWidgetEventPlayer.h
   pqConsoleWidgetEventTranslator.cxx
   pqConsoleWidgetEventTranslator.h
+  pqConsoleWidget.h
   pqDelimitedTextParser.cxx
   pqDelimitedTextParser.h
   pqDoubleRangeDialog.cxx
@@ -80,14 +76,12 @@ set(Module_SRCS
   pqExpanderButton.h
   pqFlatTreeView.cxx
   pqFlatTreeView.h
-  pqHelpWindow.cxx
-  pqHelpWindow.h
   pqHighlightablePushButton.cxx
   pqHighlightablePushButton.h
   pqLineEdit.cxx
-  pqLineEdit.h
   pqLineEditEventPlayer.cxx
   pqLineEditEventPlayer.h
+  pqLineEdit.h
   pqListWidgetCheckHelper.cxx
   pqListWidgetCheckHelper.h
   pqListWidgetItemObject.cxx
@@ -113,6 +107,8 @@ set(Module_SRCS
   pqTextEdit.cxx
   pqTextEdit.h
   pqTreeView.cxx
+  pqTreeViewExpandState.cxx
+  pqTreeViewExpandState.h
   pqTreeView.h
   pqTreeViewSelectionHelper.cxx
   pqTreeViewSelectionHelper.h
@@ -137,8 +133,6 @@ set(Module_SRCS
 set (QtWidgets_SRCS
 #  QtWidgetsPlugin.h
 
-  ctkRangeSlider.h
-  ctkDoubleRangeSlider.h
   pqAnimationKeyFrame.h
   pqAnimationModel.h
   pqAnimationTrack.h
@@ -151,9 +145,9 @@ set (QtWidgets_SRCS
   pqColorChooserButton.h
   pqColorDialogEventPlayer.h
   pqColorDialogEventTranslator.h
-  pqConsoleWidget.h
   pqConsoleWidgetEventPlayer.h
   pqConsoleWidgetEventTranslator.h
+  pqConsoleWidget.h
   pqDelimitedTextParser.h
   pqDoubleRangeDialog.h
   pqDoubleRangeWidget.h
@@ -162,8 +156,8 @@ set (QtWidgets_SRCS
   pqExpanderButton.h
   pqFlatTreeView.h
   pqHighlightablePushButton.h
-  pqLineEdit.h
   pqLineEditEventPlayer.h
+  pqLineEdit.h
   pqListWidgetCheckHelper.h
   pqListWidgetItemObject.h
   pqProgressBar.h
@@ -174,21 +168,53 @@ set (QtWidgets_SRCS
   pqSpinBox.h
   pqTableView.h
   pqTextEdit.h
+  pqTreeViewExpandState.h
   pqTreeView.h
-  pqTreeWidget.h
+  pqTreeViewSelectionHelper.h
   pqTreeWidgetCheckHelper.h
+  pqTreeWidget.h
   pqTreeWidgetItemObject.h
   pqTreeWidgetSelectionHelper.h
-  pqTreeViewSelectionHelper.h
-  pqHelpWindow.h
 )
 
-if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
-  QT5_WRAP_CPP(QtWidgets_MOC_SOURCES ${QtWidgets_SRCS})
-else ()
-  QT4_WRAP_CPP(QtWidgets_MOC_SOURCES ${QtWidgets_SRCS})
-endif ()
+include(ParaViewQt)
 
+set(qt4_public_comps QtGui)
+set(qt4_private_comps QtNetwork)
+
+set(qt5_public_comps Core Gui Widgets)
+set(qt5_private_comps Network)
+if(PARAVIEW_USE_QTWEBKIT)
+  list(APPEND qt4_private_comps QtWebKit)
+endif()
+if(APPLE)
+  list(APPEND qt5_private_comps PrintSupport)
+endif()
+
+if (PARAVIEW_USE_QTHELP)
+  list(APPEND Module_SRCS pqHelpWindow.cxx pqHelpWindow.h)
+  list(APPEND QtWidgets_SRCS pqHelpWindow.h)
+  set(${vtk-module}_EXPORT_CODE
+    "#ifndef PARAVIEW_USE_QTHELP\n#  define PARAVIEW_USE_QTHELP\n#endif\n")
+  list(APPEND qt4_private_comps QtHelp)
+  list(APPEND qt5_private_comps Help)
+endif()
+
+pv_find_package_qt(qt_public_targets REQUIRED
+  QT4_COMPONENTS ${qt4_public_comps}
+  QT5_COMPONENTS ${qt5_public_comps})
+pv_find_package_qt(qt_private_targets REQUIRED
+  QT4_COMPONENTS ${qt4_private_comps}
+  QT5_COMPONENTS ${qt5_private_comps})
+
+set(${vtk-module}_EXPORT_CODE_INSTALL
+  "include(\${ParaView_CMAKE_DIR}/ParaViewQt.cmake)
+  pv_find_package_qt(__${vtk-module}_qt_targets REQUIRED QUIET
+    QT4_COMPONENTS ${qt4_public_comps}
+    QT5_COMPONENTS ${qt5_public_comps})")
+set(${vtk-module}_EXPORT_CODE_BUILD "${${vtk-module}_EXPORT_CODE_INSTALL}")
+
+pv_qt_wrap_cpp(QtWidgets_MOC_SOURCES ${QtWidgets_SRCS})
 
 ##########################################################################
 ## Add *.ui files to be uic processed.
@@ -198,15 +224,7 @@ SET(QtWidgets_UI_FORMS
   Resources/UI/pqQuickLaunchDialog.ui
 )
 
-if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
-  QT5_WRAP_UI(QtWidgets_UI_BUILT_SOURCES
-    ${QtWidgets_UI_FORMS}
-  )
-else ()
-  QT4_WRAP_UI(QtWidgets_UI_BUILT_SOURCES
-    ${QtWidgets_UI_FORMS}
-  )
-endif ()
+pv_qt_wrap_ui(QtWidgets_UI_BUILT_SOURCES ${QtWidgets_UI_FORMS})
 
 ##########################################################################
 ## Add resources.
@@ -214,15 +232,7 @@ SET(UI_RESOURCES
   Resources/QtWidgets.qrc
 )
 
-if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
-  QT5_ADD_RESOURCES(RCS_SOURCES
-    ${UI_RESOURCES}
-  )
-else ()
-  QT4_ADD_RESOURCES(RCS_SOURCES
-    ${UI_RESOURCES}
-  )
-endif ()
+pv_qt_add_resources(RCS_SOURCES ${UI_RESOURCES})
 
 SOURCE_GROUP("Resources" FILES
   ${UI_RESOURCES}
@@ -240,39 +250,21 @@ SET(QT_WIDGETS_ALL_SRCS ${Module_SRCS} ${QtWidgets_MOC_SOURCES}
 
 ##########################################################################
 # import Qt build settings
-
-if (PARAVIEW_QT_VERSION VERSION_GREATER "4")
-  # Setting this variable ensures that any module depending on pqWidgets
-  # automatically inherits the Qt include dirs.
-  set (${vtk-module}_INCLUDE_DIRS
-    ${Qt5Widgets_INCLUDE_DIRS}
-    ${Qt5Network_INCLUDE_DIRS}
-    ${Qt5Help_INCLUDE_DIRS}
-    ${Qt5PrintSupport_INCLUDE_DIRS}
-    ${Qt5Test_INCLUDE_DIRS}
-    ${Qt5WebKitWidgets_INCLUDE_DIRS})
-else ()
-  set (QT_USE_QTNETWORK 1)
-  set (QT_USE_QTHELP 1)
-  if(PARAVIEW_USE_QTWEBKIT)
-    set(QT_USE_QTWEBKIT 1)
-  endif()
-  find_package (Qt4 REQUIRED QUIET)
-  include (${QT_USE_FILE})
-
-  # Setting this variable ensures that any module depending on pqWidgets
-  # automatically inherits the Qt include dirs.
-  set (${vtk-module}_INCLUDE_DIRS
-    ${QT_INCLUDES})
-endif ()
-
 set(${vtk-module}_NO_HeaderTest 1)
 if(PARAVIEW_USE_QTWEBKIT)
   add_definitions(-DPARAVIEW_USE_QTWEBKIT)
 endif()
-vtk_module_library(${vtk-module} ${QT_WIDGETS_ALL_SRCS})
-target_link_libraries(${vtk-module} LINK_PUBLIC ${QT_LIBRARIES})
 
+if(PARAVIEW_QT_VERSION VERSION_GREATER "4")
+  vtk_module_export_code_find_package(Qt5 COMPONENTS ${qt5_public_comps})
+else()
+  vtk_module_export_code_find_package(Qt4 COMPONENTS ${qt4_public_comps})
+endif()
+
+vtk_module_library(${vtk-module} ${QT_WIDGETS_ALL_SRCS})
+target_link_libraries(${vtk-module}
+  LINK_PRIVATE ${qt_private_targets}
+  LINK_PUBLIC ${qt_public_targets})
 #IF (NOT PV_INSTALL_NO_DEVELOPMENT)
 #  # Headers
 #  GLOB_INSTALL_DEVELOPMENT(

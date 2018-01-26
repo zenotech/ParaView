@@ -12,50 +12,47 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPolyLineToRectilinearGridFilter - filter that converts an input
-// poly data with a single polyline to a 1-D regular rectilinear grid.
-// .SECTION Description
-// vtkPolyLineToRectilinearGridFilter converts an input polydata with single 
-// polyline to a 1-D regular rectilinear grid. The output has additional point
-// data indicating the arc-length for each point. Note that the Xcoordinates
-// of the output are not related to those of the input. The input point 
-// coordinates themselves are added as point data in the output.
+/**
+ * @class   vtkPolyLineToRectilinearGridFilter
+ * @brief   filter that converts an input
+ * poly data with a single polyline to a 1-D regular rectilinear grid.
+ *
+ * vtkPolyLineToRectilinearGridFilter converts an input polydata with single
+ * polyline to a 1-D regular rectilinear grid. The output has additional point
+ * data indicating the arc-length for each point. Note that the Xcoordinates
+ * of the output are not related to those of the input. The input point
+ * coordinates themselves are added as point data in the output.
+*/
 
-#ifndef __vtkPolyLineToRectilinearGridFilter_h
-#define __vtkPolyLineToRectilinearGridFilter_h
-
+#ifndef vtkPolyLineToRectilinearGridFilter_h
+#define vtkPolyLineToRectilinearGridFilter_h
 
 #include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkRectilinearGridAlgorithm.h"
 
-class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPolyLineToRectilinearGridFilter : 
-  public vtkRectilinearGridAlgorithm
+class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPolyLineToRectilinearGridFilter
+  : public vtkRectilinearGridAlgorithm
 {
 public:
   static vtkPolyLineToRectilinearGridFilter* New();
-  vtkTypeMacro(vtkPolyLineToRectilinearGridFilter,
-    vtkRectilinearGridAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
-
-
+  vtkTypeMacro(vtkPolyLineToRectilinearGridFilter, vtkRectilinearGridAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkPolyLineToRectilinearGridFilter();
   ~vtkPolyLineToRectilinearGridFilter();
-  
-  virtual int FillInputPortInformation (int port, vtkInformation *info);
-  
-  virtual int RequestInformation(vtkInformation* request,
-                                 vtkInformationVector** inputVector,
-                                 vtkInformationVector* outputVector);
 
-  int RequestData(vtkInformation* request, 
-                  vtkInformationVector** inputVector, 
-                  vtkInformationVector* outputVector);
+  virtual int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+
+  virtual int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
+
+  int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
+
 private:
-  vtkPolyLineToRectilinearGridFilter(const vtkPolyLineToRectilinearGridFilter&); // Not implemented.
-  void operator=(const vtkPolyLineToRectilinearGridFilter&); // Not implemented.
+  vtkPolyLineToRectilinearGridFilter(const vtkPolyLineToRectilinearGridFilter&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPolyLineToRectilinearGridFilter&) VTK_DELETE_FUNCTION;
 };
 
 #endif
-

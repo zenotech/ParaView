@@ -12,26 +12,24 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSciVizStatisticsPrivate - Private class for scientific viz statistics classes.
-// .SECTION Description
-// This class handles array selection in a way that makes ParaView happy.
+/**
+ * @class   vtkSciVizStatisticsPrivate
+ * @brief   Private class for scientific viz statistics classes.
+ *
+ * This class handles array selection in a way that makes ParaView happy.
+*/
 
-#ifndef __vtkSciVizStatisticsPrivate_h
-#define __vtkSciVizStatisticsPrivate_h
+#ifndef vtkSciVizStatisticsPrivate_h
+#define vtkSciVizStatisticsPrivate_h
 
 #include "vtkStatisticsAlgorithmPrivate.h"
 
 class vtkSciVizStatisticsP : public vtkStatisticsAlgorithmPrivate
 {
 public:
-  bool Has( vtkStdString arrName )
-    {
-    return this->Buffer.find( arrName ) != this->Buffer.end();
-    }
+  bool Has(vtkStdString arrName) { return this->Buffer.find(arrName) != this->Buffer.end(); }
 };
 
-
-#endif // __vtkSciVizStatisticsPrivate_h
-
+#endif // vtkSciVizStatisticsPrivate_h
 
 // VTK-HeaderTest-Exclude: vtkSciVizStatisticsPrivate.h

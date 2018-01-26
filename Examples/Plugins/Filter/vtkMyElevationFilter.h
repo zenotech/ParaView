@@ -20,8 +20,8 @@
 // a line. The line can be oriented arbitrarily. A typical example is
 // to generate scalars based on elevation or height above a plane.
 
-#ifndef __vtkMyElevationFilter_h
-#define __vtkMyElevationFilter_h
+#ifndef vtkMyElevationFilter_h
+#define vtkMyElevationFilter_h
 
 #include "vtkElevationFilter.h"
 
@@ -30,15 +30,15 @@ class VTK_EXPORT vtkMyElevationFilter : public vtkElevationFilter
 public:
   static vtkMyElevationFilter* New();
   vtkTypeMacro(vtkMyElevationFilter, vtkElevationFilter);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkMyElevationFilter();
   ~vtkMyElevationFilter();
 
 private:
-  vtkMyElevationFilter(const vtkMyElevationFilter&);  // Not implemented.
-  void operator=(const vtkMyElevationFilter&);  // Not implemented.
+  vtkMyElevationFilter(const vtkMyElevationFilter&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkMyElevationFilter&) VTK_DELETE_FUNCTION;
 };
 
 #endif

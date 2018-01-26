@@ -19,7 +19,7 @@
    <property name="spacing" >
     <number>6</number>
    </property>
-   <item row="1" column="0" >
+   <item row="1" column="0" colspan="2">
     <widget class="QStackedWidget" name="stackedWidget" >
      <property name="currentIndex" >
       <number>0</number>
@@ -62,9 +62,26 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="page_3" >
+      <layout class="QGridLayout" >
+       <property name="margin" >
+        <number>9</number>
+       </property>
+       <property name="spacing" >
+        <number>6</number>
+       </property>
+       <item row="0" column="0" >
+        <widget class="QTreeView" name="ObjectTreeSelection1" />
+       </item>
+       <item row="0" column="1" >
+        <widget class="QTreeView" name="ObjectTreeSelection2" />
+       </item>
+      </layout>
+     </widget>
+
     </widget>
    </item>
-   <item row="0" column="0" >
+   <item row="0" column="0" colspan="2">
     <layout class="QHBoxLayout" >
      <property name="margin" >
       <number>0</number>
@@ -101,6 +118,11 @@
          <string>Property Link</string>
         </property>
        </item>
+       <item>
+        <property name="text" >
+         <string>Selection Link</string>
+        </property>
+       </item>
       </widget>
      </item>
      <item>
@@ -119,6 +141,32 @@
     </layout>
    </item>
    <item row="2" column="0" >
+    <widget class="QCheckBox" name="interactiveViewLinkCheckBox" >
+     <property name="text" >
+      <string>Interactive View Link</string>
+     </property>
+     <property name="visible" >
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0" >
+    <widget class="QCheckBox" name="convertToIndicesCheckBox">
+     <property name="toolTip">
+      <string>&lt;span&gt;When enabled, selection is linked by evaluating the selection on the data source and select corresponding elements based on their indices on other linked data sources, instead of sharing the actual selection between the data sources.&lt;/span&gt;</string>
+     </property>
+     <property name="text">
+      <string>Link Selected Elements</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+     <property name="visible" >
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1" >
     <widget class="QDialogButtonBox" name="buttonBox" >
      <property name="orientation" >
       <enum>Qt::Horizontal</enum>

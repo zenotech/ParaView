@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -32,18 +32,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqSaveScreenshotReaction.h"
 
 #include "pqActiveObjects.h"
+#include "pqApplicationCore.h"
 #include "pqCoreUtilities.h"
 #include "pqFileDialog.h"
-#include "pqImageUtil.h"
-#include "pqPVApplicationCore.h"
-#include "pqRenderViewBase.h"
-#include "pqSaveSnapshotDialog.h"
+#include "pqProxyWidgetDialog.h"
+#include "pqServer.h"
 #include "pqSettings.h"
-#include "pqTabbedMultiViewWidget.h"
 #include "pqView.h"
 #include "vtkImageData.h"
-#include "vtkSmartPointer.h"
+#include "vtkNew.h"
+#include "vtkSMParaViewPipelineController.h"
+#include "vtkSMProperty.h"
+#include "vtkSMPropertyHelper.h"
+#include "vtkSMSaveScreenshotProxy.h"
 #include "vtkSMSessionProxyManager.h"
+#include "vtkSMUtilities.h"
+#include "vtkSMViewLayoutProxy.h"
+#include "vtkSMViewProxy.h"
+#include "vtkSmartPointer.h"
 
 #include <QDebug>
 #include <QFileInfo>
@@ -55,10 +61,9 @@ pqSaveScreenshotReaction::pqSaveScreenshotReaction(QAction* parentObject)
   // load state enable state depends on whether we are connected to an active
   // server or not and whether
   pqActiveObjects* activeObjects = &pqActiveObjects::instance();
-  QObject::connect(activeObjects, SIGNAL(serverChanged(pqServer*)),
-    this, SLOT(updateEnableState()));
-  QObject::connect(activeObjects, SIGNAL(viewChanged(pqView*)),
-    this, SLOT(updateEnableState()));
+  QObject::connect(
+    activeObjects, SIGNAL(serverChanged(pqServer*)), this, SLOT(updateEnableState()));
+  QObject::connect(activeObjects, SIGNAL(viewChanged(pqView*)), this, SLOT(updateEnableState()));
   this->updateEnableState();
 }
 
@@ -71,147 +76,130 @@ void pqSaveScreenshotReaction::updateEnableState()
 }
 
 //-----------------------------------------------------------------------------
-void pqSaveScreenshotReaction::saveScreenshot()
+QString pqSaveScreenshotReaction::promptFileName()
 {
-  pqTabbedMultiViewWidget* viewManager = qobject_cast<pqTabbedMultiViewWidget*>(
-    pqApplicationCore::instance()->manager("MULTIVIEW_WIDGET"));
-  if (!viewManager)
-    {
-    qCritical("Could not locate pqTabbedMultiViewWidget. "
-      "If using custom-widget as the "
-      "central widget, you cannot use pqSaveScreenshotReaction.");
-    return;
-    }
-
-  pqView* view = pqActiveObjects::instance().activeView();
-  if (!view)
-    {
-    qDebug() << "Cannnot save image. No active view.";
-    return;
-    }
-
-  pqSaveSnapshotDialog ssDialog(pqCoreUtilities::mainWidget());
-  ssDialog.setViewSize(view->getSize());
-  ssDialog.setAllViewsSize(viewManager->clientSize());
-
-  if (ssDialog.exec() != QDialog::Accepted)
-    {
-    return;
-    }
-
   QString lastUsedExt;
   // Load the most recently used file extensions from QSettings, if available.
   pqSettings* settings = pqApplicationCore::instance()->settings();
   if (settings->contains("extensions/ScreenshotExtension"))
-    {
-    lastUsedExt = 
-      settings->value("extensions/ScreenshotExtension").toString();
-    }
+  {
+    lastUsedExt = settings->value("extensions/ScreenshotExtension").toString();
+  }
 
-  QString filters;
-  filters += "PNG image (*.png)";
-  filters += ";;BMP image (*.bmp)";
-  filters += ";;TIFF image (*.tif)";
-  filters += ";;PPM image (*.ppm)";
-  filters += ";;JPG image (*.jpg)";
-  pqFileDialog file_dialog(NULL,
-    pqCoreUtilities::mainWidget(),
-    tr("Save Screenshot:"), QString(), filters);
+  QString filters("PNG image (*.png);;JPG image (*.jpg);;TIFF image (*.tif)"
+                  ";;BMP image (*.bmp);;PPM image (*.ppm)");
+
+  pqFileDialog file_dialog(
+    NULL, pqCoreUtilities::mainWidget(), tr("Save Screenshot:"), QString(), filters);
   file_dialog.setRecentlyUsedExtension(lastUsedExt);
   file_dialog.setObjectName("FileSaveScreenshotDialog");
   file_dialog.setFileMode(pqFileDialog::AnyFile);
   if (file_dialog.exec() != QDialog::Accepted)
-    {
-    return;
-    }
+  {
+    return QString();
+  }
 
   QString file = file_dialog.getSelectedFiles()[0];
-  QFileInfo fileInfo = QFileInfo( file );
+  QFileInfo fileInfo(file);
   lastUsedExt = QString("*.") + fileInfo.suffix();
   settings->setValue("extensions/ScreenshotExtension", lastUsedExt);
-
-  QSize size = ssDialog.viewSize();
-  QString palette = ssDialog.palette();
-
-  vtkSMSessionProxyManager* pxm =
-    pqActiveObjects::instance().activeServer()->proxyManager();
-  vtkSMProxy* colorPalette = pxm->GetProxy(
-    "global_properties", "ColorPalette");
-  vtkSmartPointer<vtkSMProxy> clone;
-  if (colorPalette && !palette.isEmpty())
-    {
-    // save current property values
-    clone.TakeReference(pxm->NewProxy(colorPalette->GetXMLGroup(),
-        colorPalette->GetXMLName()));
-    clone->Copy(colorPalette);
-
-    vtkSMProxy* chosenPalette =
-      pxm->NewProxy("palettes", palette.toLatin1().data());
-    colorPalette->Copy(chosenPalette);
-    chosenPalette->Delete();
-    }
-
-  int stereo = ssDialog.getStereoMode();
-  if (stereo)
-    {
-    pqRenderViewBase::setStereo(stereo);
-    }
-
-  pqSaveScreenshotReaction::saveScreenshot(file,
-    size, ssDialog.quality(), ssDialog.saveAllViews());
-
-  // restore color palette.
-  if (clone)
-    {
-    colorPalette->Copy(clone);
-    }
-
-  // restore stereo
-  if (stereo)
-    {
-    pqRenderViewBase::setStereo(0);
-    }
-
-  // check if need to render to clear the changes we did
-  // while saving the screenshot.
-  if (clone || stereo)
-    {
-    pqApplicationCore::instance()->render();
-    }
+  return file;
 }
 
 //-----------------------------------------------------------------------------
-void pqSaveScreenshotReaction::saveScreenshot(
+void pqSaveScreenshotReaction::saveScreenshot()
+{
+  pqView* view = pqActiveObjects::instance().activeView();
+  if (!view)
+  {
+    qDebug() << "Cannot save image. No active view.";
+    return;
+  }
+
+  vtkSMViewProxy* viewProxy = view->getViewProxy();
+  vtkSMViewLayoutProxy* layout = vtkSMViewLayoutProxy::FindLayout(viewProxy);
+  int showWindowDecorations = -1;
+
+  vtkSMSessionProxyManager* pxm = view->getServer()->proxyManager();
+  vtkSmartPointer<vtkSMProxy> proxy;
+  proxy.TakeReference(pxm->NewProxy("misc", "SaveScreenshot"));
+  vtkSMSaveScreenshotProxy* shProxy = vtkSMSaveScreenshotProxy::SafeDownCast(proxy);
+  if (!shProxy)
+  {
+    qCritical() << "Incorrect type for `SaveScreenshot` proxy.";
+    return;
+  }
+
+  vtkNew<vtkSMParaViewPipelineController> controller;
+  controller->PreInitializeProxy(shProxy);
+  vtkSMPropertyHelper(shProxy, "View").Set(viewProxy);
+  vtkSMPropertyHelper(shProxy, "Layout").Set(layout);
+  controller->PostInitializeProxy(shProxy);
+
+  if (shProxy->UpdateSaveAllViewsPanelVisibility())
+  {
+    Q_ASSERT(layout != NULL);
+    // let's hide window decorations.
+    vtkSMPropertyHelper helper(layout, "ShowWindowDecorations");
+    showWindowDecorations = helper.GetAsInt();
+    helper.Set(0);
+  }
+
+  pqProxyWidgetDialog dialog(shProxy, pqCoreUtilities::mainWidget());
+  dialog.setObjectName("SaveScreenshotDialog");
+  dialog.setApplyChangesImmediately(true);
+  dialog.setWindowTitle("Save Screenshot Options");
+  dialog.setEnableSearchBar(true);
+  dialog.setSettingsKey("SaveScreenshotDialog");
+  if (dialog.exec() == QDialog::Accepted)
+  {
+    QString filename = pqSaveScreenshotReaction::promptFileName();
+    if (!filename.isEmpty())
+    {
+      shProxy->WriteImage(filename.toLocal8Bit().data());
+    }
+  }
+
+  if (layout && showWindowDecorations != -1)
+  {
+    vtkSMPropertyHelper(layout, "ShowWindowDecorations").Set(showWindowDecorations);
+    layout->UpdateVTKObjects();
+  }
+
+  // This should not be needed as image capturing code only affects back buffer,
+  // however it is currently needed due to paraview/paraview#17256. Once that's
+  // fixed, we should remove this.
+  pqApplicationCore::instance()->render();
+}
+
+//-----------------------------------------------------------------------------
+bool pqSaveScreenshotReaction::saveScreenshot(
   const QString& filename, const QSize& size, int quality, bool all_views)
 {
+  pqView* view = pqActiveObjects::instance().activeView();
+  if (!view)
+  {
+    qDebug() << "Cannot save image. No active view.";
+    return false;
+  }
+
+  vtkSMViewProxy* viewProxy = view->getViewProxy();
+
+  vtkSmartPointer<vtkImageData> image;
+  const vtkVector2i isize(size.width(), size.height());
   if (all_views)
-    {
-    pqTabbedMultiViewWidget* viewManager = qobject_cast<pqTabbedMultiViewWidget*>(
-      pqApplicationCore::instance()->manager("MULTIVIEW_WIDGET"));
-    if (!viewManager)
-      {
-      qCritical("Could not locate pqTabbedMultiViewWidget. "
-        "If using custom-widget as the "
-        "central widget, you cannot use pqSaveScreenshotReaction.");
-      return;
-      }
-    if (!viewManager->writeImage(filename, size.width(), size.height(), quality))
-      {
-      qCritical() << "Save Image failed.";
-      }
-    }
+  {
+    vtkSMViewLayoutProxy* layout = vtkSMViewLayoutProxy::FindLayout(viewProxy);
+    image = vtkSMSaveScreenshotProxy::CaptureImage(layout, isize);
+  }
   else
-    {
-    if (pqView* view = pqActiveObjects::instance().activeView())
-      {
-      if (!view->writeImage(filename, size, quality))
-        {
-        qCritical() << "Save Image failed.";
-        }
-      }
-    else
-      {
-      qCritical() << "No active view present. Save screenshot failed.";
-      }
-    }
+  {
+    image = vtkSMSaveScreenshotProxy::CaptureImage(viewProxy, isize);
+  }
+
+  if (image)
+  {
+    return vtkSMUtilities::SaveImage(image, filename.toLocal8Bit().data(), quality) != 0;
+  }
+  return false;
 }

@@ -12,13 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSIDoubleVectorProperty
-// .SECTION Description
-// Vector property that manage double value to be set through a method
-// on a vtkObject.
+/**
+ * @class   vtkSIDoubleVectorProperty
+ *
+ * Vector property that manage double value to be set through a method
+ * on a vtkObject.
+*/
 
-#ifndef __vtkSIDoubleVectorProperty_h
-#define __vtkSIDoubleVectorProperty_h
+#ifndef vtkSIDoubleVectorProperty_h
+#define vtkSIDoubleVectorProperty_h
 
 #include "vtkPVServerImplementationCoreModule.h" //needed for exports
 #include "vtkSIVectorProperty.h"
@@ -35,17 +37,15 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSIDoubleVectorProperty : public vt
 public:
   static vtkSIDoubleVectorProperty* New();
   vtkTypeMacro(vtkSIDoubleVectorProperty, vtkSIVectorProperty);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-//BTX
 protected:
   vtkSIDoubleVectorProperty();
   ~vtkSIDoubleVectorProperty();
 
 private:
-  vtkSIDoubleVectorProperty(const vtkSIDoubleVectorProperty&); // Not implemented
-  void operator=(const vtkSIDoubleVectorProperty&); // Not implemented
-//ETX
+  vtkSIDoubleVectorProperty(const vtkSIDoubleVectorProperty&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSIDoubleVectorProperty&) VTK_DELETE_FUNCTION;
 };
 
 #endif

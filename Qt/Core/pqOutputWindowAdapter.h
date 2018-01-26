@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -35,48 +35,68 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqCoreModule.h"
 
-#include <vtkOutputWindow.h>
 #include <QObject>
+#include <vtkOutputWindow.h>
 
 /**
-vtkOutputWindow implementation that converts VTK output messages into Qt signals.
-
-To use, create an instance of pqOutputWindowAdapter and pass it to the
-vtkOutputWindow::setInstance() static method.
-
-\sa pqOutputWindow
+ * @class pqOutputWindowAdapter
+ * @brief deprecated as of ParaView 5.4. Please consider using pqOutputWidget.
+ *
+ * @deprecated ParaView 5.4. Please use pqOutputWidget in your application
+ * instead.
+ *
+ * @sa pqOutputWindow
 */
-class PQCORE_EXPORT pqOutputWindowAdapter :
-  public QObject,
-  public vtkOutputWindow
+class PQCORE_EXPORT pqOutputWindowAdapter : public QObject, public vtkOutputWindow
 {
   Q_OBJECT
-  
+
 public:
-  static pqOutputWindowAdapter *New();
+  static pqOutputWindowAdapter* New();
   vtkTypeMacro(pqOutputWindowAdapter, vtkOutputWindow);
 
-  /// If active signals are emitted on messages.
+  /**
+  * If active signals are emitted on messages.
+  */
   void setActive(bool active);
 
-  /// These are same as DisplayText() and DisplayErrorText() except that
-  /// they don't pad the text with "\n" nor do they echo the text to the
-  /// terminal. Used in pqPythonManager to display Python text.
+  /**
+  * These are same as DisplayText() and DisplayErrorText() except that
+  * they don't pad the text with "\n" nor do they echo the text to the
+  * terminal. Used in pqPythonManager to display Python text.
+  */
   void DisplayTextInWindow(const QString&);
   void DisplayErrorTextInWindow(const QString&);
 
 signals:
-  /// Signal emitted by VTK messages
+  /**
+  * Signal emitted by VTK messages
+  */
   void displayText(const QString&);
-  /// Signal emitted by VTK error messages
+
+  /**
+  * Signal emitted by VTK error messages
+  */
   void displayErrorText(const QString&);
-  /// Signal emitted by VTK warning messages
+
+  /**
+  * Signal emitted by VTK warning messages
+  */
   void displayWarningText(const QString&);
-  /// Signal emitted by VTK warning messages
+
+  /**
+  * Signal emitted by VTK warning messages
+  */
   void displayGenericWarningText(const QString&);
-  /// Signal emitted by Python messages
+
+  /**
+  * Signal emitted by Python messages
+  */
   void displayTextInWindow(const QString&);
-  /// Signal emitted by Python errors.
+
+  /**
+  * Signal emitted by Python errors.
+  */
   void displayErrorTextInWindow(const QString&);
 
 private:
@@ -85,11 +105,11 @@ private:
   pqOutputWindowAdapter& operator=(const pqOutputWindowAdapter&);
   ~pqOutputWindowAdapter();
 
-  virtual void DisplayText(const char*);
-  virtual void DisplayErrorText(const char*);
-  virtual void DisplayWarningText(const char*);
-  virtual void DisplayGenericWarningText(const char*);
-  
+  virtual void DisplayText(const char*) VTK_OVERRIDE;
+  virtual void DisplayErrorText(const char*) VTK_OVERRIDE;
+  virtual void DisplayWarningText(const char*) VTK_OVERRIDE;
+  virtual void DisplayGenericWarningText(const char*) VTK_OVERRIDE;
+
   bool Active;
 };
 

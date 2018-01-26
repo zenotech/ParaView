@@ -29,16 +29,17 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqStreamingTestingEventPlayer_h
-#define __pqStreamingTestingEventPlayer_h
+#ifndef pqStreamingTestingEventPlayer_h
+#define pqStreamingTestingEventPlayer_h
 
-#include "pqWidgetEventPlayer.h"
 #include "pqApplicationComponentsModule.h"
+#include "pqWidgetEventPlayer.h"
 #include <QPointer>
 
 class pqViewStreamingBehavior;
 /**
-Concrete implementation of pqWidgetEventPlayer that handles playback of recorded pqViewStreamingBehavior.
+Concrete implementation of pqWidgetEventPlayer that handles playback of recorded
+pqViewStreamingBehavior.
 
 \sa pqEventPlayer
 */
@@ -49,15 +50,18 @@ class PQAPPLICATIONCOMPONENTS_EXPORT pqStreamingTestingEventPlayer : public pqWi
   typedef pqWidgetEventPlayer Superclass;
 
 public:
-  pqStreamingTestingEventPlayer(QObject* p) : Superclass(p) { }
-  virtual bool playEvent(QObject*,
-    const QString& command, const QString& arguments, bool& error);
+  pqStreamingTestingEventPlayer(QObject* p)
+    : Superclass(p)
+  {
+  }
+  using Superclass::playEvent;
+  virtual bool playEvent(QObject*, const QString& command, const QString& arguments, bool& error);
 
   void setViewStreamingBehavior(pqViewStreamingBehavior*);
   pqViewStreamingBehavior* viewStreamingBehavior();
+
 protected:
   QPointer<pqViewStreamingBehavior> StreamingBehavior;
-
 };
 
 #endif

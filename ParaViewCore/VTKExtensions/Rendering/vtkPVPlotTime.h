@@ -12,61 +12,74 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVPlotTime - takes care of drawing a "time" marker in the plot.
-// .SECTION Description
-// vtkPVPlotTime is used to add a "current-time" marker to the plot when on of
-// the axes in the plots is time. Currently only X-axis as time is supported.
+/**
+ * @class   vtkPVPlotTime
+ * @brief   takes care of drawing a "time" marker in the plot.
+ *
+ * vtkPVPlotTime is used to add a "current-time" marker to the plot when on of
+ * the axes in the plots is time. Currently only X-axis as time is supported.
+*/
 
-#ifndef __vtkPVPlotTime_h
-#define __vtkPVPlotTime_h
+#ifndef vtkPVPlotTime_h
+#define vtkPVPlotTime_h
 
-#include "vtkPlot.h"
 #include "vtkPVVTKExtensionsRenderingModule.h" // needed for export macro
+#include "vtkPlot.h"
 
 class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkPVPlotTime : public vtkPlot
 {
 public:
   static vtkPVPlotTime* New();
   vtkTypeMacro(vtkPVPlotTime, vtkPlot);
-  void PrintSelf(ostream& os, vtkIndent indent);
-  
-  enum
-    {
-    NONE=0,
-    X_AXIS=1,
-    Y_AXIS=2
-    };
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Set the Time axis mode.
+  enum
+  {
+    NONE = 0,
+    X_AXIS = 1,
+    Y_AXIS = 2
+  };
+
+  //@{
+  /**
+   * Set the Time axis mode.
+   */
   vtkSetClampMacro(TimeAxisMode, int, NONE, Y_AXIS);
   vtkGetMacro(TimeAxisMode, int);
+  //@}
 
-  // Description:
-  // Set time value.
+  //@{
+  /**
+   * Set time value.
+   */
   vtkSetMacro(Time, double);
   vtkGetMacro(Time, double);
+  //@}
 
-  // Description:
-  // Paint event for the axis, called whenever the axis needs to be drawn
-  virtual bool Paint(vtkContext2D *painter);
+  /**
+   * Paint event for the axis, called whenever the axis needs to be drawn
+   */
+  virtual bool Paint(vtkContext2D* painter) VTK_OVERRIDE;
 
-  // Description:
-  // Get the bounds for this plot as (Xmin, Xmax, Ymin, Ymax).
-  virtual void GetBounds(double bounds[4])
-  { bounds[0] = bounds[2] = 1.0; bounds[1] = bounds[3] = -1.0;}
+  /**
+   * Get the bounds for this plot as (Xmin, Xmax, Ymin, Ymax).
+   */
+  virtual void GetBounds(double bounds[4]) VTK_OVERRIDE
+  {
+    bounds[0] = bounds[2] = 1.0;
+    bounds[1] = bounds[3] = -1.0;
+  }
 
-//BTX
 protected:
   vtkPVPlotTime();
   ~vtkPVPlotTime();
 
   double Time;
   int TimeAxisMode;
+
 private:
-  vtkPVPlotTime(const vtkPVPlotTime&); // Not implemented
-  void operator=(const vtkPVPlotTime&); // Not implemented
-//ETX
+  vtkPVPlotTime(const vtkPVPlotTime&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVPlotTime&) VTK_DELETE_FUNCTION;
 };
 
 #endif

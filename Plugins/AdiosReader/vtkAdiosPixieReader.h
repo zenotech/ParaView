@@ -16,8 +16,8 @@
 // .SECTION Description
 //
 
-#ifndef __vtkAdiosPixieReader_h
-#define __vtkAdiosPixieReader_h
+#ifndef vtkAdiosPixieReader_h
+#define vtkAdiosPixieReader_h
 
 #include "vtkMultiBlockDataSetAlgorithm.h"
 
@@ -28,8 +28,8 @@ class vtkInformation;
 class vtkAdiosPixieReader : public vtkMultiBlockDataSetAlgorithm
 {
 public:
-  static vtkAdiosPixieReader *New();
-  vtkTypeMacro(vtkAdiosPixieReader,vtkMultiBlockDataSetAlgorithm);
+  static vtkAdiosPixieReader* New();
+  vtkTypeMacro(vtkAdiosPixieReader, vtkMultiBlockDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
@@ -74,15 +74,13 @@ public:
   // reader.
   virtual int CanReadFile(const char* name);
 
-//BTX
 protected:
   vtkAdiosPixieReader();
   ~vtkAdiosPixieReader();
 
   // Trigger the real data access
-  virtual int RequestData(vtkInformation *,
-                          vtkInformationVector **,
-                          vtkInformationVector *outputVector);
+  virtual int RequestData(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector);
 
   // The input file's name.
   char* FileName;
@@ -91,12 +89,11 @@ protected:
   char* Parameters;
 
 private:
-  vtkAdiosPixieReader(const vtkAdiosPixieReader&);  // Not implemented.
-  void operator=(const vtkAdiosPixieReader&);  // Not implemented.
+  vtkAdiosPixieReader(const vtkAdiosPixieReader&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkAdiosPixieReader&) VTK_DELETE_FUNCTION;
 
   class Internals;
   Internals* Internal;
-//ETX
 };
 
 #endif

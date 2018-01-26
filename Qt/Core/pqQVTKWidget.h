@@ -29,68 +29,81 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqQVTKWidget_h
-#define __pqQVTKWidget_h
+#ifndef pqQVTKWidget_h
+#define pqQVTKWidget_h
 
-#include "QVTKWidget.h"
 #include "pqCoreModule.h"
+#include "pqQVTKWidgetBase.h"
+#include "vtkEventQtSlotConnect.h"
+#include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkWeakPointer.h"
-
 #include <QPointer>
 
 class vtkSMProxy;
 class vtkSMSession;
 
-/// pqQVTKWidget extends QVTKWidget to add awareness for view proxies. The
-/// advantage of doing that is that pqQVTKWidget can automatically update the
-/// "ViewSize" propertu on the view proxy whenever the
-/// widget's size/position changes.
-///
-/// This class also enables image-caching by default (image caching support is
-/// provided by the superclass).
-class PQCORE_EXPORT pqQVTKWidget : public QVTKWidget
+/**
+* pqQVTKWidget extends pqQVTKWidgetBase to add awareness for view proxies. The
+* advantage of doing that is that pqQVTKWidget can automatically update the
+* "ViewSize" property on the view proxy whenever the
+* widget's size/position changes.
+*
+* This class also enables image-caching by default (image caching support is
+* provided by the superclass).
+*/
+class PQCORE_EXPORT pqQVTKWidget : public pqQVTKWidgetBase
 {
   Q_OBJECT
-  typedef QVTKWidget Superclass;
+  typedef pqQVTKWidgetBase Superclass;
+
 public:
   pqQVTKWidget(QWidget* parent = NULL, Qt::WindowFlags f = 0);
   virtual ~pqQVTKWidget();
 
-  /// Set the view proxy.
+  /**
+  * Set the view proxy.
+  */
   void setViewProxy(vtkSMProxy*);
 
-  /// Set the session.
-  /// This is only used when ViewProxy is not set.
+  /**
+  * Set the session.
+  * This is only used when ViewProxy is not set.
+  */
   void setSession(vtkSMSession*);
 
-  /// Retrun the Proxy ID if any, otherwise return 0
+  /**
+  * Retrun the Proxy ID if any, otherwise return 0
+  */
   vtkTypeUInt32 getProxyId();
 
-  /// Set/Get the name of the property to use to update the size of the widget
-  /// on the proxy. By default "ViewSize" is used.
-  void setSizePropertyName(const QString& pname)
-    { this->SizePropertyName = pname; }
-  const QString& sizePropertyName() const
-    { return this->SizePropertyName; }
+  /**
+  * Set/Get the name of the property to use to update the size of the widget
+  * on the proxy. By default "ViewSize" is used.
+  */
+  void setSizePropertyName(const QString& pname) { this->SizePropertyName = pname; }
+  const QString& sizePropertyName() const { return this->SizePropertyName; }
 
 public slots:
   void paintMousePointer(int x, int y);
 
 protected:
-  /// overloaded resize handler
+  /**
+  * overloaded resize handler
+  */
   virtual void resizeEvent(QResizeEvent* event);
 
-  /// overloaded move handler
-  virtual void moveEvent(QMoveEvent* event);
-
-  // method called in paintEvent() to render the image cache on to the device.
-  // return false, if cache couldn;t be used for painting. In that case, the
-  // paintEvent() method will continue with the default painting code.
-  virtual bool paintCachedImage();
-
+  //@{
+  /**
+   * methods that manage skipping of rendering if ParaView is not ready for it.
+   */
+  virtual void doDeferredRender();
+  virtual bool renderVTK();
+  bool canRender();
+  //@}
 private slots:
   void updateSizeProperties();
+  void handleViewSizeForModifiedQt4();
 
 private:
   Q_DISABLE_COPY(pqQVTKWidget)
@@ -98,6 +111,9 @@ private:
   vtkWeakPointer<vtkSMSession> Session;
   QImage MousePointerToDraw;
   QString SizePropertyName;
+
+  vtkNew<vtkEventQtSlotConnect> VTKConnect;
+  bool SkipHandleViewSizeForModifiedQt4;
 };
 
 #endif

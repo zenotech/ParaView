@@ -29,23 +29,28 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqComponentsTestUtility_h
-#define __pqComponentsTestUtility_h
+#ifndef pqComponentsTestUtility_h
+#define pqComponentsTestUtility_h
 
-#include "pqCoreTestUtility.h"
 #include "pqComponentsModule.h"
+#include "pqCoreTestUtility.h"
 
-/// pqComponentsTestUtility simply adds a pqComponents specific testing
-/// capabilities to pqCoreTestUtility.
+/**
+* pqComponentsTestUtility simply adds a pqComponents specific testing
+* capabilities to pqCoreTestUtility.
+*/
 class PQCOMPONENTS_EXPORT pqComponentsTestUtility : public pqCoreTestUtility
 {
   Q_OBJECT
   typedef pqCoreTestUtility Superclass;
+
 public:
   pqComponentsTestUtility(QObject* parentObj = 0);
 
-  /// Compares the baseline with active view for testing purposes.
-  /// (keeping naming-case similar to pqCoreTestUtility).
+  /**
+  * Compares the baseline with active view for testing purposes.
+  * (keeping naming-case similar to pqCoreTestUtility).
+  */
   static bool CompareView(
     const QString& referenceImage, double threshold, const QString& tempDirectory);
 
@@ -54,5 +59,3 @@ private:
 };
 
 #endif
-
-

@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,24 +29,27 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqSpreadSheetVisibilityBehavior_h 
-#define __pqSpreadSheetVisibilityBehavior_h
+#ifndef pqSpreadSheetVisibilityBehavior_h
+#define pqSpreadSheetVisibilityBehavior_h
 
-#include <QObject>
 #include "pqApplicationComponentsModule.h"
+#include <QObject>
 
 class pqView;
 
-/// @ingroup Behaviors
-/// Whenever spreadsheet view is created, ParaView wants to ensure that the
-/// active source is automatically displayed in that view. This is managed by
-/// this behavior.
+/**
+* @ingroup Behaviors
+* Whenever spreadsheet view is created, ParaView wants to ensure that the
+* active source is automatically displayed in that view. This is managed by
+* this behavior.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqSpreadSheetVisibilityBehavior : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
-  pqSpreadSheetVisibilityBehavior(QObject* parent=0);
+  pqSpreadSheetVisibilityBehavior(QObject* parent = 0);
 
 protected slots:
   void showActiveSource(pqView*);
@@ -56,5 +59,3 @@ private:
 };
 
 #endif
-
-

@@ -12,12 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMNullProxy - proxy with stands for NULL object on the server.
-// .SECTION Description
-// vtkSMNullProxy stands for a 0 on the server side.
+/**
+ * @class   vtkSMNullProxy
+ * @brief   proxy with stands for NULL object on the server.
+ *
+ * vtkSMNullProxy stands for a 0 on the server side.
+*/
 
-#ifndef __vtkSMNullProxy_h
-#define __vtkSMNullProxy_h
+#ifndef vtkSMNullProxy_h
+#define vtkSMNullProxy_h
 
 #include "vtkPVServerManagerCoreModule.h" //needed for exports
 #include "vtkSMProxy.h"
@@ -27,17 +30,17 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMNullProxy : public vtkSMProxy
 public:
   static vtkSMNullProxy* New();
   vtkTypeMacro(vtkSMNullProxy, vtkSMProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkSMNullProxy();
   ~vtkSMNullProxy();
 
-  virtual void CreateVTKObjects();
+  virtual void CreateVTKObjects() VTK_OVERRIDE;
 
 private:
-  vtkSMNullProxy(const vtkSMNullProxy&); // Not implemented.
-  void operator=(const vtkSMNullProxy&); // Not implemented.
+  vtkSMNullProxy(const vtkSMNullProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMNullProxy&) VTK_DELETE_FUNCTION;
 };
 
 #endif

@@ -25,8 +25,8 @@
 // Serves as a base class for algorithms that trace a geodesic path on a
 // polygonal dataset.
 
-#ifndef __vtkPolyDataGeodesicDistance_h
-#define __vtkPolyDataGeodesicDistance_h
+#ifndef vtkPolyDataGeodesicDistance_h
+#define vtkPolyDataGeodesicDistance_h
 
 #include "vtkFiltersModelingModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
@@ -38,18 +38,17 @@ class vtkIdList;
 class VTK_EXPORT vtkPolyDataGeodesicDistance : public vtkPolyDataAlgorithm
 {
 public:
-
   // Description:
   // Standard methids for printing and determining type information.
-  vtkTypeMacro(vtkPolyDataGeodesicDistance,vtkPolyDataAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkPolyDataGeodesicDistance, vtkPolyDataAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Description:
   // A list of points (seeds) on the input mesh from which to perform fast
   // marching. These are pointIds from the input mesh. At least one seed must
   // be specified.
-  virtual void SetSeeds( vtkIdList * );
-  vtkGetObjectMacro( Seeds, vtkIdList );
+  virtual void SetSeeds(vtkIdList*);
+  vtkGetObjectMacro(Seeds, vtkIdList);
 
   // Description:
   // Set/Get the name of the distance field data array that this class will
@@ -62,25 +61,25 @@ public:
   vtkGetStringMacro(FieldDataName);
 
   // Overload GetMTime() because we depend on seeds
-  unsigned long GetMTime();
+  vtkMTimeType GetMTime() VTK_OVERRIDE;
 
 protected:
   vtkPolyDataGeodesicDistance();
   ~vtkPolyDataGeodesicDistance();
 
   // Get the distance field array on the polydata
-  vtkFloatArray *GetGeodesicDistanceField(vtkPolyData *pd);
+  vtkFloatArray* GetGeodesicDistanceField(vtkPolyData* pd);
 
   // Compute the geodesic distance. Subclasses should override this method.
   // Returns 1 on success;
   virtual int Compute();
 
-  char      * FieldDataName;
-  vtkIdList * Seeds;
+  char* FieldDataName;
+  vtkIdList* Seeds;
 
 private:
-  vtkPolyDataGeodesicDistance(const vtkPolyDataGeodesicDistance&);  // Not implemented.
-  void operator=(const vtkPolyDataGeodesicDistance&);  // Not implemented.
+  vtkPolyDataGeodesicDistance(const vtkPolyDataGeodesicDistance&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPolyDataGeodesicDistance&) VTK_DELETE_FUNCTION;
 };
 
 #endif

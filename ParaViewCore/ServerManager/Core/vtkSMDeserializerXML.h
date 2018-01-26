@@ -12,14 +12,17 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMDeserializerXML - deserializes proxies from their XML states.
-// .SECTION Description
-// vtkSMDeserializer is used to deserialize proxies from their XML states. This
-// is the base class of deserialization classes that load XMLs to restore
-// servermanager state (or part thereof).
+/**
+ * @class   vtkSMDeserializerXML
+ * @brief   deserializes proxies from their XML states.
+ *
+ * vtkSMDeserializer is used to deserialize proxies from their XML states. This
+ * is the base class of deserialization classes that load XMLs to restore
+ * servermanager state (or part thereof).
+*/
 
-#ifndef __vtkSMDeserializerXML_h
-#define __vtkSMDeserializerXML_h
+#ifndef vtkSMDeserializerXML_h
+#define vtkSMDeserializerXML_h
 
 #include "vtkPVServerManagerCoreModule.h" //needed for exports
 #include "vtkSMDeserializer.h"
@@ -33,9 +36,8 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMDeserializerXML : public vtkSMDeseriali
 public:
   static vtkSMDeserializerXML* New();
   vtkTypeMacro(vtkSMDeserializerXML, vtkSMDeserializer);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-//BTX
 protected:
   vtkSMDeserializerXML();
   ~vtkSMDeserializerXML();
@@ -43,37 +45,40 @@ protected:
   // Friend to access NewProxy().
   friend class vtkSMProxyLocator;
 
-  // Description:
-  // Create a new proxy with the \c id if possible.
-  virtual vtkSMProxy* NewProxy(vtkTypeUInt32 id, vtkSMProxyLocator* locator);
+  /**
+   * Create a new proxy with the \c id if possible.
+   */
+  virtual vtkSMProxy* NewProxy(vtkTypeUInt32 id, vtkSMProxyLocator* locator) VTK_OVERRIDE;
 
-  // Description:
-  // Locate the XML for the proxy with the given id.
+  /**
+   * Locate the XML for the proxy with the given id.
+   */
   virtual vtkPVXMLElement* LocateProxyElement(vtkTypeUInt32 id);
 
-  // Description:
-  // TEMPORARY. Used to load the state on the proxy. This is only for the sake
-  // of the lookmark state loader until we get the chance to clean it up.
-  // DONT override this method.
-  virtual int LoadProxyState(vtkPVXMLElement* element, vtkSMProxy*,
-                             vtkSMProxyLocator* locator);
+  /**
+   * TEMPORARY. Used to load the state on the proxy. This is only for the sake
+   * of the lookmark state loader until we get the chance to clean it up.
+   * DONT override this method.
+   */
+  virtual int LoadProxyState(vtkPVXMLElement* element, vtkSMProxy*, vtkSMProxyLocator* locator);
 
-  // Description:
-  // Create a new proxy of the given group and name. Default implementation
-  // simply asks the proxy manager to create a new proxy of the requested type.
-  virtual vtkSMProxy* CreateProxy(const char* xmlgroup, const char* xmlname,
-                                  const char* subProxyName = NULL);
+  /**
+   * Create a new proxy of the given group and name. Default implementation
+   * simply asks the proxy manager to create a new proxy of the requested type.
+   */
+  virtual vtkSMProxy* CreateProxy(
+    const char* xmlgroup, const char* xmlname, const char* subProxyName = NULL) VTK_OVERRIDE;
 
-  // Description:
-  // Called after a new proxy has been created. Gives the subclasses an
-  // opportunity to perform certain tasks such as registering proxies etc.
-  // Default implementation is empty.
+  /**
+   * Called after a new proxy has been created. Gives the subclasses an
+   * opportunity to perform certain tasks such as registering proxies etc.
+   * Default implementation is empty.
+   */
   virtual void CreatedNewProxy(vtkTypeUInt32 id, vtkSMProxy* proxy);
 
 private:
-  vtkSMDeserializerXML(const vtkSMDeserializerXML&); // Not implemented
-  void operator=(const vtkSMDeserializerXML&); // Not implemented
-//ETX
+  vtkSMDeserializerXML(const vtkSMDeserializerXML&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMDeserializerXML&) VTK_DELETE_FUNCTION;
 };
 
 #endif

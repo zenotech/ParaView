@@ -18,10 +18,10 @@
 // standard polydata mapper
 // Note that it's essential that the mapper can handle composite datasets. If
 // your mapper cannot, then simply use an append filter internally to
-// merge the blocks into a single polydata. 
+// merge the blocks into a single polydata.
 
-#ifndef __vtkMySpecialPolyDataMapper_h
-#define __vtkMySpecialPolyDataMapper_h
+#ifndef vtkMySpecialPolyDataMapper_h
+#define vtkMySpecialPolyDataMapper_h
 
 #include "vtkCompositePolyDataMapper2.h"
 
@@ -30,18 +30,15 @@ class VTK_EXPORT vtkMySpecialPolyDataMapper : public vtkCompositePolyDataMapper2
 public:
   static vtkMySpecialPolyDataMapper* New();
   vtkTypeMacro(vtkMySpecialPolyDataMapper, vtkCompositePolyDataMapper2);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-//BTX
 protected:
   vtkMySpecialPolyDataMapper();
   ~vtkMySpecialPolyDataMapper();
 
 private:
-  vtkMySpecialPolyDataMapper(const vtkMySpecialPolyDataMapper&); // Not implemented
-  void operator=(const vtkMySpecialPolyDataMapper&); // Not implemented
-//ETX
+  vtkMySpecialPolyDataMapper(const vtkMySpecialPolyDataMapper&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkMySpecialPolyDataMapper&) VTK_DELETE_FUNCTION;
 };
 
 #endif
-

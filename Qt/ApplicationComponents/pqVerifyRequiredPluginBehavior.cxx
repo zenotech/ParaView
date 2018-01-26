@@ -32,17 +32,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqVerifyRequiredPluginBehavior.h"
 
 #include "pqApplicationCore.h"
-#include "pqPluginManager.h"
 #include "pqManagePluginsReaction.h"
-
+#include "pqPluginManager.h"
 
 //-----------------------------------------------------------------------------
 pqVerifyRequiredPluginBehavior::pqVerifyRequiredPluginBehavior(QObject* parentObject)
   : Superclass(parentObject)
 {
   QObject::connect(pqApplicationCore::instance()->getPluginManager(),
-    SIGNAL(requiredPluginsNotLoaded(pqServer*)),
-    this, SLOT(requiredPluginsNotLoaded()));
+    SIGNAL(requiredPluginsNotLoaded(pqServer*)), this, SLOT(requiredPluginsNotLoaded()));
 }
 
 //-----------------------------------------------------------------------------

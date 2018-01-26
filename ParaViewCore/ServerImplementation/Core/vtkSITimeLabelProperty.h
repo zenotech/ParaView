@@ -12,12 +12,14 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSITimeLabelProperty
-// .SECTION Description
-// SIProperty that deals with TimeLabel annotation on Algorithm object type
+/**
+ * @class   vtkSITimeLabelProperty
+ *
+ * SIProperty that deals with TimeLabel annotation on Algorithm object type
+*/
 
-#ifndef __vtkSITimeLabelProperty_h
-#define __vtkSITimeLabelProperty_h
+#ifndef vtkSITimeLabelProperty_h
+#define vtkSITimeLabelProperty_h
 
 #include "vtkPVServerImplementationCoreModule.h" //needed for exports
 #include "vtkSIProperty.h"
@@ -27,23 +29,22 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSITimeLabelProperty : public vtkSI
 public:
   static vtkSITimeLabelProperty* New();
   vtkTypeMacro(vtkSITimeLabelProperty, vtkSIProperty);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-//BTX
 protected:
   vtkSITimeLabelProperty();
   ~vtkSITimeLabelProperty();
 
   friend class vtkSIProxy;
 
-  // Description:
-  // Pull the current state of the underneath implementation
-  virtual bool Pull(vtkSMMessage*);
+  /**
+   * Pull the current state of the underneath implementation
+   */
+  virtual bool Pull(vtkSMMessage*) VTK_OVERRIDE;
 
 private:
-  vtkSITimeLabelProperty(const vtkSITimeLabelProperty&); // Not implemented
-  void operator=(const vtkSITimeLabelProperty&); // Not implemented
-//ETX
+  vtkSITimeLabelProperty(const vtkSITimeLabelProperty&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSITimeLabelProperty&) VTK_DELETE_FUNCTION;
 };
 
 #endif

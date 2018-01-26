@@ -12,18 +12,21 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMCameraManipulatorProxy - Manipulator for Camera animation.
-// .SECTION Description
-// This is the manipulator for animating camera.
-// Unlike the base class, interpolation is not done by the Keyframe objects.
-// Instead, this class does the interpolation using the values in
-// the keyframe objects. All the keyframes added to a
-// vtkSMCameraManipulatorProxy must be vtkSMCameraKeyFrameProxy.
-// Like all animation proxies, this is a client side only proxy with no
-// VTK objects created on the server side.
+/**
+ * @class   vtkSMCameraManipulatorProxy
+ * @brief   Manipulator for Camera animation.
+ *
+ * This is the manipulator for animating camera.
+ * Unlike the base class, interpolation is not done by the Keyframe objects.
+ * Instead, this class does the interpolation using the values in
+ * the keyframe objects. All the keyframes added to a
+ * vtkSMCameraManipulatorProxy must be vtkSMCameraKeyFrameProxy.
+ * Like all animation proxies, this is a client side only proxy with no
+ * VTK objects created on the server side.
+*/
 
-#ifndef __vtkPVCameraCueManipulator_h
-#define __vtkPVCameraCueManipulator_h
+#ifndef vtkPVCameraCueManipulator_h
+#define vtkPVCameraCueManipulator_h
 
 #include "vtkPVAnimationModule.h" //needed for exports
 #include "vtkPVKeyFrameCueManipulator.h"
@@ -36,35 +39,37 @@ class VTKPVANIMATION_EXPORT vtkPVCameraCueManipulator : public vtkPVKeyFrameCueM
 public:
   static vtkPVCameraCueManipulator* New();
   vtkTypeMacro(vtkPVCameraCueManipulator, vtkPVKeyFrameCueManipulator);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  //BTX
   enum Modes
-    {
+  {
     CAMERA,
     PATH,
     FOLLOW_DATA
-    };
-  //ETX
+  };
 
-  // Description:
-  // This manipulator has three modes:
-  // \li CAMERA - the traditional mode using vtkCameraInterpolator where camera
-  // values are directly interpolated.
-  // \li PATH - the easy-to-use path  based interpolation where the camera
-  // position/camera focal point paths can be explicitly specified.
-  // We may eventually deprecate CAMERA mode since it may run out of usability
-  // as PATH mode matures. So the code precariously meanders between the two
-  // right now, but deprecating the old should help clean that up.
-  // \li FOLLOW_DATA - the camera will follow the data set with the
-  // SetDataSourceProxy() method.
+  //@{
+  /**
+   * This manipulator has three modes:
+   * \li CAMERA - the traditional mode using vtkCameraInterpolator where camera
+   * values are directly interpolated.
+   * \li PATH - the easy-to-use path  based interpolation where the camera
+   * position/camera focal point paths can be explicitly specified.
+   * We may eventually deprecate CAMERA mode since it may run out of usability
+   * as PATH mode matures. So the code precariously meanders between the two
+   * right now, but deprecating the old should help clean that up.
+   * \li FOLLOW_DATA - the camera will follow the data set with the
+   * SetDataSourceProxy() method.
+   */
   vtkSetClampMacro(Mode, int, CAMERA, FOLLOW_DATA);
   vtkGetMacro(Mode, int);
+  //@}
 
-  // Description:
-  // Set the data soruce proxy. This is used when in the FOLLOW_DATA mode. The
-  // camera will track the data refered to by the data source proxy.
-  void SetDataSourceProxy(vtkSMProxy *dataSourceProxy);
+  /**
+   * Set the data soruce proxy. This is used when in the FOLLOW_DATA mode. The
+   * camera will track the data refered to by the data source proxy.
+   */
+  void SetDataSourceProxy(vtkSMProxy* dataSourceProxy);
 
 protected:
   vtkPVCameraCueManipulator();
@@ -72,20 +77,20 @@ protected:
 
   int Mode;
 
-  virtual void Initialize(vtkPVAnimationCue*);
-  virtual void Finalize(vtkPVAnimationCue*);
-  // Description:
-  // This updates the values based on currenttime.
-  // currenttime is normalized to the time range of the Cue.
-  virtual void UpdateValue(double currenttime,
-                           vtkPVAnimationCue* cueproxy);
+  virtual void Initialize(vtkPVAnimationCue*) VTK_OVERRIDE;
+  virtual void Finalize(vtkPVAnimationCue*) VTK_OVERRIDE;
+  /**
+   * This updates the values based on currenttime.
+   * currenttime is normalized to the time range of the Cue.
+   */
+  virtual void UpdateValue(double currenttime, vtkPVAnimationCue* cueproxy) VTK_OVERRIDE;
 
   vtkCameraInterpolator* CameraInterpolator;
   vtkSMProxy* DataSourceProxy;
-private:
-  vtkPVCameraCueManipulator(const vtkPVCameraCueManipulator&); // Not implemented.
-  void operator=(const vtkPVCameraCueManipulator&); // Not implemented.
 
+private:
+  vtkPVCameraCueManipulator(const vtkPVCameraCueManipulator&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVCameraCueManipulator&) VTK_DELETE_FUNCTION;
 };
 
 #endif

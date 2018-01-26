@@ -12,14 +12,16 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSIInputProperty
-// .SECTION Description
-// ServerSide Property use to set vtkOutputPort as method parameter.
-// For that we need the object on which we should get the Port and its port
-// number.
+/**
+ * @class   vtkSIInputProperty
+ *
+ * ServerSide Property use to set vtkOutputPort as method parameter.
+ * For that we need the object on which we should get the Port and its port
+ * number.
+*/
 
-#ifndef __vtkSIInputProperty_h
-#define __vtkSIInputProperty_h
+#ifndef vtkSIInputProperty_h
+#define vtkSIInputProperty_h
 
 #include "vtkPVServerImplementationCoreModule.h" //needed for exports
 #include "vtkSIProxyProperty.h"
@@ -29,32 +31,36 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSIInputProperty : public vtkSIProx
 public:
   static vtkSIInputProperty* New();
   vtkTypeMacro(vtkSIInputProperty, vtkSIProxyProperty);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Controls which input port this property uses when making connections.
-  // By default, this is 0.
+  //@{
+  /**
+   * Controls which input port this property uses when making connections.
+   * By default, this is 0.
+   */
   vtkGetMacro(PortIndex, int);
+  //@}
 
-//BTX
 protected:
   vtkSIInputProperty();
   ~vtkSIInputProperty();
 
-  // Description:
-  // Push a new state to the underneath implementation
-  virtual bool Push(vtkSMMessage*, int);
+  /**
+   * Push a new state to the underneath implementation
+   */
+  virtual bool Push(vtkSMMessage*, int) VTK_OVERRIDE;
 
-  // Description:
-  // Parse the xml for the property.
-  virtual bool ReadXMLAttributes(vtkSIProxy* proxyhelper, vtkPVXMLElement* element);
+  /**
+   * Parse the xml for the property.
+   */
+  virtual bool ReadXMLAttributes(vtkSIProxy* proxyhelper, vtkPVXMLElement* element) VTK_OVERRIDE;
 
   vtkSetMacro(PortIndex, int);
   int PortIndex;
+
 private:
-  vtkSIInputProperty(const vtkSIInputProperty&); // Not implemented
-  void operator=(const vtkSIInputProperty&); // Not implemented
-//ETX
+  vtkSIInputProperty(const vtkSIInputProperty&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSIInputProperty&) VTK_DELETE_FUNCTION;
 };
 
 #endif

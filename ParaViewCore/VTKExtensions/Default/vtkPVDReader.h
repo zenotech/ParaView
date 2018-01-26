@@ -12,13 +12,16 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVDReader - ParaView-specific vtkXMLCollectionReader subclass
-// .SECTION Description
-// vtkPVDReader subclasses vtkXMLCollectionReader to add
-// ParaView-specific methods.
+/**
+ * @class   vtkPVDReader
+ * @brief   ParaView-specific vtkXMLCollectionReader subclass
+ *
+ * vtkPVDReader subclasses vtkXMLCollectionReader to add
+ * ParaView-specific methods.
+*/
 
-#ifndef __vtkPVDReader_h
-#define __vtkPVDReader_h
+#ifndef vtkPVDReader_h
+#define vtkPVDReader_h
 
 #include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkXMLCollectionReader.h"
@@ -27,41 +30,35 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVDReader : public vtkXMLCollectionRea
 {
 public:
   static vtkPVDReader* New();
-  vtkTypeMacro(vtkPVDReader,vtkXMLCollectionReader);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkPVDReader, vtkXMLCollectionReader);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Get/Set the required value for the timestep attribute.  The value
-  // should be referenced by its index.  Only data sets matching this
-  // value will be read.  An out-of-range index will remove the
-  // restriction.
-  void SetTimeStep(int index);
-  int GetTimeStep();
-
-  // Description:
-  // Get the range of index values valid for the TimestepAsIndex
-  // setting.
-  vtkGetVector2Macro(TimeStepRange, int);
+  //@{
+  /**
+   * Get/Set the required value for the timestep attribute.  The value
+   * should be referenced by its index.  Only data sets matching this
+   * value will be read.  An out-of-range index will remove the
+   * restriction.
+   */
+  void SetTimeStep(int index) VTK_OVERRIDE;
+  int GetTimeStep() VTK_OVERRIDE;
+  //@}
 
 protected:
   vtkPVDReader();
   ~vtkPVDReader();
 
-  void ReadXMLData();
+  void ReadXMLData() VTK_OVERRIDE;
 
-  virtual int RequestDataObject(vtkInformation* request, 
-                                vtkInformationVector** inputVector, 
-                                vtkInformationVector* outputVector);
+  virtual int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   // Set TimeStepRange
-  virtual void SetupOutputInformation(vtkInformation *outInfo);
-
-  // Save the range of valid timestep index values.
-  int TimeStepRange[2];
+  virtual void SetupOutputInformation(vtkInformation* outInfo) VTK_OVERRIDE;
 
 private:
-  vtkPVDReader(const vtkPVDReader&);  // Not implemented.
-  void operator=(const vtkPVDReader&);  // Not implemented.
+  vtkPVDReader(const vtkPVDReader&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVDReader&) VTK_DELETE_FUNCTION;
 };
 
 #endif

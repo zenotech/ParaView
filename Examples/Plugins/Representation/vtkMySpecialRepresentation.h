@@ -16,8 +16,8 @@
 // .SECTION Description
 //
 
-#ifndef __vtkMySpecialRepresentation_h
-#define __vtkMySpecialRepresentation_h
+#ifndef vtkMySpecialRepresentation_h
+#define vtkMySpecialRepresentation_h
 
 #include "vtkGeometryRepresentationWithFaces.h"
 
@@ -26,17 +26,15 @@ class VTK_EXPORT vtkMySpecialRepresentation : public vtkGeometryRepresentationWi
 public:
   static vtkMySpecialRepresentation* New();
   vtkTypeMacro(vtkMySpecialRepresentation, vtkGeometryRepresentationWithFaces);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-//BTX
 protected:
   vtkMySpecialRepresentation();
   ~vtkMySpecialRepresentation();
 
 private:
-  vtkMySpecialRepresentation(const vtkMySpecialRepresentation&); // Not implemented
-  void operator=(const vtkMySpecialRepresentation&); // Not implemented
-//ETX
+  vtkMySpecialRepresentation(const vtkMySpecialRepresentation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkMySpecialRepresentation&) VTK_DELETE_FUNCTION;
 };
 
 #endif

@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,33 +29,39 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqTimerLogReaction_h 
-#define __pqTimerLogReaction_h
+#ifndef pqTimerLogReaction_h
+#define pqTimerLogReaction_h
 
 #include "pqReaction.h"
 
-/// @ingroup Reactions
-/// Reaction for showing the timer log dialog.
+/**
+* @ingroup Reactions
+* Reaction for showing the timer log dialog.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqTimerLogReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
-public:
-  pqTimerLogReaction(QAction* parentObject): Superclass(parentObject) { }
 
-  /// Pops up (or raises) the timer log dialog.
+public:
+  pqTimerLogReaction(QAction* parentObject)
+    : Superclass(parentObject)
+  {
+  }
+
+  /**
+  * Pops up (or raises) the timer log dialog.
+  */
   static void showTimerLog();
 
 protected:
-  /// Called when the action is triggered.
-  virtual void onTriggered()
-    { pqTimerLogReaction::showTimerLog(); }
+  /**
+  * Called when the action is triggered.
+  */
+  virtual void onTriggered() { pqTimerLogReaction::showTimerLog(); }
 
 private:
   Q_DISABLE_COPY(pqTimerLogReaction)
-
 };
 
 #endif
-
-

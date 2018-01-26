@@ -12,27 +12,30 @@
   the U.S. Government retains certain rights in this software.
 
 =========================================================================*/
-// .NAME vtkAMRConnectivity - Identify fragments in the grid
-//
-// .SECTION Description
-//
-// .SEE vtkAMRConnectivity
+/**
+ * @class   vtkAMRConnectivity
+ * @brief   Identify fragments in the grid
+ *
+ *
+ *
+ * .SEE vtkAMRConnectivity
+*/
 
-#ifndef __vtkAMRConnectivity_h
-#define __vtkAMRConnectivity_h
+#ifndef vtkAMRConnectivity_h
+#define vtkAMRConnectivity_h
 
+#include "vtkMultiBlockDataSetAlgorithm.h"
 #include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
-#include "vtkMultiBlockDataSetAlgorithm.h" 
-#include "vtkSmartPointer.h" // needed for vtkSmartPointer.
-#include <string>  // STL required.
-#include <vector>  // STL required.
+#include "vtkSmartPointer.h"                 // needed for vtkSmartPointer.
+#include <string>                            // STL required.
+#include <vector>                            // STL required.
 
 class vtkNonOverlappingAMR;
 class vtkUniformGrid;
 class vtkIdTypeArray;
 class vtkIntArray;
 class vtkAMRDualGridHelper;
-class vtkAMRDualGridHelperBlock; 
+class vtkAMRDualGridHelperBlock;
 class vtkAMRConnectivityEquivalence;
 class vtkMPIController;
 class vtkUnsignedCharArray;
@@ -40,29 +43,41 @@ class vtkUnsignedCharArray;
 class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkAMRConnectivity : public vtkMultiBlockDataSetAlgorithm
 {
 public:
-  vtkTypeMacro(vtkAMRConnectivity,vtkMultiBlockDataSetAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
-  static vtkAMRConnectivity *New();
+  vtkTypeMacro(vtkAMRConnectivity, vtkMultiBlockDataSetAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
+  static vtkAMRConnectivity* New();
 
-  // Description:
-  // Add to list of volume arrays to find connected fragments
+  //@{
+  /**
+   * Add to list of volume arrays to find connected fragments
+   */
   void AddInputVolumeArrayToProcess(const char* name);
   void ClearInputVolumeArrayToProcess();
+  //@}
 
-  // Description:
-  // Get / Set volume fraction value.
+  //@{
+  /**
+   * Get / Set volume fraction value.
+   */
   vtkGetMacro(VolumeFractionSurfaceValue, double);
   vtkSetMacro(VolumeFractionSurfaceValue, double);
+  //@}
 
-  // Description:
-  // Get / Set where to resolve the regions between blocks
+  //@{
+  /**
+   * Get / Set where to resolve the regions between blocks
+   */
   vtkGetMacro(ResolveBlocks, bool);
   vtkSetMacro(ResolveBlocks, bool);
+  //@}
 
-  // Description:
-  // Get / Set where to resolve the regions between blocks
+  //@{
+  /**
+   * Get / Set where to resolve the regions between blocks
+   */
   vtkGetMacro(PropagateGhosts, bool);
   vtkSetMacro(PropagateGhosts, bool);
+  //@}
 
 protected:
   vtkAMRConnectivity();
@@ -71,52 +86,42 @@ protected:
   double VolumeFractionSurfaceValue;
   vtkAMRDualGridHelper* Helper;
   vtkAMRConnectivityEquivalence* Equivalence;
-  
+
   bool ResolveBlocks;
   bool PropagateGhosts;
 
   std::string RegionName;
   vtkIdType NextRegionId;
 
-  // BTX
   std::vector<std::string> VolumeArrays;
 
-  std::vector<std::vector <vtkSmartPointer<vtkIdTypeArray> > > BoundaryArrays;
-  std::vector<std::vector <int> > ReceiveList;
+  std::vector<std::vector<vtkSmartPointer<vtkIdTypeArray> > > BoundaryArrays;
+  std::vector<std::vector<int> > ReceiveList;
 
   std::vector<bool> ValidNeighbor;
-  std::vector<std::vector <std::vector <int> > > NeighborList;
-  std::vector< vtkSmartPointer<vtkIntArray> > EquivPairs;
+  std::vector<std::vector<std::vector<int> > > NeighborList;
+  std::vector<vtkSmartPointer<vtkIntArray> > EquivPairs;
 
-  virtual int FillInputPortInformation(int port, vtkInformation *info);
-  virtual int FillOutputPortInformation(int port, vtkInformation *info);
+  virtual int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  virtual int FillOutputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
-  virtual int RequestData(vtkInformation*, vtkInformationVector**,
-                          vtkInformationVector*);
+  virtual int RequestData(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
-  int DoRequestData (vtkNonOverlappingAMR*, const char*);
-  int WavePropagation (vtkIdType cellIdStart, 
-                       vtkUniformGrid* grid, 
-                       vtkIdTypeArray* regionId,
-                       vtkDataArray* volArray,
-                       vtkUnsignedCharArray* ghostArray);
+  int DoRequestData(vtkNonOverlappingAMR*, const char*);
+  int WavePropagation(vtkIdType cellIdStart, vtkUniformGrid* grid, vtkIdTypeArray* regionId,
+    vtkDataArray* volArray, vtkUnsignedCharArray* ghostArray);
 
-  vtkAMRDualGridHelperBlock* GetBlockNeighbor (
-                       vtkAMRDualGridHelperBlock* block, 
-                       int dir);
-  void ProcessBoundaryAtBlock (vtkNonOverlappingAMR* volume,
-                               vtkAMRDualGridHelperBlock* block, 
-                               vtkAMRDualGridHelperBlock* neighbor, 
-                               int dir);
-  int ExchangeBoundaries (vtkMPIController* controller);
-  int ExchangeEquivPairs (vtkMPIController* controller);
-  void ProcessBoundaryAtNeighbor (vtkNonOverlappingAMR* volume,
-                                  vtkIdTypeArray *array);
+  vtkAMRDualGridHelperBlock* GetBlockNeighbor(vtkAMRDualGridHelperBlock* block, int dir);
+  void ProcessBoundaryAtBlock(vtkNonOverlappingAMR* volume, vtkAMRDualGridHelperBlock* block,
+    vtkAMRDualGridHelperBlock* neighbor, int dir);
+  int ExchangeBoundaries(vtkMPIController* controller);
+  int ExchangeEquivPairs(vtkMPIController* controller);
+  void ProcessBoundaryAtNeighbor(vtkNonOverlappingAMR* volume, vtkIdTypeArray* array);
 
 private:
-  vtkAMRConnectivity(const vtkAMRConnectivity&);  // Not implemented.
-  void operator=(const vtkAMRConnectivity&);  // Not implemented.
-  // ETX
+  vtkAMRConnectivity(const vtkAMRConnectivity&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkAMRConnectivity&) VTK_DELETE_FUNCTION;
 };
 
-#endif /* __vtkAMRConnectivity_h */
+#endif /* vtkAMRConnectivity_h */

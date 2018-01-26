@@ -14,10 +14,43 @@
 =========================================================================*/
 #include "vtkMaterialInterfaceProcessRing.h"
 #include <iostream>
-using std::vector;
 using std::ostream;
 using std::cerr;
 using std::endl;
+//
+class vtkMaterialInterfaceProcessRing::BufferContainer : public std::vector<vtkIdType>
+{
+};
+//
+vtkMaterialInterfaceProcessRing::vtkMaterialInterfaceProcessRing()
+{
+  this->NextElement = 0;
+  this->BufferSize = 0;
+  this->Buffer = new BufferContainer;
+}
+//
+vtkMaterialInterfaceProcessRing::~vtkMaterialInterfaceProcessRing()
+{
+  delete this->Buffer;
+}
+//
+void vtkMaterialInterfaceProcessRing::Clear()
+{
+  this->NextElement = 0;
+  this->BufferSize = 0;
+  this->Buffer->clear();
+}
+//
+void vtkMaterialInterfaceProcessRing::Initialize(int nProcs)
+{
+  this->NextElement = 0;
+  this->BufferSize = nProcs;
+  this->Buffer->resize(nProcs);
+  for (int procId = 0; procId < nProcs; ++procId)
+  {
+    (*this->Buffer)[procId] = procId;
+  }
+}
 //
 // void vtkMaterialInterfaceProcessRing::Initialize(
 //     vtkMaterialInterfaceProcessPriorityQueue &Q,
@@ -25,7 +58,7 @@ using std::endl;
 // {
 //   this->NextElement=0;
 //   this->BufferSize=0;
-//   this->Buffer.clear();
+//   this->Buffer->clear();
 //
 //   // check that upper bound does not exclude
 //   // all processes.
@@ -44,7 +77,7 @@ using std::endl;
 //     }
 //
 //   // Build ring of process ids.
-//   this->Buffer.push_back(pl.GetId());
+//   this->Buffer->push_back(pl.GetId());
 //   ++this->BufferSize;
 //   while (!Q.Empty())
 //     {
@@ -54,66 +87,73 @@ using std::endl;
 //       {
 //       break;
 //       }
-//     this->Buffer.push_back(pl.GetId());
+//     this->Buffer->push_back(pl.GetId());
 //     ++this->BufferSize;
 //     }
 // }
 //
 void vtkMaterialInterfaceProcessRing::Initialize(
-    vector<vtkMaterialInterfaceProcessLoading> &Q,
-    vtkIdType upperLoadingBound)
+  std::vector<vtkMaterialInterfaceProcessLoading>& Q, vtkIdType upperLoadingBound)
 {
-  this->NextElement=0;
-  this->BufferSize=0;
-  this->Buffer.clear();
+  this->NextElement = 0;
+  this->BufferSize = 0;
+  this->Buffer->clear();
 
   size_t nItems = Q.size();
-  assert(nItems>0);
+  assert(nItems > 0);
 
   // check that upper bound does not exclude
   // all processes.
-  vtkMaterialInterfaceProcessLoading &pl=Q[0];
-  vtkIdType minimumLoading=pl.GetLoadFactor();
+  vtkMaterialInterfaceProcessLoading& pl = Q[0];
+  vtkIdType minimumLoading = pl.GetLoadFactor();
 
   // Make sure at least one process can be used.
-  if (upperLoadingBound!=-1
-      && minimumLoading>upperLoadingBound)
-    {
-    upperLoadingBound=minimumLoading;
+  if (upperLoadingBound != -1 && minimumLoading > upperLoadingBound)
+  {
+    upperLoadingBound = minimumLoading;
     cerr << "vtkMaterialInterfaceProcessRing "
-          << "[" << __LINE__ << "] "
-          << "Error: Upper loading bound excludes all processes."
-          << endl;
-    }
+         << "[" << __LINE__ << "] "
+         << "Error: Upper loading bound excludes all processes." << endl;
+  }
 
   // Build ring of process ids.
-  this->Buffer.push_back(pl.GetId());
+  this->Buffer->push_back(pl.GetId());
   ++this->BufferSize;
-  for (size_t itemId=1; itemId<nItems; ++itemId)
+  for (size_t itemId = 1; itemId < nItems; ++itemId)
+  {
+    pl = Q[itemId];
+    if (upperLoadingBound != -1 && pl.GetLoadFactor() > upperLoadingBound)
     {
-    pl=Q[itemId];
-    if (upperLoadingBound!=-1
-        && pl.GetLoadFactor()>upperLoadingBound)
-      {
       break;
-      }
-    this->Buffer.push_back(pl.GetId());
-    ++this->BufferSize;
     }
+    this->Buffer->push_back(pl.GetId());
+    ++this->BufferSize;
+  }
+}
+//
+vtkIdType vtkMaterialInterfaceProcessRing::GetNextId()
+{
+  vtkIdType id = (*this->Buffer)[this->NextElement];
+  ++this->NextElement;
+  if (this->NextElement == this->BufferSize)
+  {
+    this->NextElement = 0;
+  }
+  return id;
 }
 //
 void vtkMaterialInterfaceProcessRing::Print()
 {
-  size_t n = this->Buffer.size();
-  if (n==0)
-    {
+  size_t n = this->Buffer->size();
+  if (n == 0)
+  {
     cerr << "{}";
     return;
-    }
-  cerr << "{" << this->Buffer[0];
-  for (size_t i=1; i < n; ++i)
-    {
-    cerr << ", " << this->Buffer[i];
-    }
+  }
+  cerr << "{" << (*this->Buffer)[0];
+  for (size_t i = 1; i < n; ++i)
+  {
+    cerr << ", " << (*this->Buffer)[i];
+  }
   cerr << "}";
 }

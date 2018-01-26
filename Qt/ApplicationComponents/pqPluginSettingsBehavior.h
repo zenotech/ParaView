@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,20 +29,23 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqPluginSettingsBehavior_h
-#define __pqPluginSettingsBehavior_h
+#ifndef pqPluginSettingsBehavior_h
+#define pqPluginSettingsBehavior_h
 
-#include <QObject>
 #include "pqApplicationComponentsModule.h"
+#include <QObject>
 
-/// @ingroup Behaviors
-/// pqPluginSettingsBehavior adds support for adding applicatin settings from plugins
+/**
+* @ingroup Behaviors
+* pqPluginSettingsBehavior adds support for adding applicatin settings from plugins
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqPluginSettingsBehavior : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
-  pqPluginSettingsBehavior(QObject* parent=0);
+  pqPluginSettingsBehavior(QObject* parent = 0);
 
 public slots:
   void updateSettings();

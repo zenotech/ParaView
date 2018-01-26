@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
 #include "pqCoreUtilities.h"
+#include "pqProgressManager.h"
 #include "pqSaveStateReaction.h"
 #include "pqServerManagerModel.h"
 #include "pqSettings.h"
@@ -42,8 +43,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QFile>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QPushButton>
 
 #define CrashRecoveryStateFile ".PVCrashRecoveryState.pvsm"
+#include <stdlib.h> /* EXIT_FAILURE */
+#if !defined(_WIN32)
+#include <unistd.h> /* _exit */
+#endif
 
 //-----------------------------------------------------------------------------
 pqCrashRecoveryBehavior::pqCrashRecoveryBehavior(QObject* parentObject)
@@ -51,50 +57,41 @@ pqCrashRecoveryBehavior::pqCrashRecoveryBehavior(QObject* parentObject)
 {
   // Look for a crash recovery state file, nag user and load if desired.
   pqSettings* settings = pqApplicationCore::instance()->settings();
-  bool recoveryEnabled = settings->value(
-    "GeneralSettings.CrashRecovery", false).toBool();
+  bool recoveryEnabled = settings->value("GeneralSettings.CrashRecovery", false).toBool();
   if (recoveryEnabled && QFile::exists(CrashRecoveryStateFile))
-    {
-    int recover = QMessageBox::question(
-      pqCoreUtilities::mainWidget(),
-      "ParaView",
+  {
+    int recover = QMessageBox::question(pqCoreUtilities::mainWidget(), "ParaView",
       "A crash recovery state file has been found.\n"
       "Would you like to save it?",
-      QMessageBox::Yes | QMessageBox::No,
-      QMessageBox::No);
-    if (recover==QMessageBox::Yes)
-      {
+      QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (recover == QMessageBox::Yes)
+    {
       QString fileExt = tr("ParaView state file (*.pvsm);;All files (*)");
-      QString path = QFileDialog::getSaveFileName(pqCoreUtilities::mainWidget(),
-                                                  "Save crash state file",
-                                                  QDir::currentPath(),
-                                                  fileExt);
-      if(!path.isNull())
+      QString path = QFileDialog::getSaveFileName(
+        pqCoreUtilities::mainWidget(), "Save crash state file", QDir::currentPath(), fileExt);
+      if (!path.isNull())
+      {
+        if (!path.endsWith(".pvsm"))
         {
-        if(!path.endsWith(".pvsm"))
-          {
           path += ".pvsm";
-          }
-        QFile::copy(CrashRecoveryStateFile, path);
         }
+        QFile::copy(CrashRecoveryStateFile, path);
       }
     }
+  }
   if (QFile::exists(CrashRecoveryStateFile))
-    {
+  {
     QFile::remove(CrashRecoveryStateFile);
-    }
+  }
   QObject::connect(pqApplicationCore::instance()->getServerManagerModel(),
-    SIGNAL(dataUpdated(pqPipelineSource*)),
-    this, SLOT(delayedSaveRecoveryState()));
+    SIGNAL(dataUpdated(pqPipelineSource*)), this, SLOT(delayedSaveRecoveryState()));
 
   QObject::connect(pqApplicationCore::instance()->getServerManagerModel(),
-    SIGNAL(serverAdded(pqServer*)),
-    this, SLOT(onServerAdded(pqServer*)));
+    SIGNAL(serverAdded(pqServer*)), this, SLOT(onServerAdded(pqServer*)));
 
   this->Timer.setInterval(1000);
   this->Timer.setSingleShot(true);
-  QObject::connect(&this->Timer, SIGNAL(timeout()),this,
-    SLOT(saveRecoveryState()));
+  QObject::connect(&this->Timer, SIGNAL(timeout()), this, SLOT(saveRecoveryState()));
 }
 
 //-----------------------------------------------------------------------------
@@ -103,9 +100,9 @@ pqCrashRecoveryBehavior::~pqCrashRecoveryBehavior()
   // Paraview is closing all is well, remove the crash
   // recovery file.
   if (QFile::exists(CrashRecoveryStateFile))
-    {
+  {
     QFile::remove(CrashRecoveryStateFile);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -118,20 +115,17 @@ void pqCrashRecoveryBehavior::delayedSaveRecoveryState()
 void pqCrashRecoveryBehavior::saveRecoveryState()
 {
   pqSettings* settings = pqApplicationCore::instance()->settings();
-  bool recoveryEnabled = settings->value(
-    "GeneralSettings.CrashRecovery", false).toBool();
+  bool recoveryEnabled = settings->value("GeneralSettings.CrashRecovery", false).toBool();
   if (recoveryEnabled)
-    {
+  {
     pqApplicationCore::instance()->saveState(CrashRecoveryStateFile);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void pqCrashRecoveryBehavior::onServerAdded(pqServer* server)
 {
-  QObject::connect(server,
-                   SIGNAL(serverSideDisconnected()),
-                   this, SLOT(onServerDisconnect()));
+  QObject::connect(server, SIGNAL(serverSideDisconnected()), this, SLOT(onServerDisconnect()));
 }
 
 //-----------------------------------------------------------------------------
@@ -140,23 +134,39 @@ void pqCrashRecoveryBehavior::onServerDisconnect()
   // Prevent re-execution
   QObject::disconnect(this);
   static bool inQuit = false;
-  if(inQuit)
-    {
+  if (inQuit)
+  {
     return;
-    }
+  }
   inQuit = true;
 
-  // Try to handle recovery
-  int recover = QMessageBox::question(
-        pqCoreUtilities::mainWidget(),
-        "ParaView",
-        "The server side has disconnected.\n"
-        "Would you like to save a ParaView state file?",
-    QMessageBox::Yes | QMessageBox::No,
-    QMessageBox::No);
-  if (recover==QMessageBox::Yes)
+  if (getenv("DASHBOARD_TEST_FROM_CTEST") == NULL)
+  {
+    // enable user interaction (BUG #17155).
+    pqProgressManager* pgm = pqApplicationCore::instance()->getProgressManager();
+    bool prev = pgm->unblockEvents(true);
+
+    // Try to handle recovery
+    QMessageBox mbox(QMessageBox::Critical, tr("Server disconnected!"),
+      tr("The server side has disconnected. "
+         "The application will now quit since it may be in an unrecoverable state.\n\n"
+         "Would you like to save a ParaView state file?"),
+      QMessageBox::NoButton, pqCoreUtilities::mainWidget());
+    mbox.addButton(QMessageBox::Yes)->setText("Save state and exit");
+    mbox.addButton(QMessageBox::No)->setText("Exit without saving state");
+    mbox.setDefaultButton(QMessageBox::Yes);
+    if (mbox.exec() == QMessageBox::Yes)
     {
-    pqSaveStateReaction::saveState();
+      pqSaveStateReaction::saveState();
     }
-  QApplication::instance()->quit();
+    // restore.
+    pgm->unblockEvents(prev);
+  }
+
+  // It's tempting to think that we shouldn't exit here, but simply disconnect
+  // from the server. However, more often then not, the server may disconnect in
+  // middle of some communication in which case there may be other asserts or
+  // checks that would fail causing the application to end up in a weird state.
+  // Hence, we simply _exit().
+  _exit(-1);
 }

@@ -21,6 +21,9 @@ set(_vtk_mpi_modules
 
   vtkIOMPIParallel
   # vtkMPIMultiBlockPLOT3DReader.
+
+  # Needed for vtkPUnstructuredGridGhostCellsGenerator
+  vtkFiltersParallelGeometry
   )
 
 # Add CosmoTools VTK extensions if enabled.
@@ -32,10 +35,11 @@ if (UNIX AND PARAVIEW_ENABLE_COSMOTOOLS)
     )
 endif()
 
-if( PARAVIEW_ENABLE_CGNS )
-  list(APPEND _vtk_mpi_modules  vtkPVVTKExtensionsCGNSReader)
+if (NOT WIN32)
+  list(APPEND _vtk_mpi_modules
+    vtkFiltersParallelDIY2
+    )
 endif()
-
 
 set(_vtk_modules
   # VTK modules which ParaView has a explicity compile
@@ -345,11 +349,33 @@ set(_vtk_modules
 
   vtkPVAnimation
   # Needed for animation support.
+
+  vtkPVVTKExtensionsPoints
+  # Needed for SPH filters.
+
+  vtkIOTecplotTable
+  # needed for vtkTecplotReader
+
+  vtkIOTRUCHAS
+  # needed for GE/LANL vtkTRUCHASReader
+
+  vtkPVVTKExtensionsCGNSReader
+  # needed for CGNS reader support.
+
+  vtkPVVTKExtensionsH5PartReader
+  # needed for H5PartReader support
   )
 
 if("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL")
   list(APPEND _vtk_modules vtkRenderingLIC vtkIOExport)
   list(APPEND _vtk_mpi_modules vtkRenderingParallelLIC)
+else()
+  list(APPEND _vtk_modules vtkRenderingLICOpenGL2)
+  list(APPEND _vtk_modules vtkDomainsChemistryOpenGL2)
+  list(APPEND _vtk_mpi_modules vtkRenderingParallelLIC)
+  if(PARAVIEW_ENABLE_PYTHON)
+    list (APPEND _vtk_modules vtkPVCinemaReader)
+  endif()
 endif()
 
 if (PARAVIEW_USE_MPI)
@@ -373,6 +399,7 @@ if (PARAVIEW_ENABLE_PYTHON)
   if (PARAVIEW_USE_MPI)
     list(APPEND _vtk_modules vtkParallelMPI4Py)
   endif()
+
 endif()
 
 # Any module can import this file and add DEPENDS or COMPILE_DEPENDS on this

@@ -12,13 +12,16 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMSessionObject - superclass for any server manager classes
-//                            that are related to a session
-// .SECTION Description
-// vtkSMSessionObject provides methods to set and get the relative session
+/**
+ * @class   vtkSMSessionObject
+ * @brief   superclass for any server manager classes
+ *                            that are related to a session
+ *
+ * vtkSMSessionObject provides methods to set and get the relative session
+*/
 
-#ifndef __vtkSMSessionObject_h
-#define __vtkSMSessionObject_h
+#ifndef vtkSMSessionObject_h
+#define vtkSMSessionObject_h
 
 #include "vtkPVServerManagerCoreModule.h" //needed for exports
 #include "vtkSMObject.h"
@@ -32,16 +35,20 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMSessionObject : public vtkSMObject
 public:
   static vtkSMSessionObject* New();
   vtkTypeMacro(vtkSMSessionObject, vtkSMObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Get/Set the session on wihch this object exists.
-  // Note that session is not reference counted.
+  //@{
+  /**
+   * Get/Set the session on wihch this object exists.
+   * Note that session is not reference counted.
+   */
   virtual void SetSession(vtkSMSession*);
   virtual vtkSMSession* GetSession();
+  //@}
 
-  // Description:
-  // Return the corresponding ProxyManager if any.
+  /**
+   * Return the corresponding ProxyManager if any.
+   */
   virtual vtkSMSessionProxyManager* GetSessionProxyManager();
 
 protected:
@@ -52,8 +59,8 @@ protected:
   vtkWeakPointer<vtkSMSession> Session;
 
 private:
-  vtkSMSessionObject(const vtkSMSessionObject&); // Not implemented
-  void operator=(const vtkSMSessionObject&); // Not implemented
+  vtkSMSessionObject(const vtkSMSessionObject&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMSessionObject&) VTK_DELETE_FUNCTION;
 };
 
 #endif

@@ -12,13 +12,16 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVEnsembleDataReaderInformation - Information obeject to
-// collect file information from vtkEnsembleDataReader.
-// .SECTION Description
-// Gather information about data files from vtkEnsembleDataReader.
+/**
+ * @class   vtkPVEnsembleDataReaderInformation
+ * @brief   Information obeject to
+ * collect file information from vtkEnsembleDataReader.
+ *
+ * Gather information about data files from vtkEnsembleDataReader.
+*/
 
-#ifndef __vtkPVEnsembleDataReaderInformation_h
-#define __vtkPVEnsembleDataReaderInformation_h
+#ifndef vtkPVEnsembleDataReaderInformation_h
+#define vtkPVEnsembleDataReaderInformation_h
 
 #include "vtkPVClientServerCoreDefaultModule.h" //needed for exports
 #include "vtkPVInformation.h"
@@ -29,25 +32,29 @@ class VTKPVCLIENTSERVERCOREDEFAULT_EXPORT vtkPVEnsembleDataReaderInformation
 public:
   static vtkPVEnsembleDataReaderInformation* New();
   vtkTypeMacro(vtkPVEnsembleDataReaderInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Transfer information about a single object into this object.
-  virtual void CopyFromObject(vtkObject*);
+  /**
+   * Transfer information about a single object into this object.
+   */
+  virtual void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
-  //BTX
-  // Description:
-  // Manage a serialized version of the information.
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
-  //ETX
+  //@{
+  /**
+   * Manage a serialized version of the information.
+   */
+  virtual void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  virtual void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
+  //@}
 
-  // Description:
-  // Get number of files contained in the ensemble.
+  /**
+   * Get number of files contained in the ensemble.
+   */
   virtual unsigned int GetFileCount();
 
-  // Description:
-  // Get the file path for the input row index.
+  /**
+   * Get the file path for the input row index.
+   */
   virtual vtkStdString GetFilePath(const unsigned int);
 
 protected:
@@ -55,11 +62,11 @@ protected:
   ~vtkPVEnsembleDataReaderInformation();
 
 private:
-  vtkPVEnsembleDataReaderInformation(const vtkPVEnsembleDataReaderInformation&); // Not implemented.
-  void operator=(const vtkPVEnsembleDataReaderInformation&); // Not implemented.
+  vtkPVEnsembleDataReaderInformation(const vtkPVEnsembleDataReaderInformation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVEnsembleDataReaderInformation&) VTK_DELETE_FUNCTION;
 
   class vtkInternal;
-  vtkInternal *Internal;
+  vtkInternal* Internal;
 };
 
 #endif

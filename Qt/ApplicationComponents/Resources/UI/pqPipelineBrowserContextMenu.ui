@@ -36,6 +36,18 @@
     <string>Delete</string>
    </property>
   </action>
+  <action name="actionPBHideAll">
+   <property name="icon">
+    <iconset resource="../../../Widgets/Resources/QtWidgets.qrc">
+     <normaloff>:/pqWidgets/Icons/pqEyeball16.png</normaloff>:/pqWidgets/Icons/pqEyeballd16.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Hide All</string>
+   </property>
+   <property name="statusTip">
+    <string>Hide all source outputs in the pipeline</string>
+   </property>
+  </action>
   <action name="actionPBCopy">
    <property name="icon">
     <iconset resource="../../../Components/Resources/pqComponents.qrc">
@@ -77,6 +89,20 @@
     <string>Disregard this source/filter's time from animations</string>
    </property>
   </action>
+  <action name="actionPBLinkSelection">
+   <property name="text">
+    <string>Link with selection</string>
+   </property>
+   <property name="iconText">
+    <string>Link with selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Link this source and current selected source as a selection link</string>
+   </property>
+   <property name="statusTip">
+    <string>Link this source and current selected source as a selection link</string>
+   </property>
+  </action>
   <action name="actionPBOpen">
    <property name="icon">
     <iconset resource="../../../Components/Resources/pqComponents.qrc">
@@ -100,13 +126,27 @@
     <string>&amp;Create Custom Filter...</string>
    </property>
   </action>
+  <action name="actionPBReloadFiles">
+   <property name="text">
+     <string>Reload Files</string>
+   </property>
+   <property name="iconText">
+    <string>Reload Files</string>
+   </property>
+   <property name="toolTip">
+    <string>Reload data files in case they were changed externally.</string>
+   </property>
+  </action>
   <addaction name="actionPBOpen"/>
+  <addaction name="actionPBHideAll"/>
   <addaction name="actionPBCopy"/>
   <addaction name="actionPBPaste"/>
-  <addaction name="actionPBCreateCustomFilter"/>
   <addaction name="actionPBChangeInput"/>
+  <addaction name="actionPBReloadFiles"/>
   <addaction name="actionPBIgnoreTime"/>
   <addaction name="actionPBDelete"/>
+  <addaction name="actionPBCreateCustomFilter"/>
+  <addaction name="actionPBLinkSelection"/>
  </widget>
  <resources>
   <include location="../../../Components/Resources/pqComponents.qrc"/>

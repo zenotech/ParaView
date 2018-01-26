@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,33 +29,41 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqApplicationSettingsReaction_h 
-#define __pqApplicationSettingsReaction_h
+#ifndef pqApplicationSettingsReaction_h
+#define pqApplicationSettingsReaction_h
 
 #include "pqReaction.h"
 #include <QPointer>
 
 class pqSettingsDialog;
 
-/// @ingroup Reactions
-/// pqApplicationSettingsReaction is a reaction to popup the application
-/// settings dialog. It creates pqSettingsDialog when required.
+/**
+* @ingroup Reactions
+* pqApplicationSettingsReaction is a reaction to popup the application
+* settings dialog. It creates pqSettingsDialog when required.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqApplicationSettingsReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
+
 public:
-  /// Constructor. Parent cannot be NULL.
+  /**
+  * Constructor. Parent cannot be NULL.
+  */
   pqApplicationSettingsReaction(QAction* parent);
   virtual ~pqApplicationSettingsReaction();
 
-  /// Show the application settings dialog.
-  static void showApplicationSettingsDialog(const QString& tabName="");
+  /**
+  * Show the application settings dialog.
+  */
+  static void showApplicationSettingsDialog(const QString& tabName = "");
 
 protected:
-  /// Called when the action is triggered.
-  virtual void onTriggered()
-    { pqApplicationSettingsReaction::showApplicationSettingsDialog(); }
+  /**
+  * Called when the action is triggered.
+  */
+  virtual void onTriggered() { pqApplicationSettingsReaction::showApplicationSettingsDialog(); }
 
 private:
   Q_DISABLE_COPY(pqApplicationSettingsReaction)
@@ -64,5 +72,3 @@ private:
 };
 
 #endif
-
-

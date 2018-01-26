@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -33,10 +33,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _pqPythonMacroSupervisor_h
 
 #include "pqPythonModule.h"
-#include <QObject>
-#include <QMap>
-#include <QPointer>
 #include <QList>
+#include <QMap>
+#include <QObject>
+#include <QPointer>
 #include <QString>
 
 class QAction;
@@ -45,7 +45,7 @@ class PQPYTHON_EXPORT pqPythonMacroSupervisor : public QObject
 {
   Q_OBJECT
 public:
-  pqPythonMacroSupervisor(QObject* p=0);
+  pqPythonMacroSupervisor(QObject* p = 0);
   ~pqPythonMacroSupervisor();
 
   // Description:
@@ -133,7 +133,6 @@ protected slots:
   void onEditMacroTriggered();
 
 protected:
-
   // Description:
   // Add a widget to be given macro actions.  QActions representing script macros
   // will be added to the widget.  This could be a QToolBar, QMenu, or other type
@@ -149,5 +148,4 @@ private:
   pqInternal* Internal;
 };
 
-#endif //ifndef _pqPythonMacroSupervisor_h
-
+#endif // ifndef _pqPythonMacroSupervisor_h

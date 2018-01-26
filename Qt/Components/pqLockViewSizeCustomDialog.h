@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -29,41 +29,50 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqLockViewSizeCustomDialog_h
-#define __pqLockViewSizeCustomDialog_h
+#ifndef pqLockViewSizeCustomDialog_h
+#define pqLockViewSizeCustomDialog_h
 
-#include <QDialog>
 #include "pqComponentsModule.h"
+#include <QDialog>
 
-/// Dialog used to ask the user what resolution to lock the views to.
+/**
+* Dialog used to ask the user what resolution to lock the views to.
+*/
 class PQCOMPONENTS_EXPORT pqLockViewSizeCustomDialog : public QDialog
 {
   Q_OBJECT;
   typedef QDialog Superclass;
 
 public:
-  pqLockViewSizeCustomDialog(QWidget *parent, Qt::WindowFlags f=0);
+  pqLockViewSizeCustomDialog(QWidget* parent, Qt::WindowFlags f = 0);
   virtual ~pqLockViewSizeCustomDialog();
 
-  /// The custom resolution currently entered by the user.
+  /**
+  * The custom resolution currently entered by the user.
+  */
   QSize customResolution() const;
 
 public slots:
-  /// Sets the view size to the displayed resolution.
+  /**
+  * Sets the view size to the displayed resolution.
+  */
   virtual void apply();
 
-  /// Applies the resolution and accepts the dialog.
+  /**
+  * Applies the resolution and accepts the dialog.
+  */
   virtual void accept();
 
-  /// Unlocks the size on the view.
+  /**
+  * Unlocks the size on the view.
+  */
   virtual void unlock();
 
 private:
-  pqLockViewSizeCustomDialog(const pqLockViewSizeCustomDialog &); // Not implemented
-  void operator=(const pqLockViewSizeCustomDialog &);   // Not implemented
+  Q_DISABLE_COPY(pqLockViewSizeCustomDialog)
 
   class pqUI;
-  pqUI *ui;
+  pqUI* ui;
 };
 
-#endif //__pqLockViewSizeCustomDialog_h
+#endif // pqLockViewSizeCustomDialog_h

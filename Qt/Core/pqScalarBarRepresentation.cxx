@@ -38,21 +38,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSMProxy.h"
 
 //-----------------------------------------------------------------------------
-pqScalarBarRepresentation::pqScalarBarRepresentation(const QString& group,
-                                                     const QString& name,
-                                                     vtkSMProxy* scalarbar,
-                                                     pqServer* server,
-                                                     QObject* _parent)
+pqScalarBarRepresentation::pqScalarBarRepresentation(const QString& group, const QString& name,
+  vtkSMProxy* scalarbar, pqServer* server, QObject* _parent)
   : Superclass(group, name, scalarbar, server, _parent)
 {
   vtkEventQtSlotConnect* connector = this->getConnector();
 
   // Listen to start/end interactions to update the application undo-redo stack
   // correctly.
-  connector->Connect(scalarbar, vtkCommand::StartInteractionEvent,
-    this, SLOT(startInteraction()));
-  connector->Connect(scalarbar, vtkCommand::EndInteractionEvent,
-    this, SLOT(endInteraction()));
+  connector->Connect(scalarbar, vtkCommand::StartInteractionEvent, this, SLOT(startInteraction()));
+  connector->Connect(scalarbar, vtkCommand::EndInteractionEvent, this, SLOT(endInteraction()));
 }
 
 //-----------------------------------------------------------------------------
@@ -61,14 +56,13 @@ pqScalarBarRepresentation::~pqScalarBarRepresentation()
 }
 
 //-----------------------------------------------------------------------------
-#define PUSH_PROPERTY(name) \
-{\
-  vtkSMPropertyModificationUndoElement* elem =\
-  vtkSMPropertyModificationUndoElement::New();\
-  elem->ModifiedProperty(proxy, name);\
-  ADD_UNDO_ELEM(elem);\
-  elem->Delete();\
-}
+#define PUSH_PROPERTY(name)                                                                        \
+  {                                                                                                \
+    vtkSMPropertyModificationUndoElement* elem = vtkSMPropertyModificationUndoElement::New();      \
+    elem->ModifiedProperty(proxy, name);                                                           \
+    ADD_UNDO_ELEM(elem);                                                                           \
+    elem->Delete();                                                                                \
+  }
 
 //-----------------------------------------------------------------------------
 void pqScalarBarRepresentation::startInteraction()
@@ -77,7 +71,7 @@ void pqScalarBarRepresentation::startInteraction()
 
   vtkSMProxy* proxy = this->getProxy();
   PUSH_PROPERTY("Position");
-  PUSH_PROPERTY("Position2");
+  PUSH_PROPERTY("ScalarBarLength");
   PUSH_PROPERTY("Orientation");
 }
 
@@ -85,9 +79,8 @@ void pqScalarBarRepresentation::startInteraction()
 void pqScalarBarRepresentation::endInteraction()
 {
   vtkSMProxy* proxy = this->getProxy();
-  PUSH_PROPERTY("Position");
-  PUSH_PROPERTY("Position2");
   PUSH_PROPERTY("Orientation");
+  PUSH_PROPERTY("ScalarBarLength");
+  PUSH_PROPERTY("Position");
   END_UNDO_SET();
 }
-

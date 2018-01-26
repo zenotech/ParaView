@@ -29,46 +29,57 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqTextureComboBox_h
-#define __pqTextureComboBox_h
+#ifndef pqTextureComboBox_h
+#define pqTextureComboBox_h
 
-#include <QComboBox>
 #include "pqComponentsModule.h"
+#include <QComboBox>
 
 class pqDataRepresentation;
 class pqRenderView;
 
 class vtkSMProxy;
 
-/// This is a ComboBox that is used on the display tab to select available
-/// textures. It checks whether current representation has texture coordinates,
-/// if not, the widget will be disabled automatically.
-/// It also provides the user with an option to load new images as textures.
+/**
+* This is a ComboBox that is used on the display tab to select available
+* textures. It checks whether current representation has texture coordinates,
+* if not, the widget will be disabled automatically.
+* It also provides the user with an option to load new images as textures.
+*/
 class PQCOMPONENTS_EXPORT pqTextureComboBox : public QComboBox
 {
   Q_OBJECT
   typedef QComboBox Superclass;
+
 public:
-  pqTextureComboBox(QWidget* parent=0);
+  pqTextureComboBox(QWidget* parent = 0);
   virtual ~pqTextureComboBox();
 
 public slots:
-  /// Set the representation. We need the representation, since we need to
-  /// update the enable state of the widget depending on whether texture
-  /// coordinates are available.
+  /**
+  * Set the representation. We need the representation, since we need to
+  * update the enable state of the widget depending on whether texture
+  * coordinates are available.
+  */
   void setRepresentation(pqDataRepresentation* repr);
 
   void setRenderView(pqRenderView* rview);
 
-  /// Forces a reload of the widget. Generally one does not need to call this
-  /// method explicity.
+  /**
+  * Forces a reload of the widget. Generally one does not need to call this
+  * method explicity.
+  */
   void reload();
 
 protected slots:
-  /// Update the enable state of the widget.
+  /**
+  * Update the enable state of the widget.
+  */
   virtual void updateEnableState();
 
-  /// Called when user activates an item.
+  /**
+  * Called when user activates an item.
+  */
   void onActivated(int);
 
   void updateFromProperty();
@@ -76,26 +87,27 @@ protected slots:
   void updateTextures();
 
   void proxyRegistered(const QString& groupname);
-  void proxyUnRegistered(const QString& group,
-    const QString&, vtkSMProxy* proxy);
+  void proxyUnRegistered(const QString& group, const QString&, vtkSMProxy* proxy);
+
 protected:
-  /// Get the texture proxy associated with the given data.
+  /**
+  * Get the texture proxy associated with the given data.
+  */
   vtkSMProxy* getTextureProxy(const QVariant& data) const;
 
-  /// Prompts the user to load a texture file.
+  /**
+  * Prompts the user to load a texture file.
+  */
   void loadTexture();
   bool loadTexture(const QString& filename);
+
 private:
-  pqTextureComboBox(const pqTextureComboBox&); // Not implemented.
-  void operator=(const pqTextureComboBox&); // Not implemented.
+  Q_DISABLE_COPY(pqTextureComboBox)
 
   class pqInternal;
   pqInternal* Internal;
 
   bool InOnActivate;
-
 };
 
 #endif
-
-

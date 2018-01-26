@@ -12,16 +12,18 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkExtractsDeliveryHelper
-// .SECTION Description
-//
+/**
+ * @class   vtkExtractsDeliveryHelper
+ *
+ *
+*/
 
-#ifndef __vtkExtractsDeliveryHelper_h
-#define __vtkExtractsDeliveryHelper_h
+#ifndef vtkExtractsDeliveryHelper_h
+#define vtkExtractsDeliveryHelper_h
 
-#include "vtkPVClientServerCoreCoreModule.h" //needed for exports
 #include "vtkObject.h"
-#include "vtkSmartPointer.h" // needed for smart pointer
+#include "vtkPVClientServerCoreCoreModule.h" //needed for exports
+#include "vtkSmartPointer.h"                 // needed for smart pointer
 
 class vtkAlgorithmOutput;
 class vtkDataObject;
@@ -37,7 +39,7 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkExtractsDeliveryHelper : public vtkObj
 public:
   static vtkExtractsDeliveryHelper* New();
   vtkTypeMacro(vtkExtractsDeliveryHelper, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   vtkSetMacro(ProcessIsProducer, bool);
   vtkGetMacro(ProcessIsProducer, bool);
@@ -59,8 +61,9 @@ public:
 
   void AddExtractProducer(const char* key, vtkAlgorithmOutput* producerPort);
 
-  // Description:
-  // Returns true if the data has been made available.
+  /**
+   * Returns true if the data has been made available.
+   */
   bool Update();
 
   vtkSetMacro(NumberOfVisualizationProcesses, int);
@@ -68,7 +71,6 @@ public:
   vtkSetMacro(NumberOfSimulationProcesses, int);
   vtkGetMacro(NumberOfSimulationProcesses, int);
 
-//BTX
 protected:
   vtkExtractsDeliveryHelper();
   ~vtkExtractsDeliveryHelper();
@@ -82,22 +84,19 @@ protected:
   // the bool is to keep track of whether the trivial producer has had
   // its output set yet. we don't want to update the pipeline until
   // it gets its output.
-  typedef std::map<std::string,
-    std::pair<vtkSmartPointer<vtkTrivialProducer>,bool> >
+  typedef std::map<std::string, std::pair<vtkSmartPointer<vtkTrivialProducer>, bool> >
     ExtractConsumersType;
   ExtractConsumersType ExtractConsumers;
 
-  typedef std::map<std::string, vtkSmartPointer<vtkAlgorithmOutput> >
-    ExtractProducersType;
+  typedef std::map<std::string, vtkSmartPointer<vtkAlgorithmOutput> > ExtractProducersType;
   ExtractProducersType ExtractProducers;
 
   vtkSmartPointer<vtkSocketController> Simulation2VisualizationController;
   vtkSmartPointer<vtkMultiProcessController> ParallelController;
 
 private:
-  vtkExtractsDeliveryHelper(const vtkExtractsDeliveryHelper&); // Not implemented
-  void operator=(const vtkExtractsDeliveryHelper&); // Not implemented
-//ETX
+  vtkExtractsDeliveryHelper(const vtkExtractsDeliveryHelper&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkExtractsDeliveryHelper&) VTK_DELETE_FUNCTION;
 };
 
 #endif

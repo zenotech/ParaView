@@ -29,31 +29,29 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqBoolPropertyWidgetDecorator_h
-#define __pqBoolPropertyWidgetDecorator_h
+#ifndef pqBoolPropertyWidgetDecorator_h
+#define pqBoolPropertyWidgetDecorator_h
 
 #include "pqApplicationComponentsModule.h"
 #include "pqPropertyWidgetDecorator.h"
 #include "vtkWeakPointer.h"
 
-
-/// pqBoolPropertyWidgetDecorator is a base class for enable/disable
-/// or show/hide widgets based on the status of another property not
-/// directly controlled by the widget.
-class PQAPPLICATIONCOMPONENTS_EXPORT pqBoolPropertyWidgetDecorator :
-  public pqPropertyWidgetDecorator
+/**
+* pqBoolPropertyWidgetDecorator is a base class for enable/disable
+* or show/hide widgets based on the status of another property not
+* directly controlled by the widget.
+*/
+class PQAPPLICATIONCOMPONENTS_EXPORT pqBoolPropertyWidgetDecorator
+  : public pqPropertyWidgetDecorator
 {
   Q_OBJECT
   typedef pqPropertyWidgetDecorator Superclass;
+
 public:
-  pqBoolPropertyWidgetDecorator(
-    vtkPVXMLElement* config, pqPropertyWidget* parent);
+  pqBoolPropertyWidgetDecorator(vtkPVXMLElement* config, pqPropertyWidget* parent);
   virtual ~pqBoolPropertyWidgetDecorator();
 
-  bool isBoolProperty() const
-  {
-    return this->BoolProperty;
-  }
+  bool isBoolProperty() const { return this->BoolProperty; }
 
 signals:
   void boolPropertyChanged();
@@ -66,11 +64,15 @@ protected:
   bool BoolProperty;
 
 private:
-  Q_DISABLE_COPY(pqBoolPropertyWidgetDecorator);
+  Q_DISABLE_COPY(pqBoolPropertyWidgetDecorator)
 
-  /// updates the enabled state.
+  /**
+  * updates the enabled state.
+  */
   void updateBoolPropertyState();
-  /// update this->BoolProperty and fires boolPropertyChanged
+  /**
+  * update this->BoolProperty and fires boolPropertyChanged
+  */
   void setBoolProperty(bool val);
 };
 

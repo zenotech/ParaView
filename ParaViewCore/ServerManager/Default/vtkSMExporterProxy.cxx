@@ -15,8 +15,8 @@
 #include "vtkSMExporterProxy.h"
 
 #include "vtkObjectFactory.h"
-#include "vtkProcessModule.h"
 #include "vtkPVXMLElement.h"
+#include "vtkProcessModule.h"
 #include "vtkSMViewProxy.h"
 
 vtkCxxSetObjectMacro(vtkSMExporterProxy, View, vtkSMViewProxy);
@@ -37,14 +37,13 @@ vtkSMExporterProxy::~vtkSMExporterProxy()
 }
 
 //----------------------------------------------------------------------------
-int vtkSMExporterProxy::ReadXMLAttributes(
-  vtkSMSessionProxyManager* pxm, vtkPVXMLElement* element)
+int vtkSMExporterProxy::ReadXMLAttributes(vtkSMSessionProxyManager* pxm, vtkPVXMLElement* element)
 {
   const char* exts = element->GetAttribute("file_extension");
   if (exts)
-    {
+  {
     this->SetFileExtension(exts);
-    }
+  }
 
   return this->Superclass::ReadXMLAttributes(pxm, element);
 }
@@ -54,8 +53,6 @@ void vtkSMExporterProxy::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "View: " << this->View << endl;
-  os << indent << "FileExtension: " 
-    << (this->FileExtension? this->FileExtension : "(none)") << endl;
+  os << indent << "FileExtension: " << (this->FileExtension ? this->FileExtension : "(none)")
+     << endl;
 }
-
-

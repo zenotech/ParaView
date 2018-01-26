@@ -12,14 +12,16 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVMultiClientsInformation - Gets Multi-clients informations from the server.
-// .SECTION Description
-// This objects is used by the client to get the number of multi-clients server
-// as well as their ids.
+/**
+ * @class   vtkPVMultiClientsInformation
+ * @brief   Gets Multi-clients informations from the server.
+ *
+ * This objects is used by the client to get the number of multi-clients server
+ * as well as their ids.
+*/
 
-
-#ifndef __vtkPVMultiClientsInformation_h
-#define __vtkPVMultiClientsInformation_h
+#ifndef vtkPVMultiClientsInformation_h
+#define vtkPVMultiClientsInformation_h
 
 #include "vtkPVClientServerCoreCoreModule.h" //needed for exports
 #include "vtkPVInformation.h"
@@ -31,43 +33,61 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVMultiClientsInformation : public vtk
 public:
   static vtkPVMultiClientsInformation* New();
   vtkTypeMacro(vtkPVMultiClientsInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  void DeepCopy(vtkPVMultiClientsInformation *info);
+  void DeepCopy(vtkPVMultiClientsInformation* info);
 
-  // Description:
-  // Transfer information about a single object into this object.
-  virtual void CopyFromObject(vtkObject*);
+  /**
+   * Transfer information about a single object into this object.
+   */
+  virtual void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
-  // Description:
-  // Merge another information object.
-  virtual void AddInformation(vtkPVInformation*);
+  /**
+   * Merge another information object.
+   */
+  virtual void AddInformation(vtkPVInformation*) VTK_OVERRIDE;
 
-  // Description:
-  // Manage a serialized version of the information.
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
+  //@{
+  /**
+   * Manage a serialized version of the information.
+   */
+  virtual void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  virtual void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
+  //@}
 
-  // Description:
-  // Get the id that correspond to the current client
+  //@{
+  /**
+   * Get the id that correspond to the current client
+   */
   vtkGetMacro(ClientId, int);
+  //@}
 
-  // Description:
-  // Return the client id of the nth connected client.
-  // idx < NumberOfClients
+  /**
+   * Return the client id of the nth connected client.
+   * idx < NumberOfClients
+   */
   int GetClientId(int idx);
 
-  // Description:
-  // Return the number of connected clients
+  //@{
+  /**
+   * Return the number of connected clients
+   */
   vtkGetMacro(NumberOfClients, int);
+  //@}
 
-  // Description:
-  // Return 1 if the server allow server client to connect to itself
+  //@{
+  /**
+   * Return 1 if the server allow server client to connect to itself
+   */
   vtkGetMacro(MultiClientEnable, int);
+  //@}
 
-  // Description:
-  // Return the Id of the client that has been elected as master
+  //@{
+  /**
+   * Return the Id of the client that has been elected as master
+   */
   vtkGetMacro(MasterId, int);
+  //@}
 
 protected:
   vtkPVMultiClientsInformation();
@@ -79,8 +99,8 @@ protected:
   int MultiClientEnable;
   int MasterId;
 
-  vtkPVMultiClientsInformation(const vtkPVMultiClientsInformation&); // Not implemented
-  void operator=(const vtkPVMultiClientsInformation&); // Not implemented
+  vtkPVMultiClientsInformation(const vtkPVMultiClientsInformation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVMultiClientsInformation&) VTK_DELETE_FUNCTION;
 };
 
 #endif

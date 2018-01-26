@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -32,44 +32,48 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _pqProxyInformationWidget_h
 #define _pqProxyInformationWidget_h
 
-#include <QWidget>
-#include <QPointer>
 #include "pqComponentsModule.h"
+#include <QPointer>
+#include <QWidget>
 
 class pqOutputPort;
-class QTreeWidgetItem;
+class QModelIndex;
 class vtkEventQtSlotConnect;
 class vtkPVDataInformation;
 
-/// Widget which provides information about an output port of a source proxy
+/**
+* Widget which provides information about an output port of a source proxy
+*/
 class PQCOMPONENTS_EXPORT pqProxyInformationWidget : public QWidget
 {
   Q_OBJECT
 public:
-  /// constructor
-  pqProxyInformationWidget(QWidget* p=0);
-  /// destructor
+  /**
+  * constructor
+  */
+  pqProxyInformationWidget(QWidget* p = 0);
+  /**
+  * destructor
+  */
   ~pqProxyInformationWidget();
 
-  /// get the proxy for which properties are displayed
+  /**
+  * get the proxy for which properties are displayed
+  */
   pqOutputPort* getOutputPort();
 
 public slots:
-  /// TODO: have this become automatic instead of relying on 
-  /// the accept button in case another client modifies the pipeline.
   void updateInformation();
 
-  /// Set the display whose properties we want to edit.
+  /**
+  * Set the display whose properties we want to edit.
+  */
   void setOutputPort(pqOutputPort* outputport);
 
 private slots:
-  void onItemClicked(QTreeWidgetItem* item);
+  void onCurrentChanged(const QModelIndex& item);
 
 private:
-  /// builds the composite tree structure.
-  QTreeWidgetItem* fillCompositeInformation(vtkPVDataInformation* info,
-    QTreeWidgetItem* parent=0);
-
   void fillDataInformation(vtkPVDataInformation* info);
 
 private:
@@ -80,4 +84,3 @@ private:
 };
 
 #endif
-

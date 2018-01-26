@@ -12,16 +12,19 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPGenericEnSightReader - class to read any type of EnSight files
-// .SECTION Description
-// The class vtkPGenericEnSightReader allows the user to read an EnSight data
-// set without a priori knowledge of what type of EnSight data set it is.
+/**
+ * @class   vtkPGenericEnSightReader
+ * @brief   class to read any type of EnSight files
+ *
+ * The class vtkPGenericEnSightReader allows the user to read an EnSight data
+ * set without a priori knowledge of what type of EnSight data set it is.
+*/
 
-#ifndef __vtkPGenericEnSightReader_h
-#define __vtkPGenericEnSightReader_h
+#ifndef vtkPGenericEnSightReader_h
+#define vtkPGenericEnSightReader_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkGenericEnSightReader.h"
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 
 class vtkCallbackCommand;
 class vtkDataArrayCollection;
@@ -31,31 +34,32 @@ class vtkIdListCollection;
 class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPGenericEnSightReader : public vtkGenericEnSightReader
 {
 public:
-  static vtkPGenericEnSightReader *New();
+  static vtkPGenericEnSightReader* New();
   vtkTypeMacro(vtkPGenericEnSightReader, vtkGenericEnSightReader);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkPGenericEnSightReader();
   ~vtkPGenericEnSightReader();
 
-  virtual int RequestInformation(vtkInformation*,
-                                 vtkInformationVector**,
-                                 vtkInformationVector*);
+  virtual int RequestInformation(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
-  // Description:
-  // Multi Process cache. Will be read a lot of times.
+  /**
+   * Multi Process cache. Will be read a lot of times.
+   */
   int GetMultiProcessLocalProcessId();
-  // Description:
-  // Multi Process cache. Will be read a lot of times.
+  /**
+   * Multi Process cache. Will be read a lot of times.
+   */
   int GetMultiProcessNumberOfProcesses();
 
   int MultiProcessLocalProcessId;
   int MultiProcessNumberOfProcesses;
 
 private:
-  vtkPGenericEnSightReader(const vtkPGenericEnSightReader&);  // Not implemented.
-  void operator=(const vtkPGenericEnSightReader&);  // Not implemented.
+  vtkPGenericEnSightReader(const vtkPGenericEnSightReader&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPGenericEnSightReader&) VTK_DELETE_FUNCTION;
 };
 
 #endif

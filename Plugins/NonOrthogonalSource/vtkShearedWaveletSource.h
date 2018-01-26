@@ -16,8 +16,8 @@
 // .SECTION Description
 //
 
-#ifndef __vtkShearedWaveletSource_h
-#define __vtkShearedWaveletSource_h
+#ifndef vtkShearedWaveletSource_h
+#define vtkShearedWaveletSource_h
 
 #include "vtkUnstructuredGridAlgorithm.h"
 
@@ -26,7 +26,7 @@ class VTK_EXPORT vtkShearedWaveletSource : public vtkUnstructuredGridAlgorithm
 public:
   static vtkShearedWaveletSource* New();
   vtkTypeMacro(vtkShearedWaveletSource, vtkUnstructuredGridAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Set bounding box is model-space.
   // Specified as (xmin, xmax, ymin, ymax, zmin, zmax).
@@ -61,18 +61,14 @@ public:
   // Specify custom Time label
   vtkSetStringMacro(TimeLabel);
   vtkGetStringMacro(TimeLabel);
-  const char* GetTimeLabelAnnotation()
-    {
-    return this->EnableTimeLabel? this->TimeLabel : "Time";
-    }
+  const char* GetTimeLabelAnnotation() { return this->EnableTimeLabel ? this->TimeLabel : "Time"; }
 
-//BTX
 protected:
   vtkShearedWaveletSource();
   ~vtkShearedWaveletSource();
 
   virtual int RequestData(
-    vtkInformation *, vtkInformationVector **, vtkInformationVector *);
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   bool EnableAxisTitles;
   bool EnableTimeLabel;
@@ -86,10 +82,10 @@ protected:
   double BasisU[3];
   double BasisV[3];
   double BasisW[3];
+
 private:
-  vtkShearedWaveletSource(const vtkShearedWaveletSource&); // Not implemented
-  void operator=(const vtkShearedWaveletSource&); // Not implemented
-//ETX
+  vtkShearedWaveletSource(const vtkShearedWaveletSource&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkShearedWaveletSource&) VTK_DELETE_FUNCTION;
 };
 
 #endif

@@ -23,40 +23,41 @@
  * statement of authorship are reproduced on all copies.
  */
 
-// .NAME vtkExodusFileSeriesReader - meta-reader to read Exodus file series from simulation restarts
-//
-// .SECTION Description
-//
-// Add some special sauce to the superclass that allows it to work with the
-// parallel Exodus reader.  Specifically, changing the file name causes
-// the selected output arrays to be cleared out.  This class saves and
-// restores the information.
-//
+/**
+ * @class   vtkExodusFileSeriesReader
+ * @brief   meta-reader to read Exodus file series from simulation restarts
+ *
+ *
+ *
+ * Add some special sauce to the superclass that allows it to work with the
+ * parallel Exodus reader.  Specifically, changing the file name causes
+ * the selected output arrays to be cleared out.  This class saves and
+ * restores the information.
+ *
+*/
 
-#ifndef __vtkExodusFileSeriesReader_h
-#define __vtkExodusFileSeriesReader_h
+#ifndef vtkExodusFileSeriesReader_h
+#define vtkExodusFileSeriesReader_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkFileSeriesReader.h"
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 
 class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkExodusFileSeriesReader : public vtkFileSeriesReader
 {
 public:
   vtkTypeMacro(vtkExodusFileSeriesReader, vtkFileSeriesReader);
-  static vtkExodusFileSeriesReader *New();
-  virtual void PrintSelf(ostream &os, vtkIndent indent);
+  static vtkExodusFileSeriesReader* New();
+  virtual void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkExodusFileSeriesReader();
   ~vtkExodusFileSeriesReader();
 
-  virtual int RequestInformation(vtkInformation *request,
-                                 vtkInformationVector **inputVector,
-                                 vtkInformationVector *outputVector);
+  virtual int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector) VTK_OVERRIDE;
 
-  virtual int RequestInformationForInput(int index,
-                                         vtkInformation *request,
-                                         vtkInformationVector *outputVector);
+  virtual int RequestInformationForInput(
+    int index, vtkInformation* request, vtkInformationVector* outputVector) VTK_OVERRIDE;
 
   // Replaces the filenames, which probably represents partitions of the data,
   // with a set of files where each represents a set of solution files for one
@@ -64,8 +65,8 @@ protected:
   virtual void FindRestartedResults();
 
 private:
-  vtkExodusFileSeriesReader(const vtkExodusFileSeriesReader &); // Not implemented
-  void operator=(const vtkExodusFileSeriesReader &);    // Not implemented
+  vtkExodusFileSeriesReader(const vtkExodusFileSeriesReader&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkExodusFileSeriesReader&) VTK_DELETE_FUNCTION;
 };
 
-#endif //__vtkExodusFileSeriesReader_h
+#endif // vtkExodusFileSeriesReader_h

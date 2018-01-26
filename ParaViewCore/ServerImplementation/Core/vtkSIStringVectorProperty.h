@@ -12,12 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSIStringVectorProperty
-// .SECTION Description
-// ServerImplementation Property to deal with String array as method arguments.
+/**
+ * @class   vtkSIStringVectorProperty
+ *
+ * ServerImplementation Property to deal with String array as method arguments.
+ * It also takes care of string encoding on server side.
+*/
 
-#ifndef __vtkSIStringVectorProperty_h
-#define __vtkSIStringVectorProperty_h
+#ifndef vtkSIStringVectorProperty_h
+#define vtkSIStringVectorProperty_h
 
 #include "vtkPVServerImplementationCoreModule.h" //needed for exports
 #include "vtkSIVectorProperty.h"
@@ -27,38 +30,44 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSIStringVectorProperty : public vt
 public:
   static vtkSIStringVectorProperty* New();
   vtkTypeMacro(vtkSIStringVectorProperty, vtkSIVectorProperty);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-
-//BTX
 protected:
   vtkSIStringVectorProperty();
   ~vtkSIStringVectorProperty();
 
-  enum ElementTypes{ INT, DOUBLE, STRING };
+  enum ElementTypes
+  {
+    INT,
+    DOUBLE,
+    STRING
+  };
 
-  // Description:
-  // Push a new state to the underneath implementation
-  virtual bool Push(vtkSMMessage*, int);
+  /**
+   * Push a new state to the underneath implementation
+   */
+  virtual bool Push(vtkSMMessage*, int) VTK_OVERRIDE;
 
-  // Description:
-  // Pull the current state of the underneath implementation
-  virtual bool Pull(vtkSMMessage*);
+  /**
+   * Pull the current state of the underneath implementation
+   */
+  virtual bool Pull(vtkSMMessage*) VTK_OVERRIDE;
 
-  // Description:
-  // Parse the xml for the property.
-  virtual bool ReadXMLAttributes(vtkSIProxy* proxyhelper, vtkPVXMLElement* element);
+  /**
+   * Parse the xml for the property.
+   */
+  virtual bool ReadXMLAttributes(vtkSIProxy* proxyhelper, vtkPVXMLElement* element) VTK_OVERRIDE;
 
 private:
-  vtkSIStringVectorProperty(const vtkSIStringVectorProperty&); // Not implemented
-  void operator=(const vtkSIStringVectorProperty&); // Not implemented
+  vtkSIStringVectorProperty(const vtkSIStringVectorProperty&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSIStringVectorProperty&) VTK_DELETE_FUNCTION;
 
   class vtkVectorOfStrings;
   class vtkVectorOfInts;
 
-  bool Push(const vtkVectorOfStrings &values);
+  bool Push(const vtkVectorOfStrings& values);
   vtkVectorOfInts* ElementTypes;
-//ETX
+  bool NeedReencoding;
 };
 
 #endif

@@ -29,25 +29,30 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqImageOutputInfo_h
-#define __pqImageOutputInfo_h
+#ifndef pqImageOutputInfo_h
+#define pqImageOutputInfo_h
 
 #include "pqComponentsModule.h"
+#include <QScopedPointer>
 #include <QString>
 #include <QStringList>
 #include <QWidget>
-#include <QScopedPointer>
 
 class pqView;
-namespace Ui { class ImageOutputInfo; }
+namespace Ui
+{
+class ImageOutputInfo;
+}
 
 class PQCOMPONENTS_EXPORT pqImageOutputInfo : public QWidget
 {
   Q_OBJECT
-  typedef QWidget Superclass;
+
 public:
+  pqImageOutputInfo(QWidget* parent_ = NULL);
   pqImageOutputInfo(
-    QWidget *parentObject, Qt::WindowFlags parentFlags, pqView* view, QString& viewName);
+    QWidget* parentObject, Qt::WindowFlags parentFlags, pqView* view, QString& viewName);
+
   ~pqImageOutputInfo();
 
   void setupScreenshotInfo();
@@ -58,27 +63,45 @@ public:
   void showFrequencyInput();
   void hideFitToScreen();
   void showFitToScreen();
+  void hideMagnification();
+  void showMagnification();
+  void hideFilenameDetails();
+  void showFilenameDetails();
   int getWriteFrequency();
   bool fitToScreen();
   int getMagnification();
+  bool getComposite();
+  bool getUseFloatValues();
+  bool getNoValues();
 
-  void showCinema();
-  void hideCinema();
-
+  /**
+  * Remove or add options depending on whether cinema is visible.
+  */
+  void setCinemaVisible(bool status);
   const QString getCameraType();
   double getPhi();
   double getTheta();
+  double getRoll();
+  QString getTrackObjectName();
+  void setView(pqView* const view);
+
+signals:
+  void compositeChanged(bool checked);
 
 public slots:
   void updateImageFileName();
   void updateImageFileNameExtension(const QString&);
   void updateCinemaType(const QString&);
+  void updateComposite(int);
+  void endisAbleDirectFloat(int);
 
 private:
-  Q_DISABLE_COPY(pqImageOutputInfo)
-  QScopedPointer<Ui::ImageOutputInfo> Info;
-  pqView* View;
+  void initialize(Qt::WindowFlags parentFlags, pqView* view, QString const& viewName);
 
   void updateSpherical();
+
+  Q_DISABLE_COPY(pqImageOutputInfo)
+  QScopedPointer<Ui::ImageOutputInfo> Ui;
+  pqView* View;
 };
 #endif

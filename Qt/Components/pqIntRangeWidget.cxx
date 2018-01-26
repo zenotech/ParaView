@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -34,15 +34,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Qt includes
 #include "pqLineEdit.h"
-#include <QSlider>
 #include <QHBoxLayout>
 #include <QIntValidator>
+#include <QSlider>
 
-#include "vtkSMIntRangeDomain.h"
 #include "vtkEventQtSlotConnect.h"
+#include "vtkSMIntRangeDomain.h"
 
 pqIntRangeWidget::pqIntRangeWidget(QWidget* p)
-  : QWidget(p) 
+  : QWidget(p)
 {
   this->BlockUpdate = false;
   this->Value = 0;
@@ -51,11 +51,13 @@ pqIntRangeWidget::pqIntRangeWidget(QWidget* p)
   this->StrictRange = false;
   this->Domain = 0;
   this->DomainConnection = 0;
+  this->InteractingWithSlider = false;
+  this->DeferredValueEdited = false;
 
   QHBoxLayout* l = new QHBoxLayout(this);
   l->setMargin(0);
   this->Slider = new QSlider(Qt::Horizontal, this);
-  this->Slider->setRange(0,1);
+  this->Slider->setRange(0, 1);
   l->addWidget(this->Slider);
   this->Slider->setObjectName("Slider");
   this->LineEdit = new pqLineEdit(this);
@@ -64,21 +66,25 @@ pqIntRangeWidget::pqIntRangeWidget(QWidget* p)
   this->LineEdit->setValidator(new QIntValidator(this->LineEdit));
   this->LineEdit->setTextAndResetCursor(QString().setNum(this->Value));
 
-  QObject::connect(this->Slider, SIGNAL(valueChanged(int)),
-                   this, SLOT(sliderChanged(int)));
-  QObject::connect(this->LineEdit, SIGNAL(textChanged(const QString&)),
-                   this, SLOT(textChanged(const QString&)));
-   QObject::connect(this->LineEdit, SIGNAL(textChangedAndEditingFinished()),
-                   this, SLOT(editingFinished()));
+  QObject::connect(this->Slider, SIGNAL(valueChanged(int)), this, SLOT(sliderChanged(int)));
+  QObject::connect(
+    this->LineEdit, SIGNAL(textChanged(const QString&)), this, SLOT(textChanged(const QString&)));
+  QObject::connect(
+    this->LineEdit, SIGNAL(textChangedAndEditingFinished()), this, SLOT(editingFinished()));
+
+  // let's avoid firing `valueChanged` events until the user has released the
+  // slider.
+  this->connect(this->Slider, SIGNAL(sliderPressed()), SLOT(sliderPressed()));
+  this->connect(this->Slider, SIGNAL(sliderReleased()), SLOT(sliderReleased()));
 }
 
 //-----------------------------------------------------------------------------
 pqIntRangeWidget::~pqIntRangeWidget()
 {
-  if(this->DomainConnection)
-    {
+  if (this->DomainConnection)
+  {
     this->DomainConnection->Delete();
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -90,14 +96,14 @@ int pqIntRangeWidget::value() const
 //-----------------------------------------------------------------------------
 void pqIntRangeWidget::setValue(int val)
 {
-  if(this->Value == val)
-    {
+  if (this->Value == val)
+  {
     return;
-    }
+  }
 
-  if(!this->BlockUpdate)
-    {
-    // set the slider 
+  if (!this->BlockUpdate)
+  {
+    // set the slider
     this->Slider->blockSignals(true);
     this->Slider->setValue(val);
     this->Slider->blockSignals(false);
@@ -106,7 +112,7 @@ void pqIntRangeWidget::setValue(int val)
     this->LineEdit->blockSignals(true);
     this->LineEdit->setTextAndResetCursor(QString().setNum(val));
     this->LineEdit->blockSignals(false);
-    }
+  }
 
   this->Value = val;
   emit this->valueChanged(this->Value);
@@ -143,25 +149,24 @@ void pqIntRangeWidget::setMinimum(int val)
 //-----------------------------------------------------------------------------
 void pqIntRangeWidget::updateValidator()
 {
-  if(this->StrictRange)
-    {
-    this->LineEdit->setValidator(new QIntValidator(this->minimum(),
-        this->maximum(), this->LineEdit));
-    }
+  if (this->StrictRange)
+  {
+    this->LineEdit->setValidator(
+      new QIntValidator(this->minimum(), this->maximum(), this->LineEdit));
+  }
   else
-    {
+  {
     this->LineEdit->setValidator(new QIntValidator(this->LineEdit));
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 bool pqIntRangeWidget::strictRange() const
 {
-  const QIntValidator* dv =
-    qobject_cast<const QIntValidator*>(this->LineEdit->validator());
+  const QIntValidator* dv = qobject_cast<const QIntValidator*>(this->LineEdit->validator());
   return dv->bottom() == this->minimum() && dv->top() == this->maximum();
 }
-  
+
 void pqIntRangeWidget::setStrictRange(bool s)
 {
   this->StrictRange = s;
@@ -169,70 +174,104 @@ void pqIntRangeWidget::setStrictRange(bool s)
 }
 
 //-----------------------------------------------------------------------------
-void pqIntRangeWidget::setDomain(vtkSMIntRangeDomain *domain)
+void pqIntRangeWidget::setDomain(vtkSMIntRangeDomain* domain)
 {
-  if(this->Domain == domain)
-    {
+  if (this->Domain == domain)
+  {
     return;
-    }
+  }
 
   this->Domain = domain;
 
-  if(this->Domain)
+  if (this->Domain)
+  {
+    if (this->DomainConnection)
     {
-    if(this->DomainConnection)
-      {
       this->DomainConnection->Delete();
       this->DomainConnection = 0;
-      }
+    }
 
     this->DomainConnection = vtkEventQtSlotConnect::New();
-    this->DomainConnection->Connect(this->Domain,
-                                    vtkCommand::DomainModifiedEvent,
-                                    this,
-                                    SLOT(domainChanged()));
+    this->DomainConnection->Connect(
+      this->Domain, vtkCommand::DomainModifiedEvent, this, SLOT(domainChanged()));
     this->setMinimum(this->Domain->GetMinimum(0));
     this->setMaximum(this->Domain->GetMaximum(0));
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void pqIntRangeWidget::sliderChanged(int val)
 {
-  if(!this->BlockUpdate)
-    {
+  if (!this->BlockUpdate)
+  {
     this->BlockUpdate = true;
     this->LineEdit->setTextAndResetCursor(QString().setNum(val));
     this->setValue(val);
-    emit this->valueEdited(val);
+    this->emitValueEdited();
     this->BlockUpdate = false;
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void pqIntRangeWidget::textChanged(const QString& text)
 {
-  if(!this->BlockUpdate)
-    {
+  if (!this->BlockUpdate)
+  {
     int val = text.toInt();
     this->BlockUpdate = true;
     this->Slider->setValue(val);
     this->setValue(val);
     this->BlockUpdate = false;
-    }
+  }
 }
 //-----------------------------------------------------------------------------
 void pqIntRangeWidget::editingFinished()
 {
-  emit this->valueEdited(this->Value);
+  this->emitValueEdited();
+}
+
+//-----------------------------------------------------------------------------
+void pqIntRangeWidget::emitValueEdited()
+{
+  if (this->InteractingWithSlider == false)
+  {
+    emit this->valueEdited(this->Value);
+  }
+  else
+  {
+    this->DeferredValueEdited = true;
+  }
+}
+
+//-----------------------------------------------------------------------------
+void pqIntRangeWidget::emitIfDeferredValueEdited()
+{
+  if (this->DeferredValueEdited)
+  {
+    this->DeferredValueEdited = false;
+    this->emitValueEdited();
+  }
 }
 
 //-----------------------------------------------------------------------------
 void pqIntRangeWidget::domainChanged()
 {
-  if(this->Domain)
-    {
+  if (this->Domain)
+  {
     this->setMinimum(this->Domain->GetMinimum(0));
     this->setMaximum(this->Domain->GetMaximum(0));
-    }
+  }
+}
+
+//-----------------------------------------------------------------------------
+void pqIntRangeWidget::sliderPressed()
+{
+  this->InteractingWithSlider = true;
+}
+
+//-----------------------------------------------------------------------------
+void pqIntRangeWidget::sliderReleased()
+{
+  this->InteractingWithSlider = false;
+  this->emitIfDeferredValueEdited();
 }

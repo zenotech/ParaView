@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -29,15 +29,15 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
-#ifndef __pqPythonQtWrapperFactory_h
-#define __pqPythonQtWrapperFactory_h
+#ifndef pqPythonQtWrapperFactory_h
+#define pqPythonQtWrapperFactory_h
 
 #include <PythonQtCppWrapperFactory.h>
 
 class pqPythonQtWrapperFactory : public PythonQtForeignWrapperFactory
 {
 public:
-  virtual PyObject* wrap(const QByteArray& classname, void *ptr);
+  virtual PyObject* wrap(const QByteArray& classname, void* ptr);
   virtual void* unwrap(const QByteArray& classname, PyObject* object);
 };
 

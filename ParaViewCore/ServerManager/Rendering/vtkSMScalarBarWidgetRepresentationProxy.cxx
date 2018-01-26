@@ -17,17 +17,18 @@
 #include "vtkBoundingBox.h"
 #include "vtkCommand.h"
 #include "vtkObjectFactory.h"
-#include "vtkProcessModule.h"
 #include "vtkPVArrayInformation.h"
-#include "vtkScalarBarRepresentation.h"
+#include "vtkProcessModule.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMProxyProperty.h"
+#include "vtkScalarBarActor.h"
+#include "vtkScalarBarRepresentation.h"
 #include "vtkTuple.h"
 
 #include <algorithm>
+#include <sstream>
 #include <string>
 #include <vector>
-#include <sstream>
 
 vtkStandardNewMacro(vtkSMScalarBarWidgetRepresentationProxy);
 
@@ -35,85 +36,124 @@ vtkStandardNewMacro(vtkSMScalarBarWidgetRepresentationProxy);
 vtkSMScalarBarWidgetRepresentationProxy::vtkSMScalarBarWidgetRepresentationProxy()
 {
   this->ActorProxy = NULL;
+  this->TraceItem = NULL;
 }
 
 //----------------------------------------------------------------------------
 vtkSMScalarBarWidgetRepresentationProxy::~vtkSMScalarBarWidgetRepresentationProxy()
 {
   this->ActorProxy = NULL;
+  delete this->TraceItem;
 }
 
 //-----------------------------------------------------------------------------
 void vtkSMScalarBarWidgetRepresentationProxy::CreateVTKObjects()
 {
   if (this->ObjectsCreated)
-    {
+  {
     return;
-    }
+  }
 
   this->ActorProxy = this->GetSubProxy("Prop2DActor");
   if (!this->ActorProxy)
-    {
+  {
     vtkErrorMacro("Failed to find subproxy Prop2DActor.");
     return;
-    }
+  }
 
-  this->ActorProxy->SetLocation( vtkProcessModule::CLIENT |
-                                 vtkProcessModule::RENDER_SERVER);
+  this->ActorProxy->SetLocation(vtkProcessModule::CLIENT | vtkProcessModule::RENDER_SERVER);
 
   this->Superclass::CreateVTKObjects();
 
   if (!this->RepresentationProxy)
-    {
+  {
     vtkErrorMacro("Failed to find subproxy Prop2D.");
     return;
-    }
+  }
 
-  vtkSMProxyProperty* tapp = vtkSMProxyProperty::SafeDownCast(
-                      this->RepresentationProxy->GetProperty("ScalarBarActor"));
+  vtkSMProxyProperty* tapp =
+    vtkSMProxyProperty::SafeDownCast(this->RepresentationProxy->GetProperty("ScalarBarActor"));
   if (!tapp)
-    {
+  {
     vtkErrorMacro("Failed to find property ScalarBarActor on ScalarBarRepresentation proxy.");
     return;
-    }
+  }
   tapp->AddProxy(this->ActorProxy);
+
+  // Initialize the scalar bar widget from the ScalarBarLength property.
+  this->ScalarBarLengthToScalarBarWidgetPosition2();
+
+  // Add observer on the ScalarBarLength property to convert its value to
+  // Position2 of the widget.
+  this->GetProperty("ScalarBarLength")
+    ->AddObserver(vtkCommand::ModifiedEvent, this,
+      &vtkSMScalarBarWidgetRepresentationProxy::ScalarBarLengthToScalarBarWidgetPosition2);
 }
 
 //----------------------------------------------------------------------------
 void vtkSMScalarBarWidgetRepresentationProxy::ExecuteEvent(unsigned long event)
 {
-  if (event == vtkCommand::InteractionEvent)
-    {
+  if (event == vtkCommand::StartInteractionEvent)
+  {
+    this->BeginTrackingPropertiesForTrace();
+  }
+  else if (event == vtkCommand::InteractionEvent)
+  {
     // BUG #5399. If the widget's position is beyond the viewport, fix it.
-    vtkScalarBarRepresentation* repr = vtkScalarBarRepresentation::SafeDownCast(
-      this->RepresentationProxy->GetClientSideObject());
+    vtkScalarBarRepresentation* repr =
+      vtkScalarBarRepresentation::SafeDownCast(this->RepresentationProxy->GetClientSideObject());
     if (repr)
-      {
+    {
       double position[2];
       position[0] = repr->GetPosition()[0];
       position[1] = repr->GetPosition()[1];
       if (position[0] < 0.0)
-        {
+      {
         position[0] = 0.0;
-        }
-      if (position[0] > 0.97)
-        {
-        position[0] = 0.97;
-        }
-      if (position[1] < 0.0)
-        {
-        position[1] = 0.0;
-        }
-      if (position[1] > 0.97)
-        {
-        position[1] = 0.97;
-        }
-      repr->SetPosition(position);
       }
+      if (position[0] > 0.97)
+      {
+        position[0] = 0.97;
+      }
+      if (position[1] < 0.0)
+      {
+        position[1] = 0.0;
+      }
+      if (position[1] > 0.97)
+      {
+        position[1] = 0.97;
+      }
+      repr->SetPosition(position);
+    }
     // user interacted. lock the position.
     vtkSMPropertyHelper(this, "LockPosition").Set(1);
-    }
+    vtkSMPropertyHelper(this, "WindowLocation").Set(0);
+
+    this->ScalarBarWidgetPosition2ToScalarBarLength();
+  }
+
   this->Superclass::ExecuteEvent(event);
+
+  if (event == vtkCommand::EndInteractionEvent)
+  {
+    this->EndTrackingPropertiesForTrace();
+  }
+}
+
+//----------------------------------------------------------------------------
+void vtkSMScalarBarWidgetRepresentationProxy::BeginTrackingPropertiesForTrace()
+{
+  assert(this->TraceItem == NULL);
+  this->TraceItem = new vtkSMTrace::TraceItem("ScalarBarInteraction");
+  (*this->TraceItem) =
+    vtkSMTrace::TraceItemArgs().arg("proxy", this).arg("comment", " change scalar bar placement");
+}
+
+//----------------------------------------------------------------------------
+void vtkSMScalarBarWidgetRepresentationProxy::EndTrackingPropertiesForTrace()
+{
+  delete this->TraceItem;
+  this->TraceItem = NULL;
 }
 
 //----------------------------------------------------------------------------
@@ -123,47 +163,46 @@ void vtkSMScalarBarWidgetRepresentationProxy::PrintSelf(ostream& os, vtkIndent i
 }
 
 //----------------------------------------------------------------------------
-bool vtkSMScalarBarWidgetRepresentationProxy::UpdateComponentTitle(
-  vtkPVArrayInformation* arrayInfo)
+bool vtkSMScalarBarWidgetRepresentationProxy::UpdateComponentTitle(vtkPVArrayInformation* arrayInfo)
 {
   vtkSMProperty* compProp = this->GetProperty("ComponentTitle");
   if (compProp == NULL)
-    {
+  {
     vtkErrorMacro("Failed to locate ComponentTitle property.");
     return false;
-    }
+  }
 
   vtkSMProxy* lutProxy = vtkSMPropertyHelper(this, "LookupTable").GetAsProxy();
 
   std::string componentName;
   int component = -1;
   if (lutProxy && vtkSMPropertyHelper(lutProxy, "VectorMode").GetAsInt() != 0)
-    {
+  {
     component = vtkSMPropertyHelper(lutProxy, "VectorComponent").GetAsInt();
-    }
+  }
 
   if (arrayInfo == NULL || arrayInfo->GetNumberOfComponents() > 1)
-    {
-    const char* componentNameFromData = arrayInfo? arrayInfo->GetComponentName(component): NULL;
+  {
+    const char* componentNameFromData = arrayInfo ? arrayInfo->GetComponentName(component) : NULL;
     if (componentNameFromData == NULL)
-      {
+    {
       // just use the component number directly.
       if (component >= 0)
-        {
+      {
         std::ostringstream cname;
         cname << component;
         componentName = cname.str();
-        }
-      else
-        {
-        componentName = "Magnitude";
-        }
       }
-    else
+      else
       {
-      componentName = componentNameFromData;
+        componentName = "Magnitude";
       }
     }
+    else
+    {
+      componentName = componentNameFromData;
+    }
+  }
   vtkSMPropertyHelper(compProp).Set(componentName.c_str());
   this->UpdateVTKObjects();
   return true;
@@ -171,171 +210,97 @@ bool vtkSMScalarBarWidgetRepresentationProxy::UpdateComponentTitle(
 
 namespace
 {
-  inline bool IsAvailable(
-    const vtkBoundingBox& bbox, const std::vector<vtkBoundingBox>& boxes)
+inline bool IsAvailable(const int location, const std::vector<int>& existingLocations)
+{
+  for (size_t i = 0; i < existingLocations.size(); ++i)
+  {
+    if (location == existingLocations[i])
     {
-    for (std::vector<vtkBoundingBox>::const_iterator iter=boxes.begin();
-      iter != boxes.end(); ++iter)
-      {
-      if (iter->Intersects(bbox) == 1)
-        {
-        return false;
-        }
-      }
-    return true;
+      return false;
     }
-
-  inline double clamp(double val, double min, double max)
-    {
-    val = std::max(val, min);
-    val = std::min(val, max);
-    return val;
-    }
-
-  inline vtkBoundingBox GetBox(
-    const vtkTuple<double, 2>& anchor,
-    const vtkTuple<double, 2>& size)
-    {
-    return vtkBoundingBox(
-      clamp(anchor[0], 0, 1), clamp(anchor[0] + size[0], 0, 1),
-      clamp(anchor[1], 0, 1), clamp(anchor[1] + size[1], 0, 1),
-      0, 0);
-    }
-};
+  }
+  return true;
+}
+}
 
 //----------------------------------------------------------------------------
 bool vtkSMScalarBarWidgetRepresentationProxy::PlaceInView(vtkSMProxy* view)
 {
-  if (!view || vtkSMPropertyHelper(this, "LockPosition", /*quiet*/true).GetAsInt() == 1)
-    {
+  if (!view || vtkSMPropertyHelper(this, "LockPosition", /*quiet*/ true).GetAsInt() == 1)
+  {
     return false;
-    }
+  }
 
-  // locate all *other* visible scalar bar in the view and determine their
-  // positions.
-  std::vector<vtkBoundingBox> occupiedBoxes;
+  // locate all *other* visible scalar bar in the view.
+  std::vector<int> occupiedLocations;
 
   vtkSMPropertyHelper reprHelper(view, "Representations");
-  for (unsigned int cc=0, max=reprHelper.GetNumberOfElements(); cc<max; ++cc)
-    {
+  for (unsigned int cc = 0, max = reprHelper.GetNumberOfElements(); cc < max; ++cc)
+  {
     vtkSMProxy* repr = reprHelper.GetAsProxy(cc);
-    if (repr != this &&
-      vtkSMScalarBarWidgetRepresentationProxy::SafeDownCast(repr) &&
-      vtkSMPropertyHelper(repr, "Visibility", /*quiet*/true).GetAsInt() == 1)
-      {
-      double pos1[2], pos2[2];
-      vtkSMPropertyHelper(repr, "Position").Get(pos1, 2);
-      vtkSMPropertyHelper(repr, "Position2").Get(pos2, 2);
-
-      vtkBoundingBox bbox;
-      bbox.AddPoint(pos1[0], pos1[1], 0.0);
-      bbox.AddPoint(pos1[0] + pos2[0], pos1[1] + pos2[1], 0.0);
-      occupiedBoxes.push_back(bbox);
-      }
-    }
-
-  bool isVertical = (vtkSMPropertyHelper(this, "Orientation").GetAsInt() == 1);
-  double aspect = vtkSMPropertyHelper(this, "AspectRatio").GetAsDouble();
-  aspect = aspect? aspect : 20;
-
-  vtkTuple<double,2> mysize;
-  vtkSMPropertyHelper pos2Helper(this, "Position2");
-  pos2Helper.Get(mysize.GetData(), 2);
-  // if size is invalid, fix it.
-  if (mysize[0] <= 0.0) { mysize[0] = 0.23; }
-  if (mysize[1] <= 0.0) { mysize[1] = 0.13; }
-  pos2Helper.Set(mysize.GetData(), 2);
-
-  vtkTuple<double,2> myanchor;
-  vtkSMPropertyHelper posHelper(this, "Position");
-  posHelper.Get(myanchor.GetData(), 2);
-
-  // Shift anchor x position for horizontal orientations
-  if (!isVertical)
+    if (repr != this && vtkSMScalarBarWidgetRepresentationProxy::SafeDownCast(repr) &&
+      vtkSMPropertyHelper(repr, "Visibility", /*quiet*/ true).GetAsInt() == 1)
     {
-    // Scoot the scalar bar to the left a bit from where a vertically
-    // oriented scalar bar would be to fit it in the vieww
-    myanchor[0] = 0.54;
-
-    double minSize = std::min(mysize[0], mysize[1]);
-    double maxSize = std::max(mysize[0], mysize[1]);
-    mysize[0] = maxSize;
-    mysize[1] = minSize;
+      int location = vtkSMPropertyHelper(repr, "WindowLocation").GetAsInt();
+      occupiedLocations.push_back(location);
     }
-  posHelper.Set(myanchor.GetData(), 2);
-  pos2Helper.Set(mysize.GetData(), 2);
+  }
 
-  vtkBoundingBox mybox = GetBox(myanchor, mysize);
-  // let call mybox as (x1,y1):(x2,y2)
-  if (IsAvailable(mybox, occupiedBoxes))
-    {
+  if (IsAvailable(vtkSMPropertyHelper(this, "WindowLocation").GetAsInt(), occupiedLocations))
+  {
     // current position and if available, just return.
     this->UpdateVTKObjects();
     return true;
-    }
+  }
 
-  std::vector<vtkBoundingBox> regions;
-  regions.push_back(mybox); // although we've tested mybox, we add
-  // it to the regions since it makes it easier to build the regions list.
-
-  // flip mybox along X axis i.e. (x1, 1-y2):(x2, 1-y1)
-  regions.push_back(vtkBoundingBox(
-      // xmin, xmax
-      mybox.GetMinPoint()[0], mybox.GetMaxPoint()[0],
-      // ymin, ymax
-      1.0 - mybox.GetMaxPoint()[1], 1.0 - mybox.GetMinPoint()[1],
-      // zmin, zmax
-      0,  0));
-
-  // flip both mybox and the flipped-X box along Y axis.
-  // i.e. (1-x2, y1):(1-x1: y2) and (1-x2, 1-y2):(1-x1, 1-y1)
-  for (int cc=1; cc >=0; cc--)
-    {
-    const vtkBoundingBox& bbox = regions[cc];
-    double maxX = 1.0 - bbox.GetMinPoint()[0];
-    double minX = 1.0 - bbox.GetMaxPoint()[0];
-
-    if (isVertical)
-      {
-      // Vertical scalar bars like to stick on the left edge of the bounding box.
-      // That results in the scalar bar getting too close the egde on flipping
-      // along Y axis. So we adjust it by offsetting the X position.
-      double barWidth = bbox.GetLength(1)/aspect;
-      double deltaX = maxX - minX;
-      minX = clamp(maxX - barWidth, 0, 1);
-      maxX = clamp(minX + deltaX, 0, 1);
-      }
-    else
-      {
-      minX += 0.01;
-      maxX += 0.01;
-      }
-    vtkBoundingBox flippedYBox(
-        // xmin, xmax
-        //1.0 - bbox.GetMaxPoint()[0], 1.0 - bbox.GetMinPoint()[0],
-        minX, maxX,
-        // ymin, ymax
-        bbox.GetMinPoint()[1], bbox.GetMaxPoint()[1],
-        // zmin, zmax
-        0, 0);
-    regions.push_back(flippedYBox);
-    }
+  // Set up corner codes for the scalar bar representation
+  int locations[] = { 0, 5, 4, 1 };
 
   // we skip the front since we already tested it.
-  for (size_t cc=1; cc < regions.size(); ++cc)
+  for (size_t cc = 1; cc < sizeof(locations) / sizeof(int); ++cc)
+  {
+    if (IsAvailable(locations[cc], occupiedLocations))
     {
-    const vtkBoundingBox &curbox = regions[cc];
-    if (IsAvailable(curbox, occupiedBoxes))
-      {
-      posHelper.Set(curbox.GetMinPoint(), 2);
-      double lengths[3];
-      curbox.GetLengths(lengths);
-      pos2Helper.Set(lengths, 2);
+      vtkSMPropertyHelper(this, "WindowLocation").Set(locations[cc]);
       break;
-      }
     }
+  }
 
   // otherwise just leave the positions unchanged.
   this->UpdateVTKObjects();
   return true;
+}
+
+//----------------------------------------------------------------------------
+void vtkSMScalarBarWidgetRepresentationProxy::ScalarBarWidgetPosition2ToScalarBarLength()
+{
+  vtkScalarBarRepresentation* repr =
+    vtkScalarBarRepresentation::SafeDownCast(this->RepresentationProxy->GetClientSideObject());
+  if (!repr)
+  {
+    return;
+  }
+
+  int index = repr->GetOrientation() == VTK_ORIENT_HORIZONTAL ? 0 : 1;
+  double length = repr->GetPosition2Coordinate()->GetValue()[index];
+  vtkSMPropertyHelper(this, "ScalarBarLength").Set(length);
+}
+
+//----------------------------------------------------------------------------
+void vtkSMScalarBarWidgetRepresentationProxy::ScalarBarLengthToScalarBarWidgetPosition2()
+{
+  // Set the scalar bar representation length from the ScalarBarlLength property
+  vtkScalarBarRepresentation* repr =
+    vtkScalarBarRepresentation::SafeDownCast(this->RepresentationProxy->GetClientSideObject());
+  if (!repr)
+  {
+    return;
+  }
+
+  int index = repr->GetOrientation() == VTK_ORIENT_HORIZONTAL ? 0 : 1;
+  double length = vtkSMPropertyHelper(this, "ScalarBarLength").GetAsDouble();
+  double pos2[3];
+  repr->GetPosition2Coordinate()->GetValue(pos2);
+  pos2[index] = length;
+  repr->SetPosition2(pos2);
 }

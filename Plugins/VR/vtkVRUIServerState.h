@@ -32,8 +32,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef vtkVRUIServerState_h
 #define vtkVRUIServerState_h
 
-#include "vtkVRUITrackerState.h"
 #include "vtkSmartPointer.h"
+#include "vtkVRUITrackerState.h"
 #include <vector>
 
 class vtkVRUIServerState
@@ -45,15 +45,15 @@ public:
 
   // Description:
   // Return the state of all the trackers.
-  std::vector<vtkSmartPointer<vtkVRUITrackerState> > *GetTrackerStates();
+  std::vector<vtkSmartPointer<vtkVRUITrackerState> >* GetTrackerStates();
 
   // Description:
   // Return the state of all the buttons.
-  std::vector<bool> *GetButtonStates();
+  std::vector<bool>* GetButtonStates();
 
   // Description:
   // Return the state of all the valuators (whatever it is).
-  std::vector<float> *GetValuatorStates();
+  std::vector<float>* GetValuatorStates();
 
 protected:
   std::vector<vtkSmartPointer<vtkVRUITrackerState> > TrackerStates;
@@ -61,8 +61,8 @@ protected:
   std::vector<float> ValuatorStates;
 
 private:
-  vtkVRUIServerState(const vtkVRUIServerState&); // Not implemented.
-  void operator=(const vtkVRUIServerState&); // Not implemented.
+  vtkVRUIServerState(const vtkVRUIServerState&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkVRUIServerState&) VTK_DELETE_FUNCTION;
 };
 
 #endif // #ifndef vtkVRUIServerState_h

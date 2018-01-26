@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,32 +29,41 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqEditCameraReaction_h 
-#define __pqEditCameraReaction_h
+#ifndef pqEditCameraReaction_h
+#define pqEditCameraReaction_h
 
 #include "pqReaction.h"
 #include <QPointer>
 
 class pqView;
 
-/// @ingroup Reactions
-/// pqEditCameraReaction is a reaction to show the edit-camera dialog.
+/**
+* @ingroup Reactions
+* pqEditCameraReaction is a reaction to show the edit-camera dialog.
+*/
 class PQAPPLICATIONCOMPONENTS_EXPORT pqEditCameraReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
-public:
-  pqEditCameraReaction(QAction* parent, pqView* view=0);
 
-  /// Shows the dialog for the view.
+public:
+  pqEditCameraReaction(QAction* parent, pqView* view = 0);
+
+  /**
+  * Shows the dialog for the view.
+  */
   static void editCamera(pqView*);
 public slots:
-  /// Updates the enabled state. Applications need not explicitly call
-  /// this.
+  /**
+  * Updates the enabled state. Applications need not explicitly call
+  * this.
+  */
   void updateEnableState();
 
 protected:
-  /// Called when the action is triggered.
+  /**
+  * Called when the action is triggered.
+  */
   virtual void onTriggered();
 
 private:
@@ -63,5 +72,3 @@ private:
 };
 
 #endif
-
-

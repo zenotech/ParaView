@@ -24,6 +24,24 @@ In that case, use this property hint as follows.
       </Hints>
     </IntVectorProperty>
 
+ComponentLabels
+-----------------
+Show vector component labels for double vector properties.
+
+A multi-component double vector property may represent several different types
+of coordinates.  It may be useful to provide labels for each component's input
+to designate which type of vector is being represented.
+
+    <DoubleVectorProperty ...>
+      ...
+      <Hints>
+        <ShowComponentLabels>
+          <Label component="0" label="X:"/>
+          ...
+        </ShowComponentLabels>
+      </Hints>
+    </DoubleVectorProperty>
+
 PlaceholderText
 ---------------
 Put a PlaceHolder text in the Text entry widget.
@@ -112,3 +130,67 @@ tabular/tree widget.
         <WidgetHeight number_of_rows="20" />
       </Hints>
     </IntVectorProperty>
+
+FileChooser
+------------
+Specify supported extensions to list for `pqFileChooserWidget` dialog.
+
+For properties using FileListDomain to show a file chooser widget on the
+Properties panel, sometimes we want to provide a list of extensions expected. In
+that case, one can use this hint. Note, this is not intended for specifying
+extensions that a reader supports. For that one uses the `<ReaderFactory>` hint
+described in [ProxyHints](@ref ProxyHints). Multiple `FileChooser` hints may be
+specified to show multiple extensions with different description texts.
+
+By default, the file chooser widget will accept only existing files.
+It is possible to add `<UseDirectoryName/>` in the `<Hints>` section to accept only directories,
+or `<AcceptAnyFile/>` to accept any filename to export data.
+
+    <StringVectorProperty animateable="0"
+                          command="SetQFileName"
+                          name="QFileName"
+                          number_of_elements="1"
+                          panel_visibility="default">
+      <FileListDomain name="files" />
+      <Documentation>This property specifies the .q (solution) file name for
+        the PLOT3D reader.</Documentation>
+      <Hints>
+        <FileChooser extensions="q" file_description="Solution files" />
+      </Hints>
+    </StringVectorProperty>
+
+OmitFromLoadAllVariables
+------------
+Specify that a dataset property be excluded when "Load All Variables" toggle is selected.
+
+ParaView has a global toggle named "Load All Variables" that
+automatically selects all variables in a dataset when loading a
+file. This hint allows certain values to be omitted from that list
+(e.g. sidesets, edgesets) so they will not be included by default. The
+user can still manually select these values to be loaded.
+
+    <StringVectorProperty command="SetSideSetArrayStatus"
+                            element_types="2 0"
+                            information_property="SideSetInfo"
+                            name="SideSetArrayStatus"
+                            number_of_elements_per_command="2"
+                            repeat_command="1">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property function="ArrayList"
+                      name="SideSetInfo" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>An Exodus II file may define subsets of all the
+        <i>boundaries</i>of all the elements in a file as sets in their own
+        right. This property specifies which of those sets should be loaded.
+        Variables, such as boundary conditions, may then be defined over these
+        sets by specifying a single number per side. For example, a hexahedron
+        has 18 sides: 6 faces and 12 edges. Any of these sides may be
+        individually called out in a set and assigned a result value. The
+        accompanying SideSetResultArrayStatus property specifies which
+        variables defined over those sets should be loaded.</Documentation>
+        <Hints>
+          <OmitFromLoadAllVariables />
+        </Hints>
+    </StringVectorProperty>

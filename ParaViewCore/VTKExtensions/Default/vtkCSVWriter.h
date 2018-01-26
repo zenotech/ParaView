@@ -12,10 +12,14 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkCSVWriter - CSV writer for vtkTable
-// Writes a vtkTable as a delimited text file (such as CSV). 
-#ifndef __vtkCSVWriter_h
-#define __vtkCSVWriter_h
+/**
+ * @class   vtkCSVWriter
+ * @brief   CSV writer for vtkTable
+ * Writes a vtkTable as a delimited text file (such as CSV).
+*/
+
+#ifndef vtkCSVWriter_h
+#define vtkCSVWriter_h
 
 #include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkWriter.h"
@@ -28,59 +32,80 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkCSVWriter : public vtkWriter
 public:
   static vtkCSVWriter* New();
   vtkTypeMacro(vtkCSVWriter, vtkWriter);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Get/Set the delimiter use to separate fields ("," by default.)
+  //@{
+  /**
+   * Get/Set the delimiter use to separate fields ("," by default.)
+   */
   vtkSetStringMacro(FieldDelimiter);
   vtkGetStringMacro(FieldDelimiter);
+  //@}
 
-  // Description:
-  // Get/Set the delimiter used for string data, if any 
-  // eg. double quotes(").
+  //@{
+  /**
+   * Get/Set the delimiter used for string data, if any
+   * eg. double quotes(").
+   */
   vtkSetStringMacro(StringDelimiter);
   vtkGetStringMacro(StringDelimiter);
+  //@}
 
-  // Description:
-  // Get/Set the filename for the file.
+  //@{
+  /**
+   * Get/Set the filename for the file.
+   */
   vtkSetStringMacro(FileName);
   vtkGetStringMacro(FileName);
+  //@}
 
-  // Description:
-  // Get/Set if StringDelimiter must be used for string data.
-  // True by default.
+  //@{
+  /**
+   * Get/Set if StringDelimiter must be used for string data.
+   * True by default.
+   */
   vtkSetMacro(UseStringDelimiter, bool);
   vtkGetMacro(UseStringDelimiter, bool);
+  //@}
 
-  // Description:
-  // Get/Set the precision to use for printing numeric values.
-  // Default is 5.
+  //@{
+  /**
+   * Get/Set the precision to use for printing numeric values.
+   * Default is 5.
+   */
   vtkSetClampMacro(Precision, int, 0, VTK_INT_MAX);
   vtkGetMacro(Precision, int);
+  //@}
 
-  // Description:
-  // Get/Set whether scientific notation is used for numeric values.
+  //@{
+  /**
+   * Get/Set whether scientific notation is used for numeric values.
+   */
   vtkSetMacro(UseScientificNotation, bool);
   vtkGetMacro(UseScientificNotation, bool);
   vtkBooleanMacro(UseScientificNotation, bool);
+  //@}
 
-//BTX
-  // Description:
-  // Internal method: decortes the "string" with the "StringDelimiter" if 
-  // UseStringDelimiter is true.
+  //@{
+  /**
+   * Internal method: decortes the "string" with the "StringDelimiter" if
+   * UseStringDelimiter is true.
+   */
   vtkStdString GetString(vtkStdString string);
+
 protected:
   vtkCSVWriter();
   ~vtkCSVWriter();
+  //@}
 
   bool OpenFile();
 
-  virtual void WriteData();
+  virtual void WriteData() VTK_OVERRIDE;
   virtual void WriteTable(vtkTable* rectilinearGrid);
 
   // see algorithm for more info.
   // This writer takes in vtkTable.
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
+  virtual int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   char* FileName;
   char* FieldDelimiter;
@@ -90,13 +115,10 @@ protected:
   bool UseScientificNotation;
 
   ofstream* Stream;
+
 private:
-  vtkCSVWriter(const vtkCSVWriter&); // Not implemented.
-  void operator=(const vtkCSVWriter&); // Not implemented.
-//ETX
+  vtkCSVWriter(const vtkCSVWriter&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkCSVWriter&) VTK_DELETE_FUNCTION;
 };
 
-
-
 #endif
-

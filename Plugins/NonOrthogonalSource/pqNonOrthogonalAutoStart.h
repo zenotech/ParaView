@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqNonOrthogonalAutoStart_h
-#define __pqNonOrthogonalAutoStart_h
+#ifndef pqNonOrthogonalAutoStart_h
+#define pqNonOrthogonalAutoStart_h
 
 #include <QObject>
 
@@ -38,8 +38,9 @@ class pqNonOrthogonalAutoStart : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
-  pqNonOrthogonalAutoStart(QObject* parent=0);
+  pqNonOrthogonalAutoStart(QObject* parent = 0);
   virtual ~pqNonOrthogonalAutoStart();
 
   void startup();

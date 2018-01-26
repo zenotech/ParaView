@@ -12,35 +12,36 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVLastSelectionInformation
-// .SECTION Description
-// vtkPVLastSelectionInformation is used to obtain the LastSelection from
-// vtkPVRenderView.
+/**
+ * @class   vtkPVLastSelectionInformation
+ *
+ * vtkPVLastSelectionInformation is used to obtain the LastSelection from
+ * vtkPVRenderView.
+*/
 
-#ifndef __vtkPVLastSelectionInformation_h
-#define __vtkPVLastSelectionInformation_h
+#ifndef vtkPVLastSelectionInformation_h
+#define vtkPVLastSelectionInformation_h
 
 #include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 #include "vtkPVSelectionInformation.h"
 
-class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVLastSelectionInformation : public vtkPVSelectionInformation
+class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVLastSelectionInformation
+  : public vtkPVSelectionInformation
 {
 public:
   static vtkPVLastSelectionInformation* New();
   vtkTypeMacro(vtkPVLastSelectionInformation, vtkPVSelectionInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  virtual void CopyFromObject(vtkObject*);
+  virtual void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
-//BTX
 protected:
   vtkPVLastSelectionInformation();
   ~vtkPVLastSelectionInformation();
 
 private:
-  vtkPVLastSelectionInformation(const vtkPVLastSelectionInformation&); // Not implemented
-  void operator=(const vtkPVLastSelectionInformation&); // Not implemented
-//ETX
+  vtkPVLastSelectionInformation(const vtkPVLastSelectionInformation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVLastSelectionInformation&) VTK_DELETE_FUNCTION;
 };
 
 #endif

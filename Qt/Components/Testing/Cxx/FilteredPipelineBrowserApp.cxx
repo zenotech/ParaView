@@ -1,29 +1,28 @@
 // A Test of a very simple app based on pqCore
 #include "FilteredPipelineBrowserApp.h"
 
-#include <QTimer>
 #include <QApplication>
-#include <QVBoxLayout>
 #include <QDebug>
 #include <QStringList>
+#include <QTimer>
+#include <QVBoxLayout>
 
-#include "QVTKWidget.h"
 #include "vtkObjectFactory.h"
-#include "vtkSmartPointer.h"
-#include "vtkSMSourceProxy.h"
 #include "vtkSMPropertyHelper.h"
+#include "vtkSMSourceProxy.h"
+#include "vtkSmartPointer.h"
 
 #include "pqApplicationCore.h"
 #include "pqCoreTestUtility.h"
 #include "pqObjectBuilder.h"
 #include "pqOptions.h"
-#include "pqPipelineSource.h"
 #include "pqPipelineAnnotationFilterModel.h"
+#include "pqPipelineSource.h"
 #include "pqServer.h"
 #include "vtkProcessModule.h"
 
-#include <QToolBar>
 #include <QAction>
+#include <QToolBar>
 
 MainPipelineWindow::MainPipelineWindow()
 {
@@ -41,9 +40,8 @@ MainPipelineWindow::MainPipelineWindow()
   // Set Filter selector
   this->FilterSelector = new QComboBox();
   this->FilterSelector->addItems(this->FilterNames);
-  QObject::connect( this->FilterSelector, SIGNAL(currentIndexChanged(int)),
-                    this, SLOT(updateSelectedFilter(int)),
-                    Qt::QueuedConnection);
+  QObject::connect(this->FilterSelector, SIGNAL(currentIndexChanged(int)), this,
+    SLOT(updateSelectedFilter(int)), Qt::QueuedConnection);
 
   // Set Pipeline Widget
   this->PipelineWidget = new pqPipelineBrowserWidget(NULL);
@@ -52,8 +50,8 @@ MainPipelineWindow::MainPipelineWindow()
   pqServer* server = ob->createServer(pqServerResource("builtin:"));
 
   // Init and layout the UI
-  QWidget *container = new QWidget(this);
-  QVBoxLayout *internalLayout = new QVBoxLayout();
+  QWidget* container = new QWidget(this);
+  QVBoxLayout* internalLayout = new QVBoxLayout();
   internalLayout->addWidget(this->FilterSelector);
   internalLayout->addWidget(this->PipelineWidget);
   container->setLayout(internalLayout);
@@ -64,7 +62,7 @@ MainPipelineWindow::MainPipelineWindow()
 
   QTimer::singleShot(100, this, SLOT(processTest()));
 
-  QToolBar *tb = new QToolBar("Options", this);
+  QToolBar* tb = new QToolBar("Options", this);
   this->addToolBar(tb);
 
   QAction* actn = tb->addAction("Settings");
@@ -74,22 +72,21 @@ MainPipelineWindow::MainPipelineWindow()
 //-----------------------------------------------------------------------------
 void MainPipelineWindow::updateSelectedFilter(int filterIndex)
 {
-  if(filterIndex == 0)
-    {
+  if (filterIndex == 0)
+  {
     this->PipelineWidget->disableAnnotationFilter();
-    }
+  }
   else
-    {
-    this->PipelineWidget->enableAnnotationFilter(
-        this->FilterNames.at(filterIndex));
-    }
+  {
+    this->PipelineWidget->enableAnnotationFilter(this->FilterNames.at(filterIndex));
+  }
 }
 
 //-----------------------------------------------------------------------------
 void MainPipelineWindow::processTest()
 {
   if (pqOptions* const options = pqApplicationCore::instance()->getOptions())
-    {
+  {
     bool test_succeeded = true;
 
     // ---- Do the testing here ----
@@ -97,10 +94,10 @@ void MainPipelineWindow::processTest()
     // ---- Do the testing here ----
 
     if (options->GetExitAppWhenTestsDone())
-      {
+    {
       QApplication::instance()->exit(test_succeeded ? 0 : 1);
-      }
     }
+  }
 }
 //-----------------------------------------------------------------------------
 void MainPipelineWindow::createPipelineWithAnnotation(pqServer* server)
@@ -137,20 +134,20 @@ void MainPipelineWindow::createPipelineWithAnnotation(pqServer* server)
   vtkSMSourceProxy::SafeDownCast(groupDS->getProxy())->UpdatePipeline();
 
   // Setup annotations:
-  wavelet->getProxy()->SetAnnotation(this->FilterNames.at(1).toLatin1().data(), "-");
-  clip1->getProxy()->SetAnnotation(this->FilterNames.at(1).toLatin1().data(), "-");
-  clip2->getProxy()->SetAnnotation(this->FilterNames.at(1).toLatin1().data(), "-");
+  wavelet->getProxy()->SetAnnotation(this->FilterNames.at(1).toLocal8Bit().data(), "-");
+  clip1->getProxy()->SetAnnotation(this->FilterNames.at(1).toLocal8Bit().data(), "-");
+  clip2->getProxy()->SetAnnotation(this->FilterNames.at(1).toLocal8Bit().data(), "-");
 
-  append->getProxy()->SetAnnotation(this->FilterNames.at(2).toLatin1().data(), "-");
-  groupDS->getProxy()->SetAnnotation(this->FilterNames.at(2).toLatin1().data(), "-");
+  append->getProxy()->SetAnnotation(this->FilterNames.at(2).toLocal8Bit().data(), "-");
+  groupDS->getProxy()->SetAnnotation(this->FilterNames.at(2).toLocal8Bit().data(), "-");
 
-  wavelet->getProxy()->SetAnnotation(this->FilterNames.at(3).toLatin1().data(), "-");
-  clip1->getProxy()->SetAnnotation(this->FilterNames.at(3).toLatin1().data(), "-");
-  clip2->getProxy()->SetAnnotation(this->FilterNames.at(3).toLatin1().data(), "-");
-  append->getProxy()->SetAnnotation(this->FilterNames.at(3).toLatin1().data(), "-");
+  wavelet->getProxy()->SetAnnotation(this->FilterNames.at(3).toLocal8Bit().data(), "-");
+  clip1->getProxy()->SetAnnotation(this->FilterNames.at(3).toLocal8Bit().data(), "-");
+  clip2->getProxy()->SetAnnotation(this->FilterNames.at(3).toLocal8Bit().data(), "-");
+  append->getProxy()->SetAnnotation(this->FilterNames.at(3).toLocal8Bit().data(), "-");
 
-  wavelet->getProxy()->SetAnnotation(this->FilterNames.at(4).toLatin1().data(), "-");
-  cone->getProxy()->SetAnnotation(this->FilterNames.at(4).toLatin1().data(), "-");
+  wavelet->getProxy()->SetAnnotation(this->FilterNames.at(4).toLocal8Bit().data(), "-");
+  cone->getProxy()->SetAnnotation(this->FilterNames.at(4).toLocal8Bit().data(), "-");
 
   // Tooltip
   wavelet->getProxy()->SetAnnotation("tooltip", "1+3+4");

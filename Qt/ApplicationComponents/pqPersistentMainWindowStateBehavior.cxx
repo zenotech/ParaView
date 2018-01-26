@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -31,22 +31,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ========================================================================*/
 #include "pqPersistentMainWindowStateBehavior.h"
 
-#include "pqSettings.h"
 #include "pqApplicationCore.h"
+#include "pqSettings.h"
 
-#include <QMainWindow>
 #include <QCoreApplication>
+#include <QMainWindow>
 #include <QTimer>
 
 //-----------------------------------------------------------------------------
-pqPersistentMainWindowStateBehavior::pqPersistentMainWindowStateBehavior(
-  QMainWindow* parentWindow)
-: Superclass(parentWindow)
+pqPersistentMainWindowStateBehavior::pqPersistentMainWindowStateBehavior(QMainWindow* parentWindow)
+  : Superclass(parentWindow)
 {
   Q_ASSERT(parentWindow != NULL);
-  QObject::connect(QCoreApplication::instance(),
-    SIGNAL(aboutToQuit()),
-    this, SLOT(saveState()));
+  QObject::connect(QCoreApplication::instance(), SIGNAL(aboutToQuit()), this, SLOT(saveState()));
 
   // This is done after a slight delay so that any GUI elements that get created
   // as a consequence of loading of the configuration files will have their
@@ -64,8 +61,7 @@ pqPersistentMainWindowStateBehavior::~pqPersistentMainWindowStateBehavior()
 //-----------------------------------------------------------------------------
 void pqPersistentMainWindowStateBehavior::restoreState(QMainWindow* window)
 {
-  pqApplicationCore::instance()->settings()->restoreState("MainWindow",
-    *window);
+  pqApplicationCore::instance()->settings()->restoreState("MainWindow", *window);
 }
 
 //-----------------------------------------------------------------------------

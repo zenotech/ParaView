@@ -12,13 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVMemoryUseInformation
-// .SECTION Description
-// A vtkClientServerStream serializable container for a single process's
-// instantaneous memory usage.
+/**
+ * @class   vtkPVMemoryUseInformation
+ *
+ * A vtkClientServerStream serializable container for a single process's
+ * instantaneous memory usage.
+*/
 
-#ifndef __vtkPVMemoryUseInformation_h
-#define __vtkPVMemoryUseInformation_h
+#ifndef vtkPVMemoryUseInformation_h
+#define vtkPVMemoryUseInformation_h
 
 #include "vtkPVInformation.h"
 
@@ -32,52 +34,63 @@ class VTKPVCLIENTSERVERCORECORE_EXPORT vtkPVMemoryUseInformation : public vtkPVI
 public:
   static vtkPVMemoryUseInformation* New();
   vtkTypeMacro(vtkPVMemoryUseInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Transfer information about a single object into this object.
-  virtual void CopyFromObject(vtkObject*);
+  /**
+   * Transfer information about a single object into this object.
+   */
+  virtual void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
-  // Description:
-  // Merge another information object.
-  virtual void AddInformation(vtkPVInformation*);
+  /**
+   * Merge another information object.
+   */
+  virtual void AddInformation(vtkPVInformation*) VTK_OVERRIDE;
 
-  // Description:
-  // Manage a serialized version of the information.
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
+  //@{
+  /**
+   * Manage a serialized version of the information.
+   */
+  virtual void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  virtual void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
+  //@}
 
-  // Description:
-  // access the managed information.
-  size_t GetSize(){ return this->MemInfos.size(); }
-  int GetProcessType(int i){ return this->MemInfos[i].ProcessType; }
-  int GetRank(int i){ return this->MemInfos[i].Rank; }
-  long long GetProcMemoryUse(int i){ return this->MemInfos[i].ProcMemUse; }
-  long long GetHostMemoryUse(int i){ return this->MemInfos[i].HostMemUse; }
+  /**
+   * access the managed information.
+   */
+  size_t GetSize() { return this->MemInfos.size(); }
+  int GetProcessType(int i) { return this->MemInfos[i].ProcessType; }
+  int GetRank(int i) { return this->MemInfos[i].Rank; }
+  long long GetProcMemoryUse(int i) { return this->MemInfos[i].ProcMemUse; }
+  long long GetHostMemoryUse(int i) { return this->MemInfos[i].HostMemUse; }
 
 protected:
   vtkPVMemoryUseInformation();
   ~vtkPVMemoryUseInformation();
 
 private:
-  //BTX
   class MemInfo
+  {
+  public:
+    MemInfo()
+      : ProcessType(-1)
+      , Rank(0)
+      , ProcMemUse(0)
+      , HostMemUse(0)
     {
-    public:
-      MemInfo() : ProcessType(-1), Rank(0), ProcMemUse(0), HostMemUse(0) {}
-      void Print();
-    public:
-      int ProcessType;
-      int Rank;
-      long long ProcMemUse;
-      long long HostMemUse;
-    };
+    }
+    void Print();
+
+  public:
+    int ProcessType;
+    int Rank;
+    long long ProcMemUse;
+    long long HostMemUse;
+  };
   vector<MemInfo> MemInfos;
-  //ETX
 
 private:
-  vtkPVMemoryUseInformation(const vtkPVMemoryUseInformation&); // Not implemented
-  void operator=(const vtkPVMemoryUseInformation&); // Not implemented
+  vtkPVMemoryUseInformation(const vtkPVMemoryUseInformation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVMemoryUseInformation&) VTK_DELETE_FUNCTION;
 };
 
 #endif

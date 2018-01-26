@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,27 +29,25 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqDefaultMainWindow_h 
-#define __pqDefaultMainWindow_h
+#ifndef pqDefaultMainWindow_h
+#define pqDefaultMainWindow_h
 
-#include <QMainWindow>
 #include "pqApplicationComponentsModule.h"
+#include <QMainWindow>
 class PQAPPLICATIONCOMPONENTS_EXPORT pqDefaultMainWindow : public QMainWindow
 {
   Q_OBJECT
   typedef QMainWindow Superclass;
+
 public:
-  pqDefaultMainWindow(QWidget* parent=0, Qt::WindowFlags flags=0);
+  pqDefaultMainWindow(QWidget* parent = 0, Qt::WindowFlags flags = 0);
   ~pqDefaultMainWindow();
 
 private:
-  pqDefaultMainWindow(const pqDefaultMainWindow&); // Not implemented.
-  void operator=(const pqDefaultMainWindow&); // Not implemented.
+  Q_DISABLE_COPY(pqDefaultMainWindow)
 
   class pqInternals;
   pqInternals* Internals;
 };
 
 #endif
-
-

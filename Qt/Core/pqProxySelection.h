@@ -29,29 +29,36 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqProxySelection_h
-#define __pqProxySelection_h
+#ifndef pqProxySelection_h
+#define pqProxySelection_h
 
-#include <QSet>
 #include "pqCoreModule.h"
+#include <QSet>
 
 class pqServerManagerModelItem;
 class vtkSMProxySelectionModel;
 
-/// pqProxySelection is used to specify a selection comprising proxies.
-/// pqProxySelection provides methods to convert to and from
-/// vtkSMProxySelectionModel.
+/**
+* pqProxySelection is used to specify a selection comprising proxies.
+* pqProxySelection provides methods to convert to and from
+* vtkSMProxySelectionModel.
+*/
 class PQCORE_EXPORT pqProxySelection : public QSet<pqServerManagerModelItem*>
 {
   typedef QList<pqServerManagerModelItem> Superclass;
+
 public:
-  /// copy values from vtkSMProxySelectionModel. All proxies in the
-  /// vtkSMProxySelectionModel must be known to pqServerManagerModel otherwise
-  /// it will be ignored. Returns true, if the selection was changed, otherwise
-  /// returns false.
+  /**
+  * copy values from vtkSMProxySelectionModel. All proxies in the
+  * vtkSMProxySelectionModel must be known to pqServerManagerModel otherwise
+  * it will be ignored. Returns true, if the selection was changed, otherwise
+  * returns false.
+  */
   bool copyFrom(vtkSMProxySelectionModel* other);
 
-  /// copy values to vtkSMProxySelectionModel. Clears any existing selection.
+  /**
+  * copy values to vtkSMProxySelectionModel. Clears any existing selection.
+  */
   bool copyTo(vtkSMProxySelectionModel* other) const;
 };
 

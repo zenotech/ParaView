@@ -33,7 +33,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqCoreUtilities.h"
 #include "pqFindDataDialog.h"
+#ifdef PARAVIEW_USE_QTHELP
 #include "pqHelpReaction.h"
+#endif
 #include "vtkPVConfig.h"
 
 #include <QMessageBox>
@@ -54,7 +56,9 @@ pqDataQueryReaction::~pqDataQueryReaction()
 //-----------------------------------------------------------------------------
 void pqDataQueryReaction::showHelp()
 {
+#ifdef PARAVIEW_USE_QTHELP
   pqHelpReaction::showHelp("qthelp://paraview.org/paraview/Book/Book_Chapter6.html");
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -62,19 +66,18 @@ void pqDataQueryReaction::showQueryDialog()
 {
 #ifdef PARAVIEW_ENABLE_PYTHON
   if (pqFindDataSingleton.isNull())
-    {
+  {
     pqFindDataDialog* dialog = new pqFindDataDialog(pqCoreUtilities::mainWidget());
     this->connect(dialog, SIGNAL(helpRequested()), SLOT(showHelp()));
     pqFindDataSingleton = dialog;
-    }
+  }
 
   pqFindDataSingleton->show();
   pqFindDataSingleton->raise();
 #else
-  QMessageBox::warning(0,
-                       "Selection Not Supported",
-                       "Error: Find Data requires that ParaView be built with "
-                       "Python enabled. To enable Python set the CMake flag '"
-                       "PARAVIEW_ENABLE_PYTHON' to True.");
+  QMessageBox::warning(0, "Selection Not Supported",
+    "Error: Find Data requires that ParaView be built with "
+    "Python enabled. To enable Python set the CMake flag '"
+    "PARAVIEW_ENABLE_PYTHON' to True.");
 #endif // PARAVIEW_ENABLE_PYTHON
 }

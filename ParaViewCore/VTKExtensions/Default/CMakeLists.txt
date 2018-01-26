@@ -37,23 +37,17 @@ set(Module_SRCS
   vtkAMRFileSeriesReader.cxx
   vtkAMRFragmentIntegration.cxx
   vtkAMRFragmentsFilter.cxx
-  vtkAppendArcLength.cxx
   vtkAppendRectilinearGrid.cxx
-  vtkAttributeDataReductionFilter.cxx
   vtkCellIntegrator.cxx
   vtkCleanUnstructuredGridCells.cxx
   vtkCleanUnstructuredGrid.cxx
   vtkCSVWriter.cxx
-  vtkDataSetRegionSurfaceFilter.cxx
   vtkEnsembleDataReader.cxx
   vtkEquivalenceSet.cxx
   vtkExodusFileSeriesReader.cxx
-  vtkExtractHistogram.cxx
   vtkExtractScatterPlot.cxx
   vtkExtractSelectionRange.cxx
   vtkFileSequenceParser.cxx
-  vtkFileSeriesReader.cxx
-  vtkFileSeriesWriter.cxx
   vtkFlashContour.cxx
   vtkGridAxes2DActor.cxx
   vtkGridAxes3DActor.cxx
@@ -62,8 +56,6 @@ set(Module_SRCS
   vtkGridConnectivity.cxx
   vtkHierarchicalFractal.cxx
   vtkHybridProbeFilter.cxx
-  vtkImageFileSeriesReader.cxx
-  vtkIntegrateAttributes.cxx
   vtkIntegrateFlowThroughSurface.cxx
   vtkIntersectFragments.cxx
   vtkIsoVolume.cxx
@@ -78,14 +70,12 @@ set(Module_SRCS
   vtkMaterialInterfaceToProcMap.cxx
   vtkMergeArrays.cxx
   vtkMergeCompositeDataSet.cxx
-  vtkMetaReader.cxx
   vtkMinMax.cxx
-  vtkParallelSerialWriter.cxx
   vtkPEnSightGoldBinaryReader.cxx
   vtkPEnSightGoldReader.cxx
   vtkPEnSightReader.cxx
   vtkPEquivalenceSet.cxx
-  vtkPExtractHistogram.cxx
+  vtkPExtractTemporalFieldData.cxx
   vtkPGenericEnSightReader.cxx
   vtkPhastaReader.cxx
   vtkPlotEdges.cxx
@@ -123,12 +113,12 @@ set(Module_SRCS
   vtkPVLinearExtrusionFilter.cxx
   vtkPVMetaClipDataSet.cxx
   vtkPVMetaSliceDataSet.cxx
-  vtkPVNullSource.cxx
   vtkPVPlane.cxx
+  vtkPVPLYWriter.cxx
   vtkPVSelectionSource.cxx
   vtkPVTextSource.cxx
-  vtkPVTransform.cxx
   vtkPVTransposeTable.cxx
+  vtkRulerLineForInput.cxx
   vtkQuerySelectionSource.cxx
   vtkRectilinearGridConnectivity.cxx
   vtkSciVizStatistics.cxx
@@ -141,12 +131,16 @@ set(Module_SRCS
   vtkSpyPlotReaderMap.cxx
   vtkSpyPlotUniReader.cxx
   vtkSurfaceVectors.cxx
+  vtkTimeStepProgressFilter.cxx
   vtkTimeToTextConvertor.cxx
   vtkUnstructuredPOPReader.cxx
   vtkVRMLSource.cxx
   vtkXMLCollectionReader.cxx
   vtkXMLPVDWriter.cxx
 )
+if (PARAVIEW_USE_MPI)
+  list(APPEND Module_SRCS vtkInSituPParticlePathFilter.cxx)
+endif()
 
 # Disabled unless using the OpenGL backend.
 if ("${VTK_RENDERING_BACKEND}" STREQUAL "OpenGL")
@@ -179,6 +173,11 @@ set_source_files_properties(
   vtkSpyPlotReaderMap
   vtkSpyPlotUniReader
   WRAP_EXCLUDE
+  )
+
+set_source_files_properties(
+  vtkSpyPlotBlockIterator
+  PROPERTIES WRAP_EXCLUDE_PYTHON 1
   )
 
 set_source_files_properties(

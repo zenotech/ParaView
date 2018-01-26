@@ -12,21 +12,20 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#ifndef   	__vtkProcessModuleAutoMPI_h
-# define   	__vtkProcessModuleAutoMPI_h
+#ifndef vtkProcessModuleAutoMPI_h
+#define vtkProcessModuleAutoMPI_h
 
-
-#include "vtkPVClientServerCoreCoreModule.h" //needed for exports
-#include "vtkObject.h"
 #include "vtkClientServerID.h" // needed for UniqueID.
+#include "vtkObject.h"
+#include "vtkPVClientServerCoreCoreModule.h" //needed for exports
 
 class vtkProcessModuleAutoMPIInternals;
-class VTKPVCLIENTSERVERCORECORE_EXPORT vtkProcessModuleAutoMPI: public vtkObject
+class VTKPVCLIENTSERVERCORECORE_EXPORT vtkProcessModuleAutoMPI : public vtkObject
 {
 public:
   static vtkProcessModuleAutoMPI* New();
   vtkTypeMacro(vtkProcessModuleAutoMPI, vtkObject);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   static bool EnableAutoMPI;
   static int NumberOfCores;
@@ -48,13 +47,12 @@ public:
   // scans for an available free port and starts the server on that
   // port. The port over which the connection is made is returned for
   // the client to consequently connect to it. Returns 0 on failure.
-  int ConnectToRemoteBuiltInSelf ();
+  int ConnectToRemoteBuiltInSelf();
 
 private:
-  vtkProcessModuleAutoMPI(const vtkProcessModuleAutoMPI&); // Not implemented.
-  void operator=(const vtkProcessModuleAutoMPI&); // Not implemented.
-  vtkProcessModuleAutoMPIInternals *Internals;
+  vtkProcessModuleAutoMPI(const vtkProcessModuleAutoMPI&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkProcessModuleAutoMPI&) VTK_DELETE_FUNCTION;
+  vtkProcessModuleAutoMPIInternals* Internals;
 };
 
-
-#endif 	    /* !__vktProcessModuleAutoMPI_h */
+#endif /* !vtkProcessModuleAutoMPI_h */

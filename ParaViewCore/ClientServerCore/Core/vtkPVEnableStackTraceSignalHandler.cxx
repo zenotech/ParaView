@@ -14,8 +14,8 @@
 =========================================================================*/
 #include "vtkPVEnableStackTraceSignalHandler.h"
 
-#include "vtkObjectFactory.h"
 #include "vtkClientServerStream.h"
+#include "vtkObjectFactory.h"
 
 #include <vtksys/SystemInformation.hxx>
 
@@ -23,7 +23,7 @@
 vtkStandardNewMacro(vtkPVEnableStackTraceSignalHandler);
 
 //----------------------------------------------------------------------------
-void vtkPVEnableStackTraceSignalHandler::CopyFromObject(vtkObject *obj)
+void vtkPVEnableStackTraceSignalHandler::CopyFromObject(vtkObject* obj)
 {
   (void)obj;
   vtksys::SystemInformation::SetStackTraceOnError(1);

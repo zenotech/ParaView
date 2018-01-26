@@ -12,21 +12,24 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMContextViewProxy - abstract base class for all Chart Views.
-// .SECTION Description
-// vtkSMContextViewProxy is an abstract base class for all vtkContextView
-// subclasses.
+/**
+ * @class   vtkSMContextViewProxy
+ * @brief   abstract base class for all Chart Views.
+ *
+ * vtkSMContextViewProxy is an abstract base class for all vtkContextView
+ * subclasses.
+*/
 
-#ifndef __vtkSMContextViewProxy_h
-#define __vtkSMContextViewProxy_h
+#ifndef vtkSMContextViewProxy_h
+#define vtkSMContextViewProxy_h
 
+#include "vtkNew.h"                            // needed for vtkInteractorObserver.
 #include "vtkPVServerManagerRenderingModule.h" //needed for exports
 #include "vtkSMViewProxy.h"
-#include "vtkNew.h" // needed for vtkInteractorObserver.
 
 class vtkAbstractContextItem;
 class vtkContextView;
-class vtkImageData;
+class vtkEventForwarderCommand;
 class vtkRenderWindow;
 class vtkRenderWindowInteractor;
 class vtkSelection;
@@ -37,99 +40,119 @@ class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMContextViewProxy : public vtkSMVie
 public:
   static vtkSMContextViewProxy* New();
   vtkTypeMacro(vtkSMContextViewProxy, vtkSMViewProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-//BTX
-  // Description:
-  // Provides access to the vtk chart view.
+  /**
+   * Provides access to the vtk chart view.
+   */
   vtkContextView* GetContextView();
 
-  // Description:
-  // Provides access to the vtk chart.
+  /**
+   * Provides access to the vtk chart.
+   */
   virtual vtkAbstractContextItem* GetContextItem();
-//ETX
 
-  // Description:
-  // Return the render window from which offscreen rendering and interactor can
-  // be accessed
-  virtual vtkRenderWindow* GetRenderWindow();
+  /**
+   * Return the render window from which offscreen rendering and interactor can
+   * be accessed
+   */
+  virtual vtkRenderWindow* GetRenderWindow() VTK_OVERRIDE;
 
-  // Description:
-  // A client process need to set the interactor to enable interactivity. Use
-  // this method to set the interactor and initialize it as needed by the
-  // RenderView. This include changing the interactor style as well as
-  // overriding VTK rendering to use the Proxy/ViewProxy API instead.
-  virtual void SetupInteractor(vtkRenderWindowInteractor* iren);
+  /**
+   * A client process need to set the interactor to enable interactivity. Use
+   * this method to set the interactor and initialize it as needed by the
+   * RenderView. This include changing the interactor style as well as
+   * overriding VTK rendering to use the Proxy/ViewProxy API instead.
+   */
+  virtual void SetupInteractor(vtkRenderWindowInteractor* iren) VTK_OVERRIDE;
 
-  // Description:
-  // Returns the interactor.
-  virtual vtkRenderWindowInteractor* GetInteractor();
+  /**
+   * Returns the interactor.
+   */
+  virtual vtkRenderWindowInteractor* GetInteractor() VTK_OVERRIDE;
 
-  // Description:
-  // Resets the zoom level to 100%
+  /**
+   * Resets the zoom level to 100%
+   */
   virtual void ResetDisplay();
 
-  // Description:
-  // Overridden to report to applications that producers producing non-table
-  // datasets are only viewable if they have the "Plottable" hint. This avoid
-  // applications from inadvertently showing large data in charts.
-  // CreateDefaultRepresentation() will still work without regard for this
-  // Plottable hint.
-  virtual bool CanDisplayData(vtkSMSourceProxy* producer, int outputPort);
+  /**
+   * Overridden to report to applications that producers producing non-table
+   * datasets are only viewable if they have the "Plottable" hint. This avoid
+   * applications from inadvertently showing large data in charts.
+   * CreateDefaultRepresentation() will still work without regard for this
+   * Plottable hint.
+   */
+  virtual bool CanDisplayData(vtkSMSourceProxy* producer, int outputPort) VTK_OVERRIDE;
 
   vtkSelection* GetCurrentSelection();
 
-
-//BTX
 protected:
   vtkSMContextViewProxy();
   ~vtkSMContextViewProxy();
 
-  // Description:
-  // Subclasses should override this method to do the actual image capture.
-  virtual vtkImageData* CaptureWindowInternal(int magnification);
+  virtual void CreateVTKObjects() VTK_OVERRIDE;
 
-  // Description:
-  virtual void CreateVTKObjects();
-
-  // Description:
-  // Used to update the axis range properties on each interaction event.
-  // This also fires the vtkCommand::InteractionEvent.
+  /**
+   * Used to update the axis range properties on each interaction event.
+   * This also fires the vtkCommand::InteractionEvent.
+   */
   void OnInteractionEvent();
 
-  // Description:
-  // Overridden to update ChartAxes ranges on every render. This ensures that
-  // the property's values are up-to-date.
-  virtual void PostRender(bool interactive);
+  /**
+   * Forwards vtkCommand::StartInteractionEvent and
+   * vtkCommand::EndInteractionEvent
+   * from the vtkRenderWindowInteractor
+   */
+  void OnForwardInteractionEvent(vtkObject*, unsigned long, void*);
 
-  // Description:
-  // Overridden to process the "skip_plotable_check" attribute.
-  virtual int ReadXMLAttributes(vtkSMSessionProxyManager* pm, vtkPVXMLElement* element);
+  /**
+   * Used to update the legend position on interaction event.
+   * This also fires the vtkCommand::InteractionEvent.
+   */
+  void OnLeftButtonReleaseEvent();
 
-  // Description:
-  // The context view that is used for all context derived charts.
+  /**
+   * Overridden to update ChartAxes ranges on every render. This ensures that
+   * the property's values are up-to-date.
+   */
+  virtual void PostRender(bool interactive) VTK_OVERRIDE;
+
+  /**
+   * Overridden to process the "skip_plotable_check" attribute.
+   */
+  virtual int ReadXMLAttributes(
+    vtkSMSessionProxyManager* pm, vtkPVXMLElement* element) VTK_OVERRIDE;
+
+  /**
+   * The context view that is used for all context derived charts.
+   */
   vtkContextView* ChartView;
 
-  // Description:
-  // To avoid showing large datasets in context views, that typically rely on
-  // delivering all data to the client side (or cloning it), by default make
-  // extra checks for data type and hints in CanDisplayData(). Certain views
-  // types however, (e.g. XYHistogramView) can show any type of data without
-  // this limitation. For such views, we set this flag to true using XML
-  // attribute "skip_plotable_check".
+  //@{
+  /**
+   * To avoid showing large datasets in context views, that typically rely on
+   * delivering all data to the client side (or cloning it), by default make
+   * extra checks for data type and hints in CanDisplayData(). Certain views
+   * types however, (e.g. XYHistogramView) can show any type of data without
+   * this limitation. For such views, we set this flag to true using XML
+   * attribute "skip_plotable_check".
+   */
   bool SkipPlotableCheck;
-private:
-  vtkSMContextViewProxy(const vtkSMContextViewProxy&); // Not implemented
-  void operator=(const vtkSMContextViewProxy&); // Not implemented
 
-  // Description:
-  // Copies axis ranges from each of the vtkAxis on the vtkChartXY to the
-  // SMproperties.
+private:
+  vtkSMContextViewProxy(const vtkSMContextViewProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMContextViewProxy&) VTK_DELETE_FUNCTION;
+  //@}
+
+  /**
+   * Copies axis ranges from each of the vtkAxis on the vtkChartXY to the
+   * SMproperties.
+   */
   void CopyAxisRangesFromChart();
 
   vtkNew<vtkSMViewProxyInteractorHelper> InteractorHelper;
-//ETX
+  vtkNew<vtkEventForwarderCommand> EventForwarder;
 };
 
 #endif
-

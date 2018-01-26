@@ -5,17 +5,23 @@
 # GENERIC_IO_INCLUDE_DIR -- the include path for GenericIO
 # GENERIC_IO_LIBRARIES -- the GenericIO libraries to link against
 
-## Try to find include directory
-find_path(GENERIC_IO_INCLUDE_DIR
-            NAMES GenericIO.h
-            PATHS /usr/include /usr/local/include
-            )
+find_package(GenericIO CONFIG)
+if (NOT GenericIO_FOUND)
+  ## Try to find include directory
+  find_path(GENERIC_IO_INCLUDE_DIR
+              NAMES GenericIO.h
+              PATHS /usr/include /usr/local/include
+              )
 
-## Try to find the GenericIO library
-find_library(GENERIC_IO_LIBRARIES
-    NAMES GenericIO
-    PATHS /usr/lib
-    )
+  ## Try to find the GenericIO library
+  find_library(GENERIC_IO_LIBRARIES
+      NAMES GenericIO
+      PATHS /usr/lib
+      )
+else ()
+    get_property(GENERIC_IO_INCLUDE_DIR TARGET GenericIO PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+    set(GENERIC_IO_LIBRARIES "GenericIO")
+endif ()
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(

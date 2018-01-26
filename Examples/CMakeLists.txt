@@ -1,7 +1,17 @@
-cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.3)
 project(ParaViewExamples)
 
-find_package(ParaView REQUIRED)
+option(ENABLE_CATALYST "Enable Catalyst Examples" OFF)
+
+set(paraview_components)
+if (ENABLE_CATALYST)
+  list(APPEND paraview_components vtkPVPythonCatalyst)
+endif ()
+
+if (paraview_components)
+  list(INSERT paraview_components 0 COMPONENTS)
+endif ()
+find_package(ParaView REQUIRED ${paraview_components})
 include(${PARAVIEW_USE_FILE})
 
 add_subdirectory(Plugins/Filter)
@@ -10,10 +20,15 @@ add_subdirectory(Plugins/SMProxy)
 add_subdirectory(Plugins/Representation)
 add_subdirectory(Plugins/HiddenLinesRemoval)
 
+if (ENABLE_CATALYST)
+  add_subdirectory(Catalyst)
+endif ()
+
 if (PARAVIEW_BUILD_QT_GUI)
   add_subdirectory(Plugins/Autostart)
   add_subdirectory(Plugins/DockWidget)
   add_subdirectory(Plugins/GUIToolBar)
+  add_subdirectory(Plugins/LagrangianIntegrationModel)
   add_subdirectory(Plugins/PropertyWidgets)
   add_subdirectory(Plugins/Reader)
   add_subdirectory(Plugins/ReaderXMLOnly)
@@ -28,8 +43,8 @@ if (PARAVIEW_BUILD_QT_GUI)
   add_subdirectory(CustomApplications/Demo0)
   add_subdirectory(CustomApplications/Demo1)
   add_subdirectory(CustomApplications/MultiServerClient)
-  add_subdirectory(CustomApplications/Spreadsheet)
-  add_subdirectory(CustomApplications/ParticlesViewer)
+# TODO Update this custom application to load only specific data types.
+#  add_subdirectory(CustomApplications/Spreadsheet) 
 endif()
 
 if (TARGET vtkIOVisItBridge)

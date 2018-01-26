@@ -12,16 +12,18 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVFrustumActor
-// .SECTION Description
-// vtkPVFrustumActor is an actor that renders a frustum. Used in ParaView to
-// show the frustum used for frustum selection extraction.
+/**
+ * @class   vtkPVFrustumActor
+ *
+ * vtkPVFrustumActor is an actor that renders a frustum. Used in ParaView to
+ * show the frustum used for frustum selection extraction.
+*/
 
-#ifndef __vtkPVFrustumActor_h
-#define __vtkPVFrustumActor_h
+#ifndef vtkPVFrustumActor_h
+#define vtkPVFrustumActor_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkOpenGLActor.h"
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 
 class vtkOutlineSource;
 class vtkPolyDataMapper;
@@ -31,18 +33,21 @@ class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVFrustumActor : public vtkOpenGLActor
 public:
   static vtkPVFrustumActor* New();
   vtkTypeMacro(vtkPVFrustumActor, vtkOpenGLActor);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Get/Set the frustum.
+  /**
+   * Get/Set the frustum.
+   */
   void SetFrustum(double corners[24]);
 
-  // Description:
-  // Convenience method to set the color.
+  //@{
+  /**
+   * Convenience method to set the color.
+   */
   void SetColor(double r, double g, double b);
   void SetLineWidth(double r);
+  //@}
 
-//BTX
 protected:
   vtkPVFrustumActor();
   ~vtkPVFrustumActor();
@@ -51,9 +56,8 @@ protected:
   vtkPolyDataMapper* Mapper;
 
 private:
-  vtkPVFrustumActor(const vtkPVFrustumActor&); // Not implemented
-  void operator=(const vtkPVFrustumActor&); // Not implemented
-//ETX
+  vtkPVFrustumActor(const vtkPVFrustumActor&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVFrustumActor&) VTK_DELETE_FUNCTION;
 };
 
 #endif

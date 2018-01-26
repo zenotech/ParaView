@@ -17,25 +17,7 @@ convenience classes in Python.
 #
 #==============================================================================
 import paraview
-import vtk
-
-from vtkPVServerImplementationCorePython import *
-from vtkPVClientServerCoreCorePython import *
-from vtkPVServerManagerCorePython import *
-
-try:
-  from vtkPVServerManagerDefaultPython import *
-except:
-  paraview.print_error("Error: Cannot import vtkPVServerManagerDefaultPython")
-try:
-  from vtkPVServerManagerRenderingPython import *
-except:
-  paraview.print_error("Error: Cannot import vtkPVServerManagerRenderingPython")
-try:
-  from vtkPVServerManagerApplicationPython import *
-except:
-  paraview.print_error("Error: Cannot import vtkPVServerManagerApplicationPython")
-from vtkPVCommonPython import *
+from paraview import vtk
 
 
 def numpy_to_image(numpy_array):
@@ -63,7 +45,7 @@ def numpy_to_image(numpy_array):
   linear_array = numpy.reshape(numpy_array, (w*h, c))
 
   try:
-    from vtk.util import numpy_support
+    from paraview.vtk.util import numpy_support
   except:
     paraview.print_error("Error: Cannot import vtk.util.numpy_support")
 
@@ -144,18 +126,6 @@ def matplotlib_figure(width, height):
   figure.set_size_inches(float(width)/72.0, float(height)/72.0)
 
   return figure
-
-
-def call_setup_data(setup_data_function, view):
-  """
-  @brief Utility function to call the user-defined setup_data function. This is
-         meant to be called by the C++ side of the vtkPythonView class.
-  @parameter view vtkPythonView object
-  """
-  if setup_data_function == None:
-    return
-
-  setup_data_function(view)
 
 
 def call_render(render_function, view, width, height):

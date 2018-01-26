@@ -6,7 +6,6 @@
 #include "vtkClientServerMoveData.h"
 #include "vtkCompleteArrays.h"
 #include "vtkCompositeRepresentation.h"
-#include "vtkCubeAxesRepresentation.h"
 #include "vtkDataLabelRepresentation.h"
 #include "vtkGeometryRepresentation.h"
 #include "vtkGeometryRepresentationWithFaces.h"
@@ -46,7 +45,6 @@
 #include "vtkPVImplicitPlaneRepresentation.h"
 #include "vtkPVInformation.h"
 #include "vtkPVLastSelectionInformation.h"
-#include "vtkPVOpenGLExtensionsInformation.h"
 #include "vtkPVOptions.h"
 #include "vtkPVOptionsXMLParser.h"
 #include "vtkPVParallelCoordinatesRepresentation.h"
@@ -76,7 +74,6 @@
 #include "vtkSelectionDeliveryFilter.h"
 #include "vtkSelectionRepresentation.h"
 #include "vtkSession.h"
-#include "vtkSessionIterator.h"
 #include "vtkSpreadSheetRepresentation.h"
 #include "vtkSpreadSheetView.h"
 #include "vtkTCPNetworkAccessManager.h"
@@ -85,32 +82,32 @@
 #include "vtkXYChartRepresentation.h"
 
 #ifdef PARAVIEW_USE_MPI
-# ifdef PARAVIEW_USE_ICE_T
-#  include "vtkIceTSynchronizedRenderers.h"
-# endif
+#ifdef PARAVIEW_USE_ICE_T
+#include "vtkIceTSynchronizedRenderers.h"
+#endif
 #endif
 
 #ifdef PARAVIEW_ENABLE_PYTHON
-# include "vtkPythonCalculator.h"
-# include "vtkPythonProgrammableFilter.h"
+#include "vtkPythonCalculator.h"
+#include "vtkPythonProgrammableFilter.h"
 #endif
 
-#define PRINT_SELF(classname)\
-  cout <<"------------------------------------" << endl;\
-  cout << "Class: " << #classname << endl;\
-  c = classname::New(); c->Print(cout); c->Delete();
+#define PRINT_SELF(classname)                                                                      \
+  cout << "------------------------------------" << endl;                                          \
+  cout << "Class: " << #classname << endl;                                                         \
+  c = classname::New();                                                                            \
+  c->Print(cout);                                                                                  \
+  c->Delete();
 
-
-int ParaViewCoreClientServerCorePrintSelf(int, char*[])
+int ParaViewCoreClientServerCorePrintSelf(int, char* [])
 {
   vtkObject* c;
   PRINT_SELF(vtk3DWidgetRepresentation);
-  //PRINT_SELF(vtkCaveSynchronizedRenderers);
+  // PRINT_SELF(vtkCaveSynchronizedRenderers);
   PRINT_SELF(vtkChartRepresentation);
   PRINT_SELF(vtkClientServerMoveData);
   PRINT_SELF(vtkCompleteArrays);
   PRINT_SELF(vtkCompositeRepresentation);
-  PRINT_SELF(vtkCubeAxesRepresentation);
   PRINT_SELF(vtkDataLabelRepresentation);
   PRINT_SELF(vtkGeometryRepresentation);
   PRINT_SELF(vtkGeometryRepresentationWithFaces);
@@ -134,7 +131,7 @@ int ParaViewCoreClientServerCorePrintSelf(int, char*[])
   PRINT_SELF(vtkPVCompositeDataInformation);
   PRINT_SELF(vtkPVCompositeDataInformationIterator);
   PRINT_SELF(vtkPVCompositeRepresentation);
-  //PRINT_SELF(vtkPVContextView);
+  // PRINT_SELF(vtkPVContextView);
   PRINT_SELF(vtkPVDataInformation);
   PRINT_SELF(vtkPVDataRepresentation);
   PRINT_SELF(vtkPVDataRepresentationPipeline);
@@ -150,48 +147,47 @@ int ParaViewCoreClientServerCorePrintSelf(int, char*[])
   PRINT_SELF(vtkPVImplicitPlaneRepresentation);
   PRINT_SELF(vtkPVInformation);
   PRINT_SELF(vtkPVLastSelectionInformation);
-  PRINT_SELF(vtkPVOpenGLExtensionsInformation);
   PRINT_SELF(vtkPVOptions);
   PRINT_SELF(vtkPVOptionsXMLParser);
   PRINT_SELF(vtkPVParallelCoordinatesRepresentation);
-  //PRINT_SELF(vtkPVPlugin);
+  // PRINT_SELF(vtkPVPlugin);
   PRINT_SELF(vtkPVPluginLoader);
   PRINT_SELF(vtkPVPluginTracker);
   PRINT_SELF(vtkPVPluginsInformation);
   PRINT_SELF(vtkPVProgressHandler);
-  //PRINT_SELF(vtkPVPythonModule);
-  //PRINT_SELF(vtkPVPythonPluginInterface);
-  //PRINT_SELF(vtkPVRenderView);
+  // PRINT_SELF(vtkPVPythonModule);
+  // PRINT_SELF(vtkPVPythonPluginInterface);
+  // PRINT_SELF(vtkPVRenderView);
   PRINT_SELF(vtkPVRepresentedDataInformation);
   PRINT_SELF(vtkPVSILInformation);
   PRINT_SELF(vtkPVSelectionInformation);
   PRINT_SELF(vtkPVServerInformation);
-  //PRINT_SELF(vtkPVServerManagerPluginInterface);
+  // PRINT_SELF(vtkPVServerManagerPluginInterface);
   PRINT_SELF(vtkPVServerOptions);
   PRINT_SELF(vtkPVSession);
-  //PRINT_SELF(vtkPVSynchronizedRenderWindows);
-  //PRINT_SELF(vtkPVSynchronizedRenderer);
+  // PRINT_SELF(vtkPVSynchronizedRenderWindows);
+  // PRINT_SELF(vtkPVSynchronizedRenderer);
   PRINT_SELF(vtkPVTemporalDataInformation);
   PRINT_SELF(vtkPVTimerInformation);
-  //PRINT_SELF(vtkPVView);
-  //PRINT_SELF(vtkPVXYChartView);
+  // PRINT_SELF(vtkPVView);
+  // PRINT_SELF(vtkPVXYChartView);
   PRINT_SELF(vtkProcessModule);
   PRINT_SELF(vtkProcessModuleAutoMPI);
   PRINT_SELF(vtkSelectionDeliveryFilter);
   PRINT_SELF(vtkSelectionRepresentation);
   PRINT_SELF(vtkSession);
-  PRINT_SELF(vtkSessionIterator);
+  // PRINT_SELF(vtkSessionIterator); Requires process module to have been created.
   PRINT_SELF(vtkSpreadSheetRepresentation);
-  //PRINT_SELF(vtkSpreadSheetView);
+  // PRINT_SELF(vtkSpreadSheetView);
   PRINT_SELF(vtkTCPNetworkAccessManager);
   PRINT_SELF(vtkTextSourceRepresentation);
   PRINT_SELF(vtkUnstructuredGridVolumeRepresentation);
   PRINT_SELF(vtkXYChartRepresentation);
 
 #ifdef PARAVIEW_USE_MPI
-# ifdef PARAVIEW_USE_ICE_T
+#ifdef PARAVIEW_USE_ICE_T
   PRINT_SELF(vtkIceTSynchronizedRenderers);
-# endif
+#endif
 #endif
 
 #ifdef PARAVIEW_ENABLE_PYTHON

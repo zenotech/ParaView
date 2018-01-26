@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,41 +29,54 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqLoadStateReaction_h 
-#define __pqLoadStateReaction_h
+#ifndef pqLoadStateReaction_h
+#define pqLoadStateReaction_h
 
 #include "pqReaction.h"
 
-/// @ingroup Reactions
-/// Reaction for load state action.
+class pqServer;
+
+/**
+* @ingroup Reactions
+* Reaction for load state action.
+*/
+class pqServer;
 class PQAPPLICATIONCOMPONENTS_EXPORT pqLoadStateReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
-public:
-  /// Constructor. Parent cannot be NULL.
-  pqLoadStateReaction(QAction *parent);
 
-  /// Loads the state file.
-  /// Note that this method is static. Applications can simply use this without
-  /// having to create a reaction instance.
-  static void loadState(const QString& filename);
+public:
+  /**
+  * Constructor. Parent cannot be NULL.
+  */
+  pqLoadStateReaction(QAction* parent);
+
+  /**
+  * Loads the state file.
+  * Note that this method is static. Applications can simply use this without
+  * having to create a reaction instance.
+  * If no server is specified, active server is used.
+  */
+  static void loadState(
+    const QString& filename, bool dialogBlocked = false, pqServer* server = NULL);
   static void loadState();
 
 public slots:
-  /// Updates the enabled state. Applications need not explicitly call
-  /// this.
+  /**
+  * Updates the enabled state. Applications need not explicitly call
+  * this.
+  */
   void updateEnableState();
 
 protected:
-  /// Called when the action is triggered.
-  virtual void onTriggered()
-    { pqLoadStateReaction::loadState(); }
+  /**
+  * Called when the action is triggered.
+  */
+  virtual void onTriggered() { pqLoadStateReaction::loadState(); }
 
 private:
   Q_DISABLE_COPY(pqLoadStateReaction)
 };
 
 #endif
-
-

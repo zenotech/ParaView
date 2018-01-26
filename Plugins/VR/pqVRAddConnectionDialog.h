@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqVRAddConnectionDialog_h
-#define __pqVRAddConnectionDialog_h
+#ifndef pqVRAddConnectionDialog_h
+#define pqVRAddConnectionDialog_h
 
 #include <QDialog>
 
@@ -47,17 +47,18 @@ class pqVRAddConnectionDialog : public QDialog
 {
   Q_OBJECT
   typedef QDialog Superclass;
+
 public:
-  pqVRAddConnectionDialog(QWidget* parent=0, Qt::WindowFlags f=0);
+  pqVRAddConnectionDialog(QWidget* parent = 0, Qt::WindowFlags f = 0);
   virtual ~pqVRAddConnectionDialog();
 
 #ifdef PARAVIEW_USE_VRPN
-  void setConnection(pqVRPNConnection *conn);
+  void setConnection(pqVRPNConnection* conn);
   pqVRPNConnection* getVRPNConnection();
   bool isVRPN();
 #endif
 #ifdef PARAVIEW_USE_VRUI
-  void setConnection(pqVRUIConnection *conn);
+  void setConnection(pqVRUIConnection* conn);
   pqVRUIConnection* getVRUIConnection();
   bool isVRUI();
 #endif
@@ -68,7 +69,7 @@ public slots:
   void accept();
 
 protected:
-  void keyPressEvent(QKeyEvent *);
+  void keyPressEvent(QKeyEvent*);
 
 private slots:
   void addInput();

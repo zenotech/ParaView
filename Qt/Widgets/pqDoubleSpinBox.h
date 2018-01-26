@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -29,30 +29,32 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqDoubleSpinBox_h 
-#define __pqDoubleSpinBox_h
+#ifndef pqDoubleSpinBox_h
+#define pqDoubleSpinBox_h
 
-#include <QDoubleSpinBox>
 #include "pqWidgetsModule.h"
+#include <QDoubleSpinBox>
 
-/// QDoubleSpinBox which fires editingFinished() signal when the value is changed
-/// by steps (increments).
+/**
+* QDoubleSpinBox which fires editingFinished() signal when the value is changed
+* by steps (increments).
+*/
 class PQWIDGETS_EXPORT pqDoubleSpinBox : public QDoubleSpinBox
 {
   Q_OBJECT
   typedef QDoubleSpinBox Superclass;
-public:
-  explicit pqDoubleSpinBox(QWidget* parent=0);
 
-  /// Virtual function that is called whenever the user triggers a step.  We are
-  /// overridding this so that we can emit editingFinished() signal
+public:
+  explicit pqDoubleSpinBox(QWidget* parent = 0);
+
+  /**
+  * Virtual function that is called whenever the user triggers a step.  We are
+  * overridding this so that we can emit editingFinished() signal
+  */
   virtual void stepBy(int steps);
 
 private:
-  pqDoubleSpinBox(const pqDoubleSpinBox&); // Not implemented.
-  void operator=(const pqDoubleSpinBox&); // Not implemented.
+  Q_DISABLE_COPY(pqDoubleSpinBox)
 };
 
 #endif
-
-

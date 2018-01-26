@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -30,54 +30,56 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
 
-#ifndef __pqOptions_h
-#define __pqOptions_h
+#ifndef pqOptions_h
+#define pqOptions_h
 
 #include "pqCoreModule.h"
-#include <vtkPVOptions.h>
 #include <QStringList>
+#include <vtkPVOptions.h>
 
-/*! \brief Command line options for pqClient.
+/** \brief Command line options for pqClient.
  *
- * pqOptions extends vtkPVOptions to handle pqClient specific command line 
+ * pqOptions extends vtkPVOptions to handle pqClient specific command line
  * options.
  */
 class PQCORE_EXPORT pqOptions : public vtkPVOptions
 {
 public:
-  static pqOptions *New();
+  static pqOptions* New();
   vtkTypeMacro(pqOptions, vtkPVOptions);
-  void PrintSelf(ostream &os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   vtkGetStringMacro(TileImagePath);
+  vtkGetStringMacro(BaselineDirectory);
   vtkGetStringMacro(TestDirectory);
   vtkGetStringMacro(DataDirectory);
 
   vtkGetMacro(ExitAppWhenTestsDone, int);
- 
+
   // Returns the test scripts as a list.
   QStringList GetTestScripts();
 
-  /// Returns the server resource name specified
-  /// to load.
+  /**
+  * Returns the server resource name specified
+  * to load.
+  */
   vtkGetStringMacro(ServerResourceName);
 
   vtkSetStringMacro(TileImagePath);
+  vtkSetStringMacro(BaselineDirectory);
   vtkSetStringMacro(TestDirectory);
   vtkSetStringMacro(DataDirectory);
 
-  int GetNumberOfTestScripts()
-    { return this->TestScripts.size(); }
-  QString GetTestScript(int cc)
-    { return this->TestScripts[cc].TestFile; }
-  QString GetTestBaseline(int cc)
-    { return this->TestScripts[cc].TestBaseline; }
-  int GetTestImageThreshold(int cc)
-    { return this->TestScripts[cc].ImageThreshold; }
+  int GetNumberOfTestScripts() { return this->TestScripts.size(); }
+  QString GetTestScript(int cc) { return this->TestScripts[cc].TestFile; }
+  QString GetTestBaseline(int cc) { return this->TestScripts[cc].TestBaseline; }
+  int GetTestImageThreshold(int cc) { return this->TestScripts[cc].ImageThreshold; }
 
-  /// HACK: When playing back tests, this variable is set to make it easier to locate
-  /// the test image threshold for the current test. This is updated by the
-  /// test playback code.
+  /**
+  * HACK: When playing back tests, this variable is set to make it easier to locate
+  * the test image threshold for the current test. This is updated by the
+  * test playback code.
+  */
   vtkSetMacro(CurrentImageThreshold, int);
   vtkGetMacro(CurrentImageThreshold, int);
 
@@ -101,9 +103,10 @@ protected:
   pqOptions();
   virtual ~pqOptions();
 
-  virtual void Initialize();
-  virtual int PostProcess(int argc, const char * const *argv);
+  virtual void Initialize() VTK_OVERRIDE;
+  virtual int PostProcess(int argc, const char* const* argv) VTK_OVERRIDE;
 
+  char* BaselineDirectory;
   char* TestDirectory;
   char* DataDirectory;
   char* ServerResourceName;
@@ -120,23 +123,26 @@ protected:
   vtkSetStringMacro(ServerResourceName);
 
   struct TestInfo
-    {
+  {
     QString TestFile;
     QString TestBaseline;
     int ImageThreshold;
-    TestInfo():ImageThreshold(12) { }
-    };
+    TestInfo()
+      : ImageThreshold(12)
+    {
+    }
+  };
 
   QList<TestInfo> TestScripts;
 
   // Description:
   // This method is called when wrong argument is found. If it returns 0, then
   // the parsing will fail.
-  virtual int WrongArgument(const char* argument);
+  virtual int WrongArgument(const char* argument) VTK_OVERRIDE;
+
 private:
-  pqOptions(const pqOptions &);
-  void operator=(const pqOptions &);
+  pqOptions(const pqOptions&);
+  void operator=(const pqOptions&);
 };
 
-#endif //__pqOptions_h
-
+#endif // pqOptions_h

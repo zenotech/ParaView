@@ -12,29 +12,30 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkTableExtentTranslator - Extent translation through lookup table.
-// .SECTION Description
-// vtkTableExtentTranslator provides a vtkExtentTranslator that is
-// programmed with a specific extent corresponding to each piece
-// number.  Readers can provide this to an application to allow the
-// pipeline to execute using the same piece breakdown that is provided
-// in the input file.
+/**
+ * @class   vtkTableExtentTranslator
+ * @brief   Extent translation through lookup table.
+ *
+ * vtkTableExtentTranslator provides a vtkExtentTranslator that is
+ * programmed with a specific extent corresponding to each piece
+ * number.  Readers can provide this to an application to allow the
+ * pipeline to execute using the same piece breakdown that is provided
+ * in the input file.
+*/
 
-#ifndef __vtkTableExtentTranslator_h
-#define __vtkTableExtentTranslator_h
+#ifndef vtkTableExtentTranslator_h
+#define vtkTableExtentTranslator_h
 
-#include "vtkPVClientServerCoreRenderingModule.h" // For export macro
 #include "vtkExtentTranslator.h"
+#include "vtkPVClientServerCoreRenderingModule.h" // For export macro
 
 class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkTableExtentTranslator : public vtkExtentTranslator
 {
 public:
-  vtkTypeMacro(vtkTableExtentTranslator,vtkExtentTranslator);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkTableExtentTranslator, vtkExtentTranslator);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   static vtkTableExtentTranslator* New();
-
-  // Description:
 
   // Set the number of pieces into which the whole extent will be
   // split.  If this is 1 then the whole extent will be returned.  If
@@ -42,53 +43,67 @@ public:
   // extra pieces will be empty data.  If this is more than one but
   // less than the number of pieces in the table then only this many
   // pieces will be returned (FIXME).
-  void SetNumberOfPieces(int pieces);
+  void SetNumberOfPieces(int pieces) VTK_OVERRIDE;
 
-  // Description:
-  // Set the real number of pieces in the extent table.
+  //@{
+  /**
+   * Set the real number of pieces in the extent table.
+   */
   void SetNumberOfPiecesInTable(int pieces);
   vtkGetMacro(NumberOfPiecesInTable, int);
+  //@}
 
-  // Description:
-  // Called to translate the current piece into an extent.  This is
-  // not thread safe.
-  int PieceToExtent();
+  /**
+   * Called to translate the current piece into an extent.  This is
+   * not thread safe.
+   */
+  int PieceToExtent() VTK_OVERRIDE;
 
-  // Description:
-  // Not supported by this subclass of vtkExtentTranslator.
-  int PieceToExtentByPoints();
+  /**
+   * Not supported by this subclass of vtkExtentTranslator.
+   */
+  int PieceToExtentByPoints() VTK_OVERRIDE;
 
-  // Description:
-  // Not supported by this subclass of vtkExtentTranslator.
-  int PieceToExtentThreadSafe(int piece, int numPieces,
-                              int ghostLevel, int *wholeExtent,
-                              int *resultExtent, int splitMode,
-                              int byPoints);
+  /**
+   * Not supported by this subclass of vtkExtentTranslator.
+   */
+  int PieceToExtentThreadSafe(int piece, int numPieces, int ghostLevel, int* wholeExtent,
+    int* resultExtent, int splitMode, int byPoints) VTK_OVERRIDE;
 
-  // Description:
-  // Set the extent to be used for a piece.  This sets the extent table
-  // entry for the piece.
+  /**
+   * Set the extent to be used for a piece.  This sets the extent table
+   * entry for the piece.
+   */
   virtual void SetExtentForPiece(int piece, int* extent);
 
-  // Description:
-  // Get the extent table entry for the given piece.  This is only for
-  // code that is setting up the table.  Extent translation should
-  // always be done through the PieceToExtent method.
+  //@{
+  /**
+   * Get the extent table entry for the given piece.  This is only for
+   * code that is setting up the table.  Extent translation should
+   * always be done through the PieceToExtent method.
+   */
   virtual void GetExtentForPiece(int piece, int* extent);
   virtual int* GetExtentForPiece(int piece);
+  //@}
 
-  // Description:
-  // Set the maximum ghost level that can be requested.  This can be
-  // used by a reader to make sure an extent request does not go
-  // outside the boundaries of the piece's file.
+  //@{
+  /**
+   * Set the maximum ghost level that can be requested.  This can be
+   * used by a reader to make sure an extent request does not go
+   * outside the boundaries of the piece's file.
+   */
   vtkSetMacro(MaximumGhostLevel, int);
   vtkGetMacro(MaximumGhostLevel, int);
+  //@}
 
-  // Description:
-  // Get/Set whether the given piece is available.  Requesting a piece
-  // that is not available will produce errors in the pipeline.
+  //@{
+  /**
+   * Get/Set whether the given piece is available.  Requesting a piece
+   * that is not available will produce errors in the pipeline.
+   */
   virtual void SetPieceAvailable(int piece, int available);
   virtual int GetPieceAvailable(int piece);
+  //@}
 
 protected:
   vtkTableExtentTranslator();
@@ -103,8 +118,8 @@ protected:
   int* PieceAvailable;
 
 private:
-  vtkTableExtentTranslator(const vtkTableExtentTranslator&);  // Not implemented.
-  void operator=(const vtkTableExtentTranslator&);  // Not implemented.
+  vtkTableExtentTranslator(const vtkTableExtentTranslator&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkTableExtentTranslator&) VTK_DELETE_FUNCTION;
 };
 
 #endif

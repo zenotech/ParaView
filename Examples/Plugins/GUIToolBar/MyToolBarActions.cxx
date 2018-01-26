@@ -3,8 +3,8 @@
 #include "MyToolBarActions.h"
 
 #include <QApplication>
-#include <QStyle>
 #include <QMessageBox>
+#include <QStyle>
 
 MyToolBarActions::MyToolBarActions(QObject* p)
   : QActionGroup(p)
@@ -23,4 +23,3 @@ void MyToolBarActions::onAction()
 {
   QMessageBox::information(NULL, "MyAction", "MyAction was invoked\n");
 }
-

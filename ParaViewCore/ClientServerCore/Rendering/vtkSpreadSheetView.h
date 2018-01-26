@@ -12,22 +12,27 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSpreadSheetView
-// .SECTION Description
-// vtkSpreadSheetView is a vtkPVView subclass for a view used to show any data
-// as a spreadsheet. This view can only show one representation at a
-// time. If more than one representation is added to this view, only the first
-// visible representation will be shown.
+/**
+ * @class   vtkSpreadSheetView
+ *
+ * vtkSpreadSheetView is a vtkPVView subclass for a view used to show any data
+ * as a spreadsheet. This view can only show one representation at a
+ * time. If more than one representation is added to this view, only the first
+ * visible representation will be shown.
+*/
 
-#ifndef __vtkSpreadSheetView_h
-#define __vtkSpreadSheetView_h
+#ifndef vtkSpreadSheetView_h
+#define vtkSpreadSheetView_h
 
 #include "vtkPVClientServerCoreRenderingModule.h" //needed for exports
 #include "vtkPVView.h"
 
-class vtkClientServerMoveData;
+#include <map> // For Column Visibilities
+
 class vtkCSVExporter;
+class vtkClientServerMoveData;
 class vtkMarkSelectedRows;
+class vtkPassArrays;
 class vtkReductionFilter;
 class vtkSortedTableStreamer;
 class vtkTable;
@@ -38,137 +43,176 @@ class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkSpreadSheetView : public vtkPVVie
 public:
   static vtkSpreadSheetView* New();
   vtkTypeMacro(vtkSpreadSheetView, vtkPVView);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Triggers a high-resolution render.
-  // @CallOnAllProcessess
-  virtual void StillRender() { this->StreamToClient(); }
+  /**
+   * Triggers a high-resolution render.
+   * \note CallOnAllProcesses
+   */
+  virtual void StillRender() VTK_OVERRIDE { this->StreamToClient(); }
 
-  // Description:
-  // Triggers a interactive render. Based on the settings on the view, this may
-  // result in a low-resolution rendering or a simplified geometry rendering.
-  // @CallOnAllProcessess
-  virtual void InteractiveRender() { this->StreamToClient(); }
+  /**
+   * Triggers a interactive render. Based on the settings on the view, this may
+   * result in a low-resolution rendering or a simplified geometry rendering.
+   * \note CallOnAllProcesses
+   */
+  virtual void InteractiveRender() VTK_OVERRIDE { this->StreamToClient(); }
 
-  // Description:
-  // Overridden to identify and locate the active-representation.
-  virtual void Update();
+  /**
+   * Overridden to identify and locate the active-representation.
+   */
+  virtual void Update() VTK_OVERRIDE;
 
-  // Description:
-  // Get/Set if the view shows extracted selection only or the actual data.
-  // false by default.
-  // @CallOnAllProcessess
+  //@{
+  /**
+   * Get/Set if the view shows extracted selection only or the actual data.
+   * false by default.
+   * \note CallOnAllProcesses
+   */
   void SetShowExtractedSelection(bool);
   vtkBooleanMacro(ShowExtractedSelection, bool);
   vtkGetMacro(ShowExtractedSelection, bool);
+  //@}
 
-  // Description:
-  // Get the number of columns.
-  // @CallOnClient
+  //@{
+  /**
+   * Allow user to enable/disable cell connectivity generation in the datamodel
+   */
+  vtkSetMacro(GenerateCellConnectivity, bool);
+  vtkGetMacro(GenerateCellConnectivity, bool);
+  vtkBooleanMacro(GenerateCellConnectivity, bool);
+  //@}
+
+  //@{
+  /**
+   * Manage column visibilities, used only for export
+   */
+  void SetColumnVisibility(int fieldAssociation, const char* column, int visibility);
+  void ClearColumnVisibilities();
+  //@}
+
+  /**
+   * Get the number of columns.
+   * \note CallOnClient
+   */
   vtkIdType GetNumberOfColumns();
 
-  // Description:
-  // Get the number of rows.
-  // @CallOnClient
+  /**
+   * Get the number of rows.
+   * \note CallOnClient
+   */
   vtkIdType GetNumberOfRows();
 
-  // Description:
-  // Returns the name for the column.
-  // @CallOnClient
+  /**
+   * Returns the name for the column.
+   * \note CallOnClient
+   */
   const char* GetColumnName(vtkIdType index);
 
-  // Description:
-  // Returns the value at given location. This may result in collective
-  // operations is data is not available locally. This method can only be called
-  // on the CLIENT process for now.
-  // @CallOnClient
+  //@{
+  /**
+   * Returns the value at given location. This may result in collective
+   * operations is data is not available locally. This method can only be called
+   * on the CLIENT process for now.
+   * \note CallOnClient
+   */
   vtkVariant GetValue(vtkIdType row, vtkIdType col);
   vtkVariant GetValueByName(vtkIdType row, const char* columnName);
+  //@}
 
-  // Description:
-  // Returns true if the row is selected.
+  /**
+   * Returns true if the row is selected.
+   */
   bool IsRowSelected(vtkIdType row);
 
-  // Description:
-  // Returns true is the data for the particular row is locally available.
+  /**
+   * Returns true is the data for the particular row is locally available.
+   */
   bool IsAvailable(vtkIdType row);
 
   //***************************************************************************
   // Forwarded to vtkSortedTableStreamer.
-  // Description:
-  // Get/Set the column name to sort by.
-  // @CallOnAllProcessess
+  /**
+   * Get/Set the column name to sort by.
+   * \note CallOnAllProcesses
+   */
   void SetColumnNameToSort(const char*);
   void SetColumnNameToSort() { this->SetColumnNameToSort(NULL); }
 
-  // Description:
-  // Get/Set the component to sort with. Use -1 (default) for magnitude.
-  // @CallOnAllProcessess
+  /**
+   * Get/Set the component to sort with. Use -1 (default) for magnitude.
+   * \note CallOnAllProcesses
+   */
   void SetComponentToSort(int val);
 
-  // Description:
-  // Get/Set whether the sort order must be Max to Min rather than Min to Max.
-  // @CallOnAllProcessess
+  /**
+   * Get/Set whether the sort order must be Max to Min rather than Min to Max.
+   * \note CallOnAllProcesses
+   */
   void SetInvertSortOrder(bool);
 
-  // Description:
-  // Set the block size
-  // @CallOnAllProcessess
+  /**
+   * Set the block size
+   * \note CallOnAllProcesses
+   */
   void SetBlockSize(vtkIdType val);
 
-  // Description:
-  // Export the contents of this view using the exporter.
+  /**
+   * Export the contents of this view using the exporter.
+   */
   bool Export(vtkCSVExporter* exporter);
 
-  // Description:
-  // Allow user to clear the cache if he needs to.
+  /**
+   * Allow user to clear the cache if he needs to.
+   */
   void ClearCache();
 
-//BTX
   // INTERNAL METHOD. Don't call directly.
-  void FetchBlockCallback(vtkIdType blockindex);
+  vtkTable* FetchBlockCallback(vtkIdType blockindex, bool filterColumnForExport = false);
 
 protected:
   vtkSpreadSheetView();
   ~vtkSpreadSheetView();
 
-
-  // Description:
-  // On render streams all the data from the processes to the client.
-  // Returns 0 on failure.
-  // Note: Was removed from update because you can't call update()
-  // while in an update
+  /**
+   * On render streams all the data from the processes to the client.
+   * Returns 0 on failure.
+   * Note: Was removed from update because you can't call update()
+   * while in an update
+   */
   int StreamToClient();
 
   void OnRepresentationUpdated();
 
-  vtkTable* FetchBlock(vtkIdType blockindex);
+  vtkTable* FetchBlock(vtkIdType blockindex, bool filterColumnForExport = false);
 
   bool ShowExtractedSelection;
+  bool GenerateCellConnectivity;
   vtkSortedTableStreamer* TableStreamer;
   vtkMarkSelectedRows* TableSelectionMarker;
   vtkReductionFilter* ReductionFilter;
   vtkClientServerMoveData* DeliveryFilter;
+  vtkPassArrays* PassFilter;
 
   vtkIdType NumberOfRows;
 
   enum
-    {
+  {
     FETCH_BLOCK_TAG = 394732
-    };
+  };
+
 private:
-  vtkSpreadSheetView(const vtkSpreadSheetView&); // Not implemented
-  void operator=(const vtkSpreadSheetView&); // Not implemented
+  vtkSpreadSheetView(const vtkSpreadSheetView&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSpreadSheetView&) VTK_DELETE_FUNCTION;
 
   class vtkInternals;
   friend class vtkInternals;
   vtkInternals* Internals;
 
+  std::map<std::pair<int, std::string>, int> ColumnVisibilities;
   bool SomethingUpdated;
 
   unsigned long RMICallbackTag;
-//ETX
 };
 
 #endif

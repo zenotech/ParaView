@@ -12,13 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVCenterAxesActor
-// .SECTION Description
-// vtkPVCenterAxesActor is an actor for the center-axes used in ParaView. It
-// merely uses vtkAxes as the poly data source.
+/**
+ * @class   vtkPVCenterAxesActor
+ *
+ * vtkPVCenterAxesActor is an actor for the center-axes used in ParaView. It
+ * merely uses vtkAxes as the poly data source.
+*/
 
-#ifndef __vtkPVCenterAxesActor_h
-#define __vtkPVCenterAxesActor_h
+#ifndef vtkPVCenterAxesActor_h
+#define vtkPVCenterAxesActor_h
 
 #include "vtkOpenGLActor.h"
 #include "vtkPVVTKExtensionsRenderingModule.h" // needed for export macro
@@ -31,17 +33,18 @@ class VTKPVVTKEXTENSIONSRENDERING_EXPORT vtkPVCenterAxesActor : public vtkOpenGL
 public:
   static vtkPVCenterAxesActor* New();
   vtkTypeMacro(vtkPVCenterAxesActor, vtkOpenGLActor);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // If Symetric is on, the the axis continue to negative values.
+  /**
+   * If Symetric is on, the the axis continue to negative values.
+   */
   void SetSymmetric(int);
 
-  // Description:
-  // Option for computing normals.  By default they are computed.
+  /**
+   * Option for computing normals.  By default they are computed.
+   */
   void SetComputeNormals(int);
 
-//BTX
 protected:
   vtkPVCenterAxesActor();
   ~vtkPVCenterAxesActor();
@@ -49,11 +52,9 @@ protected:
   vtkAxes* Axes;
   vtkPolyDataMapper* Mapper;
 
-
 private:
-  vtkPVCenterAxesActor(const vtkPVCenterAxesActor&); // Not implemented
-  void operator=(const vtkPVCenterAxesActor&); // Not implemented
-//ETX
+  vtkPVCenterAxesActor(const vtkPVCenterAxesActor&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVCenterAxesActor&) VTK_DELETE_FUNCTION;
 };
 
 #endif

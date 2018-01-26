@@ -37,6 +37,10 @@
       { "name":"VTK_ENABLE_KITS",
         "type":"BOOL",
         "value":"ON"
+      },
+      { "name":"VTK_RENDERING_BACKEND",
+        "type":"STRING",
+        "value":"OpenGL"
       }
     ]
   },
@@ -70,6 +74,10 @@
     },
     { "name":"vtkUtilitiesKWSys",
       "path":"VTK/Utilities/KWSys"
+    },
+    {
+      "name":"vtkkwiml",
+      "path":"VTK/Utilities/KWIML"
     },
     { "name":"vtkPVServerManagerCore",
       "path":"ParaViewCore/ServerManager/Core",
@@ -194,6 +202,9 @@
     { "name":"vtkThirdPartyzlib",
       "path":"VTK/ThirdParty/zlib"
     },
+    { "name":"vtkThirdPartylz4",
+      "path":"VTK/ThirdParty/lz4"
+    },
     { "name":"vtkThirdPartyexpat",
       "path":"VTK/ThirdParty/expat"
     },
@@ -202,6 +213,31 @@
     },
     { "name":"vtkPVVTKExtensionsCore",
       "path":"ParaViewCore/VTKExtensions/Core",
+      "include": [
+        { "class":"vtkCommunicationErrorCatcher" },
+        { "class":"vtkCompositeMultiProcessController" },
+        { "class":"vtkDistributedTrivialProducer" },
+        { "class":"vtkMultiProcessControllerHelper" },
+        { "class":"vtkPVCompositeDataPipeline" },
+        { "class":"vtkPVInformationKeys" },
+        { "class":"vtkPVPostFilterExecutive" },
+        { "class":"vtkPVPostFilter" },
+        { "class":"vtkPVTrivialProducer" },
+        { "class":"vtkUndoElement" },
+        { "class":"vtkUndoSet" },
+        { "class":"vtkUndoStack" },
+        { "path":"vtkMemberFunctionCommand.h" },
+        { "path":"vtkPVChangeOfBasisHelper.h" },
+        { "path":"vtkUndoStackInternal.h" }
+      ],
+      "replace": [
+        { "path":"ParaViewCore/VTKExtensions/Core/module.cmake" },
+        { "path":"ParaViewCore/VTKExtensions/Core/CMakeLists.txt" },
+        { "path":"ParaViewCore/VTKExtensions/Core/Base-wrap-exclude-classes.catalyst.cmake" }
+      ],
+      "exclude": [
+        { "path": "Testing" }
+      ],
       "cswrap":true,
       "pythonwrap":true
     },
@@ -247,6 +283,7 @@
     { "path":"VTK/Copyright.txt" },
     { "path":"License_v1.2.txt" },
     { "path":"CMakeLists.txt" },
+    { "path":"version.txt" },
     { "path":"CTestConfig.cmake" },
     { "path":"CMake" },
     { "path":"VTK/CMake" },

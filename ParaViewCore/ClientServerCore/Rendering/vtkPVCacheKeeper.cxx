@@ -19,36 +19,39 @@
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
-#include "vtkProcessModule.h"
 #include "vtkPVCacheKeeperPipeline.h"
+#include "vtkProcessModule.h"
 #include "vtkSmartPointer.h"
 
 #include <map>
 //----------------------------------------------------------------------------
-class vtkPVCacheKeeper::vtkCacheMap :
-  public std::map<double, vtkSmartPointer<vtkDataObject> >
+class vtkPVCacheKeeper::vtkCacheMap : public std::map<double, vtkSmartPointer<vtkDataObject> >
 {
 public:
-  unsigned long GetActualMemorySize() 
-    {
+  unsigned long GetActualMemorySize()
+  {
     unsigned long actual_size = 0;
     vtkCacheMap::iterator iter;
     for (iter = this->begin(); iter != this->end(); ++iter)
-      {
+    {
       actual_size += iter->second.GetPointer()->GetActualMemorySize();
-      }
-    return actual_size;
     }
+    return actual_size;
+  }
 };
 
 vtkStandardNewMacro(vtkPVCacheKeeper);
 vtkCxxSetObjectMacro(vtkPVCacheKeeper, CacheSizeKeeper, vtkCacheSizeKeeper);
 //----------------------------------------------------------------------------
+int vtkPVCacheKeeper::CacheHit = 0;
+int vtkPVCacheKeeper::CacheMiss = 0;
+int vtkPVCacheKeeper::CacheSkips = 0;
+//----------------------------------------------------------------------------
 vtkPVCacheKeeper::vtkPVCacheKeeper()
 {
   this->Cache = new vtkPVCacheKeeper::vtkCacheMap();
   this->CacheTime = 0.0;
-  this->CachingEnabled = true; 
+  this->CachingEnabled = true;
   this->CacheSizeKeeper = 0;
   this->SetCacheSizeKeeper(vtkCacheSizeKeeper::GetInstance());
 }
@@ -72,10 +75,10 @@ void vtkPVCacheKeeper::RemoveAllCaches()
   unsigned long freed_size = this->Cache->GetActualMemorySize();
   this->Cache->clear();
   if (freed_size > 0 && this->CacheSizeKeeper)
-    {
+  {
     // Tell the cache size keeper about the newly freed memory size.
     this->CacheSizeKeeper->FreeCacheSize(freed_size);
-    }
+  }
 
   // this method should never mark the filter modified !!!
 }
@@ -90,20 +93,20 @@ bool vtkPVCacheKeeper::IsCached(double cacheTime)
 //----------------------------------------------------------------------------
 bool vtkPVCacheKeeper::SaveData(vtkDataObject* output)
 {
-  if (!this->CacheSizeKeeper  || !this->CacheSizeKeeper->GetCacheFull())
-    {
+  if (!this->CacheSizeKeeper || !this->CacheSizeKeeper->GetCacheFull())
+  {
     vtkSmartPointer<vtkDataObject> cache;
     cache.TakeReference(output->NewInstance());
     cache->ShallowCopy(output);
     (*this->Cache)[this->CacheTime] = cache;
 
     if (this->CacheSizeKeeper)
-      {
+    {
       // Register used cache size.
       this->CacheSizeKeeper->AddCacheSize(cache->GetActualMemorySize());
-      }
-    return true;
     }
+    return true;
+  }
   return false;
 }
 
@@ -115,69 +118,95 @@ vtkExecutive* vtkPVCacheKeeper::CreateDefaultExecutive()
 }
 
 //----------------------------------------------------------------------------
-int vtkPVCacheKeeper::RequestDataObject(
-  vtkInformation* vtkNotUsed(reqInfo), 
-  vtkInformationVector** inputVector , 
-  vtkInformationVector* outputVector)
+int vtkPVCacheKeeper::RequestDataObject(vtkInformation* vtkNotUsed(reqInfo),
+  vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
   if (!inInfo)
-    {
+  {
     return 0;
-    }
-  
-  vtkDataObject *input = vtkDataObject::GetData(inInfo);
+  }
+
+  vtkDataObject* input = vtkDataObject::GetData(inInfo);
   if (input)
-    {
+  {
     // for each output
-    for(int i=0; i < this->GetNumberOfOutputPorts(); ++i)
+    for (int i = 0; i < this->GetNumberOfOutputPorts(); ++i)
+    {
+      vtkDataObject* output = vtkDataObject::GetData(outputVector, 0);
+      if (!output || !output->IsA(input->GetClassName()))
       {
-      vtkDataObject *output = vtkDataObject::GetData(outputVector, 0);
-      if (!output || !output->IsA(input->GetClassName())) 
-        {
         vtkDataObject* newOutput = input->NewInstance();
         outputVector->GetInformationObject(0)->Set(vtkDataObject::DATA_OBJECT(), newOutput);
         newOutput->Delete();
         this->GetOutputPortInformation(i)->Set(
           vtkDataObject::DATA_EXTENT_TYPE(), newOutput->GetExtentType());
-        }
       }
-    return 1;
     }
+    return 1;
+  }
 
   return 0;
 }
 
 //----------------------------------------------------------------------------
 int vtkPVCacheKeeper::RequestData(vtkInformation* vtkNotUsed(reqInfo),
-  vtkInformationVector** inputVector,
-  vtkInformationVector* outputVector)
+  vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
-  vtkInformation *outInfo = outputVector->GetInformationObject(0);
-  vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
-  vtkDataObject *input = inInfo->Get(vtkDataObject::DATA_OBJECT());
-  vtkDataObject *output = outInfo->Get(vtkDataObject::DATA_OBJECT());
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
+  vtkDataObject* input = inInfo->Get(vtkDataObject::DATA_OBJECT());
+  vtkDataObject* output = outInfo->Get(vtkDataObject::DATA_OBJECT());
 
   if (this->CachingEnabled)
-    {
+  {
     if (this->IsCached(this->CacheTime))
-      {
+    {
       output->ShallowCopy((*this->Cache)[this->CacheTime]);
-      //cout << this << " using Cache: " << this->CacheTime << endl;
-      }
+      // cout << this << " using Cache: " << this->CacheTime << endl;
+      vtkPVCacheKeeper::CacheHit++;
+    }
     else
-      {
+    {
       output->ShallowCopy(input);
       this->SaveData(output);
-      //cout << this << " Saving cache: " << this->CacheTime << endl;
-      }
+      // cout << this << " Saving cache: " << this->CacheTime << endl;
+      vtkPVCacheKeeper::CacheMiss++;
     }
+  }
   else
-    {
+  {
     output->ShallowCopy(input);
-    //cout << this << " Not using cache" << endl;
-    }
+    vtkPVCacheKeeper::CacheSkips++;
+    // cout << this << " Not using cache" << endl;
+  }
   return 1;
+}
+
+//----------------------------------------------------------------------------
+void vtkPVCacheKeeper::ClearCacheStateFlags()
+{
+  vtkPVCacheKeeper::CacheHit = 0;
+  vtkPVCacheKeeper::CacheMiss = 0;
+  vtkPVCacheKeeper::CacheSkips = 0;
+}
+
+//----------------------------------------------------------------------------
+int vtkPVCacheKeeper::GetCacheHits()
+{
+  return vtkPVCacheKeeper::CacheHit;
+}
+
+//----------------------------------------------------------------------------
+int vtkPVCacheKeeper::GetCacheMisses()
+{
+  return vtkPVCacheKeeper::CacheMiss;
+}
+
+//----------------------------------------------------------------------------
+int vtkPVCacheKeeper::GetCacheSkips()
+{
+  return vtkPVCacheKeeper::CacheSkips;
 }
 
 //----------------------------------------------------------------------------
@@ -185,5 +214,3 @@ void vtkPVCacheKeeper::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
-
-

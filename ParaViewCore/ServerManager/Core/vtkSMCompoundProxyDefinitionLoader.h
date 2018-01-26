@@ -12,17 +12,20 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSMCompoundProxyDefinitionLoader - Creates a compound proxy from an
-// XML definition.
-// .SECTION Description
-// vtkSMCompoundProxyDefinitionLoader can load a compound proxy definition
-// from a given vtkPVXMLElement. This element can be populated by a 
-// vtkPVXMLElement or obtained from the proxy manager.
-// .SECTION See Also
-// vtkPVXMLElement vtkPVXMLParser vtkSMProxyManager
+/**
+ * @class   vtkSMCompoundProxyDefinitionLoader
+ * @brief   Creates a compound proxy from an
+ * XML definition.
+ *
+ * vtkSMCompoundProxyDefinitionLoader can load a compound proxy definition
+ * from a given vtkPVXMLElement. This element can be populated by a
+ * vtkPVXMLElement or obtained from the proxy manager.
+ * @sa
+ * vtkPVXMLElement vtkPVXMLParser vtkSMProxyManager
+*/
 
-#ifndef __vtkSMCompoundProxyDefinitionLoader_h
-#define __vtkSMCompoundProxyDefinitionLoader_h
+#ifndef vtkSMCompoundProxyDefinitionLoader_h
+#define vtkSMCompoundProxyDefinitionLoader_h
 
 #include "vtkPVServerManagerCoreModule.h" //needed for exports
 #include "vtkSMDeserializerXML.h"
@@ -34,7 +37,7 @@ class VTKPVSERVERMANAGERCORE_EXPORT vtkSMCompoundProxyDefinitionLoader : public 
 public:
   static vtkSMCompoundProxyDefinitionLoader* New();
   vtkTypeMacro(vtkSMCompoundProxyDefinitionLoader, vtkSMDeserializerXML);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   virtual void SetRootElement(vtkPVXMLElement*);
 
@@ -42,14 +45,16 @@ protected:
   vtkSMCompoundProxyDefinitionLoader();
   ~vtkSMCompoundProxyDefinitionLoader();
 
-  // Description:
-  // Locate the XML for the proxy with the given id.
-  virtual vtkPVXMLElement* LocateProxyElement(vtkTypeUInt32 id);
+  /**
+   * Locate the XML for the proxy with the given id.
+   */
+  virtual vtkPVXMLElement* LocateProxyElement(vtkTypeUInt32 id) VTK_OVERRIDE;
 
   vtkPVXMLElement* RootElement;
+
 private:
-  vtkSMCompoundProxyDefinitionLoader(const vtkSMCompoundProxyDefinitionLoader&); // Not implemented
-  void operator=(const vtkSMCompoundProxyDefinitionLoader&); // Not implemented
+  vtkSMCompoundProxyDefinitionLoader(const vtkSMCompoundProxyDefinitionLoader&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSMCompoundProxyDefinitionLoader&) VTK_DELETE_FUNCTION;
 };
 
 #endif

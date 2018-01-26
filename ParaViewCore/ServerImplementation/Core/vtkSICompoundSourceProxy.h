@@ -12,15 +12,17 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkSICompoundSourceProxy
-// .SECTION Description
-// vtkSICompoundSourceProxy is the server-side helper for a
-// vtkSMCompoundSourceProxy.
-// It provides the mapping to the exposed output port to the underneath
-// internal sub-proxy.
+/**
+ * @class   vtkSICompoundSourceProxy
+ *
+ * vtkSICompoundSourceProxy is the server-side helper for a
+ * vtkSMCompoundSourceProxy.
+ * It provides the mapping to the exposed output port to the underneath
+ * internal sub-proxy.
+*/
 
-#ifndef __vtkSICompoundSourceProxy_h
-#define __vtkSICompoundSourceProxy_h
+#ifndef vtkSICompoundSourceProxy_h
+#define vtkSICompoundSourceProxy_h
 
 #include "vtkPVServerImplementationCoreModule.h" //needed for exports
 #include "vtkSISourceProxy.h"
@@ -32,32 +34,33 @@ class VTKPVSERVERIMPLEMENTATIONCORE_EXPORT vtkSICompoundSourceProxy : public vtk
 public:
   static vtkSICompoundSourceProxy* New();
   vtkTypeMacro(vtkSICompoundSourceProxy, vtkSISourceProxy);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Returns the vtkAlgorithmOutput for an output port, if valid.
-  virtual vtkAlgorithmOutput* GetOutputPort(int port);
+  /**
+   * Returns the vtkAlgorithmOutput for an output port, if valid.
+   */
+  virtual vtkAlgorithmOutput* GetOutputPort(int port) VTK_OVERRIDE;
 
-//BTX
 protected:
   vtkSICompoundSourceProxy();
   ~vtkSICompoundSourceProxy();
 
-  // Description:
-  // Read xml-attributes.
-  virtual bool ReadXMLAttributes(vtkPVXMLElement* element);
+  /**
+   * Read xml-attributes.
+   */
+  virtual bool ReadXMLAttributes(vtkPVXMLElement* element) VTK_OVERRIDE;
 
-  // Description:
-  // Create the output ports and add post filters for each output port.
-  virtual bool CreateOutputPorts();
+  /**
+   * Create the output ports and add post filters for each output port.
+   */
+  virtual bool CreateOutputPorts() VTK_OVERRIDE;
 
 private:
-  vtkSICompoundSourceProxy(const vtkSICompoundSourceProxy&); // Not implemented
-  void operator=(const vtkSICompoundSourceProxy&); // Not implemented
+  vtkSICompoundSourceProxy(const vtkSICompoundSourceProxy&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSICompoundSourceProxy&) VTK_DELETE_FUNCTION;
 
   class vtkInternals;
   vtkInternals* Internals;
-//ETX
 };
 
 #endif

@@ -29,19 +29,20 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqTPPluginManager_h
-#define __pqTPPluginManager_h
+#ifndef pqTPPluginManager_h
+#define pqTPPluginManager_h
 
 #include <pqSGPluginManager.h>
 
 /// pqTPPluginManager is the central class that orchestrates the behaviour of
 /// this spatio-temporal script creator plugin.
-class pqTPPluginManager :  public pqSGPluginManager
+class pqTPPluginManager : public pqSGPluginManager
 {
   Q_OBJECT
   typedef pqSGPluginManager Superclass;
+
 public:
-  pqTPPluginManager(QObject* parent=0);
+  pqTPPluginManager(QObject* parent = 0);
   ~pqTPPluginManager();
 
   /// Get the name of the writers menu from the concrete subclass.
@@ -51,8 +52,7 @@ public:
   virtual const char* getObjectMenuName();
 
 private:
-  pqTPPluginManager(const pqTPPluginManager&); // Not implemented.
-  void operator=(const pqTPPluginManager&); // Not implemented.
+  Q_DISABLE_COPY(pqTPPluginManager)
 };
 
 #endif

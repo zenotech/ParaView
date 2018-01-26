@@ -14,8 +14,8 @@
 =========================================================================*/
 #include "vtkDataLabelRepresentation.h"
 
-#include "vtkActor2D.h"
 #include "vtkActor.h"
+#include "vtkActor2D.h"
 #include "vtkCallbackCommand.h"
 #include "vtkCellCenters.h"
 #include "vtkCompositeDataToUnstructuredGridFilter.h"
@@ -23,6 +23,7 @@
 #include "vtkInformationVector.h"
 #include "vtkLabeledDataMapper.h"
 #include "vtkMPIMoveData.h"
+#include "vtkMaskPoints.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPVCacheKeeper.h"
@@ -38,10 +39,13 @@ vtkDataLabelRepresentation::vtkDataLabelRepresentation()
 {
   this->PointLabelVisibility = 0;
   this->CellLabelVisibility = 0;
+  this->MaximumNumberOfLabels = 100;
 
   this->MergeBlocks = vtkCompositeDataToUnstructuredGridFilter::New();
   this->CacheKeeper = vtkPVCacheKeeper::New();
 
+  this->PointMask = vtkSmartPointer<vtkMaskPoints>::New();
+  this->PointMask->SetOnRatio(1);
   this->PointLabelMapper = vtkLabeledDataMapper::New();
   this->PointLabelActor = vtkActor2D::New();
   this->PointLabelProperty = vtkTextProperty::New();
@@ -50,15 +54,24 @@ vtkDataLabelRepresentation::vtkDataLabelRepresentation()
   this->Transform->Identity();
 
   this->CellCenters = vtkCellCenters::New();
+  this->CellMask = vtkSmartPointer<vtkMaskPoints>::New();
+  this->CellMask->SetOnRatio(1);
   this->CellLabelMapper = vtkLabeledDataMapper::New();
   this->CellLabelActor = vtkActor2D::New();
   this->CellLabelProperty = vtkTextProperty::New();
 
   this->CacheKeeper->SetInputConnection(this->MergeBlocks->GetOutputPort());
 
-  //this->PointLabelMapper->SetInputConnection(this->DeliverySuppressor->GetOutputPort());
-  //this->CellCenters->SetInputConnection(this->DeliverySuppressor->GetOutputPort());
-  this->CellLabelMapper->SetInputConnection(this->CellCenters->GetOutputPort());
+  this->PointMask->SetMaximumNumberOfPoints(this->MaximumNumberOfLabels);
+  this->PointMask->RandomModeOn();
+  this->CellMask->SetMaximumNumberOfPoints(this->MaximumNumberOfLabels);
+  this->CellMask->RandomModeOn();
+
+  this->PointLabelMapper->SetInputConnection(this->PointMask->GetOutputPort());
+  // this->PointLabelMapper->SetInputConnection(this->DeliverySuppressor->GetOutputPort());
+  // this->CellCenters->SetInputConnection(this->DeliverySuppressor->GetOutputPort());
+  this->CellMask->SetInputConnection(this->CellCenters->GetOutputPort());
+  this->CellLabelMapper->SetInputConnection(this->CellMask->GetOutputPort());
 
   this->PointLabelActor->SetMapper(this->PointLabelMapper);
   this->CellLabelActor->SetMapper(this->CellLabelMapper);
@@ -78,8 +91,7 @@ vtkDataLabelRepresentation::vtkDataLabelRepresentation()
   this->WarningObserver = vtkCallbackCommand::New();
   this->WarningObserver->SetCallback(&vtkDataLabelRepresentation::OnWarningEvent);
   this->WarningObserver->SetClientData(this);
-  this->CellLabelMapper->AddObserver(vtkCommand::WarningEvent,
-                                     this->WarningObserver);
+  this->CellLabelMapper->AddObserver(vtkCommand::WarningEvent, this->WarningObserver);
 }
 
 //----------------------------------------------------------------------------
@@ -110,10 +122,26 @@ void vtkDataLabelRepresentation::SetVisibility(bool val)
 //----------------------------------------------------------------------------
 bool vtkDataLabelRepresentation::GetVisibility()
 {
-  return this->Superclass::GetVisibility() && (
-    this->PointLabelVisibility || this->CellLabelVisibility);
+  return this->Superclass::GetVisibility() &&
+    (this->PointLabelVisibility || this->CellLabelVisibility);
 }
 
+//----------------------------------------------------------------------------
+void vtkDataLabelRepresentation::SetMaximumNumberOfLabels(int numLabels)
+{
+  if (this->MaximumNumberOfLabels != numLabels)
+  {
+    this->MaximumNumberOfLabels = numLabels;
+    this->PointMask->SetMaximumNumberOfPoints(numLabels);
+    this->CellMask->SetMaximumNumberOfPoints(numLabels);
+  }
+}
+
+//----------------------------------------------------------------------------
+int vtkDataLabelRepresentation::GetMaximumNumberOfLabels()
+{
+  return this->MaximumNumberOfLabels;
+}
 //----------------------------------------------------------------------------
 void vtkDataLabelRepresentation::SetPointLabelVisibility(int val)
 {
@@ -183,14 +211,14 @@ void vtkDataLabelRepresentation::SetPointLabelFontSize(int val)
 //----------------------------------------------------------------------------
 void vtkDataLabelRepresentation::SetPointLabelFormat(const char* format)
 {
-  if ( format && strcmp(format,"") != 0 )
-    {
+  if (format && strcmp(format, "") != 0)
+  {
     this->PointLabelMapper->SetLabelFormat(format);
-    }
+  }
   else
-    {
+  {
     this->PointLabelMapper->SetLabelFormat(NULL);
-    }
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -262,25 +290,24 @@ void vtkDataLabelRepresentation::SetCellLabelFontSize(int val)
 //----------------------------------------------------------------------------
 void vtkDataLabelRepresentation::SetCellLabelFormat(const char* format)
 {
-  if ( format && strcmp(format,"") != 0 )
-    {
+  if (format && strcmp(format, "") != 0)
+  {
     this->CellLabelMapper->SetLabelFormat(format);
-    }
+  }
   else
-    {
+  {
     this->CellLabelMapper->SetLabelFormat(NULL);
-    }
+  }
 }
-
 
 //----------------------------------------------------------------------------
 void vtkDataLabelRepresentation::MarkModified()
 {
   if (!this->GetUseCache())
-    {
+  {
     // Cleanup caches when not using cache.
     this->CacheKeeper->RemoveAllCaches();
-    }
+  }
   this->Superclass::MarkModified();
 }
 
@@ -291,8 +318,7 @@ bool vtkDataLabelRepresentation::IsCached(double cache_key)
 }
 
 //----------------------------------------------------------------------------
-int vtkDataLabelRepresentation::FillInputPortInformation(
-  int vtkNotUsed(port), vtkInformation* info)
+int vtkDataLabelRepresentation::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   info->Append(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkCompositeDataSet");
@@ -305,11 +331,11 @@ bool vtkDataLabelRepresentation::AddToView(vtkView* view)
 {
   vtkPVRenderView* rview = vtkPVRenderView::SafeDownCast(view);
   if (rview)
-    {
+  {
     rview->GetNonCompositedRenderer()->AddActor(this->PointLabelActor);
     rview->GetNonCompositedRenderer()->AddActor(this->CellLabelActor);
-    return true;
-    }
+    return this->Superclass::AddToView(view);
+  }
   return false;
 }
 
@@ -318,61 +344,59 @@ bool vtkDataLabelRepresentation::RemoveFromView(vtkView* view)
 {
   vtkPVRenderView* rview = vtkPVRenderView::SafeDownCast(view);
   if (rview)
-    {
+  {
     rview->GetNonCompositedRenderer()->RemoveActor(this->PointLabelActor);
     rview->GetNonCompositedRenderer()->RemoveActor(this->CellLabelActor);
-    return true;
-    }
+    return this->Superclass::RemoveFromView(view);
+  }
   return false;
 }
 
 //----------------------------------------------------------------------------
-int vtkDataLabelRepresentation::RequestData(vtkInformation* request,
-  vtkInformationVector** inputVector, vtkInformationVector* outputVector)
+int vtkDataLabelRepresentation::RequestData(
+  vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   // Pass caching information to the cache keeper.
   this->CacheKeeper->SetCachingEnabled(this->GetUseCache());
   this->CacheKeeper->SetCacheTime(this->GetCacheKey());
 
-  if (inputVector[0]->GetNumberOfInformationObjects()==1)
-    {
-    this->MergeBlocks->SetInputConnection(
-      this->GetInternalOutputPort());
+  if (inputVector[0]->GetNumberOfInformationObjects() == 1)
+  {
+    this->MergeBlocks->SetInputConnection(this->GetInternalOutputPort());
     this->CacheKeeper->Update();
 
     this->Dataset = this->CacheKeeper->GetOutputDataObject(0);
-    }
+  }
   else
-    {
+  {
     this->MergeBlocks->RemoveAllInputs();
     this->Dataset = vtkSmartPointer<vtkUnstructuredGrid>::New();
-    }
+  }
 
   return this->Superclass::RequestData(request, inputVector, outputVector);
 }
 
 //----------------------------------------------------------------------------
 int vtkDataLabelRepresentation::ProcessViewRequest(
-  vtkInformationRequestKey* request_type,
-  vtkInformation* inInfo, vtkInformation* outInfo)
+  vtkInformationRequestKey* request_type, vtkInformation* inInfo, vtkInformation* outInfo)
 {
   if (!this->Superclass::ProcessViewRequest(request_type, inInfo, outInfo))
-    {
+  {
     // i.e. this->GetVisibility() == false, hence nothing to do.
     return 0;
-    }
+  }
 
   if (request_type == vtkPVView::REQUEST_UPDATE())
-    {
+  {
     vtkPVRenderView::SetPiece(inInfo, this, this->Dataset);
     vtkPVRenderView::SetDeliverToAllProcesses(inInfo, this, true);
-    }
+  }
   else if (request_type == vtkPVView::REQUEST_RENDER())
-    {
+  {
     vtkAlgorithmOutput* producerPort = vtkPVRenderView::GetPieceProducer(inInfo, this);
-    this->PointLabelMapper->SetInputConnection(producerPort);
+    this->PointMask->SetInputConnection(producerPort);
     this->CellCenters->SetInputConnection(producerPort);
-    }
+  }
 
   return 1;
 }
@@ -430,8 +454,7 @@ void vtkDataLabelRepresentation::SetUserTransform(const double matrix[16])
 }
 
 //----------------------------------------------------------------------------
-void vtkDataLabelRepresentation::OnWarningEvent(
-  vtkObject*, unsigned long, void*, void *)
+void vtkDataLabelRepresentation::OnWarningEvent(vtkObject*, unsigned long, void*, void*)
 {
   // we just ignore the warning here.
 }

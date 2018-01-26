@@ -13,11 +13,18 @@ import paraview
 from paraview import simple, servermanager
 from paraview.servermanager import ProxyProperty, InputProperty
 
-from vtkPVServerManagerCorePython import *
+from vtk.vtkPVServerManagerCore import *
 
 # Needed for:
 #    vtkSMPVRepresentationProxy
-from vtkPVServerManagerRenderingPython import *
+from vtk.vtkPVServerManagerRendering import *
+
+PY3 = False
+if sys.version_info >= (3,):
+    xrange = range
+    PY3 = True
+
+from vtk.web import buffer
 
 # =============================================================================
 # Pipeline management
@@ -56,7 +63,7 @@ class Pipeline:
         nid = str(node_id)
 
         # Add child
-        if self.children_ids.has_key(pid):
+        if pid in self.children_ids:
             self.children_ids[pid].append(nid)
         else:
             self.children_ids[pid] = [nid]
@@ -98,12 +105,12 @@ class Pipeline:
             node = getProxyAsPipelineNode(id, view)
             nid = str(node['proxy_id'])
 
-            if nodeToFill.has_key('children'):
+            if 'children' in nodeToFill:
                 nodeToFill['children'].append(node)
             else:
                 nodeToFill['children'] = [ node ]
 
-            if self.children_ids.has_key(nid):
+            if nid in self.children_ids:
                 self.__fill_children(node, self.children_ids[nid]);
 
 # =============================================================================
@@ -274,9 +281,9 @@ def getProxyAsState(id):
                     subProxyId = proxy.GetProperty(property).GetData().GetGlobalID()
                     properties[propertyName] = getProxyAsState(subProxyId)
                 except:
-                    print "Error on", property, propertyName
-                    print "Skip property: ", str(type(data))
-                    print data
+                    print ("Error on", property, propertyName)
+                    print ("Skip property: ", str(type(data)))
+                    print (data)
     state['properties'] = properties;
     return state
 
@@ -312,6 +319,8 @@ def updateProxyProperties(proxy, properties):
 # --------------------------------------------------------------------------
 
 def removeUnicode(value):
+    # python 3 is using str everywhere already.
+    if PY3: return value
     if type(value) == unicode:
         return str(value)
     if type(value) == list:
@@ -355,8 +364,8 @@ def getProxyDomains(id):
                    jsonDefinition[key]['order'] = orderIndex
                    orderIndex = orderIndex + 1
            except:
-               print "(Def) Error on", property, ", skipping it..."
-               #print "(Def) Skip property: ", str(type(data))
+               print ("(Def) Error on", property, ", skipping it...")
+               #print ("(Def) Skip property: ", str(type(data)))
 
    return jsonDefinition
 
@@ -486,7 +495,7 @@ def apply_domains(parentProxy, proxy_id):
                             apply_domains(parentProxy, internal_proxy.GetGlobalIDAsString())
             except:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
-                print "Unexpected error:", exc_type, " line: " , exc_tb.tb_lineno
+                print ("Unexpected error:", exc_type, " line: " , exc_tb.tb_lineno)
 
     # Reset all properties to leverage domain capabilities
     for prop_name in proxy.ListProperties():
@@ -502,8 +511,8 @@ def apply_domains(parentProxy, proxy_id):
                     if domain.IsA('vtkSMBoundsDomain'):
                         domain.SetDomainValues(parentProxy.GetDataInformation().GetBounds())
                 except AttributeError as attrErr:
-                    print 'Caught exception setting domain values in apply_domains:'
-                    print attrErr
+                    print ('Caught exception setting domain values in apply_domains:')
+                    print (attrErr)
 
             prop.ResetToDefault()
 
@@ -511,6 +520,6 @@ def apply_domains(parentProxy, proxy_id):
             iter.UnRegister(None)
         except:
             exc_type, exc_obj, exc_tb = sys.exc_info()
-            print "Unexpected error:", exc_type, " line: " , exc_tb.tb_lineno
+            print ("Unexpected error:", exc_type, " line: " , exc_tb.tb_lineno)
 
     proxy.UpdateVTKObjects()

@@ -41,22 +41,21 @@
 // for class vtkEnSightGoldReader which helped to add support for GMV cell
 // type generic.
 
+#ifndef vtkGMVReader_h
+#define vtkGMVReader_h
 
-#ifndef __vtkGMVReader_h
-#define __vtkGMVReader_h
-
-#include "vtkMultiBlockDataSetAlgorithm.h"
 #include "vtkDataSet.h"
 #include "vtkFieldData.h"
+#include "vtkMultiBlockDataSetAlgorithm.h"
+#include "vtkPVConfig.h" // For PARAVIEW_USE_MPI
 #include "vtkPolyData.h"
-#include "vtkPVConfig.h"     // For PARAVIEW_USE_MPI
 
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStringArray.h"
+#include <map>    // for TimeStepValuesMap & NumberOfPolygonsMap
+#include <string> // for TimeStepValuesMap & NumberOfPolygonsMap
 #include <sys/stat.h>
-#include <vector>      // for NodeDataInfoTemp & CellDataInfoTemp
-#include <map>         // for TimeStepValuesMap & NumberOfPolygonsMap
-#include <string>      // for TimeStepValuesMap & NumberOfPolygonsMap
+#include <vector> // for NodeDataInfoTemp & CellDataInfoTemp
 
 class vtkIntArray;
 class vtkStringArray;
@@ -69,9 +68,9 @@ class vtkMultiProcessController;
 class vtkGMVReader : public vtkMultiBlockDataSetAlgorithm
 {
 public:
-  static vtkGMVReader *New();
-  vtkTypeMacro(vtkGMVReader,vtkMultiBlockDataSetAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  static vtkGMVReader* New();
+  vtkTypeMacro(vtkGMVReader, vtkMultiBlockDataSetAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   // Description:
   // Specify file name of GMV datafile to read
@@ -148,7 +147,7 @@ public:
   // Set/Get the endian-ness of the binary file.
   void SetByteOrderToBigEndian();
   void SetByteOrderToLittleEndian();
-  const char *GetByteOrderAsString();
+  const char* GetByteOrderAsString();
 
   vtkSetMacro(ByteOrder, int);
   vtkGetMacro(ByteOrder, int);
@@ -179,42 +178,39 @@ public:
 
   // get min and max value for the index-th value of a node component
   // index varies from 0 to (veclen - 1)
-  void GetNodeDataRange(int nodeComp, int index, float *min, float *max);
+  void GetNodeDataRange(int nodeComp, int index, float* min, float* max);
 
   // get min and max value for the index-th value of a cell component
   // index varies from 0 to (veclen - 1)
-  void GetCellDataRange(int cellComp, int index, float *min, float *max);
+  void GetCellDataRange(int cellComp, int index, float* min, float* max);
 
   int GetHasTracers();
   int GetHasPolygons();
   int GetHasProbtimeKeyword();
 
-//BTX
 #ifdef PARAVIEW_USE_MPI
-//ETX
-//BTX
-    // Description:
-    // Set the controller use in compositing (set to
-    // the global controller by default)
-    // If not using the default, this must be called before any
-    // other methods.
-    virtual void SetController(vtkMultiProcessController* controller);
-//ETX
-//BTX
+
+  // Description:
+  // Set the controller use in compositing (set to
+  // the global controller by default)
+  // If not using the default, this must be called before any
+  // other methods.
+  virtual void SetController(vtkMultiProcessController* controller);
+
 #endif
-//ETX
 
 protected:
   vtkGMVReader();
   ~vtkGMVReader();
   // int ProcessRequest( vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-  int RequestInformation(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-  int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
+  int RequestInformation(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
 
   // Setup the output with no data available.  Used in error cases.
   void SetupEmptyOutput();
 
-  char *FileName;
+  char* FileName;
   int BinaryFile;
 
   unsigned long NumberOfNodes;
@@ -242,75 +238,72 @@ protected:
   vtkCallbackCommand* SelectionObserver;
 
   // Callback registered with the SelectionObserver.
-  static void SelectionModifiedCallback(vtkObject* caller, unsigned long eid,
-                                        void* clientdata, void* calldata);
+  static void SelectionModifiedCallback(
+    vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);
 
-//BTX
 #ifdef PARAVIEW_USE_MPI
-//ETX
+
   vtkMultiProcessController* Controller;
-//BTX
+
 #endif
-//ETX
 
 private:
-  vtkGMVReader(const vtkGMVReader&);  // Not implemented.
-  void operator=(const vtkGMVReader&);  // Not implemented.
+  vtkGMVReader(const vtkGMVReader&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkGMVReader&) VTK_DELETE_FUNCTION;
 
-  vtkStringArray *FileNames;      // VTK array of files
+  vtkStringArray* FileNames; // VTK array of files
   bool ContainsProbtimeKeyword;
 
-  vtkDataSet *Mesh;
-  vtkFieldData *FieldDataTmp;
-  vtkPolyData *Tracers;
-  vtkPolyData *Polygons;
+  vtkDataSet* Mesh;
+  vtkFieldData* FieldDataTmp;
+  vtkPolyData* Tracers;
+  vtkPolyData* Polygons;
 
-//BTX
   // filename -> #polygons and filename -> #tracers mappings
-  typedef std::map< std::string, unsigned long > stringToULongMap;
+  typedef std::map<std::string, unsigned long> stringToULongMap;
   stringToULongMap NumberOfPolygonsMap;
   stringToULongMap NumberOfTracersMap;
 
   // filename -> time step mapping
-  std::map< std::string, double > TimeStepValuesMap;
+  std::map<std::string, double> TimeStepValuesMap;
 
   enum
   {
-    FILE_BIG_ENDIAN=0,
-    FILE_LITTLE_ENDIAN=1
+    FILE_BIG_ENDIAN = 0,
+    FILE_LITTLE_ENDIAN = 1
   };
   enum GMVCell_type
   {
-    LINE    =  0,
-    TRI     =  1,
-    QUAD    =  2,
-    TET     =  3,
-    HEX     =  4,
-    PHEX8   =  5,
-    PHEX20  =  6,
-    PRISM   =  7,
-    PYRAMID =  8,
-    VFACE2D =  9,
+    LINE = 0,
+    TRI = 1,
+    QUAD = 2,
+    TET = 3,
+    HEX = 4,
+    PHEX8 = 5,
+    PHEX20 = 6,
+    PRISM = 7,
+    PYRAMID = 8,
+    VFACE2D = 9,
     VFACE3D = 10
   };
 
 #ifndef GMVREADER_SKIP_DATARANGE_CALCULATIONS
   template <class C>
-  struct DataInfo {
-    int veclen;  // number of components in the node or cell variable
-    C   min[3];  // pre-calculated data minima (max size 3 for vectors)
-    C   max[3];  // pre-calculated data maxima (max size 3 for vectors)
+  struct DataInfo
+  {
+    int veclen; // number of components in the node or cell variable
+    C min[3];   // pre-calculated data minima (max size 3 for vectors)
+    C max[3];   // pre-calculated data maxima (max size 3 for vectors)
   };
 
-  DataInfo<float> *NodeDataInfo;  // type float because Get{Node,Cell}DataRange
-  DataInfo<float> *CellDataInfo;  // takes floats for min/max
+  DataInfo<float>* NodeDataInfo; // type float because Get{Node,Cell}DataRange
+  DataInfo<float>* CellDataInfo; // takes floats for min/max
 #endif
-//ETX
 
   // Toggle whether GMV node numbers needs to decremented by 1 for VTK
   bool DecrementNodeIds;
   int ByteOrder;
-  int GetLabel(char *string, int number, char *label);
+  int GetLabel(char* string, int number, char* label);
 };
 
-#endif // __vtkGMVReader_h
+#endif // vtkGMVReader_h

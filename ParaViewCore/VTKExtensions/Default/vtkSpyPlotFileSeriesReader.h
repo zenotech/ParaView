@@ -22,11 +22,11 @@
  * statement of authorship are reproduced on all copies.
  */
 
-#ifndef __vtkSpyPlotFileSeriesReader_h
-#define __vtkSpyPlotFileSeriesReader_h
+#ifndef vtkSpyPlotFileSeriesReader_h
+#define vtkSpyPlotFileSeriesReader_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkFileSeriesReader.h"
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 
 /// vtkSpyPlotFileSeriesReader extends vtkFileSeriesReader to change the number
 /// of output ports on this reader. Based on whether markers support was
@@ -34,17 +34,17 @@
 class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkSpyPlotFileSeriesReader : public vtkFileSeriesReader
 {
 public:
-  static vtkSpyPlotFileSeriesReader* New ();
+  static vtkSpyPlotFileSeriesReader* New();
   vtkTypeMacro(vtkSpyPlotFileSeriesReader, vtkFileSeriesReader);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 protected:
   vtkSpyPlotFileSeriesReader();
   ~vtkSpyPlotFileSeriesReader();
 
 private:
-  vtkSpyPlotFileSeriesReader(const vtkSpyPlotFileSeriesReader&); // Not implemented.
-  void operator=(const vtkSpyPlotFileSeriesReader&); // Not implemented.
+  vtkSpyPlotFileSeriesReader(const vtkSpyPlotFileSeriesReader&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkSpyPlotFileSeriesReader&) VTK_DELETE_FUNCTION;
 };
 
-#endif /* __vtkSpyPlotFileSeriesReader_h */
+#endif /* vtkSpyPlotFileSeriesReader_h */

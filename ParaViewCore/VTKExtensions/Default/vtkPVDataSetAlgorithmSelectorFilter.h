@@ -12,98 +12,115 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVDataSetAlgorithmSelectorFilter -
-// is a generic vtkAlgorithm that allow the user to register
-// several vtkAlgorithm to it and be able to switch the active
-// one on the fly.
-// .SECTION Description
-// The idea behind that filter is to merge the usage of any number of existing
-// vtk filter and allow to easily switch from one implementation to another
-// without changing anything in your pipeline.
+/**
+ * @class   vtkPVDataSetAlgorithmSelectorFilter
+ * is a generic vtkAlgorithm that allow the user to register
+ * several vtkAlgorithm to it and be able to switch the active
+ * one on the fly.
+ *
+ * The idea behind that filter is to merge the usage of any number of existing
+ * vtk filter and allow to easily switch from one implementation to another
+ * without changing anything in your pipeline.
+*/
 
-#ifndef __vtkPVDataSetAlgorithmSelectorFilter_h
-#define __vtkPVDataSetAlgorithmSelectorFilter_h
+#ifndef vtkPVDataSetAlgorithmSelectorFilter_h
+#define vtkPVDataSetAlgorithmSelectorFilter_h
 
-#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
 #include "vtkAlgorithm.h"
+#include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
+
+class vtkCallbackCommand;
 
 class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVDataSetAlgorithmSelectorFilter : public vtkAlgorithm
 {
 public:
-  vtkTypeMacro(vtkPVDataSetAlgorithmSelectorFilter,vtkAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  vtkTypeMacro(vtkPVDataSetAlgorithmSelectorFilter, vtkAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  static vtkPVDataSetAlgorithmSelectorFilter *New();
+  static vtkPVDataSetAlgorithmSelectorFilter* New();
 
-  // Description:
-  // Register a new filter that can be used underneath in the requestData call.
-  // The return value is the index of that registered filter that should be use
-  // to activate it later on. (This number can became wrong in case you remove
-  // some previous registered filter)
+  /**
+   * Register a new filter that can be used underneath in the requestData call.
+   * The return value is the index of that registered filter that should be use
+   * to activate it later on. (This number can became wrong in case you remove
+   * some previous registered filter)
+   */
   int RegisterFilter(vtkAlgorithm* filter);
 
-  // Description:
-  // UnRegister an existing filter that was previously registered
+  /**
+   * UnRegister an existing filter that was previously registered
+   */
   void UnRegisterFilter(int index);
 
-  // Description:
-  // Remove all the registered filters.
+  /**
+   * Remove all the registered filters.
+   */
   void ClearFilters();
 
-  // Description:
-  // Return the current number of registered filters
+  /**
+   * Return the current number of registered filters
+   */
   int GetNumberOfFilters();
 
-  // Description:
-  // Return the filter that lies at the given index of the filters registration queue.
+  /**
+   * Return the filter that lies at the given index of the filters registration queue.
+   */
   vtkAlgorithm* GetFilter(int index);
 
-  // Description:
-  // Return the current active filter if any otherwise return NULL
+  /**
+   * Return the current active filter if any otherwise return NULL
+   */
   vtkAlgorithm* GetActiveFilter();
 
-  // Description:
-  // Set the active filter based on the given index of the filters registration
-  // queue. And return the corresponding active filter.
+  /**
+   * Set the active filter based on the given index of the filters registration
+   * queue. And return the corresponding active filter.
+   */
   virtual vtkAlgorithm* SetActiveFilter(int index);
 
-  // Description:
-  // Override GetMTime because we delegate to other filters to do the real work
-  unsigned long GetMTime();
+  /**
+   * Override GetMTime because we delegate to other filters to do the real work
+   */
+  vtkMTimeType GetMTime() VTK_OVERRIDE;
 
-  // Description:
-  // Forward those methods to the underneath filters
-  virtual int ProcessRequest(vtkInformation* request,
-                             vtkInformationVector** inInfo,
-                             vtkInformationVector* outInfo);
+  /**
+   * Forward those methods to the underneath filters
+   */
+  virtual int ProcessRequest(vtkInformation* request, vtkInformationVector** inInfo,
+    vtkInformationVector* outInfo) VTK_OVERRIDE;
 
-  // Description:
-  // Forward those methods to the underneath filters
-  virtual int ProcessRequest(vtkInformation* request,
-                     vtkCollection* inInfo,
-                     vtkInformationVector* outInfo);
+  /**
+   * Forward those methods to the underneath filters
+   */
+  virtual int ProcessRequest(
+    vtkInformation* request, vtkCollection* inInfo, vtkInformationVector* outInfo);
 
 protected:
   vtkPVDataSetAlgorithmSelectorFilter();
   ~vtkPVDataSetAlgorithmSelectorFilter();
 
-  virtual int RequestDataObject(vtkInformation *, vtkInformationVector**,
-                                vtkInformationVector* outputVector);
-  virtual int FillInputPortInformation(int port, vtkInformation* info);
-  virtual int FillOutputPortInformation(int port, vtkInformation* info);
+  virtual int RequestDataObject(
+    vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector);
+  virtual int FillInputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
+  virtual int FillOutputPortInformation(int port, vtkInformation* info) VTK_OVERRIDE;
 
   vtkGetMacro(OutputType, int);
   vtkSetMacro(OutputType, int);
   int OutputType;
 
+  // Callback registered with the InternalProgressObserver.
+  static void InternalProgressCallbackFunction(vtkObject*, unsigned long, void* clientdata, void*);
+  void InternalProgressCallback(vtkAlgorithm* algorithm);
+  // The observer to report progress from the internal filters.
+  vtkCallbackCommand* InternalProgressObserver;
+
 private:
-  vtkPVDataSetAlgorithmSelectorFilter(const vtkPVDataSetAlgorithmSelectorFilter&);  // Not implemented.
-  void operator=(const vtkPVDataSetAlgorithmSelectorFilter&);  // Not implemented.
+  vtkPVDataSetAlgorithmSelectorFilter(
+    const vtkPVDataSetAlgorithmSelectorFilter&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVDataSetAlgorithmSelectorFilter&) VTK_DELETE_FUNCTION;
 
   class vtkInternals;
   vtkInternals* Internal;
 };
 
 #endif
-
-

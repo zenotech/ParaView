@@ -22,14 +22,8 @@ A simple example:
 #
 #==============================================================================
 
-import paraview, re, new, sys, vtk
-import simple
-import servermanager
-
-from paraview.vtk import vtkPVClientServerCoreCore
-from paraview.vtk import vtkPVServerManagerCore
-from paraview.vtk import vtkPVServerImplementationCore
-from paraview.vtk import vtkCommonCore
+import paraview, re, types, sys, vtk
+from paraview import servermanager
 
 def processServerEvents():
   """Update the local state based on the notifications received from the server

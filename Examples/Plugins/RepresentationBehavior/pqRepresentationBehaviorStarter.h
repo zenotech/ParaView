@@ -7,8 +7,8 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
-   
+   under the terms of the ParaView license version 1.2.
+
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
    Kitware Inc.
@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqRepresentationBehaviorStarter_h
-#define __pqRepresentationBehaviorStarter_h
+#ifndef pqRepresentationBehaviorStarter_h
+#define pqRepresentationBehaviorStarter_h
 
 #include <QObject>
 
@@ -38,8 +38,9 @@ class pqRepresentationBehaviorStarter : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
-  pqRepresentationBehaviorStarter(QObject* p=0);
+  pqRepresentationBehaviorStarter(QObject* p = 0);
   ~pqRepresentationBehaviorStarter();
 
   // Callback for shutdown.
@@ -47,9 +48,9 @@ public:
 
   // Callback for startup.
   void onStartup();
+
 private:
-  pqRepresentationBehaviorStarter(const pqRepresentationBehaviorStarter&); // Not implemented.
-  void operator=(const pqRepresentationBehaviorStarter&); // Not implemented.
+  Q_DISABLE_COPY(pqRepresentationBehaviorStarter)
 };
 
 #endif

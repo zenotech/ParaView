@@ -12,17 +12,19 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVSinusoidKeyFrame
-// .SECTION Description
-// Interplates a sinusoid. At any given time \c t, the resultant
-// value obtained from this keyframe is given by :
-// value = this->Offset + (Key Value) * Sin (2*pi*theta);
-// where theta = this->Frequency*t + (this->Phase/360).
-// As is clear from  the equation, the amplitude of the wave
-// is obtained from the value of the keyframe.
+/**
+ * @class   vtkPVSinusoidKeyFrame
+ *
+ * Interplates a sinusoid. At any given time \c t, the resultant
+ * value obtained from this keyframe is given by :
+ * value = this->Offset + (Key Value) * Sin (2*pi*theta);
+ * where theta = this->Frequency*t + (this->Phase/360).
+ * As is clear from  the equation, the amplitude of the wave
+ * is obtained from the value of the keyframe.
+*/
 
-#ifndef __vtkPVSinusoidKeyFrame_h
-#define __vtkPVSinusoidKeyFrame_h
+#ifndef vtkPVSinusoidKeyFrame_h
+#define vtkPVSinusoidKeyFrame_h
 
 #include "vtkPVKeyFrame.h"
 
@@ -31,30 +33,40 @@ class VTKPVANIMATION_EXPORT vtkPVSinusoidKeyFrame : public vtkPVKeyFrame
 public:
   static vtkPVSinusoidKeyFrame* New();
   vtkTypeMacro(vtkPVSinusoidKeyFrame, vtkPVKeyFrame);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // This method will do the actual interpolation.
-  // currenttime is normalized to the time range between
-  // this key frame and the next key frame.
-  virtual void UpdateValue( double currenttime, vtkPVAnimationCue* cue,
-                            vtkPVKeyFrame* next);
+  /**
+   * This method will do the actual interpolation.
+   * currenttime is normalized to the time range between
+   * this key frame and the next key frame.
+   */
+  virtual void UpdateValue(
+    double currenttime, vtkPVAnimationCue* cue, vtkPVKeyFrame* next) VTK_OVERRIDE;
 
-  // Description:
-  // Get/Set the phase for the sine wave.
+  //@{
+  /**
+   * Get/Set the phase for the sine wave.
+   */
   vtkSetMacro(Phase, double);
   vtkGetMacro(Phase, double);
+  //@}
 
-  // Description:
-  // Get/Set the frequency for the sine wave in number of cycles
-  // for the entire length of this keyframe i.e. until the next key frame.
+  //@{
+  /**
+   * Get/Set the frequency for the sine wave in number of cycles
+   * for the entire length of this keyframe i.e. until the next key frame.
+   */
   vtkSetMacro(Frequency, double);
   vtkGetMacro(Frequency, double);
+  //@}
 
-  // Description:
-  // Get/Set the Wave offset.
+  //@{
+  /**
+   * Get/Set the Wave offset.
+   */
   vtkSetMacro(Offset, double);
   vtkGetMacro(Offset, double);
+  //@}
 
 protected:
   vtkPVSinusoidKeyFrame();
@@ -65,8 +77,8 @@ protected:
   double Offset;
 
 private:
-  vtkPVSinusoidKeyFrame(const vtkPVSinusoidKeyFrame&); // Not implemented.
-  void operator=(const vtkPVSinusoidKeyFrame&); // Not implemented.
+  vtkPVSinusoidKeyFrame(const vtkPVSinusoidKeyFrame&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVSinusoidKeyFrame&) VTK_DELETE_FUNCTION;
 };
 
 #endif

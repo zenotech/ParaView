@@ -1,6 +1,6 @@
 set (_dependencies)
 if (PARAVIEW_USE_MPI)
-  list(APPEND _dependencies vtkIOMPIImage)
+  list(APPEND _dependencies vtkIOMPIImage vtkFiltersParallelFlowPaths)
 elseif()
   list(APPEND _dependencies vtkIOImage)
 endif()
@@ -8,6 +8,8 @@ endif()
 vtk_module(vtkPVVTKExtensionsDefault
   DEPENDS
     vtkFiltersAMR
+    vtkFiltersExtraction
+    vtkFiltersGeneral
     vtkFiltersParallelStatistics
     vtkImagingFourier
     vtkImagingSources
@@ -22,9 +24,14 @@ vtk_module(vtkPVVTKExtensionsDefault
     ${_dependencies}
   PRIVATE_DEPENDS
     vtkIOInfovis
-    vtknetcdf
+    vtknetcdfcpp
     vtksys
     vtkChartsCore
+    vtkIOPLY
+  TEST_DEPENDS
+    vtkTestingCore
+  TEST_LABELS
+    PARAVIEW
   KIT
     vtkPVExtensions
 )

@@ -6,13 +6,17 @@ derived quantities.
 try:
   import numpy as np
 except ImportError:
-  raise RuntimeError, "'numpy' module is not found. numpy is needed for "\
-    "this functionality to work. Please install numpy and try again."
+  raise RuntimeError ("'numpy' module is not found. numpy is needed for "\
+    "this functionality to work. Please install numpy and try again.")
 
 import paraview
+from paraview import vtk
 import vtk.numpy_interface.dataset_adapter as dsa
 from vtk.numpy_interface.algorithms import *
     # -- this will import vtkMultiProcessController and vtkMPI4PyCommunicator
+import sys
+if sys.version_info >= (3,):
+    xrange = range
 
 def get_arrays(attribs, controller=None):
     """Returns a 'dict' referring to arrays in dsa.DataSetAttributes or
@@ -25,8 +29,8 @@ def get_arrays(attribs, controller=None):
     """
     if not isinstance(attribs, dsa.DataSetAttributes) and \
         not isinstance(attribs, dsa.CompositeDataSetAttributes):
-            raise ValueError, \
-                "Argument must be DataSetAttributes or CompositeDataSetAttributes."
+            raise ValueError (
+                "Argument must be DataSetAttributes or CompositeDataSetAttributes.")
     arrays = dict()
     for key in attribs.keys():
         varname = paraview.make_name_valid(key)
@@ -45,19 +49,19 @@ def get_arrays(attribs, controller=None):
 
         # reduce the array names across processes to ensure arrays missing on
         # certain ranks are handled correctly.
-        arraynames = arrays.keys()
+        arraynames = list(arrays)  # get keys from the arrays as a list.
         # gather to root and then broadcast
         # I couldn't get Allgather/Allreduce to work properly with strings.
         gathered_names = comm.gather(arraynames, root=0)
           # gathered_names is a list of lists.
         if rank == 0:
             result = set()
-            for list in gathered_names:
-                for val in list: result.add(val)
+            for alist in gathered_names:
+                for val in alist: result.add(val)
             gathered_names = [x for x in result]
         arraynames = comm.bcast(gathered_names, root=0)
         for name in arraynames:
-            if not arrays.has_key(name):
+            if name not in arrays:
                 arrays[name] = dsa.NoneArray
     return arrays
 
@@ -74,6 +78,22 @@ def compute(inputs, expression, ns=None):
     retVal = eval(expression, globals(), mylocals)
     return retVal
 
+def get_data_time(self, do, ininfo):
+    dinfo = do.GetInformation()
+    if dinfo and dinfo.Has(do.DATA_TIME_STEP()):
+        t = dinfo.Get(do.DATA_TIME_STEP())
+    else: t = None
+
+    key = vtk.vtkStreamingDemandDrivenPipeline.TIME_STEPS()
+    t_index = None
+    if ininfo.Has(key):
+        tsteps = [ininfo.Get(key, x) for x in range(ininfo.Length(key))]
+        try:
+            t_index = tsteps.index(t)
+        except ValueError:
+            pass
+    return (t, t_index)
+
 def execute(self, expression):
     """
     **Internal Method**
@@ -87,7 +107,11 @@ def execute(self, expression):
 
     for index in range(self.GetNumberOfInputConnections(0)):
         # wrap all input data objects using vtk.numpy_interface.dataset_adapter
-        inputs.append(dsa.WrapDataObject(self.GetInputDataObject(0, index)))
+        wdo_input = dsa.WrapDataObject(self.GetInputDataObject(0, index))
+        t, t_index = get_data_time(self, wdo_input.VTKObject, self.GetInputInformation(0, index))
+        wdo_input.time_value = wdo_input.t_value = t
+        wdo_input.time_index = wdo_input.t_index = t_index
+        inputs.append(wdo_input)
 
     # Setup output.
     output = dsa.WrapDataObject(self.GetOutputDataObject(0))
@@ -99,7 +123,17 @@ def execute(self, expression):
     # get a dictionary for arrays in the dataset attributes. We pass that
     # as the variables in the eval namespace for compute.
     variables = get_arrays(inputs[0].GetAttributes(self.GetArrayAssociation()))
+    variables.update({ "time_value": inputs[0].time_value,
+                       "t_value": inputs[0].t_value,
+                       "time_index": inputs[0].time_index,
+                       "t_index": inputs[0].t_index })
     retVal = compute(inputs, expression, ns=variables)
     if retVal is not None:
-        output.GetAttributes(self.GetArrayAssociation()).append(\
-            retVal, self.GetArrayName())
+        if hasattr(retVal, "Association"):
+            output.GetAttributes(retVal.Association).append(\
+              retVal, self.GetArrayName())
+        else:
+            # if somehow the association was removed we
+            # fall back to the input array association
+            output.GetAttributes(self.GetArrayAssociation()).append(\
+              retVal, self.GetArrayName())

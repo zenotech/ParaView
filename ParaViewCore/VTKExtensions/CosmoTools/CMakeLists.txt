@@ -1,24 +1,21 @@
 # Bring in VTK's MPI macros for MPI dependency
 include(vtkMPI)
 
-# Resolve GenericIO and CosmoTools external dependencies
+# Resolve the GenericIO external dependency
 find_package(GenericIO REQUIRED)
 
 # Add external include directories
 include_directories(
-#    ${COSMOTOOLS_INCLUDE_DIR}
     ${GENERIC_IO_INCLUDE_DIR}
     )
 
 # Define external libraries used by this module
 set(CosmoToolsExternalLibs
-#    ${COSMOTOOLS_LIBRARIES}
     ${GENERIC_IO_LIBRARIES}
     )
 
 # Set external includes for the CosmoTools module
 set(vtkPVVTKExtensionsCosmoTools_INCLUDE_DIRS
-#    ${COSMOTOOLS_INCLUDE_DIR}
     ${GENERIC_IO_INCLUDE_DIR}
     )
 
@@ -42,13 +39,17 @@ set(Module_SRCS
   vtkPMergeConnected.cxx
   )
 
+vtk_module_export_code_find_package(GenericIO)
+
 set_source_files_properties(
   vtkGenericIOUtilities.cxx
   WRAP_EXCLUDE
   )
-
+set_source_files_properties(
+  vtkGenericIOUtilities
+  PROPERTIES WRAP_EXCLUDE_PYTHON 1)
 vtk_module_library(vtkPVVTKExtensionsCosmoTools ${Module_SRCS})
-target_link_libraries(vtkPVVTKExtensionsCosmoTools
+vtk_module_link_libraries(vtkPVVTKExtensionsCosmoTools
                       LINK_PRIVATE
                         ${CosmoToolsExternalLibs}
                         pthread

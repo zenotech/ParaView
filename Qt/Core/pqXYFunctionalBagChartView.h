@@ -29,15 +29,17 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef __pqXYFunctionalBagChartView_h
-#define __pqXYFunctionalBagChartView_h
+#ifndef pqXYFunctionalBagChartView_h
+#define pqXYFunctionalBagChartView_h
 
 #include "pqContextView.h"
 
 class vtkSMSourceProxy;
 class pqDataRepresentation;
 
-/// FunctionalBag chart view
+/**
+* FunctionalBag chart view
+*/
 class PQCORE_EXPORT pqXYFunctionalBagChartView : public pqContextView
 {
   Q_OBJECT
@@ -49,17 +51,13 @@ public:
   virtual bool supportsSelection() const { return true; }
 
 public:
-  pqXYFunctionalBagChartView(const QString& group,
-                 const QString& name,
-                 vtkSMContextViewProxy* viewModule,
-                 pqServer* server,
-                 QObject* parent=NULL);
+  pqXYFunctionalBagChartView(const QString& group, const QString& name,
+    vtkSMContextViewProxy* viewModule, pqServer* server, QObject* parent = NULL);
 
   virtual ~pqXYFunctionalBagChartView();
 
 private:
-  pqXYFunctionalBagChartView(const pqXYFunctionalBagChartView&); // Not implemented.
-  void operator=(const pqXYFunctionalBagChartView&); // Not implemented.
+  Q_DISABLE_COPY(pqXYFunctionalBagChartView)
 };
 
 #endif

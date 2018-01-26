@@ -40,15 +40,15 @@ NB: seeks for writable files with compression are quite restricted
 // .SECTION See Also
 // 
 
-#ifndef __vtkznzlib_h
-#define __vtkznzlib_h
+#ifndef vtkznzlib_h
+#define vtkznzlib_h
 
 #include "vtkObject.h"
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 
 /* include optional check for HAVE_FDOPEN here, from deleted config.h:
 
@@ -96,7 +96,7 @@ class vtkznzlib : public vtkObject
 public:
   static vtkznzlib *New();
   vtkTypeMacro(vtkznzlib,vtkObject);
-  virtual void PrintSelf(ostream& os, vtkIndent indent);
+  virtual void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
 static znzFile znzopen(const char *path, const char *mode, int use_compression);
 
@@ -131,8 +131,8 @@ static int znzeof(znzFile file);
 
 
 private:
-  vtkznzlib(const vtkznzlib&);  // Not implemented.
-  void operator=(const vtkznzlib&);  // Not implemented.
+  vtkznzlib(const vtkznzlib&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkznzlib&) VTK_DELETE_FUNCTION;
 
 };
 

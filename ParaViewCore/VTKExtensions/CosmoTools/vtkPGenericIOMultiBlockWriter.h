@@ -12,14 +12,16 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPGenericIOMultiBlockWriter 
-// .SECTION Description
+/**
+ * @class   vtkPGenericIOMultiBlockWriter
+ *
+*/
 
-#ifndef __vtkPGenericIOMultiBlockWriter_h
-#define __vtkPGenericIOMultiBlockWriter_h
+#ifndef vtkPGenericIOMultiBlockWriter_h
+#define vtkPGenericIOMultiBlockWriter_h
 
-#include "vtkWriter.h" // superclass
 #include "vtkPVVTKExtensionsCosmoToolsModule.h" // for export macro
+#include "vtkWriter.h"
 
 class vtkMultiProcessController;
 
@@ -33,13 +35,11 @@ public:
   vtkSetStringMacro(FileName);
   vtkGetStringMacro(FileName);
 
-
-//BTX
 protected:
   vtkPGenericIOMultiBlockWriter();
   ~vtkPGenericIOMultiBlockWriter();
 
-  virtual int FillInputPortInformation(int port, vtkInformation *info);
+  virtual int FillInputPortInformation(int port, vtkInformation* info);
   virtual void WriteData();
 
 private:
@@ -47,9 +47,8 @@ private:
   vtkInternals* Internals;
   char* FileName;
   vtkMultiProcessController* Controller;
-  vtkPGenericIOMultiBlockWriter(const vtkPGenericIOMultiBlockWriter&); // Not implemented.
-  void operator=(const vtkPGenericIOMultiBlockWriter&); // Not implemented.
-//ETX
+  vtkPGenericIOMultiBlockWriter(const vtkPGenericIOMultiBlockWriter&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPGenericIOMultiBlockWriter&) VTK_DELETE_FUNCTION;
 };
 
 #endif

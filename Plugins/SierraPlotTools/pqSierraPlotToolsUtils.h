@@ -20,32 +20,29 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
-#ifndef __pqSierraPlotToolsUtils_h
-#define __pqSierraPlotToolsUtils_h
+#ifndef pqSierraPlotToolsUtils_h
+#define pqSierraPlotToolsUtils_h
 
 #include <QList>
 #include <QMap>
 #include <QString>
 #include <QStringList>
 
-
 //=============================================================================
 class pqSierraPlotToolsUtils
 {
 
 public:
-
   pqSierraPlotToolsUtils();
   ~pqSierraPlotToolsUtils();
 
-  QString removeAllWhiteSpace(const QString & inString);
+  QString removeAllWhiteSpace(const QString& inString);
 
   bool validChar(char inChar);
 
   int getNumber(int begIndex, int endIndex, QString lineEditText);
 
 protected:
-
 };
 
-#endif // __pqSierraPlotToolsUtils_h
+#endif // pqSierraPlotToolsUtils_h

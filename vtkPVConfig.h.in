@@ -13,8 +13,8 @@
 
 =========================================================================*/
 
-#ifndef __vtkPVConfig_h
-#define __vtkPVConfig_h
+#ifndef vtkPVConfig_h
+#define vtkPVConfig_h
 
 #cmakedefine PARAVIEW_USE_ICE_T
 #cmakedefine PARAVIEW_USE_VISITBRIDGE
@@ -23,6 +23,7 @@
 #cmakedefine VISIT_BUILD_READER_CGNS
 #cmakedefine VISIT_BUILD_READER_GMV
 #cmakedefine VISIT_BUILD_READER_Silo
+#cmakedefine VISIT_BUILD_READER_Boxlib3D
 #cmakedefine VISIT_BUILD_READER_Mili
 
 #cmakedefine PARAVIEW_ENABLE_PYTHON
@@ -74,6 +75,10 @@
 // defined when qt support is enabled
 #cmakedefine PARAVIEW_ENABLE_QT_SUPPORT
 
+#ifdef PARAVIEW_ENABLE_QT_SUPPORT
+# define PARAVIEW_QT_VERSION @PARAVIEW_QT_VERSION@
+#endif
+
 // ParaView data root (useful for testing).
 #define PARAVIEW_DATA_ROOT "@PARAVIEW_DATA_ROOT@"
 
@@ -93,6 +98,10 @@
 
 #cmakedefine PARAVIEW_ENABLE_FFMPEG
 
-#cmakedefine PARAVIEW_USE_PISTON
+#cmakedefine PARAVIEW_USE_OSPRAY
+
+#cmakedefine PARAVIEW_USE_OPENVR
+
+#cmakedefine PARAVIEW_ENABLE_EMBEDDED_DOCUMENTATION
 
 #endif

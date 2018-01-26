@@ -7,7 +7,7 @@
    All rights reserved.
 
    ParaView is a free software; you can redistribute it and/or modify it
-   under the terms of the ParaView license version 1.2. 
+   under the terms of the ParaView license version 1.2.
 
    See License_v1.2.txt for the full ParaView license.
    A copy of this license can be obtained by contacting
@@ -35,14 +35,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqPropertyWidget.h"
 
-#include "pqPropertyLinks.h"
+class vtkSMIntVectorProperty;
 
 class PQCOMPONENTS_EXPORT pqIntVectorPropertyWidget : public pqPropertyWidget
 {
   Q_OBJECT
 
 public:
-  pqIntVectorPropertyWidget(vtkSMProperty *property, vtkSMProxy *proxy, QWidget *parent = 0);
+  pqIntVectorPropertyWidget(vtkSMProperty* property, vtkSMProxy* proxy, QWidget* parent = 0);
+  virtual ~pqIntVectorPropertyWidget();
+
+  /**
+   * Creates known pqPropertyWidget subclasses for vtkSMIntVectorProperty property.
+   */
+  static pqPropertyWidget* createWidget(
+    vtkSMIntVectorProperty* smproperty, vtkSMProxy* smproxy, QWidget* parent);
+
+private:
+  Q_DISABLE_COPY(pqIntVectorPropertyWidget);
 };
 
 #endif // _pqIntVectorPropertyWidget_h

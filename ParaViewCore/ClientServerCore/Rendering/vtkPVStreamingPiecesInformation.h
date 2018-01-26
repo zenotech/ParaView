@@ -12,62 +12,66 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPVStreamingPiecesInformation - information object used by
-// vtkSMDataDeliveryManager to get information about representations that have
-// pieces to stream from the data-server.
-// .SECTION Description
-// vtkPVStreamingPiecesInformation is an information object used by
-// vtkSMDataDeliveryManager to get information about representations that have
-// pieces to stream from the data-server. 
+/**
+ * @class   vtkPVStreamingPiecesInformation
+ * @brief   information object used by
+ * vtkSMDataDeliveryManager to get information about representations that have
+ * pieces to stream from the data-server.
+ *
+ * vtkPVStreamingPiecesInformation is an information object used by
+ * vtkSMDataDeliveryManager to get information about representations that have
+ * pieces to stream from the data-server.
+*/
 
-#ifndef __vtkPVStreamingPiecesInformation_h
-#define __vtkPVStreamingPiecesInformation_h
+#ifndef vtkPVStreamingPiecesInformation_h
+#define vtkPVStreamingPiecesInformation_h
 
-#include "vtkPVInformation.h"
 #include "vtkPVClientServerCoreRenderingModule.h" // needed for export macro
+#include "vtkPVInformation.h"
 
-//BTX
 #include <vector> // needed for internal API
-//ETX
 
-class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVStreamingPiecesInformation : public vtkPVInformation
+class VTKPVCLIENTSERVERCORERENDERING_EXPORT vtkPVStreamingPiecesInformation
+  : public vtkPVInformation
 {
 public:
   static vtkPVStreamingPiecesInformation* New();
   vtkTypeMacro(vtkPVStreamingPiecesInformation, vtkPVInformation);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  // Description:
-  // Transfer information about a single object into this object.
-  virtual void CopyFromObject(vtkObject*);
+  /**
+   * Transfer information about a single object into this object.
+   */
+  virtual void CopyFromObject(vtkObject*) VTK_OVERRIDE;
 
-  // Description:
-  // Merge another information object. Calls AddInformation(info, 0).
-  virtual void AddInformation(vtkPVInformation* info);
+  /**
+   * Merge another information object. Calls AddInformation(info, 0).
+   */
+  virtual void AddInformation(vtkPVInformation* info) VTK_OVERRIDE;
 
-  // Description:
-  // Manage a serialized version of the information.
-  virtual void CopyToStream(vtkClientServerStream*);
-  virtual void CopyFromStream(const vtkClientServerStream*);
+  //@{
+  /**
+   * Manage a serialized version of the information.
+   */
+  virtual void CopyToStream(vtkClientServerStream*) VTK_OVERRIDE;
+  virtual void CopyFromStream(const vtkClientServerStream*) VTK_OVERRIDE;
+  //@}
 
-//BTX
-  // Description:
-  // API to access the internal keys. 
+  /**
+   * API to access the internal keys.
+   */
   void GetKeys(std::vector<unsigned int>& keys) const;
-//ETX
 
-//BTX
 protected:
   vtkPVStreamingPiecesInformation();
   ~vtkPVStreamingPiecesInformation();
 
 private:
-  vtkPVStreamingPiecesInformation(const vtkPVStreamingPiecesInformation&); // Not implemented
-  void operator=(const vtkPVStreamingPiecesInformation&); // Not implemented
+  vtkPVStreamingPiecesInformation(const vtkPVStreamingPiecesInformation&) VTK_DELETE_FUNCTION;
+  void operator=(const vtkPVStreamingPiecesInformation&) VTK_DELETE_FUNCTION;
 
   class vtkInternals;
   vtkInternals* Internals;
-//ETX
 };
 
 #endif
