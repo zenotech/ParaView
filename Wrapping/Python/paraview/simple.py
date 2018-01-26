@@ -901,7 +901,7 @@ def ImportCinema(filename, view=None):
     are shown in that view as indicated in the database.
     """
     try:
-        from paraview.vtk.vtkPVCinemaReader import vtkSMCinemaDatabaseImporter
+        from vtkmodules.vtkPVCinemaReader import vtkSMCinemaDatabaseImporter
     except ImportError:
         # cinema not supported in current configuration
         return False
@@ -1825,6 +1825,18 @@ def GetViewForLight(proxy):
         if consumer.IsA("vtkSMRenderViewProxy") and proxy in consumer.AdditionalLights:
             return consumer
     return None
+
+#==============================================================================
+# Materials.
+#==============================================================================
+
+def GetMaterialLibrary():
+    """Returns the material library for the active session. """
+    if not servermanager.ActiveConnection:
+        raise RuntimeError ("Missing active session")
+    session = servermanager.ActiveConnection.Session
+    controller = servermanager.ParaViewPipelineController()
+    return controller.FindMaterialLibrary(session)
 
 #==============================================================================
 # Miscellaneous functions.

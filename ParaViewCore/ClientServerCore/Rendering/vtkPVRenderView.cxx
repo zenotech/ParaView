@@ -60,6 +60,7 @@
 #include "vtkPVGridAxes3DActor.h"
 #include "vtkPVHardwareSelector.h"
 #include "vtkPVInteractorStyle.h"
+#include "vtkPVMaterialLibrary.h"
 #include "vtkPVOptions.h"
 #include "vtkPVServerInformation.h"
 #include "vtkPVSession.h"
@@ -415,6 +416,7 @@ vtkPVRenderView::vtkPVRenderView()
 
   this->UseHiddenLineRemoval = false;
   this->GetRenderer()->SetUseDepthPeeling(1);
+  this->GetRenderer()->SetUseDepthPeelingForVolumes(1);
   this->GetRenderer()->AddCuller(this->Culler);
 
   this->LightKit = vtkLightKit::New();
@@ -1998,6 +2000,7 @@ bool vtkPVRenderView::GetUseOrderedCompositing()
       {
         return true;
       }
+      VTK_FALLTHROUGH;
     default:
       return false;
   }
@@ -2340,6 +2343,11 @@ void vtkPVRenderView::SetMaintainLuminance(int val)
 void vtkPVRenderView::SetUseDepthPeeling(int val)
 {
   this->GetRenderer()->SetUseDepthPeeling(val);
+}
+
+void vtkPVRenderView::SetUseDepthPeelingForVolumes(bool val)
+{
+  this->GetRenderer()->SetUseDepthPeelingForVolumes(val);
 }
 
 //----------------------------------------------------------------------------
@@ -2971,7 +2979,7 @@ void vtkPVRenderView::SetEnableOSPRay(bool v)
   if (v)
   {
     vtkWarningMacro(
-      "Refusing to switch to OSPRay since it is not built into this copy of ParaView");
+      "Refusing to enable OSPRay since either the client or server does not have it.");
   }
 #endif
 }
@@ -2983,11 +2991,12 @@ bool vtkPVRenderView::GetEnableOSPRay()
 }
 
 //----------------------------------------------------------------------------
-void vtkPVRenderView::SetMaterialLibrary(vtkOSPRayMaterialLibrary* ml)
+void vtkPVRenderView::SetMaterialLibrary(vtkPVMaterialLibrary* ml)
 {
 #ifdef PARAVIEW_USE_OSPRAY
   vtkRenderer* ren = this->GetRenderer();
-  vtkOSPRayRendererNode::SetMaterialLibrary(ml, ren);
+  vtkOSPRayRendererNode::SetMaterialLibrary(
+    vtkOSPRayMaterialLibrary::SafeDownCast(ml->GetMaterialLibrary()), ren);
 #else
   (void)ml;
 #endif

@@ -54,9 +54,11 @@ endif()
 paraview_add_test_python(
   NO_DATA NO_RT
   ColorBy.py
+  OutputImageResolution.py
   PartialArrayIndication.py
   TestClipCylinder.py
   TestColorHistogram.py
+  TestGeometryBoundsClobber.py
   TestHoudiniWriter.py
   TestLineChartLabelPrefix.py
   TestPythonViewScript.py

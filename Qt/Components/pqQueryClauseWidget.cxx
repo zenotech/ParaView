@@ -143,7 +143,6 @@ pqQueryClauseWidget::pqQueryClauseWidget(QWidget* parentObject, Qt::WindowFlags 
   this->Internals->setupUi(this);
 
   this->connect(this->Internals->showCompositeTree, SIGNAL(clicked()), SLOT(showCompositeTree()));
-  this->connect(this->Internals->helpButton, SIGNAL(clicked()), SIGNAL(helpRequested()));
 
   this->connect(this->Internals->criteria, SIGNAL(currentIndexChanged(int)),
     SLOT(populateSelectionCondition()));
@@ -515,7 +514,6 @@ void pqQueryClauseWidget::updateDependentClauseWidgets()
   foreach (CriteriaTypes t_flag, sub_widgets)
   {
     pqQueryClauseWidget* sub_widget = new pqQueryClauseWidget(this);
-    sub_widget->Internals->helpButton->hide();
     sub_widget->setProducer(this->producer());
     sub_widget->setAttributeType(this->attributeType());
     sub_widget->initialize(t_flag, true);
@@ -735,13 +733,21 @@ void pqQueryClauseWidget::addSelectionQualifiers(vtkSMProxy* selSource)
   {
     case SINGLE_VALUE:
       if (query.isEmpty())
+      {
         query = "%1 == %2";
+      }
+      VTK_FALLTHROUGH;
     case SINGLE_VALUE_LE:
       if (query.isEmpty())
+      {
         query = "%1 <= %2";
+      }
+      VTK_FALLTHROUGH;
     case SINGLE_VALUE_GE:
       if (query.isEmpty())
+      {
         query = "%1 >= %2";
+      }
       if (!this->Internals->value->text().isEmpty())
       {
         values << this->Internals->value->text();
@@ -905,6 +911,7 @@ void pqQueryClauseWidget::addSelectionQualifiers(vtkSMProxy* selSource)
         vtkSMPropertyHelper(selSource, "CompositeIndex").Set(values[0].toInt());
         break;
       }
+      VTK_FALLTHROUGH;
     // break; -- don't break
 
     case INDEX:

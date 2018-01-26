@@ -74,11 +74,24 @@ set (CMAKE_MODULE_PATH
   ${ParaView_CMAKE_DIR}
 )
 
-# Use the new version of the variable names for output of build process.
-# Make sure these are consistent with what VTK sets.
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+# Set up our directory structure for output libraries and binaries
+if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${ParaView_BINARY_DIR}/bin")
+endif()
+if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
+  if(UNIX)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${ParaView_BINARY_DIR}/lib")
+  else()
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${ParaView_BINARY_DIR}/bin")
+  endif()
+endif()
+if(NOT CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${ParaView_BINARY_DIR}/lib")
+endif()
+mark_as_advanced(CMAKE_RUNTIME_OUTPUT_DIRECTORY
+  CMAKE_LIBRARY_OUTPUT_DIRECTORY
+  CMAKE_ARCHIVE_OUTPUT_DIRECTORY
+  )
 
 include(Utilities/Git/Git.cmake)
 include(ParaViewDetermineVersion)
@@ -96,7 +109,23 @@ extract_version_components("${version_txt}" "PARAVIEW")
 determine_version(${ParaView_SOURCE_DIR} ${GIT_EXECUTABLE} "PARAVIEW")
 
 # Setup some cross compiling related things.
-if (CMAKE_CROSSCOMPILING AND NOT COMPILE_TOOLS_IMPORTED)
+# Maintain backward compatibility with user setting COMPILE_TOOLS_IMPORTED
+if(DEFINED COMPILE_TOOLS_IMPORTED AND NOT DEFINED PARAVIEW_COMPILE_TOOLS_IMPORTED)
+  set(PARAVIEW_COMPILE_TOOLS_IMPORTED ${COMPILE_TOOLS_IMPORTED})
+endif()
+# Variable PARAVIEW_COMPILE_TOOLS_IMPORTED is preferred
+if(NOT DEFINED PARAVIEW_COMPILE_TOOLS_IMPORTED)
+  set(PARAVIEW_COMPILE_TOOLS_IMPORTED FALSE)
+endif()
+# Full functional CMAKE_CROSSCOMPILING_EMULATOR support for custom_command and
+# custom_target is available in CMake 3.8.0
+# It was first added in CMake 3.6.0 and later fixed in CMake 3.8.0 (commit e7480d67, CMake issue #16288)
+if (CMAKE_CROSSCOMPILING
+    AND NOT PARAVIEW_COMPILE_TOOLS_IMPORTED
+    AND NOT DEFINED CMAKE_CROSSCOMPILING_EMULATOR
+    AND CMAKE_VERSION VERSION_LESS 3.8)
+  # if CMAKE_CROSSCOMPILING is true and full crosscompiling support is not available 
+  # we need to import build-tools targets.
   find_package (ParaViewCompileTools REQUIRED)
   # this keeps VTK sub-dir from trying to import VTKCompileTools.
   set (COMPILE_TOOLS_IMPORTED TRUE)
@@ -109,19 +138,10 @@ if(NOT VTK_INSTALL_RUNTIME_DIR)
   set(VTK_INSTALL_RUNTIME_DIR bin)
 endif()
 if(NOT VTK_INSTALL_LIBRARY_DIR)
-  set(VTK_INSTALL_LIBRARY_DIR lib/paraview-${PARAVIEW_VERSION})
-endif()
-# ParaView installs the vtk python modules specifically to appropriate locations.
-if(NOT VTK_INSTALL_PYTHON_MODULE_DIR)
-  set (VTK_INSTALL_PYTHON_MODULE_DIR "${VTK_INSTALL_LIBRARY_DIR}/site-packages" CACHE
-    INTERNAL "Directory where python modules will be installed")
-endif()
-if(NOT VTK_BUILD_PYTHON_MODULE_DIR)
-  set (VTK_BUILD_PYTHON_MODULE_DIR "${CMAKE_BINARY_DIR}/lib/site-packages" CACHE
-    INTERNAL "Directory where python modules will be built")
+  set(VTK_INSTALL_LIBRARY_DIR lib)
 endif()
 if(NOT VTK_INSTALL_ARCHIVE_DIR)
-  set(VTK_INSTALL_ARCHIVE_DIR lib/paraview-${PARAVIEW_VERSION})
+  set(VTK_INSTALL_ARCHIVE_DIR lib)
 endif()
 if(NOT VTK_INSTALL_INCLUDE_DIR)
   set(VTK_INSTALL_INCLUDE_DIR include/paraview-${PARAVIEW_VERSION})
@@ -144,6 +164,7 @@ endif()
 if(NOT VTK_MODULES_DIR)
   set(VTK_MODULES_DIR "${ParaView_BINARY_DIR}/${VTK_INSTALL_PACKAGE_DIR}/Modules")
 endif()
+# Leaving  VTK_PYTHON_SITE_PACKAGES_SUFFIX unchanged. VTK picks a good one.
 if(NOT PARAVIEW_WWW_DIR)
   set(PARAVIEW_WWW_DIR "${ParaView_BINARY_DIR}/www")
 endif()
@@ -153,11 +174,21 @@ if (NOT DEFINED VTK_CUSTOM_LIBRARY_SUFFIX)
   set (VTK_CUSTOM_LIBRARY_SUFFIX "-pv${PARAVIEW_VERSION}")
 endif()
 
-if(NOT PV_INSTALL_PLUGIN_DIR)
+if(NOT PARAVIEW_INSTALL_PLUGINS_DIR)
+  if(WIN32)
+    set(PARAVIEW_INSTALL_PLUGINS_DIR ${VTK_INSTALL_RUNTIME_DIR}/plugins)
+  elseif(APPLE AND NOT PARAVIEW_DO_UNIX_STYLE_INSTALLS)
+    set(PARAVIEW_INSTALL_PLUGINS_DIR "Plugins")
+  else()
+    set(PARAVIEW_INSTALL_PLUGINS_DIR ${VTK_INSTALL_LIBRARY_DIR}/paraview-${PARAVIEW_VERSION}/plugins)
+  endif()
+endif()
+
+if(NOT PARAVIEW_BUILD_PLUGINS_DIR)
   if (WIN32)
-    set (PV_INSTALL_PLUGIN_DIR ${VTK_INSTALL_RUNTIME_DIR})
-  else ()
-    set (PV_INSTALL_PLUGIN_DIR ${VTK_INSTALL_LIBRARY_DIR})
+    set(PARAVIEW_BUILD_PLUGINS_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/plugins)
+  else()
+    set(PARAVIEW_BUILD_PLUGINS_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/paraview-${PARAVIEW_VERSION}/plugins)
   endif()
 endif()
 
@@ -191,8 +222,8 @@ option(BUILD_TESTING "Build ParaView Testing" OFF)
 option(BUILD_EXAMPLES "Build ParaView examples" OFF)
 option(BUILD_SHARED_LIBS "Build ParaView using shared libraries" ON)
 option(PARAVIEW_BUILD_QT_GUI "Enable ParaView Qt-based client" ON)
-cmake_dependent_option(PARAVIEW_USE_VTKM "Build ParaView with VTKm many-core filters" OFF "NOT APPLE" OFF)
 option(PARAVIEW_USE_MPI "Enable MPI support for parallel computing" OFF)
+option(PARAVIEW_USE_VTKM "Enable VTK-m accelerated algorithms" ON)
 option(PARAVIEW_USE_OSPRAY "Build ParaView with OSPRay Ray Traced rendering" OFF)
 set(VTK_OPENVR_OBJECT_FACTORY OFF
     CACHE INTERNAL "ParaView requires the OpenVR factory be disabled" FORCE)
@@ -206,8 +237,12 @@ option(PARAVIEW_ENABLE_NVPIPE
 option(PARAVIEW_ENABLE_XDMF2 "Enable Xdmf2 support." ON)
 mark_as_advanced(PARAVIEW_ENABLE_XDMF2)
 option(PARAVIEW_ENABLE_XDMF3 "Enable Xdmf3 support." OFF)
+option(PARAVIEW_ENABLE_GDAL "Enable GDAL support." OFF)
+mark_as_advanced(PARAVIEW_ENABLE_GDAL)
 option(PARAVIEW_ENABLE_LAS "Enable LAS support." OFF)
 mark_as_advanced(PARAVIEW_ENABLE_LAS)
+option(PARAVIEW_ENABLE_PDAL "Enable PDAL support." OFF)
+mark_as_advanced(PARAVIEW_ENABLE_PDAL)
 
 
 if (UNIX)
@@ -381,7 +416,6 @@ elseif (APPLE AND NOT PARAVIEW_DO_UNIX_STYLE_INSTALLS)
     CACHE PATH
     "Location where the *.app bundle must be installed.")
   set(CMAKE_INSTALL_NAME_DIR "@executable_path/../Libraries")
-  set(PV_INSTALL_PLUGIN_DIR "Plugins")
 
   # ensure that we don't build forwarding executables on apple.
   set(VTK_BUILD_FORWARDING_EXECUTABLES FALSE)
@@ -520,6 +554,21 @@ if (BUILD_TESTING AND PARAVIEW_INSTALL_DEVELOPMENT_FILES)
 endif()
 #------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------
+# Test to check that we can process all of the Catalyst editions
+#------------------------------------------------------------------------------
+if (BUILD_TESTING AND PARAVIEW_ENABLE_PYTHON AND UNIX)
+  add_test( NAME GenerateCatalystEditions
+    COMMAND ${CMAKE_COMMAND}
+    -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE}
+    -DPARAVIEW_SOURCE_DIR:PATH=${CMAKE_SOURCE_DIR}
+    -DPARAVIEW_TEST_DIR:PATH=${PARAVIEW_TEST_DIR}
+    -P ${CMAKE_SOURCE_DIR}/CMake/ParaViewTestCatalystCodeGeneration.cmake)
+  set_tests_properties(GenerateCatalystEditions PROPERTIES
+    LABELS "PARAVIEW;CATALYST")
+endif()
+#------------------------------------------------------------------------------
+
 include_directories(${ParaView_BINARY_DIR})
 
 set (PARAVIEW_MODULE_ROOTS)
@@ -589,6 +638,11 @@ else()
 
 endif()
 
+# ClientServer bindings require the hierarchy to be generated regardless of
+# the enable language support.
+set(VTK_WRAP_HIERARCHY ON
+  CACHE INTERNAL "Forcing the wrap hierarchy to be on.")
+
 #----------------------------------------------------------------------------------
 # Import all essential CMake files. Based on whether we are using internal or
 # external VTK, these modules will be imported for the appropropriate locations.
@@ -598,7 +652,7 @@ include(ParaViewMacros)
 
 #----------------------------------------------------------------------------------
 # Use consistent compiler flags in ParaView and VTK.
-include(vtkDetermineCompilerFlags)
+include(vtkCompilerPlatformFlags)
 
 #----------------------------------------------------------------------------------
 list (APPEND PARAVIEW_MODULE_ROOTS
@@ -729,19 +783,6 @@ if (PARAVIEW_ENABLE_PYTHON AND PARAVIEW_ENABLE_CATALYST)
     ${VTK_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS}
     ${vtkPVPythonCatalyst_INCLUDE_DIRS}
     ${ParaView_BINARY_DIR}/CoProcessing/Catalyst)
-
-  # All the ${vtk-module}Python files are installed by VTK/Wrapping/Python/CMakeLists.txt
-  # outside the module subsystem. Hence, we need to install the vtkPVPythonCatalystPython
-  # library explicitly here (BUG #15085).
-  # This code mirrors the code in VTK/Wrapping/Python/CMakeLists.txt
-  if (NOT VTK_INSTALL_NO_RUNTIME AND BUILD_SHARED_LIBS AND NOT VTK_INSTALL_NO_LIBRARIES)
-    install(TARGETS ${vtk-module}Python
-      EXPORT ${VTK_INSTALL_EXPORT_NAME}
-      RUNTIME DESTINATION ${VTK_INSTALL_RUNTIME_DIR} COMPONENT RuntimeLibraries
-      LIBRARY DESTINATION ${VTK_INSTALL_PYTHON_MODULE_DIR}/vtk COMPONENT RuntimeLibraries
-      ARCHIVE DESTINATION ${VTK_INSTALL_ARCHIVE_DIR} COMPONENT Development
-      )
-  endif()
   unset(vtk-module)
 endif()
 
@@ -805,8 +846,6 @@ if (NOT VTK_INSTALL_NO_DEVELOPMENT)
   #installed
   install(
     FILES ${CMAKE_CURRENT_SOURCE_DIR}/VTK/CMake/TopologicalSort.cmake
-          ${CMAKE_CURRENT_SOURCE_DIR}/VTK/CMake/vtkMakeInstantiator.h.in
-          ${CMAKE_CURRENT_SOURCE_DIR}/VTK/CMake/vtkMakeInstantiator.cxx.in
     DESTINATION ${VTK_INSTALL_PACKAGE_DIR}
     COMPONENT Development
   )

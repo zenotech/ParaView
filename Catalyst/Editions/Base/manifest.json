@@ -38,6 +38,10 @@
         "type":"BOOL",
         "value":"ON"
       },
+      { "name":"PARAVIEW_INSTALL_DEVELOPMENT_FILES",
+        "type":"BOOL",
+        "value":"ON"
+      },
       { "name":"VTK_RENDERING_BACKEND",
         "type":"STRING",
         "value":"OpenGL2"
@@ -221,10 +225,11 @@
         { "class":"vtkCompositeMultiProcessController" },
         { "class":"vtkDistributedTrivialProducer" },
         { "class":"vtkMultiProcessControllerHelper" },
+        { "class":"vtkPResourceFileLocator" },
         { "class":"vtkPVCompositeDataPipeline" },
         { "class":"vtkPVInformationKeys" },
-        { "class":"vtkPVPostFilterExecutive" },
         { "class":"vtkPVPostFilter" },
+        { "class":"vtkPVPostFilterExecutive" },
         { "class":"vtkPVTrivialProducer" },
         { "class":"vtkUndoElement" },
         { "class":"vtkUndoSet" },
@@ -235,8 +240,7 @@
       ],
       "replace": [
         { "path":"ParaViewCore/VTKExtensions/Core/module.cmake" },
-        { "path":"ParaViewCore/VTKExtensions/Core/CMakeLists.txt" },
-        { "path":"ParaViewCore/VTKExtensions/Core/Base-wrap-exclude-classes.catalyst.cmake" }
+        { "path":"ParaViewCore/VTKExtensions/Core/CMakeLists.txt" }
       ],
       "exclude": [
         { "path": "Testing" }
@@ -257,9 +261,6 @@
       "exclude":[
         { "path":"Testing" }
       ]
-    },
-    { "name":"vtkUtilitiesHashSource",
-      "path":"VTK/Utilities/HashSource"
     },
     { "name":"vtkParallelMPI",
       "path":"VTK/Parallel/MPI",
@@ -324,6 +325,16 @@
     { "path":"VTK/ThirdParty/utf8" }
   ],
   "proxies":[
+    { "path":"ParaViewCore/ServerManager/SMApplication/Resources/filters.xml",
+      "proxies":[
+        "Append",
+        "AppendPolyData",
+        "FeatureEdges",
+        "PointDataToCellData",
+        "QuadricClustering",
+        "Threshold"
+      ]
+    },
     { "path":"ParaViewCore/ServerManager/SMApplication/Resources/utilities.xml",
       "proxies":[ "TimeKeeper" ]
     }

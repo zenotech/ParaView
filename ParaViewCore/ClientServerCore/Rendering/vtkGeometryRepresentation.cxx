@@ -13,6 +13,7 @@
 
 =========================================================================*/
 #include "vtkGeometryRepresentation.h"
+#include "vtkGeometryRepresentationInternal.h"
 
 #include "vtkAlgorithmOutput.h"
 #include "vtkBoundingBox.h"
@@ -39,7 +40,6 @@
 #include "vtkPVUpdateSuppressor.h"
 #include "vtkPointData.h"
 #include "vtkProperty.h"
-#include "vtkQuadricClustering.h"
 #include "vtkRenderer.h"
 #include "vtkSelection.h"
 #include "vtkSelectionConverter.h"
@@ -141,7 +141,7 @@ vtkGeometryRepresentation::vtkGeometryRepresentation()
   this->GeometryFilter = vtkPVGeometryFilter::New();
   this->CacheKeeper = vtkPVCacheKeeper::New();
   this->MultiBlockMaker = vtkGeometryRepresentationMultiBlockMaker::New();
-  this->Decimator = vtkQuadricClustering::New();
+  this->Decimator = vtkGeometryRepresentation_detail::DecimationFilterType::New();
   this->LODOutlineFilter = vtkPVGeometryFilter::New();
 
   // connect progress bar
@@ -187,7 +187,7 @@ vtkGeometryRepresentation::vtkGeometryRepresentation()
   this->DebugString = 0;
   this->SetDebugString(this->GetClassName());
 
-  vtkMath::UninitializeBounds(this->DataBounds);
+  vtkMath::UninitializeBounds(this->VisibleDataBounds);
 
   this->SetupDefaults();
 
@@ -214,10 +214,7 @@ vtkGeometryRepresentation::~vtkGeometryRepresentation()
 //----------------------------------------------------------------------------
 void vtkGeometryRepresentation::SetupDefaults()
 {
-  this->Decimator->SetUseInputPoints(1);
-  this->Decimator->SetCopyCellData(1);
-  this->Decimator->SetUseInternalTriangles(0);
-  this->Decimator->SetNumberOfDivisions(10, 10, 10);
+  this->Decimator->SetLODFactor(0.5);
 
   this->LODOutlineFilter->SetUseOutline(1);
 
@@ -308,6 +305,8 @@ int vtkGeometryRepresentation::ProcessViewRequest(
     // redistribute data as and when needed.
     vtkPVRenderView::MarkAsRedistributable(inInfo, this);
 
+    this->ComputeVisibleDataBounds();
+
     // Tell the view if this representation needs ordered compositing. We need
     // ordered compositing when rendering translucent geometry.
     if (this->Actor->HasTranslucentPolygonalGeometry())
@@ -319,7 +318,7 @@ int vtkGeometryRepresentation::ProcessViewRequest(
       // Pass partitioning information to the render view.
       if (this->UseDataPartitions == true)
       {
-        vtkPVRenderView::SetOrderedCompositingInformation(inInfo, this->DataBounds);
+        vtkPVRenderView::SetOrderedCompositingInformation(inInfo, this->VisibleDataBounds);
       }
     }
 
@@ -329,7 +328,7 @@ int vtkGeometryRepresentation::ProcessViewRequest(
     // that the bounds we report include the transformation as well.
     vtkNew<vtkMatrix4x4> matrix;
     this->Actor->GetMatrix(matrix.GetPointer());
-    vtkPVRenderView::SetGeometryBounds(inInfo, this->DataBounds, matrix.GetPointer());
+    vtkPVRenderView::SetGeometryBounds(inInfo, this->VisibleDataBounds, matrix.GetPointer());
   }
   else if (request_type == vtkPVView::REQUEST_UPDATE_LOD())
   {
@@ -357,9 +356,10 @@ int vtkGeometryRepresentation::ProcessViewRequest(
 
         if (inInfo->Has(vtkPVRenderView::LOD_RESOLUTION()))
         {
-          int division =
-            static_cast<int>(150 * inInfo->Get(vtkPVRenderView::LOD_RESOLUTION())) + 10;
-          this->Decimator->SetNumberOfDivisions(division, division, division);
+          // We handle this number differently depending on decimator
+          // implementation.
+          const double factor = inInfo->Get(vtkPVRenderView::LOD_RESOLUTION());
+          this->Decimator->SetLODFactor(factor);
         }
 
         this->Decimator->Update();
@@ -462,7 +462,6 @@ int vtkGeometryRepresentation::RequestUpdateExtent(
 int vtkGeometryRepresentation::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
-  vtkMath::UninitializeBounds(this->DataBounds);
 
   // Pass caching information to the cache keeper.
   this->CacheKeeper->SetCachingEnabled(this->GetUseCache());
@@ -496,10 +495,6 @@ int vtkGeometryRepresentation::RequestData(
   // the MB dataset have older MTime.
   this->Mapper->Modified();
 
-  // Determine data bounds.
-  vtkCompositePolyDataMapper2* cpm = vtkCompositePolyDataMapper2::SafeDownCast(this->Mapper);
-  this->GetBounds(this->CacheKeeper->GetOutputDataObject(0), this->DataBounds,
-    cpm ? cpm->GetCompositeDataDisplayAttributes() : NULL);
   return this->Superclass::RequestData(request, inputVector, outputVector);
 }
 
@@ -681,8 +676,16 @@ void vtkGeometryRepresentation::UpdateColoringParameters()
 
   if (this->Representation != SURFACE && this->Representation != SURFACE_WITH_EDGES)
   {
-    diffuse = 0.0;
-    ambient = 1.0;
+    if ((this->Representation == WIREFRAME && this->Property->GetRenderLinesAsTubes()) ||
+      (this->Representation == POINTS && this->Property->GetRenderPointsAsSpheres()))
+    {
+      // use diffuse lighting, since we're rendering as tubes or spheres.
+    }
+    else
+    {
+      diffuse = 0.0;
+      ambient = 1.0;
+    }
   }
 
   this->Property->SetAmbient(ambient);
@@ -779,6 +782,18 @@ void vtkGeometryRepresentation::SetLuminosity(double val)
 #else
   (void)val;
 #endif
+}
+
+//----------------------------------------------------------------------------
+void vtkGeometryRepresentation::SetRenderPointsAsSpheres(bool val)
+{
+  this->Property->SetRenderPointsAsSpheres(val);
+}
+
+//----------------------------------------------------------------------------
+void vtkGeometryRepresentation::SetRenderLinesAsTubes(bool val)
+{
+  this->Property->SetRenderLinesAsTubes(val);
 }
 
 //----------------------------------------------------------------------------
@@ -1112,4 +1127,35 @@ void vtkGeometryRepresentation::SetMaterial(const char* val)
 #else
   (void)val;
 #endif
+}
+
+//----------------------------------------------------------------------------
+void vtkGeometryRepresentation::ComputeVisibleDataBounds()
+{
+  if (this->VisibleDataBoundsTime < this->GetPipelineDataTime() ||
+    (this->BlockAttrChanged && this->VisibleDataBoundsTime < this->BlockAttributeTime))
+  {
+    vtkDataObject* dataObject = this->CacheKeeper->GetOutputDataObject(0);
+    vtkNew<vtkCompositeDataDisplayAttributes> cdAttributes;
+    // If the input data is a composite dataset, use the currently set values for block
+    // visibility rather than the cached ones from the last render.  This must be computed
+    // in the REQUEST_UPDATE pass but the data is only copied to the mapper in the
+    // REQUEST_RENDER pass.  This constructs a dummy vtkCompositeDataDisplayAttributes
+    // with only the visibilities set and calls the helper function to compute the visible
+    // bounds with that.
+    if (vtkCompositeDataSet* cd = vtkCompositeDataSet::SafeDownCast(dataObject))
+    {
+      auto iter = vtkSmartPointer<vtkCompositeDataIterator>::Take(cd->NewIterator());
+      for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem())
+      {
+        auto visible = this->BlockVisibilities.find(iter->GetCurrentFlatIndex());
+        if (visible != this->BlockVisibilities.end())
+        {
+          cdAttributes->SetBlockVisibility(iter->GetCurrentDataObject(), visible->second);
+        }
+      }
+    }
+    this->GetBounds(dataObject, this->VisibleDataBounds, cdAttributes);
+    this->VisibleDataBoundsTime.Modified();
+  }
 }

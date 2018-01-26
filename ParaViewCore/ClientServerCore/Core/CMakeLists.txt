@@ -112,30 +112,6 @@ if (PARAVIEW_ENABLE_PYTHON)
     )
 endif()
 
-set_source_files_properties(
-  vtkExtractsDeliveryHelper
-  vtkProcessModuleAutoMPI
-  vtkPVOptionsXMLParser
-  vtkPVPlugin
-  vtkPVPythonPluginInterface
-  vtkPVServerManagerPluginInterface
-  vtkPVServerOptions
-
-  WRAP_EXCLUDE
-  )
-
-set_source_files_properties(
-  vtkNetworkAccessManager
-  vtkPVDataInformationHelper
-  vtkPVInformation
-  vtkPVPlugin
-  vtkPVPluginTracker
-  vtkPVPythonPluginInterface
-  vtkPVServerManagerPluginInterface
-  vtkPVSession
-  vtkSession
-  ABSTRACT)
-
 if(VTK_OPENGL_HAS_EGL)
   set_source_files_properties(
     vtkPVOptions.cxx
@@ -147,8 +123,6 @@ if(PARAVIEW_USE_MPI)
   include(vtkMPI)
 endif()
 
-# Use a custom hints file for this module.
-set(${vtk-module}_WRAP_HINTS "${CMAKE_CURRENT_SOURCE_DIR}/hints")
 vtk_module_library(vtkPVClientServerCoreCore ${Module_SRCS})
 if(PARAVIEW_USE_MPI)
   vtk_mpi_link(${vtk-module})

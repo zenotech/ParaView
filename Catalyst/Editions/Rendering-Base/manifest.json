@@ -5,6 +5,10 @@
   ],
   "cmake": {
     "cache": [
+      { "name": "PARAVIEW_USE_VTKM",
+        "type": "BOOL",
+        "value": "OFF"
+      },
       { "name": "Module_vtkPVVTKExtensionsRendering",
         "type": "BOOL",
         "value": "ON"
@@ -272,9 +276,11 @@
       "path": "VTK/Filters/Core",
       "include": [
         { "class": "vtkAppendSelection" },
+        { "class": "vtkDecimatePro" },
         { "class": "vtkStripper" },
         { "class": "vtkStructuredGridOutlineFilter" },
         { "class": "vtkTriangleFilter" },
+        { "class": "vtkTriangleMeshPointNormals"},
         { "class": "vtkTubeFilter" }
       ],
       "cswrap": true,
@@ -395,7 +401,6 @@
         { "class": "vtkMapper" },
         { "class": "vtkMapper2D" },
         { "class": "vtkObserverMediator" },
-        { "class": "vtkPainterDeviceAdapter" },
         { "class": "vtkPicker" },
         { "class": "vtkPickingManager" },
         { "class": "vtkPointGaussianMapper" },
@@ -539,7 +544,6 @@
     { "name": "vtkPVClientServerCoreRendering",
       "path": "ParaViewCore/ClientServerCore/Rendering",
       "include": [
-        { "path": "hints" },
         { "class": "vtk3DWidgetRepresentation" },
         { "class": "vtkCacheSizeKeeper" },
         { "class": "vtkCaveSynchronizedRenderers" },
@@ -549,6 +553,7 @@
         { "class": "vtkCompositeRepresentation" },
         { "class": "vtkDataLabelRepresentation" },
         { "class": "vtkGeometryRepresentation" },
+        { "path": "vtkGeometryRepresentationInternal.h" },
         { "class": "vtkGeometryRepresentationWithFaces" },
         { "class": "vtkGlyph3DRepresentation" },
         { "class": "vtkIceTSynchronizedRenderers" },
@@ -569,6 +574,7 @@
         { "class": "vtkPVImplicitPlaneRepresentation" },
         { "class": "vtkPVLastSelectionInformation" },
         { "class": "vtkPVOpenGLInformation" },
+        { "class": "vtkPVMaterialLibrary" },
         { "class": "vtkPVPlotMatrixView" },
         { "class": "vtkPVProminentValuesInformation" },
         { "class": "vtkPVRenderingCapabilitiesInformation" },
@@ -693,6 +699,7 @@
         { "class": "vtkSMDataDeliveryManager" },
         { "class": "vtkSMFunctionalBagChartSeriesSelectionDomain" },
         { "class": "vtkSMImplicitPlaneRepresentationProxy" },
+        { "class": "vtkSMMaterialDomain" },
         { "class": "vtkSMMaterialLibraryProxy" },
         { "class": "vtkSMNewWidgetRepresentationProxy" },
         { "class": "vtkSMParaViewPipelineControllerWithRendering" },
@@ -935,9 +942,6 @@
     { "name": "vtkMetaIO",
       "path": "VTK/Utilities/MetaIO"
     },
-    { "name": "vtkEncodeString",
-      "path": "VTK/Utilities/EncodeString"
-    },
     { "name": "vtkParseOGLExt",
       "path": "VTK/Utilities/ParseOGLExt"
     },
@@ -970,6 +974,7 @@
     { "path":"ParaViewCore/ServerManager/SMApplication/Resources/filters.xml",
       "proxies":[
         "DataSetSurfaceFilter",
+        "DecimatePro",
         "ExtractHistogram",
         "IntegrateAttributes",
         "PipelineConnection",
@@ -1016,6 +1021,12 @@
     { "path":"ParaViewCore/ServerManager/SMApplication/Resources/utilities.xml",
       "proxies":[
         "GridAxes3DActor",
+        "DefaultBackground",
+        "PrintBackground",
+        "GrayBackground",
+        "WhiteBackground",
+        "BlackBackground",
+        "GradientBackground",
         "PiecewiseFunction",
         "PVLookupTable",
         "SaveScreenshot",

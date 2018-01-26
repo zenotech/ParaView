@@ -147,39 +147,6 @@ set (${vtk-module}_HDRS
   vtkMaterialInterfaceIdListItem.h
 )
 
-set_source_files_properties(
-  vtkAMRDualGridHelper
-  vtkGridAxesHelper
-  vtkMaterialInterfaceCommBuffer
-  vtkMaterialInterfaceIdList
-  vtkMaterialInterfacePieceLoading
-  vtkMaterialInterfacePieceTransaction
-  vtkMaterialInterfacePieceTransactionMatrix
-  vtkMaterialInterfaceProcessLoading
-  vtkMaterialInterfaceProcessRing
-  vtkMaterialInterfaceToProcMap
-  vtkPVPlotTime
-  vtkSpyPlotBlock
-  vtkSpyPlotBlockIterator
-  vtkSpyPlotIStream
-  vtkSpyPlotReaderMap
-  vtkSpyPlotUniReader
-  WRAP_EXCLUDE
-  )
-
-set_source_files_properties(
-  vtkSpyPlotBlockIterator
-  PROPERTIES WRAP_EXCLUDE_PYTHON 1
-  )
-
-set_source_files_properties(
-  vtkCellIntegrator
-  vtkPEnSightReader
-  vtkSciVizStatistics
-  ABSTRACT)
-
-# Use a custom hints file for this module.
-set(${vtk-module}_WRAP_HINTS "${CMAKE_CURRENT_SOURCE_DIR}/hints")
 vtk_module_library(vtkPVVTKExtensionsDefault ${Module_SRCS})
 target_link_libraries(vtkPVVTKExtensionsDefault LINK_PRIVATE
   ${vtkIOInfovis_LIBRARIES})

@@ -49,7 +49,6 @@ class vtkInteractorStyleRubberBandZoom;
 class vtkLight;
 class vtkLightKit;
 class vtkMatrix4x4;
-class vtkOSPRayMaterialLibrary;
 class vtkPartitionOrderingInterface;
 class vtkProp;
 class vtkPVAxesWidget;
@@ -60,6 +59,7 @@ class vtkPVDataRepresentation;
 class vtkPVGridAxes3DActor;
 class vtkPVHardwareSelector;
 class vtkPVInteractorStyle;
+class vtkPVMaterialLibrary;
 class vtkPVSynchronizedRenderer;
 class vtkRenderer;
 class vtkRenderViewBase;
@@ -610,6 +610,7 @@ public:
   //*****************************************************************
   // Forward to 3D renderer.
   vtkSetMacro(UseHiddenLineRemoval, bool) virtual void SetUseDepthPeeling(int val);
+  virtual void SetUseDepthPeelingForVolumes(bool val);
   virtual void SetMaximumNumberOfPeels(int val);
   virtual void SetBackground(double r, double g, double b);
   virtual void SetBackground2(double r, double g, double b);
@@ -890,7 +891,7 @@ public:
   /**
    * For OSPRay, set the library of materials.
    */
-  virtual void SetMaterialLibrary(vtkOSPRayMaterialLibrary*);
+  virtual void SetMaterialLibrary(vtkPVMaterialLibrary*);
 
   //@{
   /**

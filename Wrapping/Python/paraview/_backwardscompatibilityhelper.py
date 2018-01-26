@@ -132,7 +132,7 @@ def setattr(proxy, pname, value):
     if pname == "LockScalarRange" and proxy.SMProxy.GetProperty("AutomaticRescaleRangeMode"):
         if paraview.compatibility.GetVersion() <= 5.4:
             if value:
-                from paraview.vtk.vtkPVServerManagerRendering import vtkSMTransferFunctionManager
+                from vtkmodules.vtkPVServerManagerRendering import vtkSMTransferFunctionManager
                 proxy.GetProperty("AutomaticRescaleRangeMode").SetData(vtkSMTransferFunctionManager.NEVER)
             else:
                 pxm = proxy.SMProxy.GetSessionProxyManager()
@@ -191,6 +191,19 @@ def setattr(proxy, pname, value):
     proxy.__dict__[pname] = value
 
     raise Continue()
+
+def setattr_fix_value(proxy, pname, value, setter_func):
+    if pname == "ShaderPreset" and proxy.SMProxy.GetXMLName().endswith("Representation"):
+        if value == "Gaussian Blur (Default)":
+            if paraview.compatibility.GetVersion() <= 5.5:
+                paraview.print_warning(\
+                    "The 'Gaussian Blur (Default)' option has been renamed to 'Gaussian Blur'.  Please use that instead.")
+                setter_func(proxy, "Gaussian Blur")
+                raise Continue()
+            else:
+                raise NotSupportedException("'Gaussian Blur (Default)' is an obsolete value for ShaderPreset. "\
+                    " Use 'Gaussian Blur' instead.")
+    raise ValueError("'%s' is not a valid value for %s!" % (value, pname))
 
 _fgetattr = getattr
 
@@ -274,7 +287,7 @@ def getattr(proxy, pname):
     # replaced it with the enumeration AutomaticRescaleRangeMode.
     if pname == "LockScalarRange" and proxy.SMProxy.GetProperty("AutomaticRescaleRangeMode"):
         if version <= 5.4:
-            from paraview.vtk.vtkPVServerManagerRendering import vtkSMTransferFunctionManager
+            from vtkmodules.vtkPVServerManagerRendering import vtkSMTransferFunctionManager
             if proxy.GetProperty("AutomaticRescaleRangeMode").GetData() == "Never":
                 return 1
             else:

@@ -68,6 +68,7 @@
         </Documentation>
       </IntVectorProperty>
 
+
       <IntVectorProperty name="EnableOpacityMapping"
                          command="SetEnableOpacityMapping"
                          number_of_elements="1"
@@ -295,6 +296,18 @@
         </Documentation>
       </DoubleVectorProperty>
 
+      <DoubleVectorProperty name="IndexedOpacities"
+                            command="SetIndexedOpacityInFullSet"
+                            number_of_elements_per_command="1"
+                            repeat_command="1"
+                            set_number_command="SetNumberOfIndexedOpacitiesInFullSet"
+                            use_index="1"
+                            panel_visibility="advanced">
+        <Documentation>
+          Opacities used when using IndexedLookup is true.
+        </Documentation>
+      </DoubleVectorProperty>
+
       <PropertyGroup label="Mapping Data" panel_widget="ColorOpacityEditor">
         <Property name="EnableOpacityMapping" function="EnableOpacityMapping" />
         <Property name="RGBPoints" function="XRGBPoints" />
@@ -314,6 +327,7 @@
 
       <PropertyGroup label="Annotations" panel_widget="AnnotationsEditor">
         <Property name="Annotations" />
+        <Property name="EnableOpacityMapping" function="EnableOpacityMapping" />
         <Property name="IndexedColors" />
       </PropertyGroup>
 
@@ -614,6 +628,10 @@
                             default_values="0.0"
                             name="Offset"
                             number_of_elements="1">
+        <Documentation>
+          Set the value to offset the origin by. The origin is translated along the normal
+          direction by the number specified.
+        </Documentation>
       </DoubleVectorProperty>
 
       <PropertyGroup label="Plane Parameters" panel_widget="InteractivePlane">
@@ -898,6 +916,12 @@
                          panel_visibility="never" >
         <BooleanDomain name="bool" />
       </IntVectorProperty>
+      <IntVectorProperty command="SetUseLogScale"
+                         default_values="0"
+                         name="UseLogScale"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
       <IntVectorProperty default_values="0"
                          name="ScalarRangeInitialized"
                          number_of_elements="1"
@@ -956,6 +980,11 @@
           <Group name="lookup_tables" />
         </ProxyGroupDomain>
       </ProxyProperty>
+      <IntVectorProperty command="GetEstimatedNumberOfAnnotations"
+                         information_only="1"
+                         name="EstimatedNumberOfAnnotations">
+        <SimpleIntInformationHelper />
+      </IntVectorProperty>
       <IntVectorProperty animateable="0"
                          command="SetVisibility"
                          default_values="1"
@@ -996,6 +1025,18 @@
                          command="SetForceHorizontalTitle"
                          default_values="0"
                          name="HorizontalTitle"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          When on, orients the title horizontally. When off (default), the title
+          will be rotated counter-clockwise 90 degrees and lie parallel to the
+          color bar.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty animateable="0"
+                         command="SetForceHorizontalTitle"
+                         default_values="0"
+                         name="HorizontalTitle2"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
         <Documentation>
@@ -1168,6 +1209,8 @@
                     name="Opacity" />
           <Property exposed_name="LabelFontFamily"
                     name="FontFamily" />
+          <Property exposed_name="LabelFontFile"
+                    name="FontFile" />
           <Property exposed_name="LabelBold"
                     name="Bold" />
           <Property exposed_name="LabelItalic"
@@ -1190,6 +1233,8 @@
                     name="Opacity" />
           <Property exposed_name="TitleFontFamily"
                     name="FontFamily" />
+          <Property exposed_name="TitleFontFile"
+                    name="FontFile" />
           <Property exposed_name="TitleBold"
                     name="Bold" />
           <Property exposed_name="TitleItalic"
@@ -1259,6 +1304,7 @@
           <Property exposed_name="XTitleColor" name="Color" />
           <Property exposed_name="XTitleOpacity" name="Opacity" />
           <Property exposed_name="XTitleFontFamily" name="FontFamily" />
+          <Property exposed_name="XTitleFontFile" name="FontFile" />
           <Property exposed_name="XTitleBold" name="Bold" />
           <Property exposed_name="XTitleItalic" name="Italic" />
           <Property exposed_name="XTitleShadow" name="Shadow" />
@@ -1269,6 +1315,7 @@
       <PropertyGroup label="X Title Font Properties" panel_widget="FontEditor">
         <Property name="XTitleColor" function="Color"/>
         <Property name="XTitleFontFamily" function="Family"/>
+        <Property name="XTitleFontFile" function="File"/>
         <Property name="XTitleBold" function="Bold" />
         <Property name="XTitleItalic" function="Italics"/>
         <Property name="XTitleFontSize" function="Size" />
@@ -1282,6 +1329,7 @@
           <Property exposed_name="YTitleColor" name="Color" />
           <Property exposed_name="YTitleOpacity" name="Opacity" />
           <Property exposed_name="YTitleFontFamily" name="FontFamily" />
+          <Property exposed_name="YTitleFontFile" name="FontFile" />
           <Property exposed_name="YTitleBold" name="Bold" />
           <Property exposed_name="YTitleItalic" name="Italic" />
           <Property exposed_name="YTitleShadow" name="Shadow" />
@@ -1292,6 +1340,7 @@
       <PropertyGroup label="Y Title Font Properties" panel_widget="FontEditor">
         <Property name="YTitleColor" function="Color"/>
         <Property name="YTitleFontFamily" function="Family"/>
+        <Property name="YTitleFontFile" function="File"/>
         <Property name="YTitleBold" function="Bold" />
         <Property name="YTitleItalic" function="Italics"/>
         <Property name="YTitleFontSize" function="Size" />
@@ -1305,6 +1354,7 @@
           <Property exposed_name="ZTitleColor" name="Color" />
           <Property exposed_name="ZTitleOpacity" name="Opacity" />
           <Property exposed_name="ZTitleFontFamily" name="FontFamily" />
+          <Property exposed_name="ZTitleFontFile" name="FontFile" />
           <Property exposed_name="ZTitleBold" name="Bold" />
           <Property exposed_name="ZTitleItalic" name="Italic" />
           <Property exposed_name="ZTitleShadow" name="Shadow" />
@@ -1315,6 +1365,7 @@
       <PropertyGroup label="Z Title Font Properties" panel_widget="FontEditor">
         <Property name="ZTitleColor" function="Color"/>
         <Property name="ZTitleFontFamily" function="Family"/>
+        <Property name="ZTitleFontFile" function="File"/>
         <Property name="ZTitleBold" function="Bold" />
         <Property name="ZTitleItalic" function="Italics"/>
         <Property name="ZTitleFontSize" function="Size" />
@@ -1482,6 +1533,7 @@
           <Property exposed_name="XLabelColor" name="Color" />
           <Property exposed_name="XLabelOpacity" name="Opacity" />
           <Property exposed_name="XLabelFontFamily" name="FontFamily" />
+          <Property exposed_name="XLabelFontFile" name="FontFile" />
           <Property exposed_name="XLabelBold" name="Bold" />
           <Property exposed_name="XLabelItalic" name="Italic" />
           <Property exposed_name="XLabelShadow" name="Shadow" />
@@ -1492,6 +1544,7 @@
       <PropertyGroup label="X Axis Label Font Properties" panel_widget="FontEditor">
         <Property name="XLabelColor" function="Color"/>
         <Property name="XLabelFontFamily" function="Family"/>
+        <Property name="XLabelFontFile" function="File"/>
         <Property name="XLabelBold" function="Bold" />
         <Property name="XLabelItalic" function="Italics"/>
         <Property name="XLabelFontSize" function="Size" />
@@ -1505,6 +1558,7 @@
           <Property exposed_name="YLabelColor" name="Color" />
           <Property exposed_name="YLabelOpacity" name="Opacity" />
           <Property exposed_name="YLabelFontFamily" name="FontFamily" />
+          <Property exposed_name="YLabelFontFile" name="FontFile" />
           <Property exposed_name="YLabelBold" name="Bold" />
           <Property exposed_name="YLabelItalic" name="Italic" />
           <Property exposed_name="YLabelShadow" name="Shadow" />
@@ -1515,6 +1569,7 @@
       <PropertyGroup label="Y Axis Label Font Properties" panel_widget="FontEditor">
         <Property name="YLabelColor" function="Color"/>
         <Property name="YLabelFontFamily" function="Family"/>
+        <Property name="YLabelFontFile" function="File"/>
         <Property name="YLabelBold" function="Bold" />
         <Property name="YLabelItalic" function="Italics"/>
         <Property name="YLabelFontSize" function="Size" />
@@ -1528,6 +1583,7 @@
           <Property exposed_name="ZLabelColor" name="Color" />
           <Property exposed_name="ZLabelOpacity" name="Opacity" />
           <Property exposed_name="ZLabelFontFamily" name="FontFamily" />
+          <Property exposed_name="ZLabelFontFile" name="FontFile" />
           <Property exposed_name="ZLabelBold" name="Bold" />
           <Property exposed_name="ZLabelItalic" name="Italic" />
           <Property exposed_name="ZLabelShadow" name="Shadow" />
@@ -1538,6 +1594,7 @@
       <PropertyGroup label="Z Axis Label Font Properties" panel_widget="FontEditor">
         <Property name="ZLabelColor" function="Color"/>
         <Property name="ZLabelFontFamily" function="Family"/>
+        <Property name="ZLabelFontFile" function="File"/>
         <Property name="ZLabelBold" function="Bold" />
         <Property name="ZLabelItalic" function="Italics"/>
         <Property name="ZLabelFontSize" function="Size" />
@@ -2005,6 +2062,46 @@
       </Hints>
       <!-- End HighResLineSource -->
     </SourceProxy>
+    <SourceProxy class="vtkPolyLineSource"
+                 label="Poly Line Source"
+                 name="PolyLineSource">
+      <DoubleVectorProperty command="SetPoint"
+                            default_values="0 0 0 1 0 0"
+                            name="Points"
+                            number_of_elements="6"
+                            number_of_elements_per_command="3"
+                            repeat_command="1"
+                            set_number_command="SetNumberOfPoints"
+                            use_index="1">
+        <BoundsDomain default_mode="min,min,min,max,max,max"
+                      mode="normal"
+                      name="range">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="DummyInput" />
+          </RequiredProperties>
+        </BoundsDomain>
+      </DoubleVectorProperty>
+      <IntVectorProperty command="SetClosed"
+                         default_values="0"
+                         name="Closed"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <InputProperty is_internal="1" name="DummyInput">
+        <!-- Used when this source is added to a proxy list domain. -->
+      </InputProperty>
+      <PropertyGroup label="Poly-line Parameters" panel_widget="InteractivePolyLine">
+        <Property function="HandlePositions" name="Points" />
+        <Property function="Closed" name="Closed" />
+      </PropertyGroup>
+      <Hints>
+        <ProxyList>
+          <Link name="DummyInput" with_property="Input" />
+        </ProxyList>
+      </Hints>
+    </SourceProxy>
+    <!-- End PolyLineSource -->
     <SourceProxy class="vtkPointSource"
                  label="Point Source"
                  name="PointSource">
@@ -2640,12 +2737,12 @@
     <ViewLayoutProxy name="ViewLayout"
                      processes="client">
       <Documentation>Proxy used to manage layout for mutliple views.</Documentation>
-      <IntVectorProperty name="ShowWindowDecorations"
-        number_of_elements="1"
-        default_values="1">
+      <IntVectorProperty name="PreviewMode"
+        number_of_elements="2"
+        default_values="0 0">
         <Documentation>
-          Set whether the UI should show extra decorations for the layout
-          e.g. view frames, view toolbars etc.
+          Set the target resolution for the preview mode to display,
+          [0, 0] is interpreted as exiting preview.
         </Documentation>
       </IntVectorProperty>
       <IntVectorProperty name="SeparatorWidth"

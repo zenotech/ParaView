@@ -32,11 +32,6 @@ set (Module_SRCS
   vtkInitializationHelper.cxx
 )
 
-SET_SOURCE_FILES_PROPERTIES(
-  vtkInitializationHelper
-  ABSTRACT
-  )
-
 vtk_module_library(vtkPVServerManagerApplication ${Module_SRCS})
 
 #------------------------------------------------------------------------------
@@ -108,7 +103,6 @@ SET(requestedResourceFiles
   ${CMAKE_CURRENT_SOURCE_DIR}/Resources/utilities.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Resources/views_and_representations.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Resources/writers.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_opengl2.xml # has to be after views_and_representations
   ${module_sm_xmls}
   )
 if (PARAVIEW_USE_MPI)
@@ -129,11 +123,24 @@ if (vtkioxdmf3_index GREATER 0)
     ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_xdmf3.xml)
 endif()
 
+list(FIND VTK_MODULES_ENABLED "vtkIOGDAL" vtkiogdal_index)
+if (vtkiogdal_index GREATER 0)
+  list(APPEND requestedResourceFiles
+    ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_gdal.xml)
+endif()
+
 list(FIND VTK_MODULES_ENABLED "vtkIOLAS" vtkiolas_index)
 if (vtkiolas_index GREATER 0)
   list(APPEND requestedResourceFiles
     ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_las.xml)
 endif()
+
+list(FIND VTK_MODULES_ENABLED "vtkIOPDAL" vtkiopdal_index)
+if (vtkiopdal_index GREATER 0)
+  list(APPEND requestedResourceFiles
+    ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_pdal.xml)
+endif()
+
 
 list(FIND VTK_MODULES_ENABLED "vtkIOADIOS" vtkioadios_index)
 if (vtkioadios_index GREATER 0)
@@ -145,12 +152,6 @@ if (PARAVIEW_USE_OPENTURNS)
   list(APPEND requestedResourceFiles
     ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_openturns.xml)
 endif()
-
-if (PARAVIEW_USE_OSPRAY)
-  list(APPEND requestedResourceFiles
-    ${CMAKE_CURRENT_SOURCE_DIR}/Resources/proxies_ospray.xml)
-endif()
-
 
 #------------------------------------------------------------------------------
 

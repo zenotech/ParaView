@@ -316,7 +316,6 @@ set(_vtk_modules
   #  vtkXMLPRectilinearGridReader
   #  vtkXMLMultiBlockDataReader
   #  vtkXMLHierarchicalBoxDataReader
-  #  vtkXMLHyperOctreeWriter
   #  vtkXMLPolyDataWriter
   #  vtkXMLUnstructuredGridWriter
   #  vtkXMLStructuredGridWriter
@@ -386,8 +385,16 @@ if (PARAVIEW_ENABLE_XDMF3)
   endif()
 endif ()
 
+if (PARAVIEW_ENABLE_GDAL)
+  list (APPEND _vtk_modules vtkIOGDAL)
+endif()
+
 if (PARAVIEW_ENABLE_LAS)
   list (APPEND _vtk_modules vtkIOLAS)
+endif()
+
+if (PARAVIEW_ENABLE_PDAL)
+  list (APPEND _vtk_modules vtkIOPDAL)
 endif()
 
 
@@ -415,8 +422,8 @@ if (PARAVIEW_BUILD_PLUGIN_OpenVR)
   list (APPEND _vtk_modules vtkRenderingOpenVR)
 endif()
 
-if (PARAVIEW_USE_VTKM)
-  list (APPEND _vtk_modules vtkAcceleratorsVTKm)
+if(PARAVIEW_USE_VTKM)
+  list(APPEND _vtk_modules vtkAcceleratorsVTKm)
 endif()
 
 # Any module can import this file and add DEPENDS or COMPILE_DEPENDS on this

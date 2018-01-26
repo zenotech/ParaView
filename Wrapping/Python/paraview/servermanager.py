@@ -53,27 +53,27 @@ import paraview, re, os, os.path, types, sys, atexit
 from paraview import vtk
 from paraview import _backwardscompatibilityhelper as _bc
 
-from vtk.vtkPVServerImplementationCore import *
-from vtk.vtkPVClientServerCoreCore import *
-from vtk.vtkPVServerManagerCore import *
+from vtkmodules.vtkPVServerImplementationCore import *
+from vtkmodules.vtkPVClientServerCoreCore import *
+from vtkmodules.vtkPVServerManagerCore import *
 
 try:
-  from vtk.vtkPVServerManagerDefault import *
+  from vtkmodules.vtkPVServerManagerDefault import *
 except:
   paraview.print_error("Error: Cannot import vtkPVServerManagerDefault")
 try:
-  from vtk.vtkPVServerManagerRendering import *
+  from vtkmodules.vtkPVServerManagerRendering import *
 except:
   paraview.print_error("Error: Cannot import vtkPVServerManagerRendering")
 try:
-  from vtk.vtkPVServerManagerApplication import *
+  from vtkmodules.vtkPVServerManagerApplication import *
 except:
   paraview.print_error("Error: Cannot import vtkPVServerManagerApplication")
 try:
-  from vtk.vtkPVAnimation import *
+  from vtkmodules.vtkPVAnimation import *
 except:
   paraview.print_error("Error: Cannot import vtkPVAnimation")
-from vtk.vtkPVCommon import *
+from vtkmodules.vtkPVCommon import *
 
 def _wrap_property(proxy, smproperty):
     """ Internal function.
@@ -460,7 +460,16 @@ class Proxy(object):
                     "to add this attribute.")
         else:
             paraview.print_debug_info(name)
-            setter(self, value)
+            try:
+                setter(self, value)
+            except ValueError:
+                # Let the backwards compatibility helper try to handle this
+                try:
+                    _bc.setattr_fix_value(self, name, value, setter)
+                except _bc.Continue:
+                    pass
+                except ValueError:
+                    raise ValueError("%s is not a valid value for attribute %s." % (value, name))
 
     def __getattr__(self, name):
         """With the exception of a few overloaded methods,
@@ -2943,7 +2952,7 @@ def demo3():
     probes it with a line, delivers the result to the client using Fetch
     and plots it using pylab. This demo requires numpy and pylab installed.
     It returns a tuple of (data, render view)."""
-    import paraview.numpy_support
+    from vtkmodules.util import numpy_support
     import pylab
 
     if not ActiveConnection:
@@ -3006,7 +3015,7 @@ def demo3():
     # Now deliver it to the client. Remember, this is for small data.
     data = Fetch(probe)
     # Convert it to a numpy array
-    data = paraview.numpy_support.vtk_to_numpy(
+    data = numpy_support.vtk_to_numpy(
       data.GetPointData().GetArray("RTData"))
     # Plot it using matplotlib
     pylab.plot(data)

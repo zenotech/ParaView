@@ -773,6 +773,11 @@
       <Hints>
         <!-- View can be used to specify the preferred view for the proxy -->
         <View type="QuartileChartView" />
+        <WarnOnCreate title="Potentially slow operation">
+          **Plot Selection Over Time** filter needs to process all timesteps
+          available in your dataset and can potentially take a long time to complete.
+          Do you want to continue?
+        </WarnOnCreate>
       </Hints>
       <!-- End of ExtractSelectionOverTime -->
     </SourceProxy>
@@ -1673,7 +1678,7 @@ found and the point will be rejected.</Documentation>
       <!-- End Delaunay3d -->
     </SourceProxy>
     <!-- ==================================================================== -->
-    <SourceProxy class="vtkConnectivityFilter"
+    <SourceProxy class="vtkPConnectivityFilter"
                  label="Connectivity"
                  name="PVConnectivityFilter">
       <Documentation long_help="Mark connected components with integer point attribute array."
@@ -2032,12 +2037,16 @@ found and the point will be rejected.</Documentation>
         <Documentation>This property specifies the name(s) of the volume
         fraction array(s) for generating parts.</Documentation>
         <ArrayListDomain attribute_type="Scalars"
+                         data_type="VTK_UNSIGNED_CHAR"
                          name="array_list">
           <RequiredProperties>
             <Property function="Input"
                       name="Input" />
           </RequiredProperties>
         </ArrayListDomain>
+        <Hints>
+          <NoDefault />
+        </Hints>
       </StringVectorProperty>
       <DoubleVectorProperty command="SetVolumeFractionSurfaceValue"
                             default_values="0.1"
@@ -2332,7 +2341,10 @@ vector value of the array at that point (or cell). The filter operates
 on any type of data set, but the input data set must have at least one
 scalar or vector array. The arrays can be either point-centered or
 cell-centered. The Calculator filter's output is of the same data set
-type as the input.</Documentation>
+type as the input.
+
+The output array type can be specified as an advanced option with the default
+being of a vtkDoubleArray.</Documentation>
       <InputProperty command="SetInputConnection"
                      name="Input">
         <ProxyGroupDomain name="groups">
@@ -2425,6 +2437,41 @@ array.
         <Documentation>If invalid values in the computation are to be replaced
         with another value, this property contains that value.</Documentation>
       </DoubleVectorProperty>
+      <IntVectorProperty command="SetResultArrayType"
+                         default_values="11"
+                         label="Result Array Type"
+                         name="ResultArrayType"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <EnumerationDomain name="enum">
+          <Entry text="Char"
+                 value="2" />
+          <Entry text="Signed Char"
+                 value="15" />
+          <Entry text="Unsigned Char"
+                 value="3" />
+          <Entry text="Short"
+                 value="4" />
+          <Entry text="Unsigned Short"
+                 value="5" />
+          <Entry text="Int"
+                 value="6" />
+          <Entry text="Unsigned Int"
+                 value="7" />
+          <Entry text="Long"
+                 value="8" />
+          <Entry text="Unsigned Long"
+                 value="9" />
+          <Entry text="Float"
+                 value="10" />
+          <Entry text="Double"
+                 value="11" />
+          <Entry text="Id Type"
+                 value="12" />
+        </EnumerationDomain>
+        <Documentation>This property determines what array type to output.
+        The default is a vtkDoubleArray.</Documentation>
+      </IntVectorProperty>
       <!-- End Calculator -->
     </SourceProxy>
     <!-- ==================================================================== -->
@@ -4451,66 +4498,6 @@ array.
       <!-- End  OutlineCornerFilter -->
     </SourceProxy>
     <!-- ==================================================================== -->
-    <SourceProxy class="vtkHyperOctreeDepth"
-                 label="Octree Depth Scalars"
-                 name="OctreeDepthScalars">
-      <Documentation long_help="This filter adds a scalar to each leaf of the octree that represents the leaf's depth within the tree."
-                     short_help="Computes cell depths within the octree.">The
-                     vtkHyperOctreeDepth filter adds a scalar to each leaf of
-                     the octree that represents the leaf's depth within the
-                     tree.</Documentation>
-      <InputProperty clean_command="RemoveAllInputs"
-                     command="AddInputConnection"
-                     name="Input">
-        <ProxyGroupDomain name="groups">
-          <Group name="sources" />
-          <Group name="filters" />
-        </ProxyGroupDomain>
-        <DataTypeDomain name="input_type">
-          <DataType value="vtkHyperOctree" />
-        </DataTypeDomain>
-        <Documentation>This property specifies the input to the Octree Depth
-        Scalars filter.</Documentation>
-      </InputProperty>
-      <!-- End  OctreeDepthScalars-->
-    </SourceProxy>
-    <!-- ==================================================================== -->
-    <SourceProxy class="vtkHyperOctreeLimiter"
-                 label="Octree Depth Limit"
-                 name="OctreeDepthLimit">
-      <Documentation long_help="This filter takes in a octree and produces a new octree which is no deeper than the maximum specified depth level."
-                     short_help="Reduce an octree's resolution.">The Octree
-                     Depth Limit filter takes in an octree and produces a new
-                     octree that is nowhere deeper than the maximum specified
-                     depth level. The attribute data of pruned leaf cells are
-                     integrated in to their ancestors at the cut
-                     level.</Documentation>
-      <InputProperty clean_command="RemoveAllInputs"
-                     command="AddInputConnection"
-                     name="Input">
-        <ProxyGroupDomain name="groups">
-          <Group name="sources" />
-          <Group name="filters" />
-        </ProxyGroupDomain>
-        <DataTypeDomain name="input_type">
-          <DataType value="vtkHyperOctree" />
-        </DataTypeDomain>
-        <Documentation>This property specifies the input to the Octree Depth
-        Limit filter.</Documentation>
-      </InputProperty>
-      <IntVectorProperty command="SetMaximumLevel"
-                         default_values="4"
-                         name="MaximumLevel"
-                         number_of_elements="1">
-        <IntRangeDomain max="255"
-                        min="3"
-                        name="range" />
-        <Documentation>The value of this property specifies the maximum depth
-        of the output octree.</Documentation>
-      </IntVectorProperty>
-      <!-- End  OctreeDepthLimit-->
-    </SourceProxy>
-    <!-- ==================================================================== -->
     <SourceProxy class="vtkProcessIdScalars"
                  label="Process Id Scalars"
                  multiprocess_support="multiple_processes"
@@ -6036,6 +6023,15 @@ array.
         transform (translation, rotation, and scaling) to apply to the input
         dataset.</Documentation>
       </ProxyProperty>
+      <IntVectorProperty command="SetTransformAllInputVectors"
+                         default_values="1"
+                         name="TransformAllInputVectors"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation> If off, only Vectors and Normals will be transformed.
+        If on, all 3-component data arrays (considered as 3D vectors) will be transformed.
+        All other arrays won't be flipped and will only be copied.</Documentation>
+      </IntVectorProperty>
       <!-- End TransformFilter -->
     </SourceProxy>
     <!-- ==================================================================== -->
@@ -6886,6 +6882,24 @@ array.
                                    property="ClipFunction"
                                    value="Scalar"
                                    inverse="1" />
+        </Hints>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetExactBoxClip"
+                         default_values="0"
+                         name="Exact"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <BooleanDomain name="bool" />
+        <Documentation>If this property is set to 1 it will clip to the exact specifications
+        for the Box option, otherwise the clip will only approximate the box geometry. The
+        exact clip is very expensive as it requires generating 6 plane clips. Additionally,
+        Inside Out must be checked and Crinkle clip must be unchecked.</Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="ClipFunction"
+                                   value="Box"
+                                   inverse="0" />
         </Hints>
       </IntVectorProperty>
       <Hints>
@@ -9835,6 +9849,14 @@ source.</Documentation>
         <Documentation>Compute the standard deviation of each point and cell
         variable over time.</Documentation>
       </IntVectorProperty>
+      <Hints>
+        <WarnOnCreate title="Potentially slow operation">
+          **Temporal Statistics** filter needs to process all timesteps
+          available in your dataset and can potentially take a long time to complete.
+          Do you want to continue?
+        </WarnOnCreate>
+      </Hints>
+
       <!-- End TemporalStatistics -->
     </SourceProxy>
     <!-- ==================================================================== -->
@@ -15564,7 +15586,7 @@ source.</Documentation>
                  value="1" />
         </EnumerationDomain>
         <Documentation>This property specifies the mode of iteration, either a user-provided number
-        of periods, or the maximum number of periods to rotate to 360°. </Documentation>
+        of periods, or the maximum number of periods to rotate to 360 degrees.</Documentation>
       </IntVectorProperty>
 
       <IntVectorProperty command="SetNumberOfPeriods"

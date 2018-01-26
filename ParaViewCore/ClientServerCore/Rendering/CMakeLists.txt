@@ -77,6 +77,7 @@ set (Module_SRCS
   vtkPVMultiSliceView.cxx
   vtkPVOpenGLInformation.cxx
   vtkPVOrthographicSliceView.cxx
+  vtkPVMaterialLibrary.cxx
   vtkPVParallelCoordinatesRepresentation.cxx
   vtkPVPlotMatrixRepresentation.cxx
   vtkPVPlotMatrixView.cxx
@@ -120,37 +121,17 @@ if (PARAVIEW_USE_ICE_T)
     vtkIceTSynchronizedRenderers.cxx)
 endif()
 
-if (PARAVIEW_USE_OSPRAY)
-  list(APPEND Module_SRCS
-    vtkPVOSPRayMaterialLibrary.cxx)
-endif()
-
 if(NOT VTK_LEGACY_REMOVE)
   list(APPEND Module_SRCS
     vtkPVDisplayInformation.cxx
     vtkPVOpenGLExtensionsInformation.cxx)
 endif()
 
-set_source_files_properties(
-  vtkCacheSizeKeeper
-
-  # No need to wrap vtkPExtentTranslator, its an internal class.
-  vtkPExtentTranslator
-  WRAP_EXCLUDE
+set (${vtk-module}_HDRS
+  vtkStreamingPriorityQueue.h
+  vtkGeometryRepresentationInternal.h
 )
 
-set_source_files_properties(
-  vtkCacheSizeKeeper
-  vtkPVContextView
-  vtkPVDataRepresentation
-  vtkPVSynchronizedRenderWindows
-  vtkPVView
-  ABSTRACT)
-
-set (${vtk-module}_HDRS vtkStreamingPriorityQueue.h)
-
-# Use a custom hints file for this module.
-set(${vtk-module}_WRAP_HINTS "${CMAKE_CURRENT_SOURCE_DIR}/hints")
 vtk_module_library(vtkPVClientServerCoreRendering ${Module_SRCS})
 include(vtkOpenGL)
 vtk_opengl_link(vtkPVClientServerCoreRendering)

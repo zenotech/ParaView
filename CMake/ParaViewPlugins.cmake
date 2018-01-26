@@ -1,15 +1,19 @@
 include(ParaViewMacros)
+include(vtkWrapHierarchy)
+
+if(DEFINED PV_INSTALL_PLUGIN_DIR)
+  message(WARNING "`PV_INSTALL_PLUGIN_DIR` is no longer supported as of ParaView 5.5. "
+    "Please set `PARAVIEW_INSTALL_PLUGINS_DIR` instead.")
+endif()
 
 # Macro to install a plugin that's included in the ParaView source directory.
 # This is a macro internal to ParaView and should not be directly used by
 # external applications. This may change in future without notice.
-MACRO(internal_paraview_install_plugin name)
-  IF (PV_INSTALL_PLUGIN_DIR)
-    INSTALL(TARGETS ${name}
-            DESTINATION ${PV_INSTALL_PLUGIN_DIR}
-            COMPONENT Runtime)
-  ENDIF ()
-ENDMACRO()
+function(internal_paraview_install_plugin name)
+  if(PARAVIEW_INSTALL_PLUGINS_DIR)
+    install(TARGETS ${name} DESTINATION ${PARAVIEW_INSTALL_PLUGINS_DIR}/${name} COMPONENT Runtime)
+  endif()
+endfunction()
 
 # helper PV_PLUGIN_LIST_CONTAINS macro
 MACRO(PV_PLUGIN_LIST_CONTAINS var value)
@@ -51,6 +55,8 @@ MACRO(PV_PLUGIN_PARSE_ARGUMENTS prefix arg_names option_names)
   SET(${prefix}_${current_arg_name} ${current_arg_list})
 ENDMACRO()
 
+include(vtkEncodeString)
+
 # Macro to encode any file(s) as a string. This creates a new cxx file with a
 # declaration of a "const char*" string with the same name as the file.
 # Example:
@@ -62,17 +68,10 @@ ENDMACRO()
 # const char* vtkColorMaterialHelper_vs.
 MACRO(ENCODE_FILES_AS_STRINGS OUT_SRCS)
   foreach(file ${ARGN})
-    GET_FILENAME_COMPONENT(file "${file}" ABSOLUTE)
-    GET_FILENAME_COMPONENT(file_name "${file}" NAME_WE)
-    set(src ${file})
-    set(res ${CMAKE_CURRENT_BINARY_DIR}/${file_name}.cxx)
-    add_custom_command(
-      OUTPUT ${res}
-      DEPENDS ${src} vtkEncodeString
-      COMMAND vtkEncodeString
-      ARGS ${res} ${src} ${file_name}
-      )
-    set(${OUT_SRCS} ${${OUT_SRCS}} ${res})
+    vtk_encode_string(
+      INPUT         "${file}"
+      SOURCE_OUTPUT _source)
+    list(APPEND ${OUT_SRCS} ${_source})
   endforeach()
 ENDMACRO()
 
@@ -123,6 +122,9 @@ MACRO(ADD_SERVER_MANAGER_EXTENSION OUTSRCS Name Version XMLFile)
   SET(CS_SRCS)
   IF(HDRS)
     include(vtkWrapClientServer)
+
+    vtk_wrap_hierarchy(${Name} ${VTK_MODULES_DIR}
+      "${ARGN}")
 
     # Plugins should not use unified bindings. The problem arises because the
     # PythonD library links to the plugin itself, but the CS wrapping code
@@ -419,7 +421,7 @@ anymore.")
 ENDMACRO()
 #------------------------------------------------------------------------
 
-# create implementation for a custom menu or toolbar
+# create implementation for a custom menu or a toolbar from an QActionGroup.
 # ADD_PARAVIEW_ACTION_GROUP(
 #    OUTIFACES
 #    OUTSRCS
@@ -448,6 +450,31 @@ MACRO(ADD_PARAVIEW_ACTION_GROUP OUTIFACES OUTSRCS)
       ${ACTION_MOC_SRCS}
       )
 ENDMACRO()
+
+# Add a custom toolbar to the application.
+# ADD_PARAVIEW_TOOLBAR(
+#    OUTIFACES
+#    OUTSRCS
+#    CLASS_NAME classname)
+#
+#    CLASS_NAME QToolBar subclass that corresponds to the custom toolbar.
+function(ADD_PARAVIEW_TOOLBAR OUTIFACES OUTSRCS)
+  pv_plugin_parse_arguments(ARG "CLASS_NAME;GROUP_NAME" "" ${ARGN} )
+  set(${OUTIFACES} ${ARG_CLASS_NAME} PARENT_SCOPE)
+  configure_file(${ParaView_CMAKE_DIR}/pqToolBarImplementation.h.in
+                 ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h @ONLY)
+  configure_file(${ParaView_CMAKE_DIR}/pqToolBarImplementation.cxx.in
+                 ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx @ONLY)
+
+  set(ACTION_MOC_SRCS)
+  qt5_wrap_cpp(ACTION_MOC_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h)
+  set(${OUTSRCS}
+      ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.cxx
+      ${CMAKE_CURRENT_BINARY_DIR}/${ARG_CLASS_NAME}Implementation.h
+      ${ACTION_MOC_SRCS}
+      PARENT_SCOPE
+      )
+endfunction()
 
 # create implementation for a custom view frame action interface
 # ADD_PARAVIEW_VIEW_FRAME_ACTION_GROUP(
@@ -921,18 +948,21 @@ FUNCTION(ADD_PARAVIEW_PLUGIN NAME VERSION)
       set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /MANIFEST:NO")
     endif()
 
+    set(_extra_add_library_flags)
+    if(PLUGIN_EXCLUDE_FROM_DEFAULT_TARGET)
+      list(APPEND _extra_add_library_flags EXCLUDE_FROM_ALL)
+    endif()
     IF (PARAVIEW_BUILD_SHARED_LIBS)
-      IF (PLUGIN_EXCLUDE_FROM_DEFAULT_TARGET)
-        ADD_LIBRARY(${NAME} SHARED EXCLUDE_FROM_ALL ${GUI_SRCS} ${SM_SRCS} ${ARG_SOURCES} ${plugin_sources})
-      ELSE ()
-        ADD_LIBRARY(${NAME} SHARED ${GUI_SRCS} ${SM_SRCS} ${ARG_SOURCES} ${plugin_sources})
-      ENDIF()
+      add_library(${NAME} SHARED ${_extra_add_library_flags} ${GUI_SRCS} ${SM_SRCS} ${ARG_SOURCES} ${plugin_sources})
+      if(PARAVIEW_BUILD_PLUGINS_DIR)
+        # build plugins under a directory with the same name as the plugin.
+        # This is only done for plugins are built in ParaView build tree itself.
+        set_target_properties(${NAME} PROPERTIES
+          RUNTIME_OUTPUT_DIRECTORY ${PARAVIEW_BUILD_PLUGINS_DIR}/${NAME}
+          LIBRARY_OUTPUT_DIRECTORY ${PARAVIEW_BUILD_PLUGINS_DIR}/${NAME})
+      endif()
     ELSE ()
-      IF (PLUGIN_EXCLUDE_FROM_DEFAULT_TARGET)
-        ADD_LIBRARY(${NAME} EXCLUDE_FROM_ALL ${GUI_SRCS} ${SM_SRCS} ${ARG_SOURCES} ${plugin_sources})
-      ELSE()
-        ADD_LIBRARY(${NAME} ${GUI_SRCS} ${SM_SRCS} ${ARG_SOURCES} ${plugin_sources})
-      ENDIF()
+      add_library(${NAME} ${_extra_add_library_flags} ${GUI_SRCS} ${SM_SRCS} ${ARG_SOURCES} ${plugin_sources})
       # When building plugins for static builds, Qt requires this flag to be
       # defined. If not defined, when we link the executable against all the
       # plugins, we get redefinied symbols from the plugins.
@@ -982,9 +1012,10 @@ MACRO(WRAP_PLUGIN_FOR_PYTHON NAME WRAP_LIST WRAP_EXCLUDE_LIST)
   #VTK/Common/KitCommonPythonWrapBlock so that plugin's name
   #does not to start with "vtk".
 
-  SET_SOURCE_FILES_PROPERTIES(
-    ${WRAP_EXCLUDE_LIST}
-    WRAP_EXCLUDE)
+  if ("${WRAP_EXCLUDE_LIST}")
+    message(WARNING
+      "The WRAP_EXCLUDE property is not used anymore.")
+  endif ()
 
   SET(Kit_PYTHON_EXTRA_SRCS)
 
@@ -1050,6 +1081,9 @@ MACRO(WRAP_PLUGIN_FOR_PYTHON NAME WRAP_LIST WRAP_EXCLUDE_LIST)
     # this suffix.
     IF(WIN32 AND NOT CYGWIN)
       SET_TARGET_PROPERTIES(${NAME}Python PROPERTIES SUFFIX ".pyd")
+      IF(PYTHON_DEBUG_LIBRARY)
+        SET_TARGET_PROPERTIES(${NAME}Python PROPERTIES OUTPUT_NAME_DEBUG "${NAME}Python_d")
+      ENDIF()
     ENDIF()
 
     # The python modules are installed by a setup.py script which does
@@ -1097,7 +1131,7 @@ macro(pv_process_modules)
   endforeach()
 
   set (current_module_set ${VTK_MODULES_ALL})
-  list(APPEND VTK_MODULES_ENABLED ${VTK_MODULES_ALL})
+  list(APPEND VTK_MODULES_AVAILABLE ${VTK_MODULES_ALL})
 
   # sort the modules based on depedencies. This will endup bringing in
   # VTK-modules too. We raise errors if required VTK modules are not already
@@ -1111,7 +1145,7 @@ macro(pv_process_modules)
     if (_found EQUAL -1)
       # this is a VTK module and must have already been enabled. Otherwise raise
       # error.
-      list(FIND VTK_MODULES_ENABLED ${module} _found)
+      list(FIND VTK_MODULES_AVAILABLE ${module} _found)
       if (_found EQUAL -1)
         message(FATAL_ERROR
           "Requested modules not available: ${module}")
@@ -1160,7 +1194,11 @@ macro(pv_setup_module_environment _name)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
   endif()
   if (NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+    if (WIN32)
+      set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+    else()
+      set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+    endif()
   endif()
   if (NOT CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
@@ -1170,10 +1208,10 @@ macro(pv_setup_module_environment _name)
     set(VTK_INSTALL_RUNTIME_DIR "bin")
   endif ()
   if (NOT VTK_INSTALL_LIBRARY_DIR)
-    set(VTK_INSTALL_LIBRARY_DIR "lib/paraview-${PARAVIEW_VERSION}")
+    set(VTK_INSTALL_LIBRARY_DIR "lib")
   endif ()
   if (NOT VTK_INSTALL_ARCHIVE_DIR)
-    set(VTK_INSTALL_ARCHIVE_DIR "lib/paraview-${PARAVIEW_VERSION}")
+    set(VTK_INSTALL_ARCHIVE_DIR "lib")
   endif ()
   if (NOT VTK_INSTALL_INCLUDE_DIR)
     set(VTK_INSTALL_INCLUDE_DIR "include")
@@ -1194,10 +1232,35 @@ macro(pv_setup_module_environment _name)
   include(vtkClientServerWrapping)
   if (PARAVIEW_ENABLE_PYTHON)
     include(vtkPythonWrapping)
+
+    if(NOT VTK_PYTHON_SITE_PACKAGES_SUFFIX)
+      if(WIN32 AND NOT CYGWIN)
+        set(VTK_PYTHON_SITE_PACKAGES_SUFFIX "Lib/site-packages")
+      else()
+        set(VTK_PYTHON_SITE_PACKAGES_SUFFIX
+          "python${PYTHON_MAJOR_VERSION}.${PYTHON_MINOR_VERSION}/site-packages")
+      endif()
+    endif()
+
+    if(CMAKE_CONFIGURATION_TYPES)
+      # For build systems with configuration types e.g. Xcode/Visual Studio,
+      # we rely on generator expressions.
+      if(CMAKE_VERSION VERSION_LESS 3.4)
+        message(FATAL_ERROR "CMake 3.4 or newer is needed for your generator.")
+      endif()
+      set(VTK_BUILD_PYTHON_MODULES_DIR "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/$<CONFIG>/${VTK_PYTHON_SITE_PACKAGES_SUFFIX}")
+    else()
+      set(VTK_BUILD_PYTHON_MODULES_DIR "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${VTK_PYTHON_SITE_PACKAGES_SUFFIX}")
+    endif()
+    if(WIN32 AND NOT CYGWIN)
+      set(VTK_INSTALL_PYTHON_MODULES_DIR "${VTK_INSTALL_RUNTIME_DIR}/${VTK_PYTHON_SITE_PACKAGES_SUFFIX}")
+    else()
+      set(VTK_INSTALL_PYTHON_MODULES_DIR "${VTK_INSTALL_LIBRARY_DIR}/${VTK_PYTHON_SITE_PACKAGES_SUFFIX}")
+    endif()
   endif()
 
   # load information about existing modules.
-  foreach (mod IN LISTS VTK_MODULES_ENABLED)
+  foreach (mod IN LISTS VTK_MODULES_AVAILABLE)
     vtk_module_load("${mod}")
   endforeach()
 

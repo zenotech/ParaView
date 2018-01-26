@@ -27,6 +27,7 @@ set(PY_TESTS
   Animation.py
   AxesGridTestGridLines.py
   CellIntegrator.py,NO_VALID
+  ChangeTimeSteps.py
   ColorAttributeTypeBackwardsCompatibility.py,NO_VALID
   CSVWriterReader.py,NO_VALID
   GhostCellsInMergeBlocks.py
@@ -86,10 +87,16 @@ set(PVBATCH_TESTS
   MultiView.py
   ParallelImageWriter.py,NO_VALID
   ParallelSerialWriter.py
+  PotentialMismatchedDataDelivery.py,NO_VALID
   SaveScreenshot.py,NO_VALID
   Simple.py
   UserTransformOnRepresentation.py
   )
+
+if (numpy_found AND PARAVIEW_USE_MPI)
+  list(APPEND PVBATCH_TESTS
+    D3CellsWithNegativeVolumes.py,NO_VALID)
+endif()
 
 # Saving animation currently doesn't work in symmetric mode.
 # paraview/paraview#17329

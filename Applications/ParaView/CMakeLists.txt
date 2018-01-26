@@ -56,7 +56,12 @@ endif()
 # ParaView itself needs vtkPVStaticPluginsInit as well.
 set(SUPPORT_STATIC_PLUGINS TRUE)
 
-set(title "ParaView ${PARAVIEW_VERSION_FULL} ${PARAVIEW_BUILD_ARCHITECTURE}-bit")
+if (PARAVIEW_VERSION_NICKNAME)
+  set(title "ParaView ${PARAVIEW_VERSION_NICKNAME} ${PARAVIEW_BUILD_ARCHITECTURE}-bit")
+else()
+  set(title "ParaView ${PARAVIEW_VERSION_FULL} ${PARAVIEW_BUILD_ARCHITECTURE}-bit")
+endif()
+
 #------------------------------------------------------------------------------
 # Build the client
 build_paraview_client(paraview
@@ -120,7 +125,7 @@ if (APPLE AND NOT PARAVIEW_DO_UNIX_STYLE_INSTALLS)
      \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${VTK_INSTALL_RUNTIME_DIR}/paraview.app/Contents/MacOS/paraview
      \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${VTK_INSTALL_RUNTIME_DIR}/paraview.app
      \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${VTK_INSTALL_LIBRARY_DIR}
-     \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${PV_INSTALL_PLUGIN_DIR}
+     \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${PARAVIEW_INSTALL_PLUGINS_DIR}
      \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${VTK_INSTALL_DATA_DIR})
 
    # Place the App at the requested location.

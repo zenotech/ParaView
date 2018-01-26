@@ -14,11 +14,6 @@ if (PARAVIEW_ENABLE_NVPIPE)
   list(APPEND __dependencies vtknvpipe)
 endif ()
 
-set (__compile_dependencies)
-if (PARAVIEW_ENABLE_PYTHON AND PARAVIEW_USE_MPI)
-  list(APPEND __compile_dependencies vtkmpi4py)
-endif()
-
 vtk_module(vtkPVClientServerCoreCore
   GROUPS
     ParaViewCore
@@ -38,10 +33,10 @@ vtk_module(vtkPVClientServerCoreCore
     vtkPVVTKExtensionsSIL
   PRIVATE_DEPENDS
     vtksys
+    vtkCommonMisc
   COMPILE_DEPENDS
   # This ensures that CS wrappings will be generated 
     vtkUtilitiesWrapClientServer
-    ${__compile_dependencies}
   TEST_LABELS
     PARAVIEW
   KIT

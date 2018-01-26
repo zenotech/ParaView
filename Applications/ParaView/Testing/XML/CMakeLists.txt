@@ -13,6 +13,7 @@ paraview_test_load_data_dirs(""
   FieldDataBlocks
   FieldDataBlocks/FieldDataBlocks
   FileSeries
+  GenericIOReader
   GMV
   GMV/invalid
   GMV/partial-pyramid
@@ -292,9 +293,12 @@ list(APPEND TESTS_WITH_BASELINES
   ${CMAKE_CURRENT_SOURCE_DIR}/ColorEditorVolumeControls.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ColorLegendMinMaxLabels.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ColorOpacityTableEditing.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/CategoricalAutomaticAnnotations.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/CategoricalColors.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/CategoricalOpacities.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ColorByCellDataStringArray.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ComparativeVisPanel.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/ComparativeViewOverlay.xml
   # disabling overlay test for now. It has issues with Time 0.
   #  ${CMAKE_CURRENT_SOURCE_DIR}/ComparativeOverlay.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/CompositeSurfaceSelection.xml
@@ -306,7 +310,9 @@ list(APPEND TESTS_WITH_BASELINES
   ${CMAKE_CURRENT_SOURCE_DIR}/EnSight.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/EnSightTensorInversion.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/EnSightTensorInversionBin.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/ExodusXML.xml
+  # Disable ExodusXML.xml test until issue with
+  # vtkExodusIIReader::SetXMLFileName() is resolved.
+  #${CMAKE_CURRENT_SOURCE_DIR}/ExodusXML.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ExportLinePlotToCSV.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ExportLinePlotToTSV.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ExportSceneSpreadSheetView2.xml
@@ -334,6 +340,7 @@ list(APPEND TESTS_WITH_BASELINES
   ${CMAKE_CURRENT_SOURCE_DIR}/InteractiveViewLinkOffscreen.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/InteractiveViewLinkOnscreen.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/InteractiveViewLinkState.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/LinesAsTubes.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/LoadPartiallyUpdatedStateFiles.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/LoadSaveStateAnimation.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/LoadState.xml
@@ -351,6 +358,7 @@ list(APPEND TESTS_WITH_BASELINES
   ${CMAKE_CURRENT_SOURCE_DIR}/NiftiReaderWriterPlugin.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/NonConvexPolygon.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/OpenSaveData.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/OrderedGroupDatasets.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/OrthographicView.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/OutOfRangeColors.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/Plot3DReader.xml
@@ -482,6 +490,8 @@ if (PARAVIEW_USE_MPI)
     #${CMAKE_CURRENT_SOURCE_DIR}/UseDataPartitions.xml
   )
 
+  # Volume rendering seems to work better in serial
+  set (UseDataPartitions_FORCE_SERIAL TRUE)
   # This test requires a parallel partition to make sense so we
   # skip running it with the built-in server.
   add_client_server_tests("pvcs"
@@ -687,13 +697,17 @@ set (Calculator_FORCE_SERIAL TRUE) # since this uses popup-menu
 set (LogColorMap_FORCE_SERIAL TRUE) # since this uses popup-menu
 set (ColorOpacityTableEditing_FORCE_SERIAL TRUE) # since this uses popup-menu
 set (SimpleInteraction_FORCE_SERIAL TRUE) # since this uses popup-menu
+set (ExportFilteredColumnsSpreadsheet_FORCE_SERIAL TRUE) # since this uses popup-menu
 set (FindWidget_FORCE_SERIAL TRUE) # Uses inline edit popups
 set (PropertyLink_FORCE_SERIAL TRUE)
 set (TestPythonView_FORCE_SERIAL TRUE) # Seems to work better in serial.
-set (Contour_FORCE_SERIAL TRUE) # Uses inline edit popups
 set (SaveColorMap_FORCE_SERIAL TRUE) # Uses inline edit popups
 set (CategoricalColors_FORCE_SERIAL TRUE) # Uses inline edit popups
 set (ChartAxisRangeAndLabels_FORCE_SERIAL TRUE) # Uses inline edit popups
+set (SaveTSV_FORCE_SERIAL TRUE) # Seems to works better in serial
+set (DisconnectAndSaveAnimation_FORCE_SERIAL TRUE) # Seems to works better in serial
+set (ComparativeViewOverlay_FORCE_SERIAL TRUE) # Seems to works better in serial
+set (CategoricalAutomaticAnnotations_FORCE_SERIAL TRUE) # Seems to works better in serial
 
 set (LoadSaveStateVolume_FORCE_SERIAL TRUE)
 # We don't support volume rendering of image data in data server & render server mode
