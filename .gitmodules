@@ -1,7 +1,6 @@
 [submodule "VTK"]
 	path = VTK
-	url = https://gitlab.kitware.com/vtk/vtk.git
-	branch = paraview/release
+	url = https://github.com/zenotech/VTK.git
 [submodule "Utilities/VisItBridge"]
 	path = Utilities/VisItBridge
 	url = https://gitlab.kitware.com/paraview/visitbridge.git
@@ -13,7 +12,10 @@
 	url = https://gitlab.kitware.com/paraview/protobuf.git
 [submodule "ThirdParty/QtTesting/vtkqttesting"]
 	path = ThirdParty/QtTesting/vtkqttesting
-	url = https://gitlab.kitware.com/paraview/qttesting.git
+        url = https://gitlab.kitware.com/paraview/qttesting.git
+[submodule "ThirdParty/hdf5"]
+	path = ThirdParty/hdf5
+	url = https://github.com/zenotech/hdf5.git
 [submodule "ThirdParty/cinema/vtkcinemapython"]
 	path = ThirdParty/cinema/vtkcinemapython
 	url = https://gitlab.kitware.com/cinema/cinema_python.git

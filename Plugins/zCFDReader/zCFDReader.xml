@@ -1,0 +1,267 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="sources">
+    <!-- ================================================================== -->
+    <!-- Beginning of zCFD Reader -->
+    <SourceProxy class="vtkzCFDReader"
+                 name="zCFDReader">
+      <Documentation long_help="Reads zCFD data files, producing multi-block dataset."
+                     short_help="Read zCFD data files.">The zCFD reader
+                     reads zCFD data files and outputs multi-block
+                     datasets. Mesh information and time dependent data are
+                     supported. </Documentation>
+                     
+      <StringVectorProperty animateable="0"
+                            command="SetFileName"
+                            name="FileName"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <FileListDomain name="files" />
+        <Documentation>This property specifies the file name for the
+        reader.</Documentation>
+      </StringVectorProperty>
+      
+       <StringVectorProperty animateable="0"
+                            command="SetCaseFileName"
+                            name="PCaseName"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <FileListDomain name="files" />
+        <Documentation>This property specifies the case name for the
+        reader.</Documentation>
+      </StringVectorProperty>
+     
+      <Property animateable="0"
+                command="SetRefresh"
+                name="Refresh">
+        <Documentation>Refresh time information and selection list metadata.
+        Useful when watching a running simulation.</Documentation>
+      </Property>
+      
+      <StringVectorProperty information_only="1"
+                            name="ZoneArrayInfo">
+        <ArraySelectionInformationHelper attribute_name="Zone" />
+      </StringVectorProperty>
+      
+      <StringVectorProperty animateable="0"
+                            command="SetZoneArrayStatus"
+                            element_types="2 0"
+                            information_property="ZoneArrayInfo"
+                            name="Zones"
+                            number_of_elements="0"
+                            number_of_elements_per_command="2"
+                            repeat_command="1">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property function="ArrayList"
+                      name="ZoneArrayInfo" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+      </StringVectorProperty>
+      
+      <StringVectorProperty information_only="1"
+                            name="CellArrayInfo">
+        <ArraySelectionInformationHelper attribute_name="Cell" />
+      </StringVectorProperty>
+  
+      <StringVectorProperty animateable="0"
+                            command="SetCellArrayStatus"
+                            element_types="2 0"
+                            information_property="CellArrayInfo"
+                            name="CellArrays"
+                            number_of_elements="0"
+                            number_of_elements_per_command="2"
+                            repeat_command="1">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property function="ArrayList"
+                      name="CellArrayInfo" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+      </StringVectorProperty>
+      
+      <!--  
+      <IntVectorProperty animateable="0"
+                         command="SetCaseType"
+                         default_values="1"
+                         name="CaseType"
+                         number_of_elements="1">
+        <EnumerationDomain name="enum">
+          <Entry text="Decomposed Case"
+                 value="0" />
+          <Entry text="Reconstructed Case"
+                 value="1" />
+        </EnumerationDomain>
+        <Documentation>The property indicates whether decomposed mesh or
+        reconstructed mesh should be read</Documentation>
+      </IntVectorProperty>
+      
+      <IntVectorProperty animateable="0"
+                         command="SetCreateCellToPoint"
+                         default_values="1"
+                         label="Create cell-to-point filtered data"
+                         name="CreateCellToPoint"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Create point data from cell data. Beware: the filter
+        does not do inverse distance weighting.</Documentation>
+      </IntVectorProperty>
+ 
+      <IntVectorProperty animateable="0"
+                         command="SetAddDimensionsToArrayNames"
+                         default_values="0"
+                         label="Add dimensional units to array names"
+                         name="AddDimensionsToArrayNames"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Read dimensional units from field data and add them to
+        array names as human-readable string.</Documentation>
+      </IntVectorProperty>
+ 
+      <DoubleVectorProperty information_only="1"
+                            name="TimestepValues"
+                            repeatable="1">
+        <TimeStepsInformationHelper />
+      </DoubleVectorProperty>
+      
+      <StringVectorProperty information_only="1"
+                            name="PatchArrayInfo">
+        <ArraySelectionInformationHelper attribute_name="Patch" />
+      </StringVectorProperty>
+      
+      <StringVectorProperty animateable="0"
+                            command="SetPatchArrayStatus"
+                            element_types="2 0"
+                            information_property="PatchArrayInfo"
+                            name="MeshRegions"
+                            number_of_elements="0"
+                            number_of_elements_per_command="2"
+                            repeat_command="1">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property function="ArrayList"
+                      name="PatchArrayInfo" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+      </StringVectorProperty>
+      
+      <StringVectorProperty information_only="1"
+                            name="CellArrayInfo">
+        <ArraySelectionInformationHelper attribute_name="Cell" />
+      </StringVectorProperty>
+  
+      <StringVectorProperty animateable="0"
+                            command="SetCellArrayStatus"
+                            element_types="2 0"
+                            information_property="CellArrayInfo"
+                            name="CellArrays"
+                            number_of_elements="0"
+                            number_of_elements_per_command="2"
+                            repeat_command="1">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property function="ArrayList"
+                      name="CellArrayInfo" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+      </StringVectorProperty>
+      
+      <StringVectorProperty information_only="1"
+                            name="PointArrayInfo">
+        <ArraySelectionInformationHelper attribute_name="Point" />
+      </StringVectorProperty>
+      
+      <StringVectorProperty animateable="0"
+                            command="SetPointArrayStatus"
+                            element_types="2 0"
+                            information_property="PointArrayInfo"
+                            name="PointArrays"
+                            number_of_elements="0"
+                            number_of_elements_per_command="2"
+                            repeat_command="1">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property function="ArrayList"
+                      name="PointArrayInfo" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+      </StringVectorProperty>
+      
+      <StringVectorProperty information_only="1"
+                            name="LagrangianArrayInfo">
+        <ArraySelectionInformationHelper attribute_name="Lagrangian" />
+      </StringVectorProperty>
+      <StringVectorProperty animateable="0"
+                            command="SetLagrangianArrayStatus"
+                            element_types="2 0"
+                            information_property="LagrangianArrayInfo"
+                            name="LagrangianArrays"
+                            number_of_elements="0"
+                            number_of_elements_per_command="2"
+                            repeat_command="1">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property function="ArrayList"
+                      name="LagrangianArrayInfo" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+      </StringVectorProperty>
+      
+      <IntVectorProperty animateable="0"
+                         command="SetCacheMesh"
+                         default_values="1"
+                         label="Cache mesh"
+                         name="CacheMesh"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Cache the OpenFOAM mesh between GUI selection
+        changes.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty animateable="0"
+                         command="SetDecomposePolyhedra"
+                         default_values="1"
+                         label="Decompose polyhedra"
+                         name="DecomposePolyhedra"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Decompose polyhedra into tetrahedra and
+        pyramids.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty animateable="0"
+                         command="SetListTimeStepsByControlDict"
+                         default_values="0"
+                         label="List timesteps according to controlDict"
+                         name="ListTimeStepsByControlDict"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>List time directories listed according to the settings
+        in controlDict.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty animateable="0"
+                         command="SetPositionsIsIn13Format"
+                         default_values="0"
+                         label="Lagrangian positions are in OF 1.3 binary format"
+                         name="PositionsIsIn13Format"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Set if Lagrangian positions files are in OpenFOAM 1.3
+        binary format.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty animateable="0"
+                         command="SetReadZones"
+                         default_values="0"
+                         label="Read zones"
+                         name="ReadZones"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Read point/face/cell-Zones?</Documentation>
+      </IntVectorProperty>
+      -->
+      <Hints>
+        <ReaderFactory extensions="h5 txt"
+                       file_description="zCFD" />
+      </Hints>
+    </SourceProxy>
+    <!-- End Reader -->
+  </ProxyGroup>
+  <!-- End Filters Group -->
+</ServerManagerConfiguration>

@@ -750,6 +750,8 @@ if (PARAVIEW_ENABLE_PYTHON)
   add_subdirectory(Utilities/PythonInitializer)
 endif()
 
+find_package(HDF5 REQUIRED)
+
 if (PARAVIEW_ENABLE_PYTHON AND PARAVIEW_ENABLE_CATALYST)
   find_package(PythonLibs REQUIRED)
   vtk_add_module(${CMAKE_CURRENT_SOURCE_DIR}/CoProcessing/PythonCatalyst

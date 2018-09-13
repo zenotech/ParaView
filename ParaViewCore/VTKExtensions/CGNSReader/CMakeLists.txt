@@ -11,6 +11,10 @@ if (WIN32)
   endif ()
 endif()
 
+set(vtkPVVTKExtensionsCGNSReader_INCLUDE_DIRS
+    ${CGNS_INCLUDE_DIR}
+   )
+
 set(Module_SRCS
   cgio_helpers.cxx
   vtkCGNSFileSeriesReader.cxx
