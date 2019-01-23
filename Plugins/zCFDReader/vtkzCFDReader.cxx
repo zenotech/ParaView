@@ -472,7 +472,7 @@ int vtkzCFDReader::RequestInformation(vtkInformation *vtkNotUsed(request),
     }
 
     // Read zone indexes from h5 file
-    hdf::HDFFile<> file(*this->ProblemName);
+    hdf::HDFFile<> file(*this->ProblemName, hdf::HDFFile<>::readonly);
     boost::shared_ptr<hdf::HDFGroup<> > meshg = file.openGroup("mesh",true);
     int totalNumFaces, totalNumCells;
 
@@ -802,7 +802,7 @@ int vtkzCFDReader::RequestData(vtkInformation *vtkNotUsed(request),
     }
 
   // Read request zones
-  hdf::HDFFile<> file(*this->ProblemName);
+  hdf::HDFFile<> file(*this->ProblemName, hdf::HDFFile<>::readonly);
   boost::shared_ptr<hdf::HDFGroup<> > meshg = file.openGroup("mesh",false);
   int totalNumFaces, totalNumCells;
 
@@ -863,11 +863,11 @@ int vtkzCFDReader::RequestData(vtkInformation *vtkNotUsed(request),
   catch(...)
   {
     std::cout << "zCFDReader: cellType missing. Treating all cells as polyhedral " << std::endl;
-    std::vector<hsize_t> dimsf(1);
-    dimsf[0] = totalNumCells;
-    hdf::Slab<1> filespace(dimsf);
-    boost::shared_ptr<hdf::HDFDataSet<> > dataset
-      = meshg->createDataset<int>("cellType", filespace);
+    //std::vector<hsize_t> dimsf(1);
+    //dimsf[0] = totalNumCells;
+    //hdf::Slab<1> filespace(dimsf);
+    //boost::shared_ptr<hdf::HDFDataSet<> > dataset
+    //  = meshg->createDataset<int>("cellType", filespace);
 
     //Read cell face
     std::vector<int> cellFaceCount(totalNumCells,0);
@@ -884,7 +884,7 @@ int vtkzCFDReader::RequestData(vtkInformation *vtkNotUsed(request),
     {
       cellType[i] = detail::CellType::encode(detail::CellType::POLY,cellFaceCount[i]);
     }
-    dataset->writeData(cellType);
+    //dataset->writeData(cellType);
   }
   std::vector<int> cellFacePtr(totalNumCells+1,0);
   for(int i=0;i<totalNumCells;++i)
@@ -900,11 +900,11 @@ int vtkzCFDReader::RequestData(vtkInformation *vtkNotUsed(request),
   {
     // Need to create cellFaces
     std::cout << "zCFDReader: Creating cell face information " << std::endl;
-    std::vector<hsize_t> dimsf(1);
-    dimsf[0] = cellFace.size();
-    hdf::Slab<1> filespace(dimsf);
-    boost::shared_ptr<hdf::HDFDataSet<> > dataset
-      = meshg->createDataset<int>("cellFace", filespace);
+    //std::vector<hsize_t> dimsf(1);
+    //dimsf[0] = cellFace.size();
+    //hdf::Slab<1> filespace(dimsf);
+    //boost::shared_ptr<hdf::HDFDataSet<> > dataset
+    //  = meshg->createDataset<int>("cellFace", filespace);
 
     std::vector<int> count(totalNumCells,0);
     for(int i = 0; i < numAllFaces; ++i)
@@ -919,7 +919,7 @@ int vtkzCFDReader::RequestData(vtkInformation *vtkNotUsed(request),
         }
       }
     }
-    dataset->writeData(cellFace);
+    //dataset->writeData(cellFace);
   }
 
   for(int i=0;i<GetNumberOfSelectionArrays(ZoneDataArraySelection);++i)
