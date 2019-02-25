@@ -24,21 +24,21 @@
  * are the min and max for the bounds along each of the coordinate axis.
  * \li \c MAGNITUDE: the domain has a single range set to (-magn/2.0, +magn/2.0)
  * where magn is the magnitude of the diagonal.
- * \li \c ORIENTED_MAGNITUDE:  same as MAGNITUDE, but instead of the dialog, a
+ * \li \c ORIENTED_MAGNITUDE:  same as MAGNITUDE, but instead of the diagonal, a
  * vector determined using two additional required properties with functions
  * Normal, and Origin is used.
- * li \c SCALED_EXTENT: the range is set to (0, maxbounds * this->ScaleFactor)
+ * \li \c SCALED_EXTENT: the range is set to (0, maxbounds * this->ScaleFactor)
  * where maxbounds is the length of the longest axis for the bounding box.
- * li \c ARRAY_SCALED_EXTENT: the range is set to (0, (arrayMagnitude / maxbounds) *
+ * \li \c ARRAY_SCALED_EXTENT: the range is set to (0, (arrayMagnitude / maxbounds) *
  * this->ScaleFactor)
  * where maxbounds is the length of the longest axis for the bounding box.
  * and arrayMagnitude the maximum magnitude of the array.
- * li \c APPROXIMATE_CELL_LENGTH: approximation for cell length computed using the
- * li \c DATA_BOUNDS: this mode for a 6 tuple property that takes the data
+ * \li \c APPROXIMATE_CELL_LENGTH: approximation for cell length computed using the
+ * \li \c DATA_BOUNDS: this mode for a 6 tuple property that takes the data
  * bounds. The range will have 6 ranges:
  * (xmin,xmax), (xmin,xmax), (ymin,ymax), (ymin,ymax), (zmin,zmax), and (zmin,zmax).
  * If default_mode is not specified, then "min,max,min,max,min,max" is assumed.
- * li \c EXTENTS: this mode for a property that takes a value between 0 and (max-min) for
+ * \li \c EXTENTS: this mode for a property that takes a value between 0 and (max-min) for
  * each component.
  *
  * To determine the input data bounds, this domain depends on a required
@@ -63,6 +63,7 @@
 class vtkPVDataInformation;
 class vtkSMProxyProperty;
 class vtkSMArrayRangeDomain;
+class vtkSMIntVectorProperty;
 
 class VTKPVSERVERMANAGERCORE_EXPORT vtkSMBoundsDomain : public vtkSMDoubleRangeDomain
 {
@@ -99,6 +100,19 @@ public:
 
   vtkGetMacro(ScaleFactor, double);
 
+  enum Axes
+  {
+    X_AXIS = 1,
+    Y_AXIS = 2,
+    Z_AXIS = 4,
+    X_AND_Y_AXES = X_AXIS | Y_AXIS,
+    Y_AND_Z_AXES = Y_AXIS | Z_AXIS,
+    X_AND_Z_AXES = X_AXIS | Z_AXIS,
+    X_Y_AND_Z_AXES = X_AXIS | Y_AXIS | Z_AXIS
+  };
+
+  vtkGetMacro(AxisFlags, int);
+
   /**
    * Overridden to handle APPROXIMATE_CELL_LENGTH.
    */
@@ -118,12 +132,19 @@ protected:
   // function "Input", if any.
   vtkPVDataInformation* GetInputInformation();
 
+  // Obtain the information for the "AxisFlags" required property.
+  vtkSMIntVectorProperty* GetAxisFlagsInformation();
+
+  bool IsAxisEnabled(int axis);
+
   void SetDomainValues(double bounds[6]);
 
   void UpdateOriented();
 
   int Mode;
   double ScaleFactor; // Used only in SCALED_EXTENT and APPROXIMATE_CELL_LENGTH mode.
+  int AxisFlags;
+
 private:
   vtkSMBoundsDomain(const vtkSMBoundsDomain&) = delete;
   void operator=(const vtkSMBoundsDomain&) = delete;

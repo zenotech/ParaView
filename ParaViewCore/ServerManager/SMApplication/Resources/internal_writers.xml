@@ -264,6 +264,13 @@
           Specify whether color information should be saved in the PLY file.
           If enabled, the data source's array to color with from the active view will be used.
         </Documentation>
+        <Hints>
+        <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="enabled_state"
+                                   property="LookupTable"
+                                   inverse="1"
+                                   value="null" />
+        </Hints>
       </IntVectorProperty>
       <IntVectorProperty name="EnableAlpha"
                          command="SetEnableAlpha"
@@ -280,10 +287,6 @@
                                    mode="enabled_state"
                                    property="EnableColoring"
                                    value="1" />
-          <!-- I am keeping this widget always hidden since I don't want the
-               user to be able to change the array in the Writer's dialog.
-               User should change the data's coloring properties in the active view
-               instead -->
         </Hints>
       </IntVectorProperty>
       <StringVectorProperty command="SetInputArrayToProcess"
@@ -324,6 +327,21 @@
         </ProxyGroupDomain>
       </ProxyProperty>
       <!-- End of PLYWriter -->
+    </Proxy>
+    <!-- ================================================================= -->
+    <Proxy class="vtkOBJWriter"
+           name="OBJWriter">
+      <Documentation short_help="Write polygonal data in Wavefront OBJ format.">
+      </Documentation>
+      <StringVectorProperty command="SetFileName"
+                            name="FileName"
+                            number_of_elements="1">
+        <Documentation>The name of the file to be written.</Documentation>
+      </StringVectorProperty>
+      <InputProperty name="DummyInput" panel_visibility="never">
+        <InputArrayDomain attribute_type="any" name="input_array" />
+      </InputProperty>
+      <!-- End of OBJWriter -->
     </Proxy>
     <!-- ================================================================= -->
     <Proxy base_proxygroup="internal_writers"

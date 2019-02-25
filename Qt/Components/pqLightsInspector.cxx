@@ -63,6 +63,7 @@ public:
   pqInternals(pqLightsInspector* inSelf)
     : self(inSelf)
     , observerTag(0)
+    , rview(nullptr)
   {
     this->Ui.setupUi(inSelf);
 
@@ -88,7 +89,6 @@ public:
     {
       if (child->widget())
       {
-        child->widget()->setParent(0);
         delete child->widget();
       }
       delete child;
@@ -119,7 +119,6 @@ public:
     if (child->widget() && child->widget()->objectName() == "LightsEditor")
     {
       child = this->Ui.verticalLayout->takeAt(0);
-      child->widget()->setParent(0);
       delete child->widget();
       delete child;
     }
@@ -127,7 +126,6 @@ public:
     {
       if (child->widget())
       {
-        child->widget()->setParent(0);
         delete child->widget();
       }
       delete child;

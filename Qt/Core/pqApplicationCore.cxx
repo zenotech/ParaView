@@ -52,6 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqCoreInit.h"
 #include "pqCoreTestUtility.h"
 #include "pqCoreUtilities.h"
+#include "pqDoubleLineEdit.h"
 #include "pqEventDispatcher.h"
 #include "pqInterfaceTracker.h"
 #include "pqLinksModel.h"
@@ -71,7 +72,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqStandardServerManagerModelInterface.h"
 #include "pqUndoStack.h"
 #include "pqXMLUtil.h"
+#include "vtkCommand.h"
 #include "vtkInitializationHelper.h"
+#include "vtkPVGeneralSettings.h"
 #include "vtkPVPluginTracker.h"
 #include "vtkPVSynchronizedRenderWindows.h"
 #include "vtkPVXMLElement.h"
@@ -96,7 +99,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Do this after all above includes. On a VS2015 with Qt 5,
 // these includes cause build errors with pqRenderView etc.
 // due to some leaked through #define's (is my guess).
-#include "QVTKOpenGLWidget.h"
+#include "pqQVTKWidgetBase.h"
 #include <QSurfaceFormat>
 
 //-----------------------------------------------------------------------------
@@ -122,13 +125,6 @@ pqApplicationCore::pqApplicationCore(
 {
   vtkPVSynchronizedRenderWindows::SetUseGenericOpenGLRenderWindow(true);
 
-  // Setup the default format.
-  QSurfaceFormat fmt = QVTKOpenGLWidget::defaultFormat();
-
-  // ParaView does not support multisamples.
-  fmt.setSamples(0);
-  QSurfaceFormat::setDefaultFormat(fmt);
-
   vtkSmartPointer<pqOptions> defaultOptions;
   if (!options)
   {
@@ -140,6 +136,19 @@ pqApplicationCore::pqApplicationCore(
   vtkInitializationHelper::SetOrganizationName(QApplication::organizationName().toStdString());
   vtkInitializationHelper::SetApplicationName(QApplication::applicationName().toStdString());
   vtkInitializationHelper::Initialize(argc, argv, vtkProcessModule::PROCESS_CLIENT, options);
+
+  // Setup the default format.
+  QSurfaceFormat fmt = pqQVTKWidgetBase::defaultFormat();
+
+  // Request quad-buffered stereo format only for Crystal Eyes
+  std::string stereoType = options->GetStereoType();
+  fmt.setStereo(stereoType == "Crystal Eyes");
+
+  // ParaView does not support multisamples.
+  fmt.setSamples(0);
+
+  QSurfaceFormat::setDefaultFormat(fmt);
+
   this->constructor();
 }
 
@@ -205,6 +214,14 @@ void pqApplicationCore::constructor()
   // tracker.
   this->InterfaceTracker->initialize();
   this->PluginManager->loadPluginsFromSettings();
+
+  if (auto pvsettings = vtkPVGeneralSettings::GetInstance())
+  {
+    // pqDoubleLineEdit's global precision is linked to parameters in
+    // vtkPVGeneralSettings. Let's set that up here.
+    pqCoreUtilities::connect(
+      pvsettings, vtkCommand::ModifiedEvent, this, SLOT(generalSettingsChanged()));
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -735,4 +752,16 @@ void pqApplicationCore::registerDocumentation(const QString& filename)
 //-----------------------------------------------------------------------------
 void pqApplicationCore::loadDistributedPlugins(const char* vtkNotUsed(filename))
 {
+}
+
+//-----------------------------------------------------------------------------
+void pqApplicationCore::generalSettingsChanged()
+{
+  if (auto pvsettings = vtkPVGeneralSettings::GetInstance())
+  {
+    pqDoubleLineEdit::setGlobalPrecisionAndNotation(
+      pvsettings->GetRealNumberDisplayedPrecision(),
+      static_cast<pqDoubleLineEdit::RealNumberNotation>(
+        pvsettings->GetRealNumberDisplayedNotation()));
+  }
 }

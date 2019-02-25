@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <pqevents>
 <pqevent object="pqClientMainWindow/menubar" command="activate" arguments="menuSources" />
-<pqevent object="pqClientMainWindow/menubar/menuSources" command="activate" arguments="RTAnalyticSource" />
+<pqevent object="pqClientMainWindow/menubar/menuSources/Alphabetical" command="activate" arguments="RTAnalyticSource" />
 <pqevent object="pqClientMainWindow/propertiesDock/propertiesPanel/Accept" command="activate" arguments="" />
 <pqevent object="pqClientMainWindow/representationToolbar/displayRepresentation/comboBox" command="set_string" arguments="Surface" />
 <pqevent object="pqClientMainWindow/variableToolbar/displayColor/Variables" command="set_string" arguments="RTData" />
@@ -34,7 +34,7 @@
   <pqevent object="pqSampleScalarAddRangeDialog/to" command="set_string" arguments="300" />
   <pqevent object="pqSampleScalarAddRangeDialog/steps" command="key" arguments="16777217" />
   <pqevent object="pqSampleScalarAddRangeDialog/steps" command="set_string" arguments="3" />
-  <pqevent object="pqSampleScalarAddRangeDialog/okButton" command="activate" arguments="" />
+  <pqevent object="pqSampleScalarAddRangeDialog/buttonBox/1QPushButton0" command="activate" arguments="" />
 
 
 

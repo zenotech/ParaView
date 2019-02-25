@@ -97,7 +97,6 @@ public:
     this->Panel->setObjectName(QString("HiddenProxyPanel%1").arg(this->MyId));
     this->Panel->hide();
     this->Panel->parentWidget()->layout()->removeWidget(this->Panel);
-    this->Panel->setParent(NULL);
   }
 
   void show(QWidget* parentWdg)
@@ -340,6 +339,20 @@ pqPropertiesPanel::~pqPropertiesPanel()
 {
   delete this->Internals;
   this->Internals = 0;
+}
+
+//-----------------------------------------------------------------------------
+bool pqPropertiesPanel::canApply()
+{
+  Ui::propertiesPanel& ui = this->Internals->Ui;
+  return ui.Accept->isEnabled();
+}
+
+//-----------------------------------------------------------------------------
+bool pqPropertiesPanel::canReset()
+{
+  Ui::propertiesPanel& ui = this->Internals->Ui;
+  return ui.Reset->isEnabled();
 }
 
 //-----------------------------------------------------------------------------
@@ -733,6 +746,7 @@ void pqPropertiesPanel::updateButtonState()
     this->Internals->ReceivedChangeAvailable = false;
   }
 
+  emit this->applyEnableStateChanged();
   this->updateButtonEnableState();
 }
 

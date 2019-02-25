@@ -123,7 +123,7 @@ MACRO(ADD_SERVER_MANAGER_EXTENSION OUTSRCS Name Version XMLFile)
   IF(HDRS)
     include(vtkWrapClientServer)
 
-    vtk_wrap_hierarchy(${Name} ${VTK_MODULES_DIR}
+    vtk_wrap_hierarchy(${Name} ${CMAKE_CURRENT_BINARY_DIR}
       "${ARGN}")
 
     # Plugins should not use unified bindings. The problem arises because the
@@ -1096,7 +1096,7 @@ MACRO(WRAP_PLUGIN_FOR_PYTHON NAME WRAP_LIST WRAP_EXCLUDE_LIST)
   # should not be linked into the shared library.  Instead the symbols
   # are exported from the python executable so that they can be used by
   # shared libraries that are linked or loaded.  On Windows and OSX we
-  # want to link to the python libray to resolve its symbols
+  # want to link to the python library to resolve its symbols
   # immediately.
   IF(WIN32 OR APPLE)
     TARGET_LINK_LIBRARIES (${NAME}PythonD ${VTK_PYTHON_LIBRARIES})

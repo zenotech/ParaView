@@ -56,6 +56,7 @@ set(Module_SRCS
   vtkGridConnectivity.cxx
   vtkHierarchicalFractal.cxx
   vtkHybridProbeFilter.cxx
+  vtkImageSimpleSource.cxx
   vtkIntegrateFlowThroughSurface.cxx
   vtkIntersectFragments.cxx
   vtkIsoVolume.cxx
@@ -107,9 +108,9 @@ set(Module_SRCS
   vtkPVExtractVOI.cxx
   vtkPVFrustumActor.cxx
   vtkPVGlyphFilter.cxx
+  vtkPVGlyphFilterLegacy.cxx
   vtkPVGridAxes3DActor.cxx
   vtkPVImageReader.cxx
-  vtkPVLegacyGlyphFilter.cxx
   vtkPVLinearExtrusionFilter.cxx
   vtkPVMetaClipDataSet.cxx
   vtkPVMetaSliceDataSet.cxx

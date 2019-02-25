@@ -727,9 +727,9 @@ public:
     bool revertOrder) override
   {
     // ------------------------------------------------------------------------
-    // Make sure that the Cache is builded
+    // Make sure that the Cache is built
     //    This will sort the local array, that's why we don't want to do it
-    //    at each execution. Specialy when we only change the requested block.
+    //    at each execution. Specially when we only change the requested block.
     // ------------------------------------------------------------------------
     if (this->NeedToBuildCache)
     {
@@ -860,9 +860,9 @@ public:
     bool revertOrder) override
   {
     // ------------------------------------------------------------------------
-    // Make sure that the Cache is builded
+    // Make sure that the Cache is built
     //    This will sort the local array, that's why we don't want to do it
-    //    at each execution. Specialy when we only change the requested block.
+    //    at each execution. Specially when we only change the requested block.
     // ------------------------------------------------------------------------
     if (this->NeedToBuildCache)
     {

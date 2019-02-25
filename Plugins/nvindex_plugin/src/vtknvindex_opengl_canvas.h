@@ -30,6 +30,7 @@
 
 #include <string>
 
+#include "vtkOpenGLRenderWindow.h"
 #include "vtkRenderer.h"
 
 #include <mi/base/interface_implement.h>
@@ -48,6 +49,9 @@ public:
 
   // Prepare the rendering (called before receive tile).
   void prepare() override;
+
+  // Returns the resolution of the canvas in pixels.
+  mi::math::Vector_struct<mi::Uint32, 2> get_resolution() const override;
 
   // Receive tile.
   // \deprecated
@@ -68,9 +72,8 @@ public:
   bool is_multi_thread_capable() const override;
 
   // Set/get OpenGL viewport resolution.
-  void set_buffer_resolution(
-    const mi::math::Vector_struct<mi::Sint32, 2>& main_window_resolution) override;
-  mi::math::Vector_struct<mi::Sint32, 2> get_buffer_resolution() const override;
+  void set_buffer_resolution(const mi::math::Vector_struct<mi::Sint32, 2>& main_window_resolution);
+  mi::math::Vector_struct<mi::Sint32, 2> get_buffer_resolution() const;
 
   // Stores the VTK Renderer pointer.
   void set_vtk_renderer(vtkRenderer* vtk_renderer);
@@ -84,6 +87,7 @@ private:
   // Set main window size.
   mi::math::Vector_struct<mi::Sint32, 2> m_main_window_size;
   vtkRenderer* m_vtk_renderer;
+  vtkOpenGLRenderWindow* m_vtk_ogl_render_window;
 };
 
 #endif // vtknvindex_opengl_canvas_h

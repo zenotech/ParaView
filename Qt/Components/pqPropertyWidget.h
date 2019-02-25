@@ -43,10 +43,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class pqPropertyWidgetDecorator;
 class pqTimer;
 class pqView;
+class vtkPVXMLElement;
 class vtkSMDomain;
 class vtkSMProperty;
 class vtkSMProxy;
-
 /**
 * pqPropertyWidget represents a widget created for each property of a proxy on
 * the pqPropertiesPanel (for the proxy's properties or display properties).
@@ -133,6 +133,12 @@ public:
   */
   static QString getTooltip(vtkSMProperty* property);
 
+  /**
+   * Helper method to return value from WidgetHeight XML hint, if any.
+   * `<WidgetHeight number_of_rows="val">`,
+   */
+  static int hintsWidgetHeightNumberOfRows(vtkPVXMLElement* hints, int defaultValue = 10);
+
 signals:
   /**
   * This signal is emitted when the current view changes.
@@ -195,6 +201,11 @@ protected:
   void addDecorator(pqPropertyWidgetDecorator*);
 
   /**
+   * Unregisters a decorator.
+   */
+  void removeDecorator(pqPropertyWidgetDecorator*);
+
+  /**
   * Provides access to the pqPropertyLinks instance.
   */
   pqPropertyLinks& links() { return this->Links; }
@@ -203,6 +214,7 @@ public:
   void setProperty(vtkSMProperty* property);
 
 private:
+  friend class pqCompositePropertyWidgetDecorator;
   friend class pqPropertyWidgetDecorator;
   friend class pqProxyWidget;
 

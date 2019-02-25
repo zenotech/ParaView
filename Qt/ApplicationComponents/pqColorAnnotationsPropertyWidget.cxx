@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqActiveObjects.h"
 #include "pqChooseColorPresetReaction.h"
+#include "pqCoreUtilities.h"
 #include "pqDataRepresentation.h"
 #include "pqDoubleRangeDialog.h"
 #include "pqDoubleRangeWidget.h"
@@ -75,8 +76,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QMessageBox>
 #include <QPainter>
 #include <QPointer>
-#include <QSet>
+#include <QString>
+#include <QTextStream>
 #include <algorithm>
+#include <set>
 
 namespace
 {
@@ -401,22 +404,24 @@ public:
   // item, if any.
   QModelIndex removeAnnotations(const QModelIndexList& toRemove = QModelIndexList())
   {
-    QSet<int> rowsToRemove;
+    std::set<int> rowsToRemove;
     foreach (const QModelIndex& idx, toRemove)
     {
       rowsToRemove.insert(idx.row());
     }
-    QList<int> rowsList = rowsToRemove.toList();
-    for (int cc = (rowsList.size() - 1); cc >= 0; --cc)
+
+    for (auto riter = rowsToRemove.rbegin(); riter != rowsToRemove.rend(); ++riter)
     {
-      emit this->beginRemoveRows(QModelIndex(), rowsList[cc], rowsList[cc]);
-      this->Items.remove(rowsList[cc]);
+      emit this->beginRemoveRows(QModelIndex(), *riter, *riter);
+      this->Items.remove(*riter);
       emit this->endRemoveRows();
     }
-    if (rowsList.size() > 0 && rowsList.front() > this->Items.size())
+
+    if (rowsToRemove.size() > 0 && *rowsToRemove.begin() > this->Items.size())
     {
-      return this->index(rowsList.front(), 0);
+      return this->index(*rowsToRemove.begin(), 0);
     }
+
     if (this->Items.size() > 0)
     {
       return this->index(this->Items.size() - 1, 0);
@@ -633,8 +638,12 @@ public:
   pqAnnotationsModel Model;
   vtkNew<vtkEventQtSlotConnect> VTKConnector;
   QPointer<pqColorAnnotationsPropertyWidgetDecorator> Decorator;
+  QScopedPointer<QAction> TempAction;
+  QScopedPointer<pqChooseColorPresetReaction> ChoosePresetReaction;
 
   pqInternals(pqColorAnnotationsPropertyWidget* self)
+    : TempAction(new QAction(self))
+    , ChoosePresetReaction(new pqChooseColorPresetReaction(this->TempAction.data(), false))
   {
     this->Ui.setupUi(self);
     this->Ui.gridLayout->setMargin(pqPropertiesPanel::suggestedMargin());
@@ -654,6 +663,9 @@ public:
     this->Ui.AnnotationsTable->horizontalHeader()->setStretchLastSection(true);
 
     this->Decorator = new pqColorAnnotationsPropertyWidgetDecorator(NULL, self);
+
+    QObject::connect(
+      this->ChoosePresetReaction.data(), SIGNAL(presetApplied()), self, SIGNAL(changeFinished()));
   }
 };
 
@@ -774,6 +786,34 @@ void pqColorAnnotationsPropertyWidget::updateIndexedLookupState()
     this->Internals->Ui.ChoosePreset->setVisible(val);
     this->Internals->Ui.SaveAsPreset->setVisible(val);
     this->Internals->Decorator->setIsAdvanced(!val);
+
+    pqDataRepresentation* repr = pqActiveObjects::instance().activeRepresentation();
+    if (val && repr && repr->isVisible())
+    {
+      vtkSMPropertyHelper annotationsInitialized(this->proxy(), "AnnotationsInitialized");
+      if (!annotationsInitialized.GetAsInt())
+      {
+        // Attempt to add active annotations.
+        bool success = this->addActiveAnnotations(false /* do not force generation */);
+        if (!success)
+        {
+          QString promptMessage;
+          QTextStream qs(&promptMessage);
+          qs << "Could not initialize annotations for categorical coloring. There may be too many "
+             << "discrete values in your data, (more than " << vtkAbstractArray::MAX_DISCRETE_VALUES
+             << ") "
+             << "or you may be coloring by a floating point data array. Please "
+             << "add annotations manually.";
+          pqCoreUtilities::promptUser("pqColorAnnotationsPropertyWidget::updatedIndexedLookupState",
+            QMessageBox::Information, "Could not determine discrete values to use for annotations",
+            promptMessage, QMessageBox::Ok | QMessageBox::Save);
+        }
+        else
+        {
+          annotationsInitialized.Set(1);
+        }
+      }
+    }
   }
 }
 
@@ -995,7 +1035,7 @@ namespace
 void MergeAnnotations(QList<QVariant>& mergedAnnotations,
   const QList<QVariant>& existingAnnotations, const QList<QVariant>& candidateValues)
 {
-  // Extract values from exisiting interleaved annotation list.
+  // Extract values from existing interleaved annotation list.
   QList<QVariant> existingValues;
   for (int idx = 0; idx < existingAnnotations.size() / 2; ++idx)
   {
@@ -1046,13 +1086,18 @@ void pqColorAnnotationsPropertyWidget::addActiveAnnotations()
 {
   if (!this->addActiveAnnotations(false))
   {
+    QString warningTitle("Could not determine discrete values");
+    QString warningMessage;
+    QTextStream qs(&warningMessage);
+    qs << "Could not automatically determine annotation values. Usually this means "
+       << "too many discrete values (more than " << vtkAbstractArray::MAX_DISCRETE_VALUES << ") "
+       << "are available in the data produced by the "
+       << "current source/filter. This can happen if the data array type is floating "
+       << "point. Please add annotations manually or force generation. Forcing the "
+       << "generation will automatically hide the Scalar Bar.";
     QMessageBox* box = new QMessageBox(this);
-    box->setWindowTitle(tr("Couldn't determine discrete values"));
-    box->setText(
-      tr("Problems generating values or too many discrete value,"
-         " using the data produced by the current source/filter. "
-         "Please add annotations manually or force generation. Forcing the generation will"
-         " automatically hide the Scalar Bar."));
+    box->setWindowTitle(warningTitle);
+    box->setText(warningMessage);
     box->addButton(tr("Force"), QMessageBox::AcceptRole);
     box->addButton(QMessageBox::Cancel);
     if (box->exec() != QMessageBox::Cancel)
@@ -1063,9 +1108,10 @@ void pqColorAnnotationsPropertyWidget::addActiveAnnotations()
 
       if (!this->addActiveAnnotations(true))
       {
-        QMessageBox::warning(this, tr("Couldn't determine discrete values"),
-          tr("Could not determine discrete values using the data produced by the "
-             "current source/filter. Please add annotations manually."),
+        QMessageBox::warning(this, warningTitle,
+          tr("Could not force generation of discrete values using the data "
+             "produced by the current source/filter. Please add annotations "
+             "manually."),
           QMessageBox::Ok);
       }
     }
@@ -1129,14 +1175,19 @@ void pqColorAnnotationsPropertyWidget::addActiveAnnotationsFromVisibleSources()
 {
   if (!this->addActiveAnnotationsFromVisibleSources(false))
   {
+    QString warningTitle("Could not determine discrete values");
+    QString warningMessage;
+    QTextStream qs(&warningMessage);
+    qs << "Could not automatically determine annotation values. Usually this means "
+       << "too many discrete values (more than " << vtkAbstractArray::MAX_DISCRETE_VALUES << ") "
+       << "are available in the data produced by the "
+       << "current source/filter. This can happen if the data array type is floating "
+       << "point. Please add annotations manually or force generation. Forcing the "
+       << "generation will automatically hide the Scalar Bar.";
 
     QMessageBox* box = new QMessageBox(this);
-    box->setWindowTitle(tr("Couldn't determine discrete values"));
-    box->setText(
-      tr("Some discrete values are missing or are unavailable because these is too many "
-         "discrete value,"
-         "Please add annotations manually or force generation. Forcing the generation will"
-         " automatically hide the Scalar Bar."));
+    box->setWindowTitle(warningTitle);
+    box->setText(warningMessage);
     box->addButton(tr("Force"), QMessageBox::AcceptRole);
     box->addButton(QMessageBox::Cancel);
     if (box->exec() != QMessageBox::Cancel)
@@ -1147,11 +1198,10 @@ void pqColorAnnotationsPropertyWidget::addActiveAnnotationsFromVisibleSources()
 
       if (!this->addActiveAnnotationsFromVisibleSources(true))
       {
-        QMessageBox::warning(this, tr("Missing or unavailable discrete values"),
-          tr("Some discrete values are missing or are unavailable because these is too many "
-             "discrete "
-             "value,"
-             "Please add annotations manually or try to force generation."),
+        QMessageBox::warning(this, warningTitle,
+          tr("Could not force generation of discrete values using the data "
+             "produced by the current source/filter. Please add annotations "
+             "manually."),
           QMessageBox::Ok);
       }
     }
@@ -1188,7 +1238,7 @@ bool pqColorAnnotationsPropertyWidget::addActiveAnnotationsFromVisibleSources(bo
   vtkSMSessionProxyManager* pxm = server->proxyManager();
 
   // Iterate over representations, collecting prominent values from each.
-  QSet<QString> uniqueAnnotations;
+  std::set<QString> uniqueAnnotations;
   vtkSmartPointer<vtkCollection> collection = vtkSmartPointer<vtkCollection>::New();
   pxm->GetProxies("representations", collection);
   bool missingValues = false;
@@ -1242,15 +1292,11 @@ bool pqColorAnnotationsPropertyWidget::addActiveAnnotationsFromVisibleSources(bo
     }
   }
 
-  QList<QString> uniqueList = uniqueAnnotations.values();
-  qSort(uniqueList);
-
   QList<QVariant> existingAnnotations = this->annotations();
-
   QList<QVariant> candidateAnnotationValues;
-  for (int idx = 0; idx < uniqueList.size(); idx++)
+  for (const QString& avalue : uniqueAnnotations)
   {
-    candidateAnnotationValues.push_back(uniqueList[idx]);
+    candidateAnnotationValues.push_back(avalue);
   }
 
   // Combined annotation values (old and new)
@@ -1272,14 +1318,9 @@ void pqColorAnnotationsPropertyWidget::removeAllAnnotations()
 //-----------------------------------------------------------------------------
 void pqColorAnnotationsPropertyWidget::choosePreset(const char* presetName)
 {
-  QAction* tmp = new QAction(NULL);
-  pqChooseColorPresetReaction* ccpr = new pqChooseColorPresetReaction(tmp, false);
-  ccpr->setTransferFunction(this->proxy());
-  this->connect(ccpr, SIGNAL(presetApplied()), SIGNAL(changeFinished()));
-  ccpr->choosePreset(presetName);
+  this->Internals->ChoosePresetReaction->setTransferFunction(this->proxy());
+  this->Internals->ChoosePresetReaction->choosePreset(presetName);
   emit this->indexedColorsChanged();
-  delete ccpr;
-  delete tmp;
 }
 
 //-----------------------------------------------------------------------------

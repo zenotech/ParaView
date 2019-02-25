@@ -61,7 +61,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 pqPipelineBrowserWidget::pqPipelineBrowserWidget(QWidget* parentObject)
   : Superclass(parentObject)
-  , PipelineModel(new pqPipelineModel(this))
+  , PipelineModel(
+      new pqPipelineModel(*pqApplicationCore::instance()->getServerManagerModel(), this))
   , FilteredPipelineModel(new pqPipelineAnnotationFilterModel(this))
   , ContextMenu(new QMenu(this))
 {
@@ -259,7 +260,8 @@ void pqPipelineBrowserWidget::setVisibility(bool visible, const QModelIndexList&
   }
   if (pqView* view = pqActiveObjects::instance().activeView())
   {
-    if (view->getNumberOfVisibleDataRepresentations() == 1 && visible)
+    if (view->getNumberOfVisibleDataRepresentations() == 1 && visible &&
+      vtkPVGeneralSettings::GetInstance()->GetResetDisplayEmptyViews())
     {
       view->resetDisplay();
     }

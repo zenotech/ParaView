@@ -22,6 +22,9 @@ def reset_cpstate_globals():
     cpstate_globals.export_rendering = False
     cpstate_globals.cinema_tracks = {}
     cpstate_globals.cinema_arrays = {}
+    cpstate_globals.channels_needed = []
+    cpstate_globals.enable_live_viz = False
+    cpstate_globals.live_viz_frequency = 0
 
 reset_cpstate_globals()
 
@@ -49,7 +52,7 @@ def locate_simulation_inputs(proxy):
 
 # -----------------------------------------------------------------------------
 def locate_simulation_inputs_for_view(view_proxy):
-    """Given a view proxy, retruns a list of source proxies that have been
+    """Given a view proxy, returns a list of source proxies that have been
         flagged as the 'simulation input' in the state exporting wizard."""
     reprProp = servermanager.ProxyProperty(view_proxy, view_proxy.GetProperty("Representations"))
     reprs = reprProp[:]
@@ -241,6 +244,9 @@ class WriterAccessor(smtrace.RealProxyAccessor):
                 cpstate_globals.write_frequencies[sim_input_name].append(write_frequency)
                 cpstate_globals.write_frequencies[sim_input_name].sort()
 
+            if not sim_input_name in cpstate_globals.channels_needed:
+                cpstate_globals.channels_needed.append(sim_input_name)
+
     def get_proxy_label(self, xmlgroup, xmlname):
         pxm = servermanager.ProxyManager()
         prototype = pxm.GetPrototypeProxy(xmlgroup, xmlname)
@@ -281,6 +287,7 @@ class WriterAccessor(smtrace.RealProxyAccessor):
         trace.append_separator()
         return trace.raw_data()
 
+# -----------------------------------------------------------------------------
 def cp_hook(varname, proxy):
     """callback to create our special accessors instead of the standard ones."""
     pname = smtrace.Trace.get_registered_name(proxy, "sources")
@@ -306,6 +313,7 @@ def cp_hook(varname, proxy):
         return ViewAccessor(varname, proxy, pname)
     raise NotImplementedError
 
+# -----------------------------------------------------------------------------
 class cpstate_filter_proxies_to_serialize(object):
     """filter used to skip views and representations a when export_rendering is
     disabled."""
@@ -316,8 +324,84 @@ class cpstate_filter_proxies_to_serialize(object):
         return True
 
 # -----------------------------------------------------------------------------
+class NewStyleWriters(object):
+    """Helper to dump configured writer proxies, which are not in the pipeline,
+    into the script."""
+
+    def __init__(self):
+        self.__cnt = 1
+
+    def __make_name(self, name):
+        """
+        emulating name uniqueness that trace brings to variable names.
+        This may not be necessary because we register everything we make immediately
+        so var names can probably conflict.
+        """
+        ret = smtrace.Trace.get_varname(name)+str(self.__cnt)
+        self.__cnt = self.__cnt + 1
+        return ret
+
+    def make_trace(self):
+        """gather trace for the writer proxies that are not in the trace pipeline but
+        rather in the new export state.
+
+        aDIOSWriter1 = servermanager.writers.ADIOSWriter(Input=wavelet1)
+        coprocessor.RegisterWriter(aDIOSWriter1, filename='filename.vta', freq=1, paddingamount=0)
+        """
+        res = []
+        res.append("")
+        res.append("# Now any catalyst writers")
+        pxm = servermanager.ProxyManager()
+        globalepxy = pxm.GetProxy("export_global", "catalyst")
+        exports = pxm.GetProxiesInGroup("export_writers") #todo should use ExportDepot
+        for x in exports:
+            xs = x[0]
+            pxy = pxm.GetProxy('export_writers', xs)
+            if not pxy.HasAnnotation('enabled'):
+                continue
+
+            xmlname = pxy.GetXMLName()
+            if xmlname == "Cinema image options":
+                # skip the array and property export information we stuff in this proxy
+                continue
+
+            inputname = xs.split('|')[0].lower().replace("*","")
+            writername = xs.split('|')[1]
+
+            xmlgroup = pxy.GetXMLGroup()
+
+            padding_amount = globalepxy.GetProperty("FileNamePadding").GetElement(0)
+            write_frequency = pxy.GetProperty("WriteFrequency").GetElement(0)
+            filename = pxy.GetProperty("CatalystFilePattern").GetElement(0)
+
+
+            sim_inputs = locate_simulation_inputs(pxy)
+            for sim_input_name in sim_inputs:
+                if not write_frequency in cpstate_globals.write_frequencies[sim_input_name]:
+                    cpstate_globals.write_frequencies[sim_input_name].append(write_frequency)
+                    cpstate_globals.write_frequencies[sim_input_name].sort()
+
+                if not sim_input_name in cpstate_globals.channels_needed:
+                    cpstate_globals.channels_needed.append(sim_input_name)
+
+            prototype = pxm.GetPrototypeProxy(xmlgroup, xmlname)
+            if not prototype:
+                varname = self.__make_name(xmlname)
+            else:
+                varname = self.__make_name(prototype.GetXMLLabel())
+            f = "%s = servermanager.writers.%s(Input=%s)" % (varname, writername, inputname)
+            res.append(f)
+            f = "coprocessor.RegisterWriter(%s, filename='%s', freq=%s, paddingamount=%s)" % (
+                varname, filename, write_frequency, padding_amount)
+            res.append(f)
+            res.append("")
+        if len(res) == 2:
+            return [] # don't clutter output if there are no writers
+        return res
+
+# -----------------------------------------------------------------------------
 def DumpPipeline(export_rendering, simulation_input_map, screenshot_info,
-    cinema_tracks, cinema_arrays):
+                 cinema_tracks, cinema_arrays, enable_live_viz, live_viz_frequency):
     """Method that will dump the current pipeline and return it as a string trace.
 
     export_rendering
@@ -348,6 +432,13 @@ def DumpPipeline(export_rendering, simulation_input_map, screenshot_info,
       * key -> proxy name
 
       * value -> list of array names
+
+    enable_live_viz
+      boolean telling if we want to enable Catalyst Live connection
+
+    live_viz_frequency
+      integer telling how often to update Live connection. only used if
+      enable_live_viz is True
     """
 
     # reset the global variables.
@@ -358,6 +449,8 @@ def DumpPipeline(export_rendering, simulation_input_map, screenshot_info,
     cpstate_globals.screenshot_info = screenshot_info
     cpstate_globals.cinema_tracks = cinema_tracks
     cpstate_globals.cinema_arrays = cinema_arrays
+    cpstate_globals.enable_live_viz = enable_live_viz
+    cpstate_globals.live_viz_frequency = live_viz_frequency
 
     # Initialize the write frequency map
     for key in cpstate_globals.simulation_input_map.values():
@@ -368,6 +461,9 @@ def DumpPipeline(export_rendering, simulation_input_map, screenshot_info,
     smtrace.RealProxyAccessor.register_create_callback(cp_hook)
     state = smstate.get_state(filter=filter, raw=True)
     smtrace.RealProxyAccessor.unregister_create_callback(cp_hook)
+
+    # add in the new style writer proxies
+    state = state + NewStyleWriters().make_trace()
 
     # iterate over all views that were saved in state and update write requencies
     if export_rendering:
@@ -383,6 +479,30 @@ def DumpPipeline(export_rendering, simulation_input_map, screenshot_info,
                 if not image_write_frequency in cpstate_globals.write_frequencies:
                     cpstate_globals.write_frequencies[sim_input_name].append(image_write_frequency)
                     cpstate_globals.write_frequencies[sim_input_name].sort()
+
+                if not sim_input_name in cpstate_globals.channels_needed:
+                    cpstate_globals.channels_needed.append(sim_input_name)
+
+    if enable_live_viz:
+        for key in simulation_input_map:
+            sim_input_name = simulation_input_map[key]
+            if not live_viz_frequency in cpstate_globals.write_frequencies:
+                cpstate_globals.write_frequencies[sim_input_name].append(live_viz_frequency)
+                cpstate_globals.write_frequencies[sim_input_name].sort()
+
+            if not sim_input_name in cpstate_globals.channels_needed:
+                cpstate_globals.channels_needed.append(sim_input_name)
+
+    pxm = servermanager.ProxyManager()
+    arrays = {}
+    for channel_name in cpstate_globals.channels_needed:
+        arrays[channel_name] = []
+        p = pxm.GetProxy("sources", channel_name)
+        if p:
+            for i in range(p.GetPointDataInformation().GetNumberOfArrays()):
+                arrays[channel_name].append([p.GetPointDataInformation().GetArray(i).GetName(), 0])
+            for i in range(p.GetCellDataInformation().GetNumberOfArrays()):
+                arrays[channel_name].append([p.GetCellDataInformation().GetArray(i).GetName(), 1])
 
     # Create global fields values
     pipelineClassDef = "\n"
@@ -413,6 +533,19 @@ def DumpPipeline(export_rendering, simulation_input_map, screenshot_info,
     pipelineClassDef += "  # these are the frequencies at which the coprocessor updates.\n"
     pipelineClassDef += "  freqs = " + str(cpstate_globals.write_frequencies) + "\n"
     pipelineClassDef += "  coprocessor.SetUpdateFrequencies(freqs)\n"
+    if arrays:
+        pipelineClassDef += "  if requestSpecificArrays:\n"
+        for channel_name in arrays:
+            pipelineClassDef += "    arrays = " + str(arrays[channel_name]) + "\n"
+            pipelineClassDef += "    coprocessor.SetRequestedArrays('" + channel_name + "', arrays)\n"
+    pipelineClassDef += "  coprocessor.SetInitialOutputOptions(timeStepToStartOutputAt,forceOutputAtFirstCall)\n"
+    pipelineClassDef += "\n"
+    pipelineClassDef += "  if rootDirectory:\n"
+    pipelineClassDef += "      coprocessor.SetRootDirectory(rootDirectory)\n"
+    pipelineClassDef += "\n"
+    pipelineClassDef += "  if make_cinema_table:\n"
+    pipelineClassDef += "      coprocessor.EnableCinemaDTable()\n"
+    pipelineClassDef += "\n"
     pipelineClassDef += "  return coprocessor\n"
     return pipelineClassDef
 

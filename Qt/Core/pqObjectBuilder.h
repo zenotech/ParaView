@@ -82,11 +82,12 @@ public:
   * MultipleConnectionsSupport to true. In that case
   * this will always try to connect the server using the details specified in
   * the resource irrespective if the server is already connected or any other
-  * server connections exists.
+  * server connections exists and will wait for timeout seconds for direct connection.
+  * 0 means no retry, -1 means infinite retries.
   * Calling this method while waiting for a previous server connection to be
   * established raises errors.
   */
-  pqServer* createServer(const pqServerResource& resource);
+  pqServer* createServer(const pqServerResource& resource, int connectionTimeout = 60);
 
   /**
   * Destroy a server connection
@@ -211,7 +212,7 @@ public:
   /**
   * This is a convenience method to return the name of the
   * property on the proxy, if any, which can be used to set the filename.
-  * If no such property exists, this retruns a null string.
+  * If no such property exists, this returns a null string.
   * If there are more than 1 properties with FileListDomain, then it looks at
   * the Hints for the proxy for the XML of the form
   * `<DefaultFileNameProperty name="<propertyname>" />` and uses that property

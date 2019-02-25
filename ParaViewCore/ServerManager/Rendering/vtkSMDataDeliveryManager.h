@@ -34,8 +34,10 @@
 #include "vtkPVServerManagerRenderingModule.h" //needed for exports
 #include "vtkSMObject.h"
 #include "vtkWeakPointer.h" // needed for iVars
-class vtkSMViewProxy;
 
+#include <map> // for std::map
+
+class vtkSMViewProxy;
 class VTKPVSERVERMANAGERRENDERING_EXPORT vtkSMDataDeliveryManager : public vtkSMObject
 {
 public:
@@ -67,15 +69,8 @@ protected:
   ~vtkSMDataDeliveryManager() override;
 
   vtkWeakPointer<vtkSMViewProxy> ViewProxy;
-
-  enum
-  {
-    LOCAL_RENDERING_AND_FULL_RES = 0,
-    LOCAL_RENDERING_AND_LOW_RES = 1,
-    REMOTE_RENDERING_AND_FULL_RES = 2,
-    REMOTE_RENDERING_AND_LOW_RES = 3,
-  };
-  vtkTimeStamp DeliveryTimestamps[4];
+  std::map<int, vtkTimeStamp> DeliveryTimestamps;
+  std::map<int, vtkTimeStamp> DeliveryTimestampsLOD;
 
 private:
   vtkSMDataDeliveryManager(const vtkSMDataDeliveryManager&) = delete;

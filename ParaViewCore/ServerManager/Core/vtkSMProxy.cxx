@@ -1228,7 +1228,7 @@ void vtkSMProxy::MarkModified(vtkSMProxy* modifiedProxy)
    * UpdatePipelineInformation(). The calling on UpdatePropertyInformation()
    * was not really buying us much as far as keeping dependent domains updated
    * was concerned, for unless UpdatePipelineInformation was called on the
-   * reader/filter, updating infor properties was not going to yield any
+   * reader/filter, updating info properties was not going to yield any
    * changed values. Removing this also allows for linking for info properties
    * and properties using property links.
    * A side effect of this may be that the 3DWidgets information properties wont get
@@ -1263,15 +1263,20 @@ void vtkSMProxy::MarkDirty(vtkSMProxy* modifiedProxy)
 //----------------------------------------------------------------------------
 void vtkSMProxy::MarkConsumersAsDirty(vtkSMProxy* modifiedProxy)
 {
-  unsigned int numConsumers = this->GetNumberOfConsumers();
-  for (unsigned int i = 0; i < numConsumers; i++)
+  for (const auto& cinfo : this->Internals->Consumers)
   {
-    vtkSMProxy* cons = this->GetConsumerProxy(i);
-    if (cons)
+    if (auto cons = cinfo.Proxy.GetPointer())
     {
-      cons->MarkDirty(modifiedProxy);
+      cons->MarkDirtyFromProducer(modifiedProxy, this, cinfo.Property);
     }
   }
+}
+
+//----------------------------------------------------------------------------
+void vtkSMProxy::MarkDirtyFromProducer(vtkSMProxy* modifiedProxy, vtkSMProxy* vtkNotUsed(producer),
+  vtkSMProperty* vtkNotUsed(producerProperty))
+{
+  this->MarkDirty(modifiedProxy);
 }
 
 //----------------------------------------------------------------------------
@@ -2126,7 +2131,7 @@ void vtkSMProxy::LoadState(const vtkSMMessage* message, vtkSMProxyLocator* locat
 
     if (subProxy == NULL)
     {
-      vtkWarningMacro("State provide a sub-proxy information althoug the proxy"
+      vtkWarningMacro("State provide a sub-proxy information although the proxy"
         << "does not find that sub-proxy."
         << " - Proxy: " << this->XMLGroup << " - " << this->XMLName << endl
         << " - Sub-Proxy: " << subProxyMsg->name().c_str() << " " << subProxyMsg->global_id());
@@ -2158,7 +2163,7 @@ void vtkSMProxy::LoadState(const vtkSMMessage* message, vtkSMProxyLocator* locat
     }
   }
   // Load deferred sub-proxy state
-  // Deferring sub-proxy loading IS VERY IMPORTANT, specialy for compound proxy
+  // Deferring sub-proxy loading IS VERY IMPORTANT, especially for compound proxy
   // that define pipeline connectivity.
   // If not done while loading the pipeline connection, this will failed because
   // the sub-proxy involved might not have a GlobalID yet !

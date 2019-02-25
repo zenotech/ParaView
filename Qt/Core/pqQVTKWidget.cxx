@@ -53,19 +53,6 @@ pqQVTKWidget::pqQVTKWidget(QWidget* parentObject, Qt::WindowFlags f)
   : Superclass(parentObject, f)
   , SizePropertyName("ViewSize")
 {
-  // Tmp objects
-  QPixmap mousePixmap(":/pqCore/Icons/pqMousePick15.png");
-  int w = mousePixmap.width();
-  int h = mousePixmap.height();
-  QImage image(w, h, QImage::Format_ARGB32);
-  QPainter painter(&image);
-  painter.drawPixmap(0, 0, mousePixmap);
-  painter.end();
-  image = image.rgbSwapped();
-
-  // Save the loaded image
-  this->MousePointerToDraw = image.mirrored();
-
   this->connect(this, SIGNAL(resized()), SLOT(updateSizeProperties()));
 
   // disable HiDPI if we are running tests
@@ -84,8 +71,8 @@ void pqQVTKWidget::updateSizeProperties()
   {
     BEGIN_UNDO_EXCLUDE();
     int view_size[2];
-    view_size[0] = this->size().width() * this->InteractorAdaptor->GetDevicePixelRatio();
-    view_size[1] = this->size().height() * this->InteractorAdaptor->GetDevicePixelRatio();
+    view_size[0] = this->size().width() * this->GetInteractorAdapter()->GetDevicePixelRatio();
+    view_size[1] = this->size().height() * this->GetInteractorAdapter()->GetDevicePixelRatio();
     vtkSMPropertyHelper(this->ViewProxy, this->SizePropertyName.toLocal8Bit().data())
       .Set(view_size, 2);
     this->ViewProxy->UpdateProperty(this->SizePropertyName.toLocal8Bit().data());
@@ -103,12 +90,6 @@ void pqQVTKWidget::setViewProxy(vtkSMProxy* view)
 void pqQVTKWidget::setSession(vtkSMSession* session)
 {
   this->Session = session;
-}
-
-//----------------------------------------------------------------------------
-bool pqQVTKWidget::renderVTK()
-{
-  return this->canRender() ? this->Superclass::renderVTK() : false;
 }
 
 //----------------------------------------------------------------------------

@@ -78,6 +78,7 @@ void vtkPVInitializePythonModules();
 #endif
 
 #ifdef PARAVIEW_ENABLE_PYTHON
+#include "pqCatalystExportInspector.h"
 #include "pqPythonDebugLeaksView.h"
 #include "pqPythonShell.h"
 typedef pqPythonDebugLeaksView DebugLeaksViewType;
@@ -135,6 +136,15 @@ ParaViewMainWindow::ParaViewMainWindow()
   {
     leaksView->setShell(shell);
   }
+#endif
+
+#ifdef PARAVIEW_ENABLE_PYTHON
+  pqCatalystExportInspector* catalystInspector = new pqCatalystExportInspector(this);
+  this->Internals->catalystInspectorDock->setWidget(catalystInspector);
+  this->Internals->catalystInspectorDock->hide();
+#else
+  delete this->Internals->catalystInspectorDock;
+  this->Internals->catalystInspectorDock = nullptr;
 #endif
 
   // show output widget if we received an error message.
@@ -248,7 +258,8 @@ ParaViewMainWindow::ParaViewMainWindow()
 
   // Populate application menus with actions.
   pqParaViewMenuBuilders::buildFileMenu(*this->Internals->menu_File);
-  pqParaViewMenuBuilders::buildEditMenu(*this->Internals->menu_Edit);
+  pqParaViewMenuBuilders::buildEditMenu(
+    *this->Internals->menu_Edit, this->Internals->propertiesPanel);
 
   // Populate sources menu.
   pqParaViewMenuBuilders::buildSourcesMenu(*this->Internals->menuSources, this);
@@ -260,7 +271,8 @@ ParaViewMainWindow::ParaViewMainWindow()
   pqParaViewMenuBuilders::buildToolsMenu(*this->Internals->menuTools);
 
   // Populate Catalyst menu.
-  pqParaViewMenuBuilders::buildCatalystMenu(*this->Internals->menu_Catalyst);
+  pqParaViewMenuBuilders::buildCatalystMenu(
+    *this->Internals->menu_Catalyst, this->Internals->catalystInspectorDock);
 
   // setup the context menu for the pipeline browser.
   pqParaViewMenuBuilders::buildPipelineBrowserContextMenu(
@@ -399,6 +411,16 @@ void ParaViewMainWindow::updateFontSize()
     }
     this->Internals->CurrentGUIFontSize = fontSize;
   }
+
+  // Console font size
+  int defaultFontSize = 12;
+#if defined(PARAVIEW_ENABLE_PYTHON)
+  pqPythonShell* shell = qobject_cast<pqPythonShell*>(this->Internals->pythonShellDock->widget());
+  shell->setFontSize(fontSize == 0 ? defaultFontSize : fontSize);
+#endif
+  pqOutputWidget* outputWidget =
+    qobject_cast<pqOutputWidget*>(this->Internals->outputWidgetDock->widget());
+  outputWidget->setFontSize(fontSize == 0 ? defaultFontSize : fontSize);
 }
 
 //-----------------------------------------------------------------------------

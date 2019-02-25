@@ -166,6 +166,7 @@ public:
   virtual void SetUseOutline(int);
   void SetTriangulate(int);
   void SetNonlinearSubdivisionLevel(int);
+  virtual void SetGenerateFeatureEdges(bool);
 
   //***************************************************************************
   // Forwarded to vtkProperty.
@@ -287,6 +288,21 @@ public:
   vtkGetMacro(UseDataPartitions, bool);
   //@}
 
+  //@{
+  /**
+   * Specify whether or not to shader replacements string must be used.
+   */
+  virtual void SetUseShaderReplacements(bool);
+  vtkGetMacro(UseShaderReplacements, bool);
+  //@}
+
+  /**
+   * Specify shader replacements using a Json string.
+   * Please refer to the XML definition of the property for details about
+   * the expected Json string format.
+   */
+  virtual void SetShaderReplacements(const char*);
+
 protected:
   vtkGeometryRepresentation();
   ~vtkGeometryRepresentation() override;
@@ -364,10 +380,15 @@ protected:
   void UpdateBlockAttributes(vtkMapper* mapper);
 
   /**
-   * Computes the bounds of the visible data based on the block visiblities in the
+   * Computes the bounds of the visible data based on the block visibilities in the
    * composite data attributes of the mapper.
    */
   void ComputeVisibleDataBounds();
+
+  /**
+   * Update the mapper with the shader replacement strings if feature is enabled.
+   */
+  void UpdateShaderReplacements();
 
   vtkAlgorithm* GeometryFilter;
   vtkAlgorithm* MultiBlockMaker;
@@ -394,6 +415,9 @@ protected:
 
   bool UseDataPartitions;
 
+  bool UseShaderReplacements;
+  std::string ShaderReplacementsString;
+
   bool BlockAttrChanged = false;
   vtkTimeStamp BlockAttributeTime;
   bool UpdateBlockAttrLOD = false;
@@ -404,10 +428,6 @@ protected:
 private:
   vtkGeometryRepresentation(const vtkGeometryRepresentation&) = delete;
   void operator=(const vtkGeometryRepresentation&) = delete;
-
-  friend class vtkSelectionRepresentation;
-  char* DebugString;
-  vtkSetStringMacro(DebugString);
 };
 
 #endif

@@ -4,8 +4,31 @@ Major API Changes             {#MajorAPIChanges}
 This page documents major API/design changes between different versions since we
 started tracking these (starting after version 4.2).
 
+Changes in 5.6
+--------------
+
+###vtkPVDataInformation and vtkTable###
+
+Previously, `vtkPVDataInformation` would accumulate row and column counts when
+gathering information from a vtkTable in the `vtkPVDataInformation::NumberOfCells`
+variable. This was incorrect and PraView 5.6 fixes this. For `vtkTable`,
+`vtkPVDataInformation::GetNumberOfCells` will now return 0.
+
 Changes in 5.5
 --------------
+
+
+###Replace pqLineEdit with pqDoubleLineEdit for viewing and editing double properties###
+
+Tests recorded prior to this version need to be updated to:
+
+* reference `DoubleLineEdit` instead of `LineEdit`
+* use `set_full_precision_text` command instead of `set_string`
+
+Note that the changes must only be applied to properties of type double. This means
+that systematic search and replace can not be directly used.
+
+See #17966
 
 ###Changes to Python shell###
 

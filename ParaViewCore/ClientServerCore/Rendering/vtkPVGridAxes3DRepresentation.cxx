@@ -37,10 +37,9 @@
 
 #include <algorithm>
 
-vtkStandardNewMacro(vtkPVGridAxes3DRepresentation)
-
-  //------------------------------------------------------------------------------
-  void vtkPVGridAxes3DRepresentation::PrintSelf(std::ostream& os, vtkIndent indent)
+vtkStandardNewMacro(vtkPVGridAxes3DRepresentation);
+//------------------------------------------------------------------------------
+void vtkPVGridAxes3DRepresentation::PrintSelf(std::ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
@@ -187,8 +186,8 @@ int vtkPVGridAxes3DRepresentation::ProcessViewRequest(
     vtkPVRenderView* rview = vtkPVRenderView::SafeDownCast(this->GetView());
     if (rview)
     {
-      forceOpaque = (rview->GetUseDistributedRenderingForInteractiveRender() ||
-                      rview->GetUseDistributedRenderingForStillRender()) &&
+      forceOpaque = (rview->GetUseDistributedRenderingForLODRender() ||
+                      rview->GetUseDistributedRenderingForRender()) &&
         !rview->GetUseOrderedCompositing();
     }
     this->GridAxes->SetForceOpaque(forceOpaque);

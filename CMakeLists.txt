@@ -165,9 +165,7 @@ if(NOT VTK_MODULES_DIR)
   set(VTK_MODULES_DIR "${ParaView_BINARY_DIR}/${VTK_INSTALL_PACKAGE_DIR}/Modules")
 endif()
 # Leaving  VTK_PYTHON_SITE_PACKAGES_SUFFIX unchanged. VTK picks a good one.
-if(NOT PARAVIEW_WWW_DIR)
-  set(PARAVIEW_WWW_DIR "${ParaView_BINARY_DIR}/www")
-endif()
+
 set(PARAVIEW_MODULES_DIR ${VTK_MODULES_DIR})
 
 if (NOT DEFINED VTK_CUSTOM_LIBRARY_SUFFIX)
@@ -190,6 +188,12 @@ if(NOT PARAVIEW_BUILD_PLUGINS_DIR)
   else()
     set(PARAVIEW_BUILD_PLUGINS_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/paraview-${PARAVIEW_VERSION}/plugins)
   endif()
+endif()
+
+# This is the directory under which all generated docs, such as Doxygen and
+# Sphinx generated docs, are placed.
+if(NOT PARAVIEW_GENERATED_DOCUMENTATION_OUTPUT_DIRECTORY)
+  set(PARAVIEW_GENERATED_DOCUMENTATION_OUTPUT_DIRECTORY "${ParaView_BINARY_DIR}/doc")
 endif()
 
 # Disable installing of the Qt Designer plugin. There's no need for it in
@@ -223,7 +227,11 @@ option(BUILD_EXAMPLES "Build ParaView examples" OFF)
 option(BUILD_SHARED_LIBS "Build ParaView using shared libraries" ON)
 option(PARAVIEW_BUILD_QT_GUI "Enable ParaView Qt-based client" ON)
 option(PARAVIEW_USE_MPI "Enable MPI support for parallel computing" OFF)
-option(PARAVIEW_USE_VTKM "Enable VTK-m accelerated algorithms" ON)
+if (WIN32 AND MSVC AND (MSVC_VERSION LESS 1900))
+  set(PARAVIEW_USE_VTKM OFF CACHE INTERNAL "VTK-m not supported on MSVC 2013 and older.")
+else()
+  option(PARAVIEW_USE_VTKM "Enable VTK-m accelerated algorithms" ON)
+endif()
 option(PARAVIEW_USE_OSPRAY "Build ParaView with OSPRay Ray Traced rendering" OFF)
 set(VTK_OPENVR_OBJECT_FACTORY OFF
     CACHE INTERNAL "ParaView requires the OpenVR factory be disabled" FORCE)
@@ -244,12 +252,8 @@ mark_as_advanced(PARAVIEW_ENABLE_LAS)
 option(PARAVIEW_ENABLE_PDAL "Enable PDAL support." OFF)
 mark_as_advanced(PARAVIEW_ENABLE_PDAL)
 
-
-#================================================================================
-# This is a workaround for a bug in VTKmDetermineVersion.cmake that has been fixed
-# since ParaView 5.5 release. This simply overcomes the bug.
-set(VTKm_GIT_DESCRIBE "v1.1.0")
-#================================================================================
+option(PARAVIEW_ENABLE_MOTIONFX "Enable MotionFX reader" ON)
+mark_as_advanced(PARAVIEW_ENABLE_MOTIONFX)
 
 if (UNIX)
   option(PARAVIEW_ENABLE_FFMPEG "Enable FFMPEG Support." OFF)
@@ -280,12 +284,17 @@ cmake_dependent_option(PARAVIEW_ENABLE_QT_SUPPORT
   "Build ParaView with Qt support (without GUI)" OFF
   "NOT PARAVIEW_BUILD_QT_GUI" ON)
 
-# Add an option to enable using Qt Webkit for widgets, as needed.
-# Default is OFF. We don't want to depend on WebKit unless absolutely needed.
-cmake_dependent_option(PARAVIEW_USE_QTWEBKIT
+# Warn about old option
+if (PARAVIEW_USE_QTWEBKIT)
+  message(WARNING
+    "PARAVIEW_USE_QTWEBKIT was removed in version 5.6 since Qt WebKit was also removed.  Use PARAVIEW_USE_QTWEBENGINE instead to use Qt's WebEngine widgets")
+endif()
+# Add an option to enable using Qt WebEngine for widgets, as needed.
+# Default is OFF. We don't want to depend on WebEngine unless absolutely needed.
+cmake_dependent_option(PARAVIEW_USE_QTWEBENGINE
   "Use Qt WebKit components as needed." OFF
   "PARAVIEW_ENABLE_QT_SUPPORT" OFF)
-mark_as_advanced(PARAVIEW_USE_QTWEBKIT)
+mark_as_advanced(PARAVIEW_USE_QTWEBENGINE)
 
 # Add an option to enable using Qt Help, as needed.
 # Default is ON to enable integrated help/documentation.
@@ -336,8 +345,6 @@ endif()
 # setup external data. this will automatically download the test
 # data and baseline files to the build tree and set PARAVIEW_DATA_ROOT.
 include(ParaViewExternalData)
-set(ExternalData_LINK_CONTENT MD5)
-set(ExternalData_BINARY_ROOT          "${CMAKE_BINARY_DIR}/ExternalData")
 set(PARAVIEW_TEST_DATA_DIR            "${CMAKE_CURRENT_SOURCE_DIR}/Testing/Data")
 set(PARAVIEW_TEST_BASELINE_DIR        "${PARAVIEW_TEST_DATA_DIR}/Baseline")
 set(PARAVIEW_TEST_OUTPUT_DATA_DIR     "${ExternalData_BINARY_ROOT}/Testing/Data")
@@ -859,6 +866,14 @@ if (NOT VTK_INSTALL_NO_DEVELOPMENT)
 endif()
 
 #-----------------------------------------------------------------------------
+if (PARAVIEW_BUILD_CATALYST_ADAPTORS AND NOT WIN32)
+  # BuildAdaptors.cmake builds the adaptors as a separate project. We mark is
+  # OPTIONAL for Catalyst packages that don't have the adaptors included.
+  include(${CMAKE_CURRENT_SOURCE_DIR}/CoProcessing/Adaptors/BuildAdaptors.cmake
+          OPTIONAL)
+endif()
+
+#-----------------------------------------------------------------------------
 # Export all targets at once from the build tree in their final configuration.
 # We export these again so that we add ParaView's targets to the list.
 get_property(_vtk_targets GLOBAL PROPERTY VTK_TARGETS)
@@ -898,15 +913,6 @@ if (BUILD_EXAMPLES)
       TEST_INCLUDE_FILE "${CMAKE_CURRENT_BINARY_DIR}/CatalystExamples.cmake")
     file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/CatalystExamples.cmake" "subdirs(${CMAKE_CURRENT_BINARY_DIR}/Examples/All/Catalyst/)")
   ENDIF ()
-endif()
-
-
-#-----------------------------------------------------------------------------
-if (PARAVIEW_BUILD_CATALYST_ADAPTORS AND NOT WIN32)
-  # BuildAdaptors.cmake builds the adaptors as a separate project. We mark is
-  # OPTIONAL for Catalyst packages that don't have the adaptors included.
-  include(${CMAKE_CURRENT_SOURCE_DIR}/CoProcessing/Adaptors/BuildAdaptors.cmake
-          OPTIONAL)
 endif()
 
 #-----------------------------------------------------------------------------
@@ -962,4 +968,9 @@ if (NOT WIN32 AND is_git)
     add_dependencies(paraview-source
       "paraview-source-${format}")
   endforeach ()
+  # This is a hack.  Git version 2.17 does NOT like running these in parallel and
+  # reports that a lockfile is already locked.  In order for the build to succeed,
+  # force these to run in serial.
+  add_dependencies(paraview-source-tgz paraview-source-txz)
+  add_dependencies(paraview-source-txz paraview-source-zip)
 endif ()

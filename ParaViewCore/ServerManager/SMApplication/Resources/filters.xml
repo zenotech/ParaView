@@ -485,6 +485,7 @@
         filter.</Documentation>
       </InputProperty>
     </SourceProxy>
+    <!-- ==================================================================== -->
     <SourceProxy class="vtkAMRCutPlane"
                  label="AMR CutPlane"
                  name="AMRCutPlane">
@@ -527,7 +528,13 @@
                             label="Center"
                             name="Center"
                             number_of_elements="3"
-                            panel_visibility="never"></DoubleVectorProperty>
+                            panel_visibility="never">
+        <BoundsDomain default_mode="mid" mode="normal" name="range">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
+      </DoubleVectorProperty>
       <DoubleVectorProperty animateable="1"
                             command="SetNormal"
                             default_values="0 0 1"
@@ -535,16 +542,13 @@
                             name="Normal"
                             number_of_elements="3"
                             panel_visibility="never"></DoubleVectorProperty>
-      <Hints>
-        <PropertyGroup label="Slice Widget"
-                       type="Plane">
-          <Property function="Origin"
-                    name="Center" />
-          <Property function="Normal"
-                    name="Normal" />
-        </PropertyGroup>
-      </Hints>
+      <PropertyGroup label="Plane Parameters" panel_widget="InteractivePlane">
+        <Property function="Origin" name="Center" />
+        <Property function="Normal" name="Normal" />
+        <Property function="Input" name="Input" />
+      </PropertyGroup>
     </SourceProxy>
+    <!-- ==================================================================== -->
     <SourceProxy class="vtkAMRResampleFilter"
                  label="Resample AMR"
                  name="AMRResampleFilter">
@@ -650,52 +654,38 @@
         <Documentation>This property specifies the input for this
         filter.</Documentation>
       </InputProperty>
-      <IntVectorProperty command="GetLevelRange"
-                        default_values="0 0"
-                        information_only="1"
-                        name="LevelRange"
-                        number_of_elements="2"></IntVectorProperty>
-      <IntVectorProperty command="SetForwardUpstream"
-                         default_values="0"
-                         name="ForwardUpstream"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation>This property specifies whether or not requests will be
-        propagated upstream.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetEnablePrefetching"
-                         default_values="0"
-                         name="EnablePrefetching"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation>This property specifies whether or not requests
-        pre-fetching of blocks of the next level will be
-        enabled.</Documentation>
-      </IntVectorProperty>
       <IntVectorProperty command="SetMaxResolution"
                          default_values="0"
                          name="Level"
                          number_of_elements="1">
-        <IntRangeDomain max="100"
-                        min="0"
-                        name="range" />
-        <!--         <RequiredProperties>
-         <Property name="LevelRange" function="LevelRange"/>
-        </RequiredProperties>
--->
+        <AMRLevelsDomain default_mode="max"
+                         name="range">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </AMRLevelsDomain>
         <Documentation>Set maximum slice resolution.</Documentation>
       </IntVectorProperty>
-      <DoubleVectorProperty command="SetOffSetFromOrigin"
-                            default_values="1.0"
+      <DoubleVectorProperty command="SetOffsetFromOrigin"
+                            default_values="0.0"
                             name="OffSet"
                             number_of_elements="1">
-        <DoubleRangeDomain min="0"
-                           name="range" />
+        <BoundsDomain default_mode="mid"
+                      mode="extents"
+                      name="range">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+            <Property function="AxisFlags"
+                      name="Normal" />
+          </RequiredProperties>
+        </BoundsDomain>
         <Documentation>Set's the offset from the origin of the
         data-set</Documentation>
       </DoubleVectorProperty>
       <IntVectorProperty command="SetNormal"
-                         default_values="0"
+                         default_values="1"
                          name="Normal"
                          number_of_elements="1">
         <EnumerationDomain name="enum">
@@ -704,7 +694,7 @@
           <Entry text="Y-Normal"
                  value="2" />
           <Entry text="Z-Normal"
-                 value="3" />
+                 value="4" />
         </EnumerationDomain>
         <Documentation>This property sets the normal of the
         slice.</Documentation>
@@ -1738,7 +1728,7 @@ found and the point will be rejected.</Documentation>
       <!-- End Delaunay3d -->
     </SourceProxy>
     <!-- ==================================================================== -->
-    <SourceProxy class="vtkPConnectivityFilter"
+    <SourceProxy class="vtkConnectivityFilter"
                  label="Connectivity"
                  name="PVConnectivityFilter">
       <Documentation long_help="Mark connected components with integer point attribute array."
@@ -1754,7 +1744,8 @@ found and the point will be rejected.</Documentation>
           <Group name="sources" />
           <Group name="filters" />
         </ProxyGroupDomain>
-        <DataTypeDomain name="input_type">
+        <DataTypeDomain composite_data_supported="0"
+                        name="input_type">
           <DataType value="vtkDataSet" />
         </DataTypeDomain>
         <Documentation>This property specifies the input to the Connectivity
@@ -2157,7 +2148,6 @@ found and the point will be rejected.</Documentation>
         <Documentation>This property specifies the name(s) of the volume
         fraction array(s) for generating parts.</Documentation>
         <ArrayListDomain attribute_type="Scalars"
-                         data_type="VTK_UNSIGNED_CHAR"
                          name="array_list">
           <RequiredProperties>
             <Property function="Input"
@@ -2211,6 +2201,16 @@ found and the point will be rejected.</Documentation>
         <Documentation>
           Triangulate results. When set to false, the internal cut and contour filters
           are told not to triangulate results if possible.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty name="GenerateSolidGeometry"
+                         command="SetGenerateSolidGeometry"
+                         number_of_elements="1"
+                         default_values="0"
+                         panel_visibility="advanced" >
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Generate solid output with 3D cells. When set to false, 2D contours are generated.
         </Documentation>
       </IntVectorProperty>
       <!-- End CTHPart -->
@@ -4146,7 +4146,7 @@ array.
                      short_help="Evaluate geometric mesh quality.">This filter
                      creates a new cell array containing a geometric measure of
                      each cell's fitness. Different quality measures can be
-                     chosen for different cell shapes. Supported shapes include
+                     chosen for different cell shapes. Supported shapes include linear
                      triangles, quadrilaterals, tetrahedra, and hexahedra. For
                      other shapes, a value of 0 is assigned.</Documentation>
       <InputProperty command="SetInputConnection"
@@ -4349,6 +4349,70 @@ array.
         used to evaluate hexahedral quality.</Documentation>
       </IntVectorProperty>
       <!-- End MeshQuality -->
+    </SourceProxy>
+    <!-- ==================================================================== -->
+    <SourceProxy class="vtkCellValidator"
+                 label="Validate Cells"
+                 name="ValidateCells">
+      <Documentation long_help="vtkCellValidator accepts as input a dataset and adds integral cell data
+ to it corresponding to the validity of each cell. The validity field
+ encodes a bitfield for identifying problems that prevent a cell from standard
+ use, including:
+
+   WrongNumberOfPoints: filters assume that a cell has access to the
+                        appropriate number of points that comprise it. This
+                        assumption is often tacit, resulting in unexpected
+                        behavior when the condition is not met. This check
+                        simply confirms that the cell has the minimum number
+                        of points needed to describe it.
+
+   IntersectingEdges: cells that incorrectly describe the order of their
+                      points often manifest with intersecting edges or
+                      intersecting faces. Given a tolerance, this check
+                      ensures that two edges from a two-dimensional cell
+                      are separated by at least the tolerance (discounting
+                      end-to-end connections).
+
+   IntersectingFaces: cells that incorrectly describe the order of their
+                      points often manifest with intersecting edges or
+                      intersecting faces. Given a tolerance, this check
+                      ensures that two faces from a three-dimensional cell
+                      do not intersect.
+
+   NoncontiguousEdges: another symptom of incorrect point ordering within a
+                       cell is the presence of noncontiguous edges where
+                       contiguous edges are otherwise expected. Given a
+                       tolerance, this check ensures that edges around the
+                       perimeter of a two-dimensional cell are contiguous.
+
+   Nonconvex: many algorithms implicitly require that all input three-
+              dimensional cells be convex. This check uses the generic
+              convexity checkers implemented in vtkPolygon and vtkPolyhedron
+              to test this requirement.
+
+   FacesAreOrientedIncorrectly: All three-dimensional cells have an implicit
+                                expectation for the orientation of their
+                                faces. While the convention is unfortunately
+                                inconsistent across cell types, it is usually
+                                required that cell faces point outward. This
+                                check tests that the faces of a cell point in
+                                the direction required by the cell type,
+                                taking into account the cell types with
+                                nonstandard orientation requirements.
+"
+        short_help="Compute cell validities."></Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+        </DataTypeDomain>
+        <Documentation>This property specifies the input to the Cell Validation filter.</Documentation>
+      </InputProperty>
+      <!-- End CellSize -->
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkPCellSizeFilter"
@@ -7011,19 +7075,13 @@ array.
         exact clip is very expensive as it requires generating 6 plane clips. Additionally,
         **Invert** must be checked and **Crinkle clip** must be unchecked.</Documentation>
         <Hints>
-          <PropertyWidgetDecorator type="GenericDecorator"
-                                   mode="visibility"
-                                   property="ClipFunction"
-                                   value="Box"
-                                   inverse="0" />
-          <PropertyWidgetDecorator type="GenericDecorator"
-                                   mode="enabled_state"
-                                   property="Invert"
-                                   value="1" />
-          <PropertyWidgetDecorator type="GenericDecorator"
-                                   mode="enabled_state"
-                                   property="PreserveInputCells"
-                                   value="0" />
+          <PropertyWidgetDecorator type="CompositeDecorator">
+            <Expression type="and">
+              <PropertyWidgetDecorator type="GenericDecorator" mode="visibility" property="ClipFunction" value="Box" inverse="0" />
+              <PropertyWidgetDecorator type="GenericDecorator" mode="enabled_state" property="Invert" value="1" />
+              <PropertyWidgetDecorator type="GenericDecorator" mode="enabled_state" property="PreserveInputCells" value="0" />
+            </Expression>
+          </PropertyWidgetDecorator>
         </Hints>
       </IntVectorProperty>
       <Hints>
@@ -7500,9 +7558,316 @@ points in the input. Defaults to ***Single***.
 
       <!-- End Contour -->
     </SourceProxy>
+
     <!-- ==================================================================== -->
     <SourceProxy class="vtkPVGlyphFilter"
                  name="Glyph">
+      <Documentation long_help="This filter produces a glyph at points or cell centers in an input data set. The glyphs can be oriented and scaled by point or cell attributes of the input dataset."
+                     short_help="Generate glyphs that represent attributes in the input data set.">
+The Glyph filter generates a glyph (i.e., an arrow, cone, cube, cylinder, line,
+sphere, or 2D glyph) at each point or cell in the input dataset. The glyphs can be
+oriented and scaled by the input scalar and vector arrays. If the arrays are
+point-centered, glyphs are placed at points in the input dataset. If the arrays
+are cell-centered, glyphs are placed at the center of cells in the input dataset.
+A transform that applies to the glyph source can be modified to change the shape
+of the glyph. This filter operates on any type of data set. Its output is a polygonal
+dataset.
+
+To use this filter, select the **Orientation Array** to orient the glyphs and the
+**Scale Array** to control glyph scaling if desired - each array
+can be set to 'No array' if orientation or scaling is not desired. When scaling
+by a 3-element vector array, the **Vector Scale Mode** can be set to either
+'Scale by Magnitude', which scales glyphs according to the vector magnitude,
+or 'Scale by Components', which treats each component as a separate scaling
+factor in the corresponding dimension, i.e., the first component is the
+scaling factor in the x-dimension, the second component scales the y-dimension,
+and the third component scales the z-dimension. An overall constant **Scale Factor**
+is applied following the scaling controlled by other properties of this filter.
+
+The **Glyph Mode** property controls which points in the input dataset
+are selected for glyphing since in most cases, glyphing all points in
+the input dataset can be both performance impeding as well as visually
+cluttered.
+      </Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+        </DataTypeDomain>
+        <InputArrayDomain name="scale_array"
+                          number_of_components="1,3"
+                          optional="1" />
+        <InputArrayDomain name="vector_array"
+                          number_of_components="3"
+                          optional="1" />
+        <Documentation>
+This property specifies the input to this filter. This is the
+dataset from which the locations are selected to be glyphed.
+        </Documentation>
+      </InputProperty>
+      <InputProperty command="SetSourceConnection"
+                     label="Glyph Type"
+                     name="Source">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="glyph_sources" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkPolyData" />
+        </DataTypeDomain>
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="sources" name="ArrowSource" />
+          <Proxy group="sources" name="ConeSource" />
+          <Proxy group="sources" name="CubeSource" />
+          <Proxy group="sources" name="CylinderSource" />
+          <Proxy group="sources" name="LineSource" />
+          <Proxy group="sources" name="SphereSource" />
+          <Proxy group="sources" name="GlyphSource2D" />
+        </ProxyListDomain>
+        <Hints>
+          <ProxyPropertyWidget selected_proxy_panel_visibility="advanced" />
+          <!-- show the selected proxy's panel, only in advanced mode. -->
+        </Hints>
+        <Documentation>
+This property determines which type of glyph will be placed at the
+points in the input dataset.
+        </Documentation>
+      </InputProperty>
+      <StringVectorProperty command="SetInputArrayToProcess"
+                            default_values="1"
+                            element_types="0 0 0 0 2"
+                            name="OrientationArray"
+                            number_of_elements="5">
+        <!-- default value=1 so normals go to the right place -->
+        <ArrayListDomain attribute_type="Vectors"
+                         input_domain_name="vector_array"
+                         name="array_list"
+                         none_string="No orientation array">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <FieldDataDomain name="field_list">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </FieldDataDomain>
+        <Documentation>
+Select the input array to use for orienting the glyphs.
+        </Documentation>
+      </StringVectorProperty>
+      <StringVectorProperty command="SetInputArrayToProcess"
+                            default_values="0"
+                            element_types="0 0 0 0 2"
+                            name="ScaleArray"
+                            number_of_elements="5">
+        <ArrayListDomain attribute_type="Scalars"
+                         input_domain_name="scale_array"
+                         name="array_list"
+                         none_string="No scale array">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <FieldDataDomain name="field_list">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </FieldDataDomain>
+        <Documentation>
+Select the input array to be used for scaling the glyphs. If the scale
+array is a vector array, you can control how the glyphs are scaled with
+the **Vector Scale Mode** property.
+        </Documentation>
+      </StringVectorProperty>
+      <IntVectorProperty command="SetVectorScaleMode"
+                         default_values="0"
+                         name="VectorScaleMode"
+                         number_of_elements="1">
+        <EnumerationDomain name="enum">
+          <Entry text="Scale by Magnitude"
+                 value="0" />
+          <Entry text="Scale by Components"
+                 value="1" />
+        </EnumerationDomain>
+        <Documentation>
+Select the mode when the scaling array is a vector. **Scale by Magnitude** scales the glyph by
+the vector magnitude. **Scale by Components** scales glyphs by each vector component in the dimension
+that component represents, e.g., the x-direction is scaled by component 0, the y-direction is
+scaled by component 1, and so on.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="ScaleArray"
+                                   number_of_components="3"
+                                   index="4" />
+        </Hints>
+      </IntVectorProperty>
+
+      <IntVectorProperty information_only="1"
+                         name="ComponentSelection"
+                         default_values="4"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <Documentation>
+Specifies array component to use. Fixed at 4 to ensure the
+ArrayRangeDomain is set to the vector magnitude for up to 3-component
+arrays.
+        </Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty command="SetScaleFactor"
+                            default_values="1.0"
+                            name="ScaleFactor"
+                            number_of_elements="1"
+                            panel_widget="glyph_scale_factor">
+        <BoundsDomain mode="scaled_extent" name="bounds" scale_factor="0.1">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
+        <ArrayRangeDomain name="scalar_range">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+            <Property function="ArraySelection" name="ScaleArray" />
+          </RequiredProperties>
+        </ArrayRangeDomain>
+        <ArrayRangeDomain name="vector_range">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+            <Property function="ArraySelection" name="OrientationArray" />
+          </RequiredProperties>
+        </ArrayRangeDomain>
+        <Documentation>Specify the constant multiplier to use to scale the glyphs.
+        </Documentation>
+      </DoubleVectorProperty>
+      <ProxyProperty command="SetSourceTransform"
+                     name="GlyphTransform"
+                     panel_visibility="advanced">
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="extended_sources"
+                 name="Transform2" />
+        </ProxyListDomain>
+        <Documentation>
+The values in this property allow you to specify the transform
+(translation, rotation, and scaling) to apply to the glyph
+source.</Documentation>
+      </ProxyProperty>
+
+      <IntVectorProperty command="SetGlyphMode"
+                         default_values="2"
+                         name="GlyphMode"
+                         number_of_elements="1"
+                         panel_visibility="default">
+        <EnumerationDomain name="enum">
+          <Entry text="All Points" value="0"/>
+          <Entry text="Every Nth Point" value="1"/>
+          <Entry text="Uniform Spatial Distribution" value="2"/>
+        </EnumerationDomain>
+        <Documentation>
+This property indicates the mode that will be used to generate
+glyphs from the dataset.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetMaximumNumberOfSamplePoints"
+                        number_of_elements="1"
+                        default_values="5000"
+                        name="MaximumNumberOfSamplePoints">
+        <IntRangeDomain min="1" name="range" />
+        <Documentation>
+This property specifies the maximum number of sample points to use
+when sampling the space when Uniform Spatial Distribution is used.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="GlyphMode"
+                                   value="2" />
+          <!-- show this widget when GlyphMode==2 -->
+        </Hints>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetSeed"
+                        number_of_elements="1"
+                        default_values="10339"
+                        name="Seed">
+        <IntRangeDomain min="1" name="range"/>
+        <Documentation>
+This property specifies the seed that will be used for generating a
+uniform distribution of glyph points when a Uniform Spatial
+Distribution is used.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="GlyphMode"
+                                   value="2" />
+          <!-- show this widget when GlyphMode==2 -->
+        </Hints>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetStride"
+                         number_of_elements="1"
+                         default_values="1"
+                         name="Stride">
+        <IntRangeDomain min="1" name="range"/>
+        <Documentation>
+This property specifies the stride that will be used when glyphing by
+Every Nth Point.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="GlyphMode"
+                                   value="1" />
+          <!-- show this widget when GlyphMode==1 -->
+        </Hints>
+     </IntVectorProperty>
+
+      <PropertyGroup label="Glyph Source">
+        <Property name="Source" />
+      </PropertyGroup>
+      <PropertyGroup label="Orientation">
+        <Property name="OrientationArray" />
+      </PropertyGroup>
+      <PropertyGroup label="Scale">
+        <Property name="ScaleArray" />
+        <Property name="VectorScaleMode" />
+        <Property name="ScaleFactor" />
+      </PropertyGroup>
+      <PropertyGroup label="Glyph Transform">
+        <Property name="GlyphTransform" />
+      </PropertyGroup>
+      <PropertyGroup label="Masking">
+        <Property name="GlyphMode" />
+        <Property name="MaximumNumberOfSamplePoints" />
+        <Property name="Seed" />
+        <Property name="Stride" />
+      </PropertyGroup>
+
+      <Hints>
+        <!-- Visibility Element can be used to suggest the GUI about
+          visibility of this filter (or its input) on creation.
+          replace_input="0" implies that the input visibility is not
+            changed on creation of this filter (defaults to "1")
+       -->
+        <Visibility replace_input="0" />
+      </Hints>
+      <!-- End Glyph -->
+    </SourceProxy>
+
+    <!-- ==================================================================== -->
+    <SourceProxy class="vtkPVGlyphFilterLegacy"
+                 name="GlyphLegacy">
+      <Deprecated deprecated_in="5.6" to_remove_in="5.7">
+        It has been replaced by 'GlyphWithCustomSource'. Please consider using that instead.
+      </Deprecated>
       <Documentation long_help="This filter produces a glyph at each point of in input data set.  The glyphs can be oriented and scaled by point attributes of the input dataset."
                      short_help="Generate a glyph at each point of the input data set.">
 The Glyph filter generates a glyph (i.e., an arrow, cone, cube,
@@ -7796,16 +8161,37 @@ source.</Documentation>
     </SourceProxy>
 
     <!-- ==================================================================== -->
-    <SourceProxy class="vtkPVLegacyGlyphFilter"
-                 name="LegacyGlyph"
-                 label="Legacy Glyph">
-      <Documentation long_help="This filter generates an arrow, cone, cube, cylinder, line, sphere, or 2D glyph at each point of the input data set.  The glyphs can be oriented and scaled by point attributes of the input dataset."
-        short_help="Generate a glyph symbol at each point of the input data set.">
-        This the implementation of the Glyph filter available in ParaView version 4.1 and earlier.
+    <SourceProxy class="vtkPVGlyphFilter"
+                 name="GlyphWithCustomSource"
+                 label="Glyph With Custom Source">
+                 The glyph is provided as the **Source** input to this filter.
+      <Documentation long_help="This filter produces a glyph at points or cell centers in an input data set. The glyphs can be oriented and scaled by point or cell attributes of the input dataset."
+                     short_help="Generate glyphs that represent attributes in the input data set.">
+The **Glyph With Custom Source** filter generates a glyph specified as the **Source**
+input to this filter at each point in the input dataset. The glyphs can be
+oriented and scaled by the input scalar and vector arrays. If the arrays are
+point-centered, glyphs are placed at points in the input dataset. If the arrays
+are cell-centered, glyphs are placed at the center of cells in the input dataset.
+A transform that applies to the glyph source can be modified to change the shape
+of the glyph. This filter operates on any type of data set. Its output is a polygonal
+dataset.
+
+To use this filter, select the **Orientation Array** to orient the glyphs and the
+**Scale Array** to control glyph scaling if desired - each array
+can be set to 'No array' if orientation or scaling is not desired. When scaling
+by a 3-element vector array, the **Vector Scale Mode** can be set to either
+'Scale by Magnitude', which scales glyphs according to the vector magnitude,
+or 'Scale by Components', which treats each component as a separate scaling
+factor in the corresponding dimension, i.e., the first component is the
+scaling factor in the x-dimension, the second component scales the y-dimension,
+and the third component scales the z-dimension. An overall constant **Scale Factor**
+is applied following the scaling controlled by other properties of this filter.
+
+The **Glyph Mode** property controls which points in the input dataset
+are selected for glyphing since in most cases, glyphing all points in
+the input dataset can be both performance impeding as well as visually
+cluttered.
       </Documentation>
-      <Deprecated deprecated_in="4.2" to_remove_in="4.3">
-        It has been replaced by 'Glyph'. Please consider using that instead.
-      </Deprecated>
       <InputProperty command="SetInputConnection"
                      name="Input">
         <ProxyGroupDomain name="groups">
@@ -7815,57 +8201,19 @@ source.</Documentation>
         <DataTypeDomain name="input_type">
           <DataType value="vtkDataSet" />
         </DataTypeDomain>
-        <InputArrayDomain attribute_type="point"
-                          name="input_array1"
-                          number_of_components="1"
+        <InputArrayDomain name="scale_array"
+                          number_of_components="1,3"
                           optional="1" />
-        <InputArrayDomain attribute_type="point"
-                          name="input_array2"
+        <InputArrayDomain name="vector_array"
                           number_of_components="3"
                           optional="1" />
-        <Documentation>This property specifies the input to the Glyph filter.
-        This is the dataset to which the glyphs will be
-        applied.</Documentation>
+        <Documentation>
+This property specifies the input to this filter. This is the
+dataset from which the locations are selected to be glyphed.
+        </Documentation>
       </InputProperty>
-      <StringVectorProperty command="SetInputArrayToProcess"
-                            element_types="0 0 0 0 2"
-                            label="Scalars"
-                            name="SelectInputScalars"
-                            number_of_elements="5">
-        <ArrayListDomain attribute_type="Scalars"
-                         input_domain_name="input_array1"
-                         name="array_list">
-          <RequiredProperties>
-            <Property function="Input"
-                      name="Input" />
-          </RequiredProperties>
-        </ArrayListDomain>
-        <Documentation>This property indicates the name of the scalar array on
-        which to operate. The indicated array may be used for scaling the
-        glyphs. (See the SetScaleMode property.)</Documentation>
-      </StringVectorProperty>
-      <StringVectorProperty command="SetInputArrayToProcess"
-                            default_values="1"
-                            element_types="0 0 0 0 2"
-                            label="Vectors"
-                            name="SelectInputVectors"
-                            number_of_elements="5">
-        <!-- default value=1 so normals go to the right place -->
-        <ArrayListDomain attribute_type="Vectors"
-                         input_domain_name="input_array2"
-                         name="array_list">
-          <RequiredProperties>
-            <Property function="Input"
-                      name="Input" />
-          </RequiredProperties>
-        </ArrayListDomain>
-        <Documentation>This property indicates the name of the vector array on
-        which to operate. The indicated array may be used for scaling and/or
-        orienting the glyphs. (See the SetScaleMode and SetOrient
-        properties.)</Documentation>
-      </StringVectorProperty>
       <InputProperty command="SetSourceConnection"
-                     label="Glyph Type"
+                     label="Glyph Source"
                      name="Source">
         <ProxyGroupDomain name="groups">
           <Group name="sources" />
@@ -7874,25 +8222,131 @@ source.</Documentation>
         <DataTypeDomain name="input_type">
           <DataType value="vtkPolyData" />
         </DataTypeDomain>
-        <ProxyListDomain name="proxy_list">
-          <Proxy group="sources"
-                 name="ArrowSource" />
-          <Proxy group="sources"
-                 name="ConeSource" />
-          <Proxy group="sources"
-                 name="CubeSource" />
-          <Proxy group="sources"
-                 name="CylinderSource" />
-          <Proxy group="sources"
-                 name="LineSource" />
-          <Proxy group="sources"
-                 name="SphereSource" />
-          <Proxy group="sources"
-                 name="GlyphSource2D" />
-        </ProxyListDomain>
-        <Documentation>This property determines which type of glyph will be
-        placed at the points in the input dataset.</Documentation>
+        <Documentation>
+This property determines the glyph geometry source that will be
+placed at the points in the input dataset.
+        </Documentation>
+        <Hints>
+          <ProxyPropertyWidget selected_proxy_panel_visibility="advanced" />
+          <!-- show the selected proxy's panel, only in advanced mode. -->
+        </Hints>
+        <Documentation>
+This property determines which glyph will be placed at the
+points in the input dataset.
+        </Documentation>
       </InputProperty>
+      <StringVectorProperty command="SetInputArrayToProcess"
+                            default_values="1"
+                            element_types="0 0 0 0 2"
+                            name="OrientationArray"
+                            number_of_elements="5">
+        <!-- default value=1 so normals go to the right place -->
+        <ArrayListDomain attribute_type="Vectors"
+                         input_domain_name="vector_array"
+                         name="array_list"
+                         none_string="No orientation array">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <FieldDataDomain name="field_list">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </FieldDataDomain>
+        <Documentation>
+Select the input array to use for orienting the glyphs.
+        </Documentation>
+      </StringVectorProperty>
+      <StringVectorProperty command="SetInputArrayToProcess"
+                            default_values="0"
+                            element_types="0 0 0 0 2"
+                            name="ScaleArray"
+                            number_of_elements="5">
+        <ArrayListDomain attribute_type="Scalars"
+                         input_domain_name="scale_array"
+                         name="array_list"
+                         none_string="No scale array">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <FieldDataDomain name="field_list">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </FieldDataDomain>
+        <Documentation>
+Select the input array to be used for scaling the glyphs. If the scale
+array is a vector array, you can control how the glyphs are scaled with
+the **Vector Scale Mode** property.
+        </Documentation>
+      </StringVectorProperty>
+      <IntVectorProperty command="SetVectorScaleMode"
+                         default_values="0"
+                         name="VectorScaleMode"
+                         number_of_elements="1">
+        <EnumerationDomain name="enum">
+          <Entry text="Scale by Magnitude"
+                 value="0" />
+          <Entry text="Scale by Components"
+                 value="1" />
+        </EnumerationDomain>
+        <Documentation>
+Select the mode when the scaling array is a vector. **Scale by Magnitude** scales the glyph by
+the vector magnitude. **Scale by Components** scales glyphs by each vector component in the dimension
+that component represents, e.g., the x-direction is scaled by component 0, the y-direction is
+scaled by component 1, and so on.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="ScaleArray"
+                                   number_of_components="3"
+                                   index="4" />
+        </Hints>
+      </IntVectorProperty>
+
+      <IntVectorProperty information_only="1"
+                         name="ComponentSelection"
+                         default_values="4"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <Documentation>
+Specifies array component to use. Fixed at 4 to ensure the
+ArrayRangeDomain is set to the vector magnitude for up to 3-component
+arrays.
+        </Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty command="SetScaleFactor"
+                            default_values="1.0"
+                            name="ScaleFactor"
+                            number_of_elements="1"
+                            panel_widget="glyph_scale_factor">
+        <BoundsDomain mode="scaled_extent" name="bounds" scale_factor="0.1">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </BoundsDomain>
+        <ArrayRangeDomain name="scalar_range">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+            <Property function="ArraySelection" name="ScaleArray" />
+          </RequiredProperties>
+        </ArrayRangeDomain>
+        <ArrayRangeDomain name="vector_range">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+            <Property function="ArraySelection" name="OrientationArray" />
+          </RequiredProperties>
+        </ArrayRangeDomain>
+        <Documentation>Specify the constant multiplier to use to scale the glyphs.
+        </Documentation>
+      </DoubleVectorProperty>
       <ProxyProperty command="SetSourceTransform"
                      name="GlyphTransform"
                      panel_visibility="advanced">
@@ -7900,126 +8354,99 @@ source.</Documentation>
           <Proxy group="extended_sources"
                  name="Transform2" />
         </ProxyListDomain>
-        <Documentation>The values in this property allow you to specify the
-        transform (translation, rotation, and scaling) to apply to the glyph
-        source.</Documentation>
+        <Documentation>
+The values in this property allow you to specify the transform
+(translation, rotation, and scaling) to apply to the glyph
+source.</Documentation>
       </ProxyProperty>
-      <IntVectorProperty command="SetOrient"
-                         default_values="1"
-                         label="Orient"
-                         name="SetOrient"
+
+      <IntVectorProperty command="SetGlyphMode"
+                         default_values="2"
+                         name="GlyphMode"
                          number_of_elements="1"
-                         panel_visibility="advanced">
-        <BooleanDomain name="bool" />
-        <Documentation>If this property is set to 1, the glyphs will be
-        oriented based on the selected vector array.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetScaleMode"
-                         default_values="1"
-                         label="Scale Mode"
-                         name="SetScaleMode"
-                         number_of_elements="1"
-                         panel_visibility="advanced">
+                         panel_visibility="default">
         <EnumerationDomain name="enum">
-          <Entry text="scalar"
-                 value="0" />
-          <Entry text="vector"
-                 value="1" />
-          <Entry text="vector_components"
-                 value="2" />
-          <Entry text="off"
-                 value="3" />
+          <Entry text="All Points" value="0"/>
+          <Entry text="Every Nth Point" value="1"/>
+          <Entry text="Uniform Spatial Distribution" value="2"/>
         </EnumerationDomain>
-        <Documentation>The value of this property specifies how/if the glyphs
-        should be scaled based on the point-centered scalars/vectors in the
-        input dataset.</Documentation>
-      </IntVectorProperty>
-      <DoubleVectorProperty command="SetScaleFactor"
-                            default_values="1.0"
-                            name="SetScaleFactor"
-                            number_of_elements="1"
-                            panel_visibility="advanced">
-        <BoundsDomain mode="scaled_extent"
-                      name="bounds"
-                      scale_factor="0.1">
-          <RequiredProperties>
-            <Property function="Input"
-                      name="Input" />
-          </RequiredProperties>
-        </BoundsDomain>
-        <ArrayRangeDomain name="scalar_range">
-          <RequiredProperties>
-            <Property function="Input"
-                      name="Input" />
-            <Property function="ArraySelection"
-                      name="SelectInputScalars" />
-          </RequiredProperties>
-        </ArrayRangeDomain>
-        <ArrayRangeDomain name="vector_range">
-          <RequiredProperties>
-            <Property function="Input"
-                      name="Input" />
-            <Property function="ArraySelection"
-                      name="SelectInputVectors" />
-          </RequiredProperties>
-        </ArrayRangeDomain>
-        <Documentation>The value of this property will be used as a multiplier
-        for scaling the glyphs before adding them to the
-        output.</Documentation>
-      </DoubleVectorProperty>
-      <IntVectorProperty command="SetMaximumNumberOfPoints"
-                         default_values="5000"
-                         label="Maximum Number of Points"
-                         name="MaximumNumberOfPoints"
-                         number_of_elements="1"
-                         panel_visibility="advanced">
-        <IntRangeDomain min="0"
-                        name="range" />
-        <Documentation>The value of this property specifies the maximum number
-        of glyphs that should appear in the output dataset if the value of the
-        UseMaskPoints property is 1. (See the UseMaskPoints
-        property.)</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetUseMaskPoints"
-                         default_values="1"
-                         label="Mask Points"
-                         name="UseMaskPoints"
-                         number_of_elements="1"
-                         panel_visibility="advanced">
-        <BooleanDomain name="bool" />
-        <Documentation>If the value of this property is set to 1, limit the
-        maximum number of glyphs to the value indicated by
-        MaximumNumberOfPoints. (See the MaximumNumberOfPoints
-        property.)</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetRandomMode"
-                         default_values="1"
-                         name="RandomMode"
-                         number_of_elements="1"
-                         panel_visibility="advanced">
-        <BooleanDomain name="bool" />
-        <Documentation>If the value of this property is 1, then the points to
-        glyph are chosen randomly. Otherwise the point ids chosen are evenly
-        spaced.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetKeepRandomPoints"
-                         default_values="0"
-                         name="KeepRandomPoints"
-                         number_of_elements="1"
-                         panel_visibility="advanced">
-        <BooleanDomain name="bool"/>
-        <Documentation> If the value of this property is 1 and RandomMode is
-        1, then the randomly chosen points to glyph are saved and reused for
-        other timesteps. This is only useful if the coordinates are the same
-        and in the same order between timesteps.
+        <Documentation>
+This property indicates the mode that will be used to generate
+glyphs from the dataset.
         </Documentation>
       </IntVectorProperty>
+      <IntVectorProperty command="SetMaximumNumberOfSamplePoints"
+                        number_of_elements="1"
+                        default_values="5000"
+                        name="MaximumNumberOfSamplePoints">
+        <IntRangeDomain min="1" name="range" />
+        <Documentation>
+This property specifies the maximum number of sample points to use
+when sampling the space when Uniform Spatial Distribution is used.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="GlyphMode"
+                                   value="2" />
+          <!-- show this widget when GlyphMode==2 -->
+        </Hints>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetSeed"
+                        number_of_elements="1"
+                        default_values="10339"
+                        name="Seed">
+        <IntRangeDomain min="1" name="range"/>
+        <Documentation>
+This property specifies the seed that will be used for generating a
+uniform distribution of glyph points when a Uniform Spatial
+Distribution is used.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="GlyphMode"
+                                   value="2" />
+          <!-- show this widget when GlyphMode==2 -->
+        </Hints>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetStride"
+                         number_of_elements="1"
+                         default_values="1"
+                         name="Stride">
+        <IntRangeDomain min="1" name="range"/>
+        <Documentation>
+This property specifies the stride that will be used when glyphing by
+Every Nth Point.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="GlyphMode"
+                                   value="1" />
+          <!-- show this widget when GlyphMode==1 -->
+        </Hints>
+     </IntVectorProperty>
 
       <PropertyGroup label="Glyph Source">
         <Property name="Source" />
       </PropertyGroup>
+      <PropertyGroup label="Orientation">
+        <Property name="OrientationArray" />
+      </PropertyGroup>
+      <PropertyGroup label="Scale">
+        <Property name="ScaleArray" />
+        <Property name="VectorScaleMode" />
+        <Property name="ScaleFactor" />
+      </PropertyGroup>
       <PropertyGroup label="Glyph Transform">
         <Property name="GlyphTransform" />
+      </PropertyGroup>
+      <PropertyGroup label="Masking">
+        <Property name="GlyphMode" />
+        <Property name="MaximumNumberOfSamplePoints" />
+        <Property name="Seed" />
+        <Property name="Stride" />
       </PropertyGroup>
 
       <Hints>
@@ -8030,13 +8457,13 @@ source.</Documentation>
        -->
         <Visibility replace_input="0" />
       </Hints>
-      <!-- End LegacyGlyph -->
+      <!-- End Glyph -->
     </SourceProxy>
 
     <!-- ==================================================================== -->
-    <SourceProxy class="vtkPVGlyphFilter"
-                 label="Glyph With Custom Source"
-                 name="GlyphWithCustomSource">
+    <SourceProxy class="vtkPVGlyphFilterLegacy"
+                 label="Glyph With Custom Source Legacy"
+                 name="GlyphWithCustomSourceLegacy">
       <Documentation long_help="This filter generates a glyph at each point of the input data set.  The glyphs can be oriented and scaled by point attributes of the input dataset."
                      short_help="Generate a glyph symbol at each point of the input data set.">
       The Glyph filter generates a glyph at each point in the input dataset.
@@ -8286,218 +8713,6 @@ source.</Documentation>
       <!-- End GlyphWithCustomSource -->
     </SourceProxy>
 
-    <!-- ==================================================================== -->
-    <SourceProxy class="vtkPVLegacyGlyphFilter"
-                 name="LegacyArbitrarySourceGlyph">
-      <Documentation long_help="This filter generates a glyph at each point of the input data set.  The glyphs can be oriented and scaled by point attributes of the input dataset."
-                     short_help="Generate a glyph symbol at each point of the input data set.">
-      The Glyph filter generates a glyph at each point in the input dataset.
-      The glyphs can be oriented and scaled by the input point-centered scalars
-      and vectors. The Glyph filter operates on any type of data set. Its
-      output is polygonal. This filter is available on the
-      Toolbar.</Documentation>
-      <Deprecated deprecated_in="4.2" to_remove_in="4.3">
-        It has been replaced by 'GlyphWithCustomSource'. Please consider using that instead.
-      </Deprecated>
-      <InputProperty command="SetInputConnection"
-                     name="Input">
-        <ProxyGroupDomain name="groups">
-          <Group name="sources" />
-          <Group name="filters" />
-        </ProxyGroupDomain>
-        <DataTypeDomain name="input_type">
-          <DataType value="vtkDataSet" />
-        </DataTypeDomain>
-        <InputArrayDomain attribute_type="point"
-                          name="input_array1"
-                          number_of_components="1"
-                          optional="1" />
-        <InputArrayDomain attribute_type="point"
-                          name="input_array2"
-                          number_of_components="3"
-                          optional="1" />
-        <Documentation>This property specifies the input to the Glyph filter.
-        This is the dataset to which the glyphs will be
-        applied.</Documentation>
-      </InputProperty>
-      <InputProperty command="SetSourceConnection"
-                     label="Glyph Type"
-                     name="Source">
-        <ProxyGroupDomain name="groups">
-          <Group name="sources" />
-          <Group name="glyph_sources" />
-        </ProxyGroupDomain>
-        <DataTypeDomain name="input_type">
-          <DataType value="vtkPolyData" />
-        </DataTypeDomain>
-        <Documentation>This property determines which type of glyph will be
-        placed at the points in the input dataset.</Documentation>
-      </InputProperty>
-      <StringVectorProperty command="SetInputArrayToProcess"
-                            element_types="0 0 0 0 2"
-                            label="Scalars"
-                            name="SelectInputScalars"
-                            number_of_elements="5">
-        <ArrayListDomain attribute_type="Scalars"
-                         input_domain_name="input_array1"
-                         name="array_list">
-          <RequiredProperties>
-            <Property function="Input"
-                      name="Input" />
-          </RequiredProperties>
-        </ArrayListDomain>
-        <Documentation>This property indicates the name of the scalar array on
-        which to operate. The indicated array may be used for scaling the
-        glyphs. (See the SetScaleMode property.)</Documentation>
-      </StringVectorProperty>
-      <StringVectorProperty command="SetInputArrayToProcess"
-                            default_values="1"
-                            element_types="0 0 0 0 2"
-                            label="Vectors"
-                            name="SelectInputVectors"
-                            number_of_elements="5">
-        <!-- default value=1 so normals go to the right place -->
-        <ArrayListDomain attribute_type="Vectors"
-                         input_domain_name="input_array2"
-                         name="array_list">
-          <RequiredProperties>
-            <Property function="Input"
-                      name="Input" />
-          </RequiredProperties>
-        </ArrayListDomain>
-        <Documentation>This property indicates the name of the vector array on
-        which to operate. The indicated array may be used for scaling and/or
-        orienting the glyphs. (See the SetScaleMode and SetOrient
-        properties.)</Documentation>
-      </StringVectorProperty>
-      <IntVectorProperty command="SetOrient"
-                         default_values="1"
-                         label="Orient"
-                         name="SetOrient"
-                         number_of_elements="1"
-                         panel_visibility="advanced">
-        <BooleanDomain name="bool" />
-        <Documentation>If this property is set to 1, the glyphs will be
-        oriented based on the selected vector array.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetScaleMode"
-                         default_values="1"
-                         label="Scale Mode"
-                         name="SetScaleMode"
-                         number_of_elements="1"
-                         panel_visibility="advanced">
-        <EnumerationDomain name="enum">
-          <Entry text="scalar"
-                 value="0" />
-          <Entry text="vector"
-                 value="1" />
-          <Entry text="vector_components"
-                 value="2" />
-          <Entry text="off"
-                 value="3" />
-        </EnumerationDomain>
-        <Documentation>The value of this property specifies how/if the glyphs
-        should be scaled based on the point-centered scalars/vectors in the
-        input dataset.</Documentation>
-      </IntVectorProperty>
-      <DoubleVectorProperty command="SetScaleFactor"
-                            default_values="1.0"
-                            name="SetScaleFactor"
-                            number_of_elements="1"
-                            panel_visibility="advanced">
-        <BoundsDomain mode="scaled_extent"
-                      name="bounds"
-                      scale_factor="0.1">
-          <RequiredProperties>
-            <Property function="Input"
-                      name="Input" />
-          </RequiredProperties>
-        </BoundsDomain>
-        <ArrayRangeDomain name="scalar_range">
-          <RequiredProperties>
-            <Property function="Input"
-                      name="Input" />
-            <Property function="ArraySelection"
-                      name="SelectInputScalars" />
-          </RequiredProperties>
-        </ArrayRangeDomain>
-        <ArrayRangeDomain name="vector_range">
-          <RequiredProperties>
-            <Property function="Input"
-                      name="Input" />
-            <Property function="ArraySelection"
-                      name="SelectInputVectors" />
-          </RequiredProperties>
-        </ArrayRangeDomain>
-        <Documentation>The value of this property will be used as a multiplier
-        for scaling the glyphs before adding them to the
-        output.</Documentation>
-      </DoubleVectorProperty>
-      <IntVectorProperty command="SetMaximumNumberOfPoints"
-                         default_values="5000"
-                         label="Maximum Number of Points"
-                         name="MaximumNumberOfPoints"
-                         number_of_elements="1"
-                         panel_visibility="advanced">
-        <IntRangeDomain min="0"
-                        name="range" />
-        <Documentation>The value of this property specifies the maximum number
-        of glyphs that should appear in the output dataset if the value of the
-        UseMaskPoints property is 1. (See the UseMaskPoints
-        property.)</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetUseMaskPoints"
-                         default_values="1"
-                         label="Mask Points"
-                         name="UseMaskPoints"
-                         number_of_elements="1"
-                         panel_visibility="advanced">
-        <BooleanDomain name="bool" />
-        <Documentation>If the value of this property is set to 1, limit the
-        maximum number of glyphs to the value indicated by
-        MaximumNumberOfPoints. (See the MaximumNumberOfPoints
-        property.)</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetRandomMode"
-                         default_values="1"
-                         name="RandomMode"
-                         number_of_elements="1"
-                         panel_visibility="advanced">
-        <BooleanDomain name="bool" />
-        <Documentation>If the value of this property is 1, then the points to
-        glyph are chosen randomly. Otherwise the point ids chosen are evenly
-        spaced.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetKeepRandomPoints"
-                         default_values="0"
-                         name="KeepRandomPoints"
-                         number_of_elements="1"
-                         panel_visibility="advanced">
-        <BooleanDomain name="bool"/>
-        <Documentation> If the value of this property is 1 and RandomMode is
-        1, then the randomly chosen points to glyph are saved and reused for
-        other timesteps. This is only useful if the coordinates are the same
-        and in the same order between timesteps.
-        </Documentation>
-      </IntVectorProperty>
-
-      <PropertyGroup label="Glyph Source">
-        <Property name="Source" />
-      </PropertyGroup>
-
-      <Hints>
-        <!-- Visibility Element can be used to suggest the GUI about
-          visibility of this filter (or its input) on creation.
-          replace_input="0" implies that the input visibility is not
-            changed on creation of this filter (defaults to "1")
-          replace_input="1" implies always replace input.
-          replace_input="2" implies replace input only when input is shown as a
-                            solid i.e surface or surface with edges.
-       -->
-        <Visibility replace_input="0" />
-      </Hints>
-      <!-- End ArbitrarySourceGlyph -->
-    </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkPVExtractVOI"
                  label="Extract Subset"
@@ -11250,6 +11465,7 @@ source.</Documentation>
         <DataTypeDomain composite_data_supported="1"
                         name="input_type">
           <DataType value="vtkDataObject" />
+          <DataType value="vtkHyperTreeGrid" />
         </DataTypeDomain>
         <Documentation>This property indicates the the inputs to the Group
         Datasets filter.</Documentation>
@@ -11814,6 +12030,7 @@ source.</Documentation>
         </ProxyGroupDomain>
         <DataTypeDomain name="input_type">
           <DataType value="vtkMultiBlockDataSet" />
+          <DataType value="vtkHyperTreeGrid" />
         </DataTypeDomain>
         <Documentation>This property specifies the input to the Extract Group
         filter.</Documentation>
@@ -11842,7 +12059,7 @@ source.</Documentation>
                          name="PruneOutput"
                          number_of_elements="1">
         <BooleanDomain name="bool" />
-        <Documentation>When set, the output mutliblock dataset will be pruned
+        <Documentation>When set, the output multiblock dataset will be pruned
         to remove empty nodes. On by default.</Documentation>
       </IntVectorProperty>
       <IntVectorProperty command="SetMaintainStructure"
@@ -12089,7 +12306,7 @@ source.</Documentation>
                          default_values="0"
                          name="Component"
                          number_of_elements="1">
-        <NumberOfComponentsDomain name="comps">
+        <NumberOfComponentsDomain name="comps" enable_magnitude="1">
           <RequiredProperties>
             <Property function="Input"
                       name="Input" />
@@ -12929,16 +13146,6 @@ source.</Documentation>
         are inside or out. If 0 then the output is an unstructured grid which
         contains only the subset of cells that are inside.</Documentation>
       </IntVectorProperty>
-      <IntVectorProperty command="SetShowBounds"
-                         default_values="0"
-                         name="ShowBounds"
-                         number_of_elements="1"
-                         panel_visibility="never">
-        <BooleanDomain name="bool" />
-        <Documentation>For frustum selection, if this property is set to 1 the
-        output is the outline of the frustum instead of the contents of the
-        input that lie within the frustum.</Documentation>
-      </IntVectorProperty>
       <!-- End of ExtractSelection -->
     </SourceProxy>
     <!-- ==================================================================== -->
@@ -13196,7 +13403,7 @@ source.</Documentation>
              group="filters"
              id="2429"
              servers="1"
-             type="Glyph">
+             type="GlyphLegacy">
         <Property id="2429.Input"
                   name="Input"
                   number_of_elements="1">
@@ -14504,6 +14711,7 @@ source.</Documentation>
         </ProxyGroupDomain>
         <DataTypeDomain name="input_type">
           <DataType value="vtkImageData" />
+          <DataType value="vtkRectilinearGrid" />
           <DataType value="vtkStructuredGrid" />
           <DataType value="vtkPolyData" />
           <DataType value="vtkUnstructuredGrid" />
@@ -15630,9 +15838,9 @@ source.</Documentation>
     <SourceProxy class="vtkAggregateDataSetFilter"
                  label="Aggregate Dataset"
                  name="AggregateDataSet">
-      <Documentation long_help="This filter aggregates polydata or unstructured grids onto a subset of processes."
-                     short_help="Aggregate a data set onto a subset of processes.">
-        This filter aggregates polydata or unstructured grids onto a subset of processes.
+      <Documentation long_help="This filter aggregates a dataset onto a subset of processes."
+                     short_help="Aggregate a dataset onto a subset of processes.">
+        This filter aggregates a dataset onto a subset of processes.
       </Documentation>
       <InputProperty command="SetInputConnection"
                      name="Input">
@@ -15641,8 +15849,7 @@ source.</Documentation>
           <Group name="filters" />
         </ProxyGroupDomain>
         <DataTypeDomain name="input_type" composite_data_supported="0">
-          <DataType value="vtkPolyData" />
-          <DataType value="vtkUnstructuredGrid" />
+          <DataType value="vtkDataSet" />
         </DataTypeDomain>
         <Documentation>This property specifies the input to the filter.
         </Documentation>
@@ -15652,7 +15859,7 @@ source.</Documentation>
                          name="NumberOfTargetProcesses"
                          number_of_elements="1">
         <Documentation>This property specifies the number of target processes to
-        aggregate the data set onto.</Documentation>
+        aggregate the dataset onto.</Documentation>
       </IntVectorProperty>
       <!-- End AggregateDataSet -->
     </SourceProxy>
@@ -16166,8 +16373,18 @@ source.</Documentation>
                  value="1" />
           <Entry text="Z Axis"
                  value="2" />
+          <Entry text="Oriented Bounding Box Major Axis"
+                 value="3" />
+          <Entry text="Oriented Bounding Box Medium Axis"
+                 value="4" />
+          <Entry text="Oriented Bounding Box Minor Axis"
+                 value="5" />
         </EnumerationDomain>
-        <Documentation>Select which axis to put the ruler along</Documentation>
+        <Documentation>Select along which axis the ruler should be aligned. Note:
+        this filter requires that all points in the dataset to which it is applied
+        be copied to a single rank when this option is set to any of the
+        Oriented Bound Box options, so make sure the dataset can fit on one rank
+        before applying this filter.</Documentation>
       </IntVectorProperty>
       <Hints>
         <Representation view="RenderView" type="RulerSourceRepresentation" />
@@ -16296,6 +16513,85 @@ source.</Documentation>
       <!-- End D3 -->
     </SourceProxy>
     <!-- ==================================================================== -->
+    <SourceProxy class="vtkUnstructuredGridGhostCellsGenerator"
+                 label="Ghost Cells Generator"
+                 name="GhostCellsGenerator">
+      <Documentation long_help="Generate ghost cells for unstructured grids."
+                     short_help="Generate ghost cells for unstructured grids.">
+                     The GhostCellGenerator operates on unstructured grids only.
+                     This filter does not redistribute the input data, it only
+                     generates ghost cells at processor boundaries by fetching
+                     topological and geometrical information of those cells on
+                     neighbor ranks. The filter can take advantage of global point
+                     ids if they are available - if so it will perform faster,
+                     otherwise point coordinates will be exchanged and processed.
+      </Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type" composite_data_supported="0">
+          <DataType value="vtkUnstructuredGrid" />
+        </DataTypeDomain>
+        <Documentation>This property specifies the input to the ghost cells
+        generator.</Documentation>
+      </InputProperty>
+      <IntVectorProperty command="SetBuildIfRequired"
+                         default_values="0"
+                         name="BuildIfRequired"
+                         number_of_elements="1">
+        <Documentation>Specify if the filter must generate the ghost cells only
+          if required by the pipeline downstream. To force at least a fixed level
+          of ghosts, this must be set to 0 (unchecked).</Documentation>
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <IntVectorProperty command="SetMinimumNumberOfGhostLevels"
+                         number_of_elements="1"
+                         default_values="1"
+                         name="MinimumNumberOfGhostLevels">
+        <IntRangeDomain name="range" min="1" max="10" />
+        <Documentation>
+          When **BuildIfRequired** if off, use this to specify the minimum number of
+          ghost cells to request. The filter may request more ghost levels than indicated if a
+          downstream filter asked for more ghost levels.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="enabled_state"
+                                   property="BuildIfRequired"
+                                   value="0" />
+          <!-- if BuildIfRequired !=0 , we disable this property -->
+        </Hints>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetUseGlobalPointIds"
+                         default_values="1"
+                         name="UseGlobalIds"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <Documentation>Specify if the filter must take benefit of global point
+        ids if they exist or if point coordinates should be used instead.
+        </Documentation>
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <StringVectorProperty command="SetGlobalPointIdsArrayName"
+                            default_values="GlobalNodeIds"
+                            name="GlobalPointIdsArrayName"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <Documentation>This property provides the name for the input array
+        containing the global point ids if the GlobalIds array of the point
+        data if not set. Default is GlobalNodeIds.</Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="ShowWidgetDecorator">
+            <Property name="UseGlobalIds" function="boolean" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </StringVectorProperty>
+      <!-- End vtkPUnstructuredGridGhostCellsGenerator -->
+    </SourceProxy>
+    <!-- ==================================================================== -->
     <SourceProxy base_proxygroup="filters"
                  base_proxyname="ParticlePath"
                  class="vtkInSituPParticlePathFilter"
@@ -16375,6 +16671,88 @@ source.</Documentation>
       <!-- End vtkInSituPParticlePathFilter -->
     </SourceProxy>
     <!-- ==================================================================== -->
+    <SourceProxy name="ExtractEnclosedPoints"
+      class="vtkExtractEnclosedPoints"
+      label="Extract Enclosed Points">
+      <Documentation long_help="Extract points inside a closed polygonal surface"
+                     short_help="Extract points inside a closed points surface">
+        Evaluates all points in the input dataset to determine whether they are contained within
+        an enclosing surface, defined by the **Surface**. The filter assumes that the surface
+        is closed and manifold. To force a check to ensure these preconditions are met
+        set the **CheckSurface** property.
+      </Documentation>
+
+      <OutputPort index="0" name="EnclosedPoints" />
+      <OutputPort index="1" name="Outliers" />
+
+      <InputProperty command="SetInputConnection" name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+         <DataType value="vtkPointSet" />
+        </DataTypeDomain>
+        <Documentation>This property specifies the input to extract points from.</Documentation>
+      </InputProperty>
+
+      <InputProperty command="SetSurfaceConnection" name="Surface">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type" composite_data_supported="0">
+          <DataType value="vtkPolyData" />
+        </DataTypeDomain>
+        <Documentation>This property specifies the closed and manifold surface.</Documentation>
+      </InputProperty>
+
+      <DoubleVectorProperty name="Tolerance"
+        command="SetTolerance"
+        number_of_elements="1"
+        default_values="0.0001">
+        <DoubleRangeDomain name="range" min="0.0" />
+        <Documentation>
+          Specify the tolerance on the intersection. The tolerance is expressed as
+          a fraction of the diagonal of the bounding box of the enclosing surface.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <IntVectorProperty name="CheckSurface"
+        number_of_elements="1"
+        default_values="0"
+        command="SetCheckSurface">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Specify whether to check the surface for closure. If on, then the
+          algorithm first checks to see if the surface is closed and manifold.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="GenerateOutliers"
+        command="SetGenerateOutliers"
+        number_of_elements="1"
+        default_values="0">
+        <Documentation>
+          If checked, then a second output will be created
+          that contains the outlier points.
+        </Documentation>
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <IntVectorProperty name="GenerateVertices"
+        command="SetGenerateVertices"
+        number_of_elements="1"
+        default_values="1">
+        <Documentation>
+          If checked, then the outputs will contain a poly-vertex cell. This takes a
+          lot more memory, however certain filters many requires cells to be present
+          to function properly.
+        </Documentation>
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+    </SourceProxy>
+    <!-- ==================================================================== -->
     <SourceProxy class="vtkHyperTreeGridToUnstructuredGrid"
                  label="HyperTreeGrid To UnstructuredGrid"
                  name="HyperTreeGridToUnstructuredGrid">
@@ -16388,7 +16766,7 @@ source.</Documentation>
           <Group name="sources" />
           <Group name="filters" />
         </ProxyGroupDomain>
-        <DataTypeDomain name="input_type" composite_data_supported="0">
+        <DataTypeDomain name="input_type">
           <DataType value="vtkHyperTreeGrid" />
         </DataTypeDomain>
         <Documentation>This property specifies the input to the converter.</Documentation>
@@ -16397,7 +16775,7 @@ source.</Documentation>
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkHyperTreeGridContour"
-                 label="HyperTreeGrid Contour"
+                 label="Hyper Tree Grid - Contour"
                  name="HyperTreeGridContour">
       <Documentation long_help="Specialized Contour filter for HyperTreeGrid."
                      short_help="Contour filter for HyperTreeGrid.">
@@ -16409,7 +16787,7 @@ source.</Documentation>
           <Group name="sources" />
           <Group name="filters" />
         </ProxyGroupDomain>
-        <DataTypeDomain name="input_type" composite_data_supported="0">
+        <DataTypeDomain name="input_type">
           <DataType value="vtkHyperTreeGrid" />
         </DataTypeDomain>
         <Documentation>This property specifies the input to the converter.</Documentation>
@@ -16462,7 +16840,7 @@ source.</Documentation>
     </SourceProxy>
     <!-- ==================================================================== -->
     <SourceProxy class="vtkHyperTreeGridThreshold"
-                 label="HyperTreeGrid Threshold"
+                 label="Hyper Tree Grid - Threshold"
                  name="HyperTreeGridThreshold">
       <Documentation long_help="Specialized Threshold filter for HyperTreeGrid."
                      short_help="Threshold filter for HyperTreeGrid.">
@@ -16474,7 +16852,7 @@ source.</Documentation>
           <Group name="sources" />
           <Group name="filters" />
         </ProxyGroupDomain>
-        <DataTypeDomain name="input_type" composite_data_supported="0">
+        <DataTypeDomain name="input_type">
           <DataType value="vtkHyperTreeGrid" />
         </DataTypeDomain>
         <Documentation>This property specifies the input to the converter.</Documentation>
@@ -16521,5 +16899,478 @@ source.</Documentation>
       </DoubleVectorProperty>
       <!-- End vtkHyperTreeGridThreshold -->
     </SourceProxy>
+    <!-- ==================================================================== -->
+    <SourceProxy class="vtkHyperTreeGridAxisClip"
+                 name="HyperTreeGridAxisClip"
+                 label="Hyper Tree Grid - Axis Clip">
+      <Documentation short_help="Clip a HTG along an axis-aligned plane or box.">
+        Clip an hyper tree grid along an axis aligned plane or box and output
+        a hyper tree grid with same dimensionality.
+      </Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+
+          <ProxyGroupDomain name="groups">
+            <Group name="sources" />
+            <Group name="filters" />
+          </ProxyGroupDomain>
+          <DataTypeDomain name="input_type">
+          <DataType value="vtkHyperTreeGrid" />
+        </DataTypeDomain>
+      </InputProperty>
+      <IntVectorProperty command="SetClipType"
+                         default_values="0"
+                         name="ClipType"
+                         number_of_elements="1">
+          <EnumerationDomain name="enum">
+            <Entry text="Plane"   value="0" />
+            <Entry text="Box"     value="1" />
+            <Entry text="Quadric" value="2" />
+          </EnumerationDomain>
+        <Documentation>Type of clip operation to use.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty name="PlaneNormal"
+                         command="SetPlaneNormalAxis"
+                         number_of_elements="1"
+                         default_values="0">
+          <EnumerationDomain name="enum">
+            <Entry text="X Axis" value="0" />
+            <Entry text="Y Axis" value="1" />
+            <Entry text="Z Axis" value="2" />
+          </EnumerationDomain>
+        <Documentation>Axis to use as the normal to the clip plane.</Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="ClipType"
+                                   value="0" />
+        </Hints>
+      </IntVectorProperty>
+      <DoubleVectorProperty name="PlanePosition"
+                            command="SetPlanePosition"
+                            number_of_elements="1"
+                            default_values="0.0">
+        <Documentation>Position of the clip plane along the normal axis.</Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="ClipType"
+                                   value="0" />
+        </Hints>
+      </DoubleVectorProperty>
+      <IntVectorProperty name="ClipBelowPlane"
+                         command="SetInsideOut"
+                         default_values="0"
+                         number_of_elements="1">
+        <Documentation>
+          By default, the portion of the dataset above the clip plane is kept.
+          Enabling this option will keep the portion below the plane.
+        </Documentation>
+        <BooleanDomain name="bool" />
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="ClipType"
+                                   value="0" />
+        </Hints>
+      </IntVectorProperty>
+      <DoubleVectorProperty name="MinimumBoxCorner"
+                            command="SetMinimumBounds"
+                            number_of_elements="3"
+                            default_values="-0.5 -0.5 -0.5">
+        <Documentation>Defines the most negative point of the clip box.</Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="ClipType"
+                                   value="1" />
+        </Hints>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty name="MaximumBoxCorner"
+                            command="SetMaximumBounds"
+                            number_of_elements="3"
+                            default_values="0.5 0.5 0.5">
+        <Documentation>Defines the most positive point of the clip box.</Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="ClipType"
+                                   value="1" />
+        </Hints>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty name="QuadricCoefficients"
+                            command="SetQuadricCoefficients"
+                            number_of_elements="10"
+                            default_values="1. 1. 1. 0. 0. 0. 0. 0. 0. -1.">
+        <Documentation>
+          Coefficients of the quadric function, defined as the 'a' values in:
+          F(x,y,z) = a0*x^2 + a1*y^2 + a2*z^2 + a3*x*y + a4*y*z + a5*x*z + a6*x + a7*y + a8*z + a9
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="ClipType"
+                                   value="2" />
+        </Hints>
+      </DoubleVectorProperty>
+    <!-- End vtkHyperTreeGridAxisClip -->
+    </SourceProxy>
+    <SourceProxy class="vtkHyperTreeGridAxisCut"
+                 name="HyperTreeGridAxisCut"
+                 label="Hyper Tree Grid - Axis Cut">
+      <Documentation short_help="Cut a 3D HTG along an axis-aligned plane.">
+        Cut a hyper tree grid along an axis-aligned plane and output a new hyper
+        tree grid. Only works for 3D grids.
+      </Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkHyperTreeGrid" />
+        </DataTypeDomain>
+      </InputProperty>
+      <IntVectorProperty name="PlaneNormal"
+                         command="SetPlaneNormalAxis"
+                         number_of_elements="1"
+                         default_values="0">
+          <EnumerationDomain name="enum">
+            <Entry text="X Axis" value="0" />
+            <Entry text="Y Axis" value="1" />
+            <Entry text="Z Axis" value="2" />
+          </EnumerationDomain>
+        <Documentation>Axis to use as the normal to the cut plane.</Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty name="PlanePosition"
+                            command="SetPlanePosition"
+                            number_of_elements="1"
+                            default_values="0.0">
+        <Documentation>Position of the cut plane along the normal axis.</Documentation>
+      </DoubleVectorProperty>
+      <!-- End vtkHyperTreeGridAxisClut -->
+    </SourceProxy>
+    <SourceProxy class="vtkHyperTreeGridAxisReflection"
+                 name="HyperTreeGridAxisReflection"
+                 label="Hyper Tree Grid - Axis Reflection">
+      <Documentation short_help="Reflect an HTG across an axis-aligned plane.">
+        This filter reflect the cells of a hyper tree grid with respect to
+        one of the planes parallel to the bounding box of the data set.
+      </Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkHyperTreeGrid" />
+        </DataTypeDomain>
+      </InputProperty>
+      <IntVectorProperty name="PlaneNormal"
+                         command="SetPlane"
+                         number_of_elements="1"
+                         default_values="0">
+          <EnumerationDomain name="enum">
+            <Entry text="X Axis" value="6" />
+            <Entry text="Y Axis" value="7" />
+            <Entry text="Z Axis" value="8" />
+          </EnumerationDomain>
+        <Documentation>Axis to use as the normal to the reflection plane.</Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty name="PlanePosition"
+                            command="SetCenter"
+                            number_of_elements="1"
+                            default_values="0.0">
+        <Documentation>Position of the reflection plane along the normal axis.</Documentation>
+      </DoubleVectorProperty>
+      <!-- End vtkHyperTreeGridAxisReflection -->
+    </SourceProxy>
+    <SourceProxy class="vtkHyperTreeGridCellCenters"
+                 name="HyperTreeGridCellCenters"
+                 label="Hyper Tree Grid - Cell Centers">
+      <Documentation short_help="Generate points at leaf node centers.">
+        This filter generates output points at the center of the leaf
+        cells in the hyper tree grid.
+        These points can be used for placing glyphs or labeling.
+        The cell attributes will be associated with the points in the output.
+      </Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkHyperTreeGrid" />
+        </DataTypeDomain>
+      </InputProperty>
+      <IntVectorProperty name="CreateVertexCells"
+                         command="SetVertexCells"
+                         default_values="0"
+                         number_of_elements="1">
+        <Documentation>
+          If enabled, vertex cells will be added to the output dataset. This
+          is useful for visualizing the output points, which are not rendered
+          otherwise.
+        </Documentation>
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <!-- End vtkHyperTreeGridCellCenters -->
+    </SourceProxy>
+    <SourceProxy class="vtkHyperTreeGridDepthLimiter"
+                 name="HyperTreeGridDepthLimiter"
+                 label="Hyper Tree Grid - Depth Limiter">
+      <Documentation short_help="Limit HTG nodes to a maximum depth">
+        Extract all levels down to a specified depth from a hyper tree grid.
+        If the required depth is greater or equal to the maximum level of the
+        input grid, then the output is identical.
+        Note that when a material mask is present, the geometry extent of the
+        output grid is guaranteed to contain that of the input tree, but the
+        former might be strictly larger than the latter. This is not a bug
+        but an expected behavior of which the user should be aware.
+      </Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkHyperTreeGrid" />
+        </DataTypeDomain>
+      </InputProperty>
+      <IntVectorProperty name="SetDepth"
+                         command="SetDepth"
+                         default_values="0"
+                         number_of_elements="1">
+        <Documentation>
+          Maximum depth to which the output grid should be limited.
+        </Documentation>
+        <IntRangeDomain min="0"
+                        name="range" />
+      </IntVectorProperty>
+      <!-- End vtkHyperTreeGridDepthLimiter -->
+    </SourceProxy>
+    <SourceProxy class="vtkHyperTreeGridGeometry"
+                 name="HyperTreeGridGeometry"
+                 label="Hyper Tree Grid - Geometry Filter">
+      <Documentation short_help="Generate external surface of a HTG.">
+        Generate PolyData representing the external surface of a HTG.
+      </Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkHyperTreeGrid" />
+        </DataTypeDomain>
+      </InputProperty>
+      <!-- End vtkHyperTreeGridGeometry -->
+    </SourceProxy>
+    <SourceProxy class="vtkHyperTreeGridPlaneCutter"
+                 name="HyperTreeGridSliceWithPlane"
+                 label="Hyper Tree Grid - Slice With Plane">
+      <Documentation short_help="Produce polydata describing a plane in the HTG.">
+        Takes as input an hyper tree grid and a single plane and generates the
+        polygonal data intersection surface.
+      </Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkHyperTreeGrid" />
+        </DataTypeDomain>
+      </InputProperty>
+      <ProxyProperty command="SetPlane"
+                     name="Plane">
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="implicit_functions"
+                 name="Plane" />
+        </ProxyListDomain>
+        <Documentation>This property sets the parameters of the plane
+        function.</Documentation>
+      </ProxyProperty>
+      <IntVectorProperty name="UseDualGrid"
+                         command="SetDual"
+                         default_values="0"
+                         number_of_elements="1">
+        <Documentation>
+          If enabled, the output plane is computed using the dual grid, providing
+          perfect connectivity at the cost of speed. If disabled, the AMR mesh
+          is used directly, and the output is obtained faster and is more useful
+          for rendering.
+        </Documentation>
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+      <!-- End vtkHyperTreeGridPlaneCutter-->
+    </SourceProxy>
+    <!-- ==================================================================== -->
+    <SourceProxy class="vtkPointSetToMoleculeFilter"
+                 name="PointSetToMolecule"
+                 label="Convert Into Molecule">
+      <Documentation long_help="Convert a point set into a molecule."
+                     short_help="Convert a point set into a molecule.">
+        Convert a point set into a molecule. Every point of the input becomes an atom
+        of the output molecule. It needs a point array containing the atomic numbers.
+      </Documentation>
+      <InputProperty name="Input"
+                     command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkPointSet"/>
+        </DataTypeDomain>
+        <InputArrayDomain attribute_type="point"
+                          name="input_array"
+                          number_of_components="1"/>
+      </InputProperty>
+      <StringVectorProperty command="SetInputArrayToProcess"
+                            element_types="0 0 0 0 2"
+                            label="Atomic Numbers"
+                            name="SelectInputScalars"
+                            number_of_elements="5">
+        <ArrayListDomain attribute_type="Scalars"
+                         input_domain_name="input_array"
+                         name="array_list">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>This property indicates the name of the scalar array
+        corresponding to atomic numbers.</Documentation>
+      </StringVectorProperty>
+      <IntVectorProperty command="SetConvertLinesIntoBonds"
+                         default_values="1"
+                         name="ConvertLinesIntoBonds"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation short_help="Specify if line cells are converted into bonds."
+                       long_help="Specify if line cells are converted into bonds.">
+          This property determines if the lines (cell of type VTK_LINE) are converted into bonds.
+        </Documentation>
+      </IntVectorProperty>
+    <!-- End PointSetToMolecule -->
+    </SourceProxy>
+    <!-- ==================================================================== -->
+    <SourceProxy class="vtkMoleculeToLinesFilter"
+                 name="MoleculeToLines"
+                label="Molecule To Lines">
+      <Documentation long_help="Convert a molecule into lines."
+                     short_help="Convert a molecule into lines.">
+        Convert a molecule into lines. Each atom of the input becomes a point of the output polydata, each bond a line.
+      </Documentation>
+      <InputProperty name="Input"
+                     command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkMolecule"/>
+        </DataTypeDomain>
+      </InputProperty>
+    <!-- End MoleculeToLines -->
+    </SourceProxy>
+    <!-- ==================================================================== -->
+    <SourceProxy class="vtkMoleculeAppend"
+                 name="AppendMolecule"
+                 label="Append Molecule">
+      <Documentation long_help="Appends one or more molecules into a single molecule."
+                     short_help="Append molecules into a single molecule.">
+        Appends one or more molecules into a single molecule. It also appends  the associated atom data and edge data.
+        Note that input data arrays should match (same number of arrays with same names in each input)
+      </Documentation>
+      <InputProperty clean_command="RemoveAllInputs"
+                     command="AddInputConnection"
+                     multiple_input="1"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkMolecule"/>
+        </DataTypeDomain>
+      </InputProperty>
+    <!-- End AppendMolecule -->
+    </SourceProxy>
+    <!-- ==================================================================== -->
+    <SourceProxy class="vtkSimpleBondPerceiver"
+                 name="ComputeMoleculeBonds"
+                 label="Compute Molecule Bonds">
+      <Documentation long_help="Compute the bonds of a molecule based on interatomic distance only."
+                     short_help="Compute the bonds of a molecule.">
+        Compute the bonds of a molecule. If the
+        interatomic distance is less than the sum of the two atom's covalent radii
+        (and a tolerance), a single bond is added.
+        This algorithm does not consider valences, hybridization, aromaticity, or
+        anything other than atomic separations. It will not produce anything other
+        than single bonds.
+      </Documentation>
+      <InputProperty name="Input"
+                     command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkMolecule"/>
+        </DataTypeDomain>
+      </InputProperty>
+      <DoubleVectorProperty command="SetTolerance"
+                            default_values="0.45"
+                            name="Tolerance"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <DoubleRangeDomain name="scalar_range" />
+        <Documentation short_help="Tolerance on covalent radius size">
+          This property determines the tolerance to apply on covalent radius.
+        </Documentation>
+      </DoubleVectorProperty>
+      <IntVectorProperty command="SetIsToleranceAbsolute"
+                         default_values="1"
+                         name="IsToleranceAbsolute"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation short_help="Specify if Tolerance is absolute or relative to radius."
+                       long_help="Specify if Tolerance is absolute (addition) or relative (multiplication) to radius.">
+          This property determines if the tolerance is absolute (value is added to radius and should be positive)
+          or not (value multiplied with radius and should be greater than 1).
+        </Documentation>
+      </IntVectorProperty>
+    <!-- End ComputeMoleculeBonds -->
+    </SourceProxy>
+    <!-- ==================================================================== -->
+    <SourceProxy class="vtkDistributedPointCloudFilter"
+                 name="DistributePoints"
+                 label="Distribute Points">
+      <Documentation long_help="Fairly distribute points over processors into spatially contiguous regions."
+                     short_help="Distribute points over processors.">
+           This filter fairly distributes points over processors into contiguous spatial regions.
+           The output is a PolyData which does not contain any cell.
+           Distribution is done using a Kd-tree.
+      </Documentation>
+      <InputProperty name="Input"
+                     command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkPointSet"/>
+        </DataTypeDomain>
+      </InputProperty>
+    </SourceProxy>
+    <!-- End DistributePointCloud -->
   </ProxyGroup>
 </ServerManagerConfiguration>

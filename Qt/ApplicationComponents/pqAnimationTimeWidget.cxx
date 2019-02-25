@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqPropertyLinks.h"
 #include "pqPropertyLinksConnection.h"
+#include "pqTimer.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMTimeKeeperProxy.h"
 #include "vtkWeakPointer.h"
@@ -49,11 +50,13 @@ public:
   pqPropertyLinks Links;
   int CachedTimestepCount;
   int Precision;
+  QChar TimeNotation;
 
   pqInternals(pqAnimationTimeWidget* self)
     : AnimationSceneVoidPtr(NULL)
     , CachedTimestepCount(-1)
-    , Precision(17)
+    , Precision(6)
+    , TimeNotation('g')
   {
     this->Ui.setupUi(self);
     this->Ui.timeValue->setValidator(new QDoubleValidator(self));
@@ -99,12 +102,21 @@ pqAnimationTimeWidget::pqAnimationTimeWidget(QWidget* parentObject)
   this->setEnabled(false);
 
   Ui::AnimationTimeWidget& ui = this->Internals->Ui;
-  this->connect(ui.timeValue, SIGNAL(textChangedAndEditingFinished()), SIGNAL(timeValueChanged()));
-  this->connect(ui.radioButtonValue, SIGNAL(toggled(bool)), SIGNAL(playModeChanged()));
+  ui.timeValueComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+  this->connect(ui.timeValue, SIGNAL(textChangedAndEditingFinished()), SLOT(timeLineEditChanged()));
   this->connect(
-    ui.radioButtonValue, SIGNAL(toggled(bool)), SLOT(updateTimestepCountLabelVisibility()));
-  this->connect(
-    ui.timestepValue, SIGNAL(valueChangedAndEditingFinished()), SLOT(timestepValueChanged()));
+    ui.timeValueComboBox, SIGNAL(currentTextChanged(QString)), SLOT(timeComboBoxChanged()));
+  ui.timeValueComboBox->setVisible(false);
+  this->connect(ui.radioButtonValue, SIGNAL(toggled(bool)), SLOT(timeRadioButtonToggled()));
+
+  // the idiosyncrasies of QSpinBox make it so that we have to delay when we
+  // respond to the "go-to-next" event (see paraview/paraview#18204).
+  auto timer = new pqTimer(this);
+  timer->setInterval(100);
+  timer->setSingleShot(true);
+  this->connect(timer, SIGNAL(timeout()), SLOT(timeSpinBoxChanged()));
+  QObject::connect(
+    ui.timestepValue, SIGNAL(valueChangedAndEditingFinished()), timer, SLOT(start()));
 }
 
 //-----------------------------------------------------------------------------
@@ -166,7 +178,20 @@ vtkSMProxy* pqAnimationTimeWidget::timeKeeper() const
 void pqAnimationTimeWidget::setTimeValue(double time)
 {
   Ui::AnimationTimeWidget& ui = this->Internals->Ui;
-  ui.timeValue->setTextAndResetCursor(QString::number(time, 'g', this->Internals->Precision));
+  ui.timeValue->setProperty("PQ_DOUBLE_VALUE", QVariant(time));
+  QString textValue =
+    QString::number(time, this->Internals->TimeNotation.toLatin1(), this->Internals->Precision);
+  ui.timeValue->setTextAndResetCursor(textValue);
+
+  for (int index = 0; index < ui.timeValueComboBox->count(); index++)
+  {
+    if (ui.timeValueComboBox->itemData(index).toDouble() == time)
+    {
+      ui.timeValueComboBox->setCurrentIndex(index);
+      break;
+    }
+  }
+
   bool prev = ui.timestepValue->blockSignals(true);
   int index = vtkSMTimeKeeperProxy::GetLowerBoundTimeStepIndex(this->timeKeeper(), time);
   ui.timestepValue->setValue(index);
@@ -177,19 +202,58 @@ void pqAnimationTimeWidget::setTimeValue(double time)
 double pqAnimationTimeWidget::timeValue() const
 {
   Ui::AnimationTimeWidget& ui = this->Internals->Ui;
-  return ui.timeValue->text().toDouble();
+  auto doubleValue = ui.timeValue->property("PQ_DOUBLE_VALUE");
+  return doubleValue.isValid() ? doubleValue.toDouble() : ui.timeValue->text().toDouble();
+}
+
+//-----------------------------------------------------------------------------
+void pqAnimationTimeWidget::timeLineEditChanged()
+{
+  auto& ui = this->Internals->Ui;
+  const auto currentValue = ui.timeValue->text().toDouble();
+  this->setTimeValue(currentValue);
+  emit this->timeValueChanged();
+}
+
+//-----------------------------------------------------------------------------
+void pqAnimationTimeWidget::timeComboBoxChanged()
+{
+  auto& ui = this->Internals->Ui;
+  const auto currentValue = ui.timeValueComboBox->currentData().toDouble();
+  this->setTimeValue(currentValue);
+  emit this->timeValueChanged();
 }
 
 //-----------------------------------------------------------------------------
 void pqAnimationTimeWidget::setTimePrecision(int val)
 {
   this->Internals->Precision = val;
+  this->setTimeValue(this->timeValue());
+  this->repopulateTimeComboBox();
 }
 
 //-----------------------------------------------------------------------------
 int pqAnimationTimeWidget::timePrecision() const
 {
   return this->Internals->Precision;
+}
+
+//-----------------------------------------------------------------------------
+void pqAnimationTimeWidget::setTimeNotation(const QChar& notation)
+{
+  QString possibilities = QString("eEfgG");
+  if (possibilities.contains(notation) && this->Internals->TimeNotation != notation)
+  {
+    this->Internals->TimeNotation = notation;
+    this->setTimeValue(this->timeValue());
+    this->repopulateTimeComboBox();
+  }
+}
+
+//-----------------------------------------------------------------------------
+QChar pqAnimationTimeWidget::timeNotation() const
+{
+  return this->Internals->TimeNotation;
 }
 
 //-----------------------------------------------------------------------------
@@ -208,6 +272,7 @@ void pqAnimationTimeWidget::setTimeStepCount(int value)
     vtkSMTimeKeeperProxy::GetLowerBoundTimeStepIndex(this->timeKeeper(), this->timeValue()));
   ui.timestepValue->blockSignals(prev);
 
+  this->repopulateTimeComboBox();
   this->updateTimestepCountLabelVisibility();
 }
 
@@ -225,10 +290,14 @@ void pqAnimationTimeWidget::setPlayMode(const QString& value)
   if (value == "Sequence" || value == "Real Time")
   {
     ui.radioButtonValue->setChecked(true);
+    ui.timeValueComboBox->setVisible(false);
+    ui.timeValue->setVisible(true);
   }
   else if (value == "Snap To TimeSteps")
   {
     ui.radioButtonStep->setChecked(true);
+    ui.timeValueComboBox->setVisible(true);
+    ui.timeValue->setVisible(false);
   }
   this->updateTimestepCountLabelVisibility();
 }
@@ -249,7 +318,7 @@ void pqAnimationTimeWidget::updateTimestepCountLabelVisibility()
 }
 
 //-----------------------------------------------------------------------------
-void pqAnimationTimeWidget::timestepValueChanged()
+void pqAnimationTimeWidget::timeSpinBoxChanged()
 {
   Ui::AnimationTimeWidget& ui = this->Internals->Ui;
   int index = ui.timestepValue->value();
@@ -288,4 +357,36 @@ bool pqAnimationTimeWidget::playModeReadOnly() const
 {
   Ui::AnimationTimeWidget& ui = this->Internals->Ui;
   return !ui.radioButtonStep->isVisible();
+}
+
+//-----------------------------------------------------------------------------
+void pqAnimationTimeWidget::repopulateTimeComboBox()
+{
+  if (this->timeKeeper() == nullptr)
+  {
+    return;
+  }
+
+  double currentTimeValue = this->timeValue();
+  Ui::AnimationTimeWidget& ui = this->Internals->Ui;
+
+  vtkSMPropertyHelper helper(this->timeKeeper(), "TimestepValues");
+  bool prev = ui.timeValueComboBox->blockSignals(true);
+  ui.timeValueComboBox->clear();
+  for (unsigned int index = 0; index < helper.GetNumberOfElements(); index++)
+  {
+    QString textValue = QString::number(helper.GetAsDouble(index),
+      this->Internals->TimeNotation.toLatin1(), this->Internals->Precision);
+    ui.timeValueComboBox->addItem(textValue, helper.GetAsDouble(index));
+  }
+  ui.timeValueComboBox->blockSignals(prev);
+
+  this->setTimeValue(currentTimeValue);
+}
+
+//-----------------------------------------------------------------------------
+void pqAnimationTimeWidget::timeRadioButtonToggled()
+{
+  this->setPlayMode(this->playMode());
+  emit this->playModeChanged();
 }

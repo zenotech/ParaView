@@ -201,7 +201,6 @@ class Proxy(object):
         for property in proxy:
             print (property)
 
-
     For advanced users:
     This is a python class that wraps a vtkSMProxy. Makes it easier to
     set/get properties.
@@ -572,7 +571,6 @@ class SourceProxy(Proxy):
     CellData = property(GetCellDataInformation, None, None, "Returns cell data information")
     FieldData = property(GetFieldDataInformation, None, None, "Returns field data information")
 
-
 class ExodusIIReaderProxy(SourceProxy):
     """Special class to define convenience functions for array
     selection."""
@@ -677,13 +675,14 @@ class Property(object):
             else:
                 repr = "None"
         else:
+            # this happens for command properties i.e. ones that do not store
+            # any state. For those, we use this alternate representation.
             repr = "Property name= "
             name = self.Proxy.GetPropertyName(self.SMProperty)
             if name:
                 repr += name
             else:
                 repr += "Unknown"
-
         return repr
 
     def __call__(self):
@@ -932,7 +931,6 @@ class EnumerationProperty(VectorProperty):
     Available = property(GetAvailable, None, None, \
         "This read-only property contains the list of values that can be applied to this property.")
 
-
 class FileNameProperty(VectorProperty):
     """Property to set/get one or more file names.
     This property updates the pipeline information everytime its value changes.
@@ -1120,7 +1118,6 @@ class ArrayListProperty(VectorProperty):
             fullvalues.append(val)
             fullvalues.append('1')
 
-
         i = 0
         for value in fullvalues:
             self.SMProperty.SetElement(i, value)
@@ -1141,14 +1138,12 @@ class ArrayListProperty(VectorProperty):
                 self.__arrays.append(self.GetElement(i))
         return list(self.__arrays)
 
-
 class SubsetInclusionLatticeProperty(ArrayListProperty):
     """This property provides a simpler interface for selecting blocks on a
     property with a `vtkSMSubsetInclusionLatticeDomain`."""
     # currently, there's nothing more here. eventually, we'll add support to
     # forward select/deselect requests to a vtkSubsetInclusionLattice instance.
     pass
-
 
 class ProxyProperty(Property):
     """A ProxyProperty provides access to one or more proxies. You can use
@@ -1405,7 +1400,6 @@ class InputProperty(ProxyProperty):
             if isinstance(prop, ArraySelectionProperty):
                 prop.UpdateDefault()
 
-
 class DataInformation(object):
     """DataInformation is a contained for meta-data associated with an
     output data.
@@ -1518,7 +1512,6 @@ class FieldDataInformationIterator(object):
         else:
             return ai
     __next__ = next # Python 3.X compatibility
-
 
 class FieldDataInformation(object):
     """Meta-data for a field of an output object (point data, cell data etc...).
@@ -1902,7 +1895,6 @@ class ProxyDefinitionIterator(object):
         """returns attributes from the vtkPVProxyDefinitionIterator."""
         return getattr(self.SMIterator, name)
 
-
 class ProxyIterator(object):
     """Wrapper for a vtkSMProxyIterator class to satisfy the
      python iterator protocol.
@@ -2063,7 +2055,7 @@ def LoadState(filename, connection=None):
             view.GetRenderWindow().SetSize(view.ViewSize[0], \
                                            view.ViewSize[1])
 
-def Connect(ds_host=None, ds_port=11111, rs_host=None, rs_port=22221):
+def Connect(ds_host=None, ds_port=11111, rs_host=None, rs_port=22221, timeout=60):
     """
     Use this function call to create a new session. On success,
     it returns a vtkSMSession object that abstracts the connection.
@@ -2071,7 +2063,7 @@ def Connect(ds_host=None, ds_port=11111, rs_host=None, rs_port=22221):
 
     There are several ways in which this function can be called:
 
-    * When called with no arguments, it creates a new session
+    * When called with no hosts, it creates a new session
       to the built-in server on the client itself.
 
     * When called with ds_host and ds_port arguments, it
@@ -2081,22 +2073,29 @@ def Connect(ds_host=None, ds_port=11111, rs_host=None, rs_port=22221):
     * When called with ds_host, ds_port, rs_host, rs_port, it
       creates a new connection to the data server on ds_host:ds_port and to the
       render server on rs_host: rs_port.
+
+    * All these connection types support a timeout argument in second.
+      Default is 60. 0 means no retry, -1 means infinite retries.
     """
+    ret = True;
     if ds_host == None:
         session = vtkSMSession()
     elif rs_host == None:
         session = vtkSMSessionClient()
-        session.Connect("cs://%s:%d" % (ds_host, ds_port))
+        ret = session.Connect("cs://%s:%d" % (ds_host, ds_port), timeout)
     else:
         session = vtkSMSessionClient()
-        session.Connect("cdsrs://%s:%d/%s:%d" % (ds_host, ds_port, rs_host, rs_port))
-    id = vtkProcessModule.GetProcessModule().RegisterSession(session)
-    connection = GetConnectionFromId(id)
+        ret = session.Connect("cdsrs://%s:%d/%s:%d" % (ds_host, ds_port, rs_host, rs_port), timeout)
+    if ret:
+      id = vtkProcessModule.GetProcessModule().RegisterSession(session)
+      connection = GetConnectionFromId(id)
 
-    # This shouldn't be needed. However, it's needed for old Python scripts that
-    # directly import servermanager.py without simple.py
-    SetActiveConnection(connection)
-    return connection
+      # This shouldn't be needed. However, it's needed for old Python scripts that
+      # directly import servermanager.py without simple.py
+      SetActiveConnection(connection)
+      return connection
+    else:
+      return None
 
 def ReverseConnect(port=11111):
     """
@@ -2262,7 +2261,6 @@ def LoadXML(xmlstring):
     """DEPRECATED. Given a server manager XML as a string, parse and process it."""
     raise RuntimeError ("Deprecated. Use LoadPlugin(...) instead.")
 
-
 def LoadPlugin(filename,  remote=True, connection=None):
     """ Given a filename and a session (optional, otherwise uses
     ActiveConnection), loads a plugin. It then updates the sources,
@@ -2285,7 +2283,6 @@ def LoadPlugin(filename,  remote=True, connection=None):
     else:
         # we should never have to call this. The modules should update automatically.
         updateModules(connection.Modules)
-
 
 def Fetch(input, arg1=None, arg2=None, idx=0):
     """
@@ -2395,7 +2392,6 @@ def AnimateReader(reader, view):
         tk.TimeSources.append(reader)
     if not view in tk.Views:
         tk.Views.append(view)
-
 
     # with 1 view
     scene.ViewModules = [view]
@@ -2736,7 +2732,6 @@ def createModule(groupName, mdl=None):
             mdl.__dict__[pname] = cobj
     return mdl
 
-
 def __determineGroup(proxy):
     """Internal method"""
     if not proxy:
@@ -2834,6 +2829,22 @@ def UnRegister(proxy, **extraArgs):
     else:
         raise RuntimeError ("UnRegistration error.")
     return (registrationGroup, registrationName)
+
+def ResetSession():
+    """Reset the session in the active connection to its initial state."""
+    global ActiveConnection
+
+    # Simulate disconnect
+    pxm = ProxyManager()
+    session = ActiveConnection.Session
+
+    pxm.UnRegisterProxies()
+
+    pm = vtkProcessModule.GetProcessModule()
+    pm.UnRegisterSession(session)
+    id = pm.RegisterSession(session)
+    connection = GetConnectionFromId(id)
+    return connection
 
 def demo1():
     """This simple demonstration creates a sphere, renders it and delivers
@@ -3021,7 +3032,6 @@ def demo4(fname="/Users/berk/Work/ParaViewData/Data/can.ex2"):
     c.Elevation(95)
     return AnimateReader(reader, view)
 
-
 def demo5():
     """ Simple sphere animation"""
     if not ActiveConnection:
@@ -3179,7 +3189,6 @@ _pyproxies = {}
 loader = _ModuleLoader()
 sys.meta_path.append(loader)
 
-
 def __exposeActiveModules__():
     """Update servermanager submodules to point to the current
     ActiveConnection.Modules.*"""
@@ -3215,7 +3224,6 @@ def GetConnectionFromSession(session):
         Connections.append(c)
         return c
     return None
-
 
 def __connectionCreatedCallback(obj, string):
     """Callback called when a new session is created."""

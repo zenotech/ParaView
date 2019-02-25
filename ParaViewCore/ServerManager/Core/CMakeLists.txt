@@ -30,6 +30,7 @@
 #==========================================================================
 set (Module_SRCS
   vtkLiveInsituLink.cxx
+  vtkSMAMRLevelsDomain.cxx
   vtkSMArrayListDomain.cxx
   vtkSMArrayRangeDomain.cxx
   vtkSMArraySelectionDomain.cxx
@@ -58,6 +59,7 @@ set (Module_SRCS
   vtkSMDoubleVectorProperty.cxx
   vtkSMEnumerationDomain.cxx
   vtkSMExtentDomain.cxx
+  vtkSMExportProxyDepot.cxx
   vtkSMFieldDataDomain.cxx
   vtkSMFileListDomain.cxx
   vtkSMInputFileNameDomain.cxx

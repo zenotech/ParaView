@@ -40,14 +40,21 @@
 #ifndef vtkPVGlyphFilter_h
 #define vtkPVGlyphFilter_h
 
-#include "vtkGlyph3D.h"
 #include "vtkPVVTKExtensionsDefaultModule.h" //needed for exports
+#include "vtkPolyDataAlgorithm.h"
 
 class vtkMultiProcessController;
+class vtkTransform;
 
-class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVGlyphFilter : public vtkGlyph3D
+class VTKPVVTKEXTENSIONSDEFAULT_EXPORT vtkPVGlyphFilter : public vtkPolyDataAlgorithm
 {
 public:
+  enum VectorScaleMode
+  {
+    SCALE_BY_MAGNITUDE,
+    SCALE_BY_COMPONENTS
+  };
+
   enum GlyphModeType
   {
     ALL_POINTS,
@@ -55,9 +62,22 @@ public:
     SPATIALLY_UNIFORM_DISTRIBUTION
   };
 
-  vtkTypeMacro(vtkPVGlyphFilter, vtkGlyph3D);
-  void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
+  vtkTypeMacro(vtkPVGlyphFilter, vtkPolyDataAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
   static vtkPVGlyphFilter* New();
+
+  //@{
+  /**
+   * Specify a source object at a specified table location. New style.
+   * Source connection is stored in port 1. This method is equivalent
+   * to SetInputConnection(1, id, outputPort).
+   */
+  void SetSourceConnection(int id, vtkAlgorithmOutput* algOutput);
+  void SetSourceConnection(vtkAlgorithmOutput* algOutput)
+  {
+    this->SetSourceConnection(0, algOutput);
+  }
+  //@}
 
   //@{
   /**
@@ -67,6 +87,49 @@ public:
   void SetController(vtkMultiProcessController*);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
   //@}
+
+  //@{
+  /**
+   * Get/set the vector scaling mode. This mode determines how glyphs are scaled when the
+   * scale array has more than one component.
+   */
+  //@}
+  vtkSetClampMacro(VectorScaleMode, int, SCALE_BY_MAGNITUDE, SCALE_BY_COMPONENTS);
+  vtkGetMacro(VectorScaleMode, int);
+
+  //@{
+  /**
+   * When set, this is use to transform the source polydata before using it to
+   * generate the glyph. This is useful if one wanted to reorient the source,
+   * for example.
+   */
+  void SetSourceTransform(vtkTransform*);
+  vtkGetObjectMacro(SourceTransform, vtkTransform);
+  //@}
+
+  /**
+   * Overridden to include SourceTransform's MTime.
+   */
+  vtkMTimeType GetMTime() override;
+
+  //@{
+  /**
+   * Set/get the desired precision for the output types. See the documentation
+   * for the vtkAlgorithm::DesiredOutputPrecision enum for an explanation of
+   * the available precision settings.
+   */
+  vtkSetMacro(OutputPointsPrecision, int);
+  vtkGetMacro(OutputPointsPrecision, int);
+  //@}
+
+  //@{
+  /**
+   * Set/get scale factor used to change the size of glyphs. This factor is
+   * applied uniformly in each dimension.
+   */
+  //@}
+  vtkSetMacro(ScaleFactor, double);
+  vtkGetMacro(ScaleFactor, double);
 
   //@{
   /**
@@ -106,7 +169,7 @@ public:
   /**
    * Overridden to create output data of appropriate type.
    */
-  int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
+  int ProcessRequest(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
 protected:
   vtkPVGlyphFilter();
@@ -114,20 +177,26 @@ protected:
   //@}
 
   // Standard Pipeline methods
-  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) VTK_OVERRIDE;
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
+  int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   virtual int RequestDataObject(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
-  int FillInputPortInformation(int, vtkInformation*) VTK_OVERRIDE;
-  int FillOutputPortInformation(int, vtkInformation*) VTK_OVERRIDE;
+  int FillInputPortInformation(int, vtkInformation*) override;
+  int FillOutputPortInformation(int, vtkInformation*) override;
 
   /**
-   * Returns 1 if point is to be glyped, otherwise returns 0.
+   * Returns 1 if point is to be glyphed, otherwise returns 0.
    */
-  int IsPointVisible(vtkDataSet* ds, vtkIdType ptId) VTK_OVERRIDE;
+  virtual int IsPointVisible(vtkDataSet* ds, vtkIdType ptId);
 
   /**
    * Returns true if input Scalars and Vectors are compatible, otherwise returns 0.
    */
   bool IsInputArrayToProcessValid(vtkDataSet* input);
+
+  /**
+   * Get the glyph source.
+   */
+  vtkPolyData* GetSource(int idx, vtkInformationVector* sourceInfo);
 
   /**
    * Returns true if input Scalars and Vectors are cell attributes, otherwise returns 0.
@@ -152,11 +221,26 @@ protected:
   virtual bool ExecuteWithCellCenters(
     vtkDataSet* input, vtkInformationVector* sourceVector, vtkPolyData* output);
 
+  //@{
+  /**
+   * Method called in RequestData() to do the actual data processing. This will
+   * glyph the \c input, filling up the \c output based on the filter
+   * parameters.
+   */
+  virtual bool Execute(vtkDataSet* input, vtkInformationVector* sourceVector, vtkPolyData* output);
+  virtual bool Execute(vtkDataSet* input, vtkInformationVector* sourceVector, vtkPolyData* output,
+    vtkDataArray* inSScalars, vtkDataArray* inVectors);
+  //@}
+
+  int VectorScaleMode;
+  vtkTransform* SourceTransform;
+  double ScaleFactor;
   int GlyphMode;
   int MaximumNumberOfSamplePoints;
   int Seed;
   int Stride;
   vtkMultiProcessController* Controller;
+  int OutputPointsPrecision;
 
 private:
   vtkPVGlyphFilter(const vtkPVGlyphFilter&) = delete;

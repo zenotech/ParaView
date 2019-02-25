@@ -31,6 +31,8 @@
 set (Module_SRCS
   pqAboutDialogReaction.cxx
   pqAboutDialogReaction.h
+  pqAddToFavoritesReaction.cxx
+  pqAddToFavoritesReaction.h
   pqAlwaysConnectedBehavior.cxx
   pqAlwaysConnectedBehavior.h
   pqAnimationShortcutWidget.cxx
@@ -47,6 +49,8 @@ set (Module_SRCS
   pqApplicationSettingsReaction.h
   pqApplyBehavior.cxx
   pqApplyBehavior.h
+  pqApplyPropertiesReaction.cxx
+  pqApplyPropertiesReaction.h
   pqAutoApplyReaction.cxx
   pqAutoApplyReaction.h
   pqAutoLoadPluginXMLBehavior.cxx
@@ -74,6 +78,8 @@ set (Module_SRCS
   pqCatalystConnectReaction.cxx
   pqCatalystConnectReaction.h
   pqCatalystContinueReaction.h
+  pqCatalystExportReaction.cxx
+  pqCatalystExportReaction.h
   pqCatalystPauseSimulationReaction.cxx
   pqCatalystPauseSimulationReaction.h
   pqCatalystRemoveBreakpointReaction.cxx
@@ -118,6 +124,14 @@ set (Module_SRCS
   pqCrashRecoveryBehavior.h
   pqCreateCustomFilterReaction.cxx
   pqCreateCustomFilterReaction.h
+  pqCustomShortcutBehavior.cxx
+  pqCustomShortcutBehavior.h
+  pqCustomizeShortcutsReaction.cxx
+  pqCustomizeShortcutsReaction.h
+  pqCustomizeShortcutsDialog.cxx
+  pqCustomizeShortcutsDialog.h
+  pqCustomViewpointsToolbar.cxx
+  pqCustomViewpointsToolbar.h
   pqCylinderPropertyWidget.cxx
   pqCylinderPropertyWidget.h
   pqDataQueryReaction.cxx
@@ -160,8 +174,6 @@ set (Module_SRCS
   pqGlyphScaleFactorPropertyWidget.h
   pqHandlePropertyWidget.cxx
   pqHandlePropertyWidget.h
-  pqHideAllReaction.cxx
-  pqHideAllReaction.h
   pqIgnoreSourceTimeReaction.cxx
   pqIgnoreSourceTimeReaction.h
   pqImageCompressorWidget.cxx
@@ -180,6 +192,8 @@ set (Module_SRCS
   pqLinkSelectionReaction.h
   pqListPropertyWidget.cxx
   pqListPropertyWidget.h
+  pqLiveSourceBehavior.cxx
+  pqLiveSourceBehavior.h
   pqLoadDataReaction.cxx
   pqLoadDataReaction.h
   pqLoadMaterialsReaction.cxx
@@ -200,12 +214,16 @@ set (Module_SRCS
   pqManageCustomFiltersReaction.h
   pqManageLinksReaction.cxx
   pqManageLinksReaction.h
+  pqManageFavoritesReaction.cxx
+  pqManageFavoritesReaction.h
   pqManagePluginsReaction.cxx
   pqManagePluginsReaction.h
   pqMasterOnlyReaction.cxx
   pqMasterOnlyReaction.h
   pqModelTransformSupportBehavior.cxx
   pqModelTransformSupportBehavior.h
+  pqMultiComponentsDecorator.cxx
+  pqMultiComponentsDecorator.h
   pqObjectPickingBehavior.cxx
   pqObjectPickingBehavior.h
   pqOpacityTableModel.cxx
@@ -274,6 +292,10 @@ set (Module_SRCS
   pqServerConnectReaction.h
   pqServerDisconnectReaction.cxx
   pqServerDisconnectReaction.h
+  pqSetMainWindowTitleReaction.cxx
+  pqSetMainWindowTitleReaction.h
+  pqShowHideAllReaction.cxx
+  pqShowHideAllReaction.h
   pqShowWidgetDecorator.cxx
   pqShowWidgetDecorator.h
   pqSourcesMenuReaction.cxx
@@ -336,6 +358,7 @@ set (Module_SRCS
 
 set (Module_MOC_HDRS
   pqAboutDialogReaction.h
+  pqAddToFavoritesReaction.h
   pqAlwaysConnectedBehavior.h
   pqAnimationShortcutDecorator.h
   pqAnimationShortcutWidget.h
@@ -357,6 +380,7 @@ set (Module_MOC_HDRS
   pqCameraUndoRedoReaction.h
   pqCatalystConnectReaction.h
   pqCatalystContinueReaction.h
+  pqCatalystExportReaction.h
   pqCatalystPauseSimulationReaction.h
   pqCatalystRemoveBreakpointReaction.h
   pqCatalystScriptGeneratorReaction.h
@@ -379,6 +403,10 @@ set (Module_MOC_HDRS
   pqCopyReaction.h
   pqCrashRecoveryBehavior.h
   pqCreateCustomFilterReaction.h
+  pqCustomShortcutBehavior.h
+  pqCustomizeShortcutsReaction.h
+  pqCustomizeShortcutsDialog.h
+  pqCustomViewpointsToolbar.h
   pqCylinderPropertyWidget.h
   pqDataQueryReaction.h
   pqDataTimeStepBehavior.h
@@ -400,7 +428,6 @@ set (Module_MOC_HDRS
   pqGenericPropertyWidgetDecorator.h
   pqGlyphScaleFactorPropertyWidget.h
   pqHandlePropertyWidget.h
-  pqHideAllReaction.h
   pqIgnoreSourceTimeReaction.h
   pqImageCompressorWidget.h
   pqImplicitPlanePropertyWidget.h
@@ -410,6 +437,7 @@ set (Module_MOC_HDRS
   pqLinePropertyWidget.h
   pqLinkSelectionReaction.h
   pqListPropertyWidget.h
+  pqLiveSourceBehavior.h
   pqLoadDataReaction.h
   pqLoadMaterialsReaction.h
   pqLoadPaletteReaction.h
@@ -420,9 +448,11 @@ set (Module_MOC_HDRS
   pqMainControlsToolbar.h
   pqManageCustomFiltersReaction.h
   pqManageLinksReaction.h
+  pqManageFavoritesReaction.h
   pqManagePluginsReaction.h
   pqMasterOnlyReaction.h
   pqModelTransformSupportBehavior.h
+  pqMultiComponentsDecorator.h
   pqObjectPickingBehavior.h
   pqOpacityTableModel.h
   pqOSPRayHidingDecorator.h
@@ -456,6 +486,8 @@ set (Module_MOC_HDRS
   pqSeriesEditorPropertyWidget.h
   pqServerConnectReaction.h
   pqServerDisconnectReaction.h
+  pqSetMainWindowTitleReaction.h
+  pqShowHideAllReaction.h
   pqShowWidgetDecorator.h
   pqSourcesMenuReaction.h
   pqSpherePropertyWidget.h
@@ -489,11 +521,14 @@ set (Module_MOC_HDRS
 
 if (PARAVIEW_ENABLE_PYTHON)
   list (APPEND Module_MOC_HDRS
+    pqCatalystExportInspector.h
     pqMacroReaction.h
     pqTraceReaction.h
   )
 
   list (APPEND Module_SRCS
+    pqCatalystExportInspector.cxx
+    pqCatalystExportInspector.h
     pqMacroReaction.cxx
     pqMacroReaction.h
     pqTraceReaction.cxx
@@ -504,9 +539,14 @@ endif()
 if(NOT VTK_LEGACY_REMOVE)
   list(APPEND Module_SRCS
     pqPythonShellReaction.cxx
-    pqPythonShellReaction.h)
+    pqPythonShellReaction.h
+    pqHideAllReaction.cxx
+    pqHideAllReaction.h
+  )
   list(APPEND Module_MOC_HDRS
-    pqPythonShellReaction.h)
+    pqPythonShellReaction.h
+    pqHideAllReaction.h
+  )
 endif()
 
 set (Module_UI_FILES
@@ -516,6 +556,7 @@ set (Module_UI_FILES
   Resources/UI/pqBoxPropertyWidget.ui
   Resources/UI/pqCameraManipulatorWidget.ui
   Resources/UI/pqCameraToolbar.ui
+  Resources/UI/pqCatalystExportInspector.ui
   Resources/UI/pqColorAnnotationsPropertyWidget.ui
   Resources/UI/pqColorEditorPropertyWidget.ui
   Resources/UI/pqColorMapEditor.ui
@@ -523,6 +564,7 @@ set (Module_UI_FILES
   Resources/UI/pqColorToolbar.ui
   Resources/UI/pqCustomResolutionDialog.ui
   Resources/UI/pqCylinderPropertyWidget.ui
+  Resources/UI/pqCustomizeShortcutsDialog.ui
   Resources/UI/pqDefaultMainWindow.ui
   Resources/UI/pqDoubleRangeSliderPropertyWidget.ui
   Resources/UI/pqEditMenuBuilder.ui

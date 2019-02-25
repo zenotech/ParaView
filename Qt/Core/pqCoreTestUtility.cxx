@@ -52,6 +52,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqColorDialogEventTranslator.h"
 #include "pqConsoleWidgetEventPlayer.h"
 #include "pqConsoleWidgetEventTranslator.h"
+#include "pqDoubleLineEditEventPlayer.h"
+#include "pqDoubleLineEditEventTranslator.h"
 #include "pqFileDialogEventPlayer.h"
 #include "pqFileDialogEventTranslator.h"
 #include "pqFlatTreeViewEventPlayer.h"
@@ -59,6 +61,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqImageUtil.h"
 #include "pqLineEditEventPlayer.h"
 #include "pqOptions.h"
+#include "pqQVTKWidget.h"
 #include "pqQVTKWidgetEventPlayer.h"
 #include "pqQVTKWidgetEventTranslator.h"
 #include "pqServerManagerModel.h"
@@ -122,6 +125,7 @@ pqCoreTestUtility::pqCoreTestUtility(QObject* p)
   this->addEventSource("py", new pqPythonEventSourceImage(this));
 #endif
 
+  this->eventTranslator()->addWidgetEventTranslator(new pqDoubleLineEditEventTranslator(this));
   this->eventTranslator()->addWidgetEventTranslator(new pqQVTKWidgetEventTranslator(this));
   this->eventTranslator()->addWidgetEventTranslator(new pqFileDialogEventTranslator(this));
   this->eventTranslator()->addWidgetEventTranslator(new pqFlatTreeViewEventTranslator(this));
@@ -130,6 +134,7 @@ pqCoreTestUtility::pqCoreTestUtility(QObject* p)
   this->eventTranslator()->addWidgetEventTranslator(new pqConsoleWidgetEventTranslator(this));
 
   this->eventPlayer()->addWidgetEventPlayer(new pqLineEditEventPlayer(this));
+  this->eventPlayer()->addWidgetEventPlayer(new pqDoubleLineEditEventPlayer(this));
   this->eventPlayer()->addWidgetEventPlayer(new pqQVTKWidgetEventPlayer(this));
   this->eventPlayer()->addWidgetEventPlayer(new pqFileDialogEventPlayer(this));
   this->eventPlayer()->addWidgetEventPlayer(new pqFlatTreeViewEventPlayer(this));
@@ -296,19 +301,35 @@ class WidgetSizer
 {
   QSize OldSize;
   QWidget* Widget;
+  bool EnableHiDPI;
 
 public:
   WidgetSizer(QWidget* widget, const QSize& size)
     : Widget(widget)
+    , EnableHiDPI(true)
   {
+    pqQVTKWidget* w = dynamic_cast<pqQVTKWidget*>(widget);
+    if (w)
+    {
+      // We need to disable the HiDPI during capture to ensure target size
+      // is exactly respected (otherwise, as we convert size from float to int
+      // and back and forth, we loose precision).
+      this->EnableHiDPI = w->enableHiDPI();
+      w->setEnableHiDPI(false);
+    }
     if (widget != nullptr && size.isValid())
     {
       this->OldSize = widget->size();
-      widget->resize(size / widget->devicePixelRatio());
+      widget->resize(size);
     }
   }
   ~WidgetSizer()
   {
+    pqQVTKWidget* w = dynamic_cast<pqQVTKWidget*>(this->Widget);
+    if (w)
+    {
+      w->setEnableHiDPI(this->EnableHiDPI);
+    }
     if (this->Widget && this->OldSize.isValid())
     {
       this->Widget->resize(this->OldSize);

@@ -56,6 +56,7 @@ paraview_add_test_python(
   ColorBy.py
   OutputImageResolution.py
   PartialArrayIndication.py
+  ResetSession.py
   TestClipCylinder.py
   TestColorHistogram.py
   TestGeometryBoundsClobber.py
@@ -71,7 +72,8 @@ paraview_add_test_python(
 )
 
 paraview_add_test_python(
-  NO_VALID NO_OUTPUT NO_RT
+  NO_VALID NO_RT
+  ExportCSV.py
   Plot3DReader.py
 )
 

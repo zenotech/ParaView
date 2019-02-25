@@ -1088,9 +1088,25 @@
         <Documentation>This property lists which point-centered arrays to
         read.</Documentation>
       </StringVectorProperty>
-      <!-- End XMLPUnstructuredGridReaderCore -->
+      <!-- End vtkXMLPUnstructuredGridReader -->
     </Proxy>
-        <Proxy class="vtkXMLPTableReader"
+    <!-- Start XMLHyperTreeReaderCore -->
+    <!-- NEED PARALLEL SUPPORT -->
+    <Proxy class="vtkXMLHyperTreeGridReader"
+                 label="XML HyperTree Grid Reader"
+                 name="XMLHyperTreeGridReaderCore">
+      <StringVectorProperty animateable="0"
+                            command="SetFileName"
+                            name="FileName"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <FileListDomain name="files" />
+        <Documentation>This property specifies the file name for the
+        Hyper Tree grid reader.</Documentation>
+      </StringVectorProperty>
+    </Proxy>
+    <!-- End XMLHyperTreeReaderCore -->
+    <Proxy class="vtkXMLPTableReader"
                  label="XML Partitioned Table Reader"
                  name="XMLPTableReaderCore">
       <Documentation long_help="Reads the summary file and the associated VTK XML table files."
@@ -1443,6 +1459,48 @@
         <Documentation>This property specifies the file name for the VTK
         multiblock reader.</Documentation>
       </StringVectorProperty>
+      <StringVectorProperty information_only="1"
+                            name="CellArrayInfo">
+        <ArraySelectionInformationHelper attribute_name="Cell" />
+      </StringVectorProperty>
+      <StringVectorProperty command="SetCellArrayStatus"
+                            element_types="2 0"
+                            information_property="CellArrayInfo"
+                            label="Cell Arrays"
+                            name="CellArrayStatus"
+                            number_of_elements="0"
+                            number_of_elements_per_command="2"
+                            repeat_command="1">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property function="ArrayList"
+                      name="CellArrayInfo" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>This property lists which cell-centered arrays to
+        read.</Documentation>
+      </StringVectorProperty>
+      <StringVectorProperty information_only="1"
+                            name="PointArrayInfo">
+        <ArraySelectionInformationHelper attribute_name="Point" />
+      </StringVectorProperty>
+      <StringVectorProperty command="SetPointArrayStatus"
+                            element_types="2 0"
+                            information_property="PointArrayInfo"
+                            label="Point Arrays"
+                            name="PointArrayStatus"
+                            number_of_elements="0"
+                            number_of_elements_per_command="2"
+                            repeat_command="1">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property function="ArrayList"
+                      name="PointArrayInfo" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>This property lists which point-centered arrays to
+        read.</Documentation>
+      </StringVectorProperty>
       <IntVectorProperty command="SetPieceDistribution"
                          default_values="0"
                          name="PieceDistribution"
@@ -1662,7 +1720,7 @@
       </StringVectorProperty>
       <StringVectorProperty command="SetEdgeBlockArrayStatus"
                             element_types="2 0"
-                            information_property="EdgeBlockArrayInfo"
+                            information_property="EdgeBlocksInfo"
                             name="EdgeBlocks"
                             number_of_elements_per_command="2"
                             repeat_command="1">
@@ -1683,7 +1741,7 @@
       </StringVectorProperty>
       <StringVectorProperty command="SetFaceBlockArrayStatus"
                             element_types="2 0"
-                            information_property="FaceBlockArrayInfo"
+                            information_property="FaceBlocksInfo"
                             name="FaceBlocks"
                             number_of_elements_per_command="2"
                             repeat_command="1">
@@ -2997,186 +3055,6 @@
       </DoubleVectorProperty>
     </Proxy>
     <!-- netCDFReaderCore -->
-    <Proxy class="vtkMultiBlockPLOT3DReader"
-                 name="P3DReaderCore">
-      <Documentation long_help="Reads ASCII or binary PLOT3D files."
-                     short_help="Read PLOT3D files.">PLOT3D is a plotting
-                     package developed at NASA. The PLOT3D reader can read both
-                     ASCII and binary PLOT3D files. The default file extension
-                     for the geometry files is .xyz, and the default file
-                     extension for the solution files is .q. The output of this
-                     reader is a multiblock dataset containing curvilinear
-                     (structured grid) datasets.</Documentation>
-      <StringVectorProperty animateable="0"
-                            command="SetFileName"
-                            name="FileName"
-                            number_of_elements="1"
-                            panel_visibility="never">
-        <FileListDomain name="files" />
-        <Documentation>This property specifies the .xyz (geometry) file name
-        for the PLOT3D reader.</Documentation>
-      </StringVectorProperty>
-      <StringVectorProperty animateable="0"
-                            command="SetQFileName"
-                            name="QFileName"
-                            number_of_elements="1"
-                            panel_visibility="default">
-        <FileListDomain name="files" />
-        <Documentation>This property specifies the .q (solution) file name for
-          the PLOT3D reader.</Documentation>
-        <Hints>
-          <FileChooser extensions="q" file_description="Solution files" />
-        </Hints>
-      </StringVectorProperty>
-      <StringVectorProperty animateable="0"
-                            command="SetFunctionFileName"
-                            name="FunctionFileName"
-                            number_of_elements="1"
-                            panel_visibility="default">
-        <FileListDomain name="files" />
-        <Documentation>This property specifies the .f (function) file name for
-        the PLOT3D reader.</Documentation>
-      </StringVectorProperty>
-      <IntVectorProperty command="SetAutoDetectFormat"
-                         default_values="1"
-                         name="AutoDetectFormat"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation>When this options is enabled, the reader will try to
-  automatically figure out various settings for a binary file. The other
-  options are ignored. Does not work for text (ASCII) files.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetBinaryFile"
-                         default_values="1"
-                         name="BinaryFile"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation>This property indicates whether the data files are
-        binary.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetMultiGrid"
-                         default_values="0"
-                         name="MultiGrid"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation>This property indicates whether these files have
-        multiple-block information.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetHasByteCount"
-                         default_values="0"
-                         name="HasByteCount"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation>This property indicates whether this file uses Fortran
-        leading-trailing byte counts.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetIBlanking"
-                         default_values="0"
-                         name="IBlanking"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation>This property indicates whether this dataset has
-        visibility information.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetTwoDimensionalGeometry"
-                         default_values="0"
-                         name="TwoDimensionalGeometry"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation>This property indicates whether the data is two- or
-        three-dimensional.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetForceRead"
-                         default_values="0"
-                         name="ForceRead"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation>This property indicates whether to attempt to read the
-        file even if it appears corrupt</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetDoublePrecision"
-                         default_values="0"
-                         name="DoublePrecision"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-        <Documentation>This property specifies whether floating points values
-  are in double precision.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty command="SetByteOrder"
-                         default_values="0"
-                         name="ByteOrder"
-                         number_of_elements="1">
-        <EnumerationDomain name="enum">
-          <Entry text="BigEndian"
-                 value="0" />
-          <Entry text="LittleEndian"
-                 value="1" />
-        </EnumerationDomain>
-        <Documentation>This property specifies the byte order of any binary
-        file(s).</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty clean_command="RemoveAllFunctions"
-                         command="AddFunction"
-                         name="Functions"
-                         number_of_elements_per_command="1"
-                         panel_visibility="default"
-                         repeat_command="1">
-        <EnumerationDomain name="array_list">
-          <!-- <Entry value="100" text="Scalar - Density"/> -->
-          <Entry text="Scalar - Pressure"
-                 value="110" />
-          <Entry text="Scalar - Pressure Coefficient"
-                 value="111" />
-          <Entry text="Scalar - Mach Number"
-                 value="112" />
-          <Entry text="Scalar - Sound Speed"
-                 value="113" />
-          <Entry text="Scalar - Temperature"
-                 value="120" />
-          <Entry text="Scalar - Enthalpy"
-                 value="130" />
-          <Entry text="Scalar - Internal energy"
-                 value="140" />
-          <Entry text="Scalar - Kinetic energy"
-                 value="144" />
-          <Entry text="Scalar - Velocity magnitude"
-                 value="153" />
-          <!-- <Entry value="163" text="Scalar - Stagnation energy"/> -->
-          <Entry text="Scalar - Entropy"
-                 value="170" />
-          <Entry text="Scalar - Swirl"
-                 value="184" />
-          <Entry text="Vector - Velocity"
-                 value="200" />
-          <Entry text="Vector - Vorticity"
-                 value="201" />
-          <!-- <Entry value="202" text="Vector - Momentum"/> -->
-          <Entry text="Vector - Pressure gradient"
-                 value="210" />
-          <Entry text="Scalar - Vorticity magnitude"
-                 value="211" />
-          <Entry text="Vector - Strain rate"
-                 value="212" />
-        </EnumerationDomain>
-        <Documentation>This property lists which functions (point-centered
-        arrays) to compute.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty name="PreserveIntermediateFunctions"
-        command="SetPreserveIntermediateFunctions"
-        number_of_elements="1"
-        default_values="1">
-        <BooleanDomain name="bool" />
-        <Documentation>
-          When checked, the reader will preserve intermediate computed
-          quantities that were not explicitly requested e.g. if **Velocity magnitude** is
-          enabled, but not **Velocity**, the reader still needs to compute **Velocity**.
-          If this is unchecked, then the output will not have
-          **Velocity** array, only the requested **VelocityMagnitude**. This is useful to
-          avoid using up memory for arrays that are not relevant for the analysis.
-        </Documentation>
-      </IntVectorProperty>
-      <!-- End P3DReaderCore -->
-    </Proxy>
     <!-- Beginning of FLUENTReaderCore -->
     <Proxy class="vtkFLUENTReader"
                  name="FLUENTReaderCore">
@@ -3739,6 +3617,15 @@
                proxygroup="internal_sources"
                proxyname="XMLMultiBlockDataReaderCore"></Proxy>
           <ExposedProperties>
+            <PropertyGroup label="Cell/Point Array Status"
+                           name="CellPointArrayStatus"
+                           panel_visibility="default"
+                           panel_widget="ArrayStatus">
+              <Property name="CellArrayInfo" />
+              <Property name="CellArrayStatus" />
+              <Property name="PointArrayInfo" />
+              <Property name="PointArrayStatus" />
+            </PropertyGroup>
             <Property name="PieceDistribution" />
           </ExposedProperties>
       </SubProxy>
@@ -3769,7 +3656,7 @@
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="vtm vtmb"
+        <ReaderFactory extensions="vtm vtm.series vtmb vtmb.series"
                        file_description="VTK MultiBlock Data Files" />
       </Hints>
       <!-- end of XMLMultiBlockDataReader -->
@@ -3824,7 +3711,7 @@
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="vthb vth"
+        <ReaderFactory extensions="vthb vthb.series vth vth.series"
                        file_description="VTK Hierarchical Box Data Files" />
       </Hints>
       <!-- end of XMLUniformGridAMRReader -->
@@ -3933,7 +3820,7 @@
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="vtp"
+        <ReaderFactory extensions="vtp vtp.series"
                        file_description="VTK PolyData Files" />
       </Hints>
     </SourceProxy>
@@ -3990,7 +3877,7 @@
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="vtt"
+        <ReaderFactory extensions="vtt vtt.series"
                        file_description="VTK Table Files" />
       </Hints>
     </SourceProxy>
@@ -4050,7 +3937,7 @@
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="vtu"
+        <ReaderFactory extensions="vtu vtu.series"
                        file_description="VTK UnstructuredGrid Files" />
       </Hints>
     </SourceProxy>
@@ -4108,7 +3995,7 @@
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="vti"
+        <ReaderFactory extensions="vti vti.series"
                        file_description="VTK ImageData Files" />
       </Hints>
     </SourceProxy>
@@ -4166,7 +4053,7 @@
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="vts"
+        <ReaderFactory extensions="vts vts.series"
                        file_description="VTK StructuredGrid Files" />
       </Hints>
     </SourceProxy>
@@ -4224,7 +4111,7 @@
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="vtr"
+        <ReaderFactory extensions="vtr vtr.series"
                        file_description="VTK RectilinearGrid Files" />
       </Hints>
     </SourceProxy>
@@ -4284,7 +4171,7 @@
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="pvtp"
+        <ReaderFactory extensions="pvtp pvtp.series"
                        file_description="VTK PolyData Files (partitioned)" />
       </Hints>
     </SourceProxy>
@@ -4346,7 +4233,7 @@
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="pvtu"
+        <ReaderFactory extensions="pvtu pvtu.series"
                        file_description="VTK UnstructuredGrid Files (partitioned)" />
       </Hints>
     </SourceProxy>
@@ -4406,7 +4293,7 @@
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="pvtt"
+        <ReaderFactory extensions="pvtt pvtt.series"
                        file_description="VTK Table (partitioned)" />
       </Hints>
     </SourceProxy>
@@ -4467,7 +4354,7 @@
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="pvti"
+        <ReaderFactory extensions="pvti pvti.series"
                        file_description="VTK ImageData Files (partitioned)" />
       </Hints>
     </SourceProxy>
@@ -4529,7 +4416,7 @@
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="pvts"
+        <ReaderFactory extensions="pvts pvts.series"
                        file_description="VTK StructuredGrid Files (partitioned)" />
       </Hints>
     </SourceProxy>
@@ -4591,7 +4478,7 @@
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="pvtr"
+        <ReaderFactory extensions="pvtr pvtr.series"
                        file_description="VTK RectilinearGrid Files (partitioned)" />
       </Hints>
     </SourceProxy>
@@ -4702,7 +4589,7 @@
         Partitioned Legacy VTK reader.</Documentation>
       </StringVectorProperty>
       <Hints>
-        <ReaderFactory extensions="pvtk"
+        <ReaderFactory extensions="pvtk pvtk.series"
                        file_description="Legacy VTK Files (partitioned)" />
       </Hints>
       <!-- End pvtkfile -->
@@ -5102,7 +4989,7 @@
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="ply"
+        <ReaderFactory extensions="ply ply.series"
                        file_description="PLY Polygonal File Format" />
       </Hints>
     </SourceProxy>
@@ -5230,7 +5117,7 @@
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="stl"
+        <ReaderFactory extensions="stl stl.series"
                        file_description="Stereo Lithography" />
       </Hints>
       <!-- End stlreader-->
@@ -5952,7 +5839,7 @@
         <TimeStepsInformationHelper />
       </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="g e ex2 ex2v2 exo gen exoII exii"
+        <ReaderFactory extensions="g e h gc ex2 ex2v2 exo gen par exoII exii"
                        file_description="ExodusII"
                        filename_patterns="*e-s*" />
       </Hints>
@@ -6421,6 +6308,21 @@
                          number_of_elements="1">
         <BooleanDomain name="bool" />
         <Documentation>Read point/face/cell-Zones?</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty animateable="0"
+                         command="SetCopyDataToCellZones"
+                         default_values="0"
+                         label="Copy data to cell zones"
+                         name="CopyDataToCellZones"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Copy data of internal mesh to the cell zones</Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="ReadZones"
+                                   value="1" />
+        </Hints>
       </IntVectorProperty>
       <Hints>
         <ReaderFactory extensions="foam"
@@ -7842,11 +7744,10 @@
       </Hints>
     </SourceProxy>
     <!-- End MPASReader -->
-    <SourceProxy class="vtkFileSeriesReader"
-                 file_name_method="SetQFileName"
+    <SourceProxy class="vtkMultiBlockPLOT3DReader"
                  label="PLOT3D Reader"
                  name="P3DReader"
-                 si_class="vtkSIMetaReaderProxy">
+                 executive="vtkReaderExecutive">
       <Documentation long_help="Reads ASCII or binary PLOT3D files."
                      short_help="Read PLOT3D files.">PLOT3D is a plotting
                      package developed at NASA. The PLOT3D reader can read both
@@ -7855,11 +7756,26 @@
                      extension for the solution files is .q. The output of this
                      reader is a multiblock dataset containing curvilinear
                      (structured grid) datasets.</Documentation>
+      <StringVectorProperty command="GetCurrentFileName"
+                            information_only="1"
+                            name="FileNameInfo">
+        <SimpleStringInformationHelper />
+      </StringVectorProperty>
       <StringVectorProperty animateable="0"
-                            clean_command="RemoveAllFileNames"
+                            command="SetFileName"
+                            name="FileName"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <FileListDomain name="files" />
+        <Documentation>This property specifies the .xyz (geometry) file name
+        for the PLOT3D reader.</Documentation>
+      </StringVectorProperty>
+      <StringVectorProperty animateable="0"
+                            clean_command="ClearFileNames"
                             command="AddFileName"
                             name="QFileName"
                             number_of_elements="1"
+                            information_property="FileNameInfo"
                             repeat_command="1">
         <FileListDomain name="files" />
         <Documentation>The list of .q (solution) files for the PLOT3D reader.
@@ -7870,31 +7786,153 @@
           <FileChooser extensions="q" file_description="Solution files" />
         </Hints>
       </StringVectorProperty>
-      <SubProxy>
-        <Proxy name="Reader"
-               proxygroup="internal_sources"
-               proxyname="P3DReaderCore"></Proxy>
-        <ExposedProperties>
-          <Property name="FileName" />
-          <Property name="FunctionFileName"/>
-          <Property name="AutoDetectFormat"/>
-          <Property name="BinaryFile" />
-          <Property name="MultiGrid" />
-          <Property name="HasByteCount" />
-          <Property name="IBlanking" />
-          <Property name="TwoDimensionalGeometry" />
-          <Property name="DoublePrecision" />
-          <Property name="ByteOrder" />
-          <Property name="Functions" />
-          <Property name="PreserveIntermediateFunctions" />
-          <Property name="ForceRead" />
-        </ExposedProperties>
-      </SubProxy>
-      <StringVectorProperty command="GetCurrentFileName"
-                            information_only="1"
-                            name="FileNameInfo">
-        <SimpleStringInformationHelper />
+      <StringVectorProperty animateable="0"
+                            command="SetFunctionFileName"
+                            name="FunctionFileName"
+                            number_of_elements="1"
+                            panel_visibility="default">
+        <FileListDomain name="files" />
+        <Documentation>This property specifies the .f (function) file name for
+        the PLOT3D reader.</Documentation>
       </StringVectorProperty>
+      <IntVectorProperty command="SetAutoDetectFormat"
+                         default_values="1"
+                         name="AutoDetectFormat"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>When this options is enabled, the reader will try to
+  automatically figure out various settings for a binary file. The other
+  options are ignored. Does not work for text (ASCII) files.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetBinaryFile"
+                         default_values="1"
+                         name="BinaryFile"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>This property indicates whether the data files are
+        binary.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetMultiGrid"
+                         default_values="0"
+                         name="MultiGrid"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>This property indicates whether these files have
+        multiple-block information.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetHasByteCount"
+                         default_values="0"
+                         name="HasByteCount"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>This property indicates whether this file uses Fortran
+        leading-trailing byte counts.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetIBlanking"
+                         default_values="0"
+                         name="IBlanking"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>This property indicates whether this dataset has
+        visibility information.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetTwoDimensionalGeometry"
+                         default_values="0"
+                         name="TwoDimensionalGeometry"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>This property indicates whether the data is two- or
+        three-dimensional.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetForceRead"
+                         default_values="0"
+                         name="ForceRead"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>This property indicates whether to attempt to read the
+        file even if it appears corrupt</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetDoublePrecision"
+                         default_values="0"
+                         name="DoublePrecision"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>This property specifies whether floating points values
+  are in double precision.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetByteOrder"
+                         default_values="0"
+                         name="ByteOrder"
+                         number_of_elements="1">
+        <EnumerationDomain name="enum">
+          <Entry text="BigEndian"
+                 value="0" />
+          <Entry text="LittleEndian"
+                 value="1" />
+        </EnumerationDomain>
+        <Documentation>This property specifies the byte order of any binary
+        file(s).</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty clean_command="RemoveAllFunctions"
+                         command="AddFunction"
+                         name="Functions"
+                         number_of_elements_per_command="1"
+                         panel_visibility="default"
+                         repeat_command="1">
+        <EnumerationDomain name="array_list">
+          <!-- <Entry value="100" text="Scalar - Density"/> -->
+          <Entry text="Scalar - Pressure"
+                 value="110" />
+          <Entry text="Scalar - Pressure Coefficient"
+                 value="111" />
+          <Entry text="Scalar - Mach Number"
+                 value="112" />
+          <Entry text="Scalar - Sound Speed"
+                 value="113" />
+          <Entry text="Scalar - Temperature"
+                 value="120" />
+          <Entry text="Scalar - Enthalpy"
+                 value="130" />
+          <Entry text="Scalar - Internal energy"
+                 value="140" />
+          <Entry text="Scalar - Kinetic energy"
+                 value="144" />
+          <Entry text="Scalar - Velocity magnitude"
+                 value="153" />
+          <!-- <Entry value="163" text="Scalar - Stagnation energy"/> -->
+          <Entry text="Scalar - Entropy"
+                 value="170" />
+          <Entry text="Scalar - Swirl"
+                 value="184" />
+          <Entry text="Vector - Velocity"
+                 value="200" />
+          <Entry text="Vector - Vorticity"
+                 value="201" />
+          <!-- <Entry value="202" text="Vector - Momentum"/> -->
+          <Entry text="Vector - Pressure gradient"
+                 value="210" />
+          <Entry text="Scalar - Vorticity magnitude"
+                 value="211" />
+          <Entry text="Vector - Strain rate"
+                 value="212" />
+        </EnumerationDomain>
+        <Documentation>This property lists which functions (point-centered
+        arrays) to compute.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty name="PreserveIntermediateFunctions"
+        command="SetPreserveIntermediateFunctions"
+        number_of_elements="1"
+        default_values="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          When checked, the reader will preserve intermediate computed
+          quantities that were not explicitly requested e.g. if **Velocity magnitude** is
+          enabled, but not **Velocity**, the reader still needs to compute **Velocity**.
+          If this is unchecked, then the output will not have
+          **Velocity** array, only the requested **VelocityMagnitude**. This is useful to
+          avoid using up memory for arrays that are not relevant for the analysis.
+        </Documentation>
+      </IntVectorProperty>
       <DoubleVectorProperty information_only="1"
                             name="TimestepValues"
                             repeatable="1">
@@ -7908,8 +7946,9 @@
          property -->
         <DefaultFileNameProperty name="FileName" />
       </Hints>
-      <!-- End plot3d reader-->
+      <!-- End P3DReader -->
     </SourceProxy>
+
     <!-- Plot3D Meta Reader -->
     <SourceProxy class="vtkPlot3DMetaReader"
                  label="PLOT3D Meta-File Reader"
@@ -8174,27 +8213,54 @@ series.
                        file_description="TRUCHAS dataset" />
       </Hints>
     </SourceProxy>
-    <!-- HyperTreeGrid Reader -->
-    <SourceProxy class="vtkXMLHyperTreeGridReader"
+    <!-- HyperTreeGridReader -->
+    <SourceProxy class="vtkFileSeriesReader"
+                 file_name_method="SetFileName"
                  label="HyperTreeGrid Reader"
-                 name="HyperTreeGridReader">
-      <Documentation long_help="Reads HyperTreeGrid .htg files"
-                     short_help="Reads HyperTreeGrid data">Reads HyperTreeGrid data files</Documentation>
-      <StringVectorProperty animateable="0"
-                            command="SetFileName"
-                            name="FileName"
-                            number_of_elements="1"
-                            panel_visibility="never">
-        <FileListDomain name="files" />
-        <Documentation>This property specifies the file name</Documentation>
+                 name="HyperTreeGridReader"
+                 si_class="vtkSIMetaReaderProxy">
+      <Documentation
+        long_help="Reads HyperTreeGrid .htg files"
+        short_help="Reads HyperTreeGrid data"
+      >Reads HyperTreeGrid data files
+      </Documentation>
+      <SubProxy>
+        <Proxy
+          name="Reader"
+          proxygroup="internal_sources"
+          proxyname="XMLHyperTreeGridReaderCore"
+        />
+      </SubProxy>
+      <StringVectorProperty command="GetCurrentFileName"
+                            information_only="1"
+                            name="FileNameInfo">
+        <SimpleStringInformationHelper />
       </StringVectorProperty>
-
+      <StringVectorProperty animateable="0"
+                            clean_command="RemoveAllFileNames"
+                            command="AddFileName"
+                            name="FileNames"
+                            number_of_elements="0"
+                            panel_visibility="never"
+                            repeat_command="1">
+        <FileListDomain name="files" />
+        <Documentation>The list of files to be read by the
+        reader.</Documentation>
+      </StringVectorProperty>
+      <DoubleVectorProperty information_only="1"
+                            name="TimestepValues"
+                            repeatable="1">
+        <TimeStepsInformationHelper />
+        <Documentation>Available timestep values.</Documentation>
+      </DoubleVectorProperty>
       <Hints>
-        <ReaderFactory extensions="htg"
-                       file_description="HyperTreeGrid" />
+        <ReaderFactory
+          extensions="htg"
+          file_description="HyperTreeGrid"
+        />
       </Hints>
     </SourceProxy>
-
+    <!-- AMReXParticlesReader -->
     <SourceProxy name="AMReXParticlesReader"
       class="vtkFileSeriesReader"
       file_name_method="SetPlotFileName"
@@ -8240,5 +8306,84 @@ series.
       <!-- end AMReXParticlesReader -->
     </SourceProxy>
 
+    <!--  VERAout Reader -->
+    <SourceProxy
+      name="vtkVeraOutReader"
+      class="vtkVeraOutReader"
+      label="VERA OUT Reader"
+    >
+      <Documentation
+        long_help="Reads VERA OUT HDF5 data."
+        short_help="Reads VERA OUT HDF5 data."
+      />
+      <StringVectorProperty
+        name="FileName"
+        animateable="0"
+        command="SetFileName"
+        number_of_elements="1"
+      >
+        <FileListDomain name="files" />
+        <Documentation>
+          This property specifies the HDF5 file name for the VERA OUT reader.
+        </Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty name="CellArrayInfo"
+        command="GetCellDataArraySelection"
+        number_of_elements_per_command="2"
+        information_only="1"
+        si_class="vtkSIDataArraySelectionProperty" />
+
+      <StringVectorProperty name="CellArrayStatus"
+        command="GetCellDataArraySelection"
+        information_property="CellArrayInfo"
+        number_of_elements_per_command="2"
+        element_types="2 0"
+        repeat_command="1"
+        si_class="vtkSIDataArraySelectionProperty">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property function="ArrayList" name="CellArrayInfo" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>Select the cell arrays to read load.</Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty name="FieldArrayInfo"
+        command="GetFieldDataArraySelection"
+        number_of_elements_per_command="2"
+        information_only="1"
+        si_class="vtkSIDataArraySelectionProperty" />
+
+      <StringVectorProperty name="FieldArrayStatus"
+        command="GetFieldDataArraySelection"
+        information_property="FieldArrayInfo"
+        number_of_elements_per_command="2"
+        element_types="2 0"
+        repeat_command="1"
+        si_class="vtkSIDataArraySelectionProperty">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property function="ArrayList" name="FieldArrayInfo" />
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>Select the field arrays to read load.</Documentation>
+      </StringVectorProperty>
+
+      <Hints>
+        <ReaderFactory
+          extensions="h5"
+          file_description="VERA OUT Reader"
+        />
+      </Hints>
+
+      <DoubleVectorProperty
+        name="TimestepValues"
+        repeatable="1"
+        information_only="1"
+      >
+        <TimeStepsInformationHelper/>
+      </DoubleVectorProperty>
+    </SourceProxy>
   </ProxyGroup>
 </ServerManagerConfiguration>

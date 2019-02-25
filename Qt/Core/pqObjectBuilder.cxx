@@ -478,7 +478,7 @@ vtkSMProxy* pqObjectBuilder::createProxy(
   }
   else if (reg_group.contains("prototypes"))
   {
-    // Mark as prototype to prevent them from behing saved in undo stack and
+    // Mark as prototype to prevent them from being saved in undo stack and
     // managed through the state
     proxy->SetPrototype(true);
   }
@@ -626,7 +626,7 @@ void pqObjectBuilder::abortPendingConnections()
 }
 
 //-----------------------------------------------------------------------------
-pqServer* pqObjectBuilder::createServer(const pqServerResource& resource)
+pqServer* pqObjectBuilder::createServer(const pqServerResource& resource, int connectionTimeout)
 {
   if (this->WaitingForConnection)
   {
@@ -668,11 +668,12 @@ pqServer* pqObjectBuilder::createServer(const pqServerResource& resource)
   vtkIdType id = 0;
   if (server_resource.scheme() == "builtin")
   {
-    id = vtkSMSession::ConnectToSelf();
+    id = vtkSMSession::ConnectToSelf(connectionTimeout);
   }
   else if (server_resource.scheme() == "cs")
   {
-    id = vtkSMSession::ConnectToRemote(resource.host().toLocal8Bit().data(), resource.port(11111));
+    id = vtkSMSession::ConnectToRemote(
+      resource.host().toLocal8Bit().data(), resource.port(11111), connectionTimeout);
   }
   else if (server_resource.scheme() == "csrc")
   {
@@ -685,7 +686,7 @@ pqServer* pqObjectBuilder::createServer(const pqServerResource& resource)
     id = vtkSMSession::ConnectToRemote(server_resource.dataServerHost().toLocal8Bit().data(),
       server_resource.dataServerPort(11111),
       server_resource.renderServerHost().toLocal8Bit().data(),
-      server_resource.renderServerPort(22221));
+      server_resource.renderServerPort(22221), connectionTimeout);
   }
   else if (server_resource.scheme() == "cdsrsrc")
   {

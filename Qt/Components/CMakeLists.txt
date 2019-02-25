@@ -45,8 +45,14 @@ set (Module_SRCS
   pqAnimationViewWidget.h
   pqArrayListDomain.cxx
   pqArrayListDomain.h
+  pqArraySelectionWidget.cxx
+  pqArraySelectionWidget.h
   pqArrayStatusPropertyWidget.cxx
   pqArrayStatusPropertyWidget.h
+  pqFavoritesDialog.cxx
+  pqFavoritesDialog.h
+  pqFavoritesTreeWidget.cxx
+  pqFavoritesTreeWidget.h
   pqCalculatorWidget.cxx
   pqCalculatorWidget.h
   pqCameraDialog.cxx
@@ -73,6 +79,8 @@ set (Module_SRCS
   pqComponentsTestUtility.h
   pqCompositeDataInformationTreeModel.cxx
   pqCompositeDataInformationTreeModel.h
+  pqCompositePropertyWidgetDecorator.cxx
+  pqCompositePropertyWidgetDecorator.h
   pqCompositeTreePropertyWidget.cxx
   pqCompositeTreePropertyWidget.h
   pqCustomFilterDefinitionModel.cxx
@@ -83,8 +91,8 @@ set (Module_SRCS
   pqCustomFilterManager.h
   pqCustomFilterManagerModel.cxx
   pqCustomFilterManagerModel.h
-  pqCustomViewButtonDialog.cxx
-  pqCustomViewButtonDialog.h
+  pqCustomViewpointButtonDialog.cxx
+  pqCustomViewpointButtonDialog.h
   pqDataInformationModel.cxx
   pqDataInformationModel.h
   pqDataInformationWidget.cxx
@@ -105,8 +113,6 @@ set (Module_SRCS
   pqDockWindowInterface.h
   pqDoubleVectorPropertyWidget.cxx
   pqDoubleVectorPropertyWidget.h
-  pqExodusIIVariableSelectionWidget.cxx
-  pqExodusIIVariableSelectionWidget.h
   pqFieldSelectionAdaptor.cxx
   pqFieldSelectionAdaptor.h
   pqFileChooserWidget.cxx
@@ -262,6 +268,10 @@ set (Module_SRCS
   pqSetBreakpointDialog.h
   pqSettingsDialog.cxx
   pqSettingsDialog.h
+  pqShaderReplacementsComboBox.cxx
+  pqShaderReplacementsComboBox.h
+  pqShaderReplacementsSelectorPropertyWidget.cxx
+  pqShaderReplacementsSelectorPropertyWidget.h
   pqSignalAdaptorKeyFrameType.cxx
   pqSignalAdaptorKeyFrameType.h
   pqSignalAdaptorSelectionTreeWidget.cxx
@@ -324,7 +334,10 @@ set (Module_MOC_HDRS
   pqAnimationManager.h
   pqAnimationViewWidget.h
   pqArrayListDomain.h
+  pqArraySelectionWidget.h
   pqArrayStatusPropertyWidget.h
+  pqFavoritesDialog.h
+  pqFavoritesTreeWidget.h
   pqCalculatorWidget.h
   pqCameraDialog.h
   pqCameraKeyFrameWidget.h
@@ -337,11 +350,12 @@ set (Module_MOC_HDRS
   pqComparativeVisPanel.h
   pqComponentsTestUtility.h
   pqCompositeDataInformationTreeModel.h
+  pqCompositePropertyWidgetDecorator.h
   pqCompositeTreePropertyWidget.h
   pqCustomFilterDefinitionWizard.h
   pqCustomFilterManager.h
   pqCustomFilterManagerModel.h
-  pqCustomViewButtonDialog.h
+  pqCustomViewpointButtonDialog.h
   pqDataInformationModel.h
   pqDataInformationWidget.h
   pqDialog.h
@@ -350,7 +364,6 @@ set (Module_MOC_HDRS
   pqDisplayPanelPropertyWidget.h
   pqDisplayRepresentationWidget.h
   pqDoubleVectorPropertyWidget.h
-  pqExodusIIVariableSelectionWidget.h
   pqFieldSelectionAdaptor.h
   pqFileChooserWidget.h
   pqFindDataCreateSelectionFrame.h
@@ -428,6 +441,8 @@ set (Module_MOC_HDRS
   pqServerLauncher.h
   pqSetBreakpointDialog.h
   pqSettingsDialog.h
+  pqShaderReplacementsComboBox.h
+  pqShaderReplacementsSelectorPropertyWidget.h
   pqSignalAdaptorKeyFrameType.h
   pqSignalAdaptorSelectionTreeWidget.h
   pqSignalAdaptorTreeWidget.h
@@ -457,6 +472,7 @@ set (Module_MOC_HDRS
 set (Module_UI_FILES
   Resources/UI/pqAbortAnimation.ui
   Resources/UI/pqAboutDialog.ui
+  Resources/UI/pqFavoritesDialog.ui
   Resources/UI/pqCalculatorWidget.ui
   Resources/UI/pqCameraDialog.ui
   Resources/UI/pqCameraKeyFrameWidget.ui
@@ -468,7 +484,7 @@ set (Module_UI_FILES
   Resources/UI/pqContourControls.ui
   Resources/UI/pqCustomFilterDefinitionWizard.ui
   Resources/UI/pqCustomFilterManager.ui
-  Resources/UI/pqCustomViewButtonDialog.ui
+  Resources/UI/pqCustomViewpointButtonDialog.ui
   Resources/UI/pqDisplayRepresentationWidget.ui
   Resources/UI/pqEmptyView.ui
   Resources/UI/pqFindDataCreateSelectionFrame.ui
@@ -558,6 +574,16 @@ endif()
 set (Module_RESOURCE_FILES
   Resources/pqComponents.qrc
 )
+
+if(NOT VTK_LEGACY_REMOVE)
+  # deprecated in 5.6
+  list(APPEND Module_SRCS
+    pqExodusIIVariableSelectionWidget.cxx
+    pqExodusIIVariableSelectionWidget.h)
+  list(APPEND Module_MOC_HDRS
+    pqExodusIIVariableSelectionWidget.h)
+endif()
+
 
 include(ParaViewQt)
 pv_find_package_qt(qt_private_targets REQUIRED QUIET

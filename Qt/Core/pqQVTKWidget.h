@@ -73,7 +73,7 @@ public:
   void setSession(vtkSMSession*);
 
   /**
-  * Retrun the Proxy ID if any, otherwise return 0
+  * Return the Proxy ID if any, otherwise return 0
   */
   vtkTypeUInt32 getProxyId();
 
@@ -88,7 +88,6 @@ public slots:
   void paintMousePointer(int x, int y);
 
 protected:
-  bool renderVTK() override;
   bool canRender();
 
 private slots:
@@ -98,7 +97,6 @@ private:
   Q_DISABLE_COPY(pqQVTKWidget)
   vtkSmartPointer<vtkSMProxy> ViewProxy;
   vtkWeakPointer<vtkSMSession> Session;
-  QImage MousePointerToDraw;
   QString SizePropertyName;
   vtkNew<vtkEventQtSlotConnect> VTKConnect;
 };

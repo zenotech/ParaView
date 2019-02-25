@@ -41,9 +41,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqCommandLineOptionsBehavior.h"
 #include "pqCoreTestUtility.h"
 #include "pqCrashRecoveryBehavior.h"
+#include "pqCustomShortcutBehavior.h"
 #include "pqDataTimeStepBehavior.h"
 #include "pqDefaultViewBehavior.h"
 #include "pqInterfaceTracker.h"
+#include "pqLiveSourceBehavior.h"
 #include "pqLockPanelsBehavior.h"
 #include "pqObjectPickingBehavior.h"
 #include "pqPersistentMainWindowStateBehavior.h"
@@ -151,6 +153,8 @@ PQ_BEHAVIOR_DEFINE_FLAG(QuickLaunchShortcuts, true);
 PQ_BEHAVIOR_DEFINE_FLAG(LockPanelsBehavior, true);
 PQ_BEHAVIOR_DEFINE_FLAG(PythonShellResetBehavior, true);
 PQ_BEHAVIOR_DEFINE_FLAG(WheelNeedsFocusBehavior, true);
+PQ_BEHAVIOR_DEFINE_FLAG(LiveSourceBehavior, true);
+PQ_BEHAVIOR_DEFINE_FLAG(CustomShortcutBehavior, true);
 #undef PQ_BEHAVIOR_DEFINE_FLAG
 
 #define PQ_IS_BEHAVIOR_ENABLED(_name) enable##_name()
@@ -187,6 +191,10 @@ pqParaViewBehaviors::pqParaViewBehaviors(QMainWindow* mainWindow, QObject* paren
   if (PQ_IS_BEHAVIOR_ENABLED(DataTimeStepBehavior))
   {
     new pqDataTimeStepBehavior(this);
+  }
+  if (PQ_IS_BEHAVIOR_ENABLED(LiveSourceBehavior))
+  {
+    new pqLiveSourceBehavior(this);
   }
   if (PQ_IS_BEHAVIOR_ENABLED(SpreadSheetVisibilityBehavior))
   {
@@ -321,6 +329,10 @@ pqParaViewBehaviors::pqParaViewBehaviors(QMainWindow* mainWindow, QObject* paren
   {
     auto afilter = new WheelFilter(mainWindow);
     qApp->installEventFilter(afilter);
+  }
+  if (PQ_IS_BEHAVIOR_ENABLED(CustomShortcutBehavior))
+  {
+    new pqCustomShortcutBehavior(mainWindow);
   }
   CLEAR_UNDO_STACK();
 }

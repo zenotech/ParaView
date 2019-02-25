@@ -32,9 +32,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef pqQVTKWidgetBase_h
 #define pqQVTKWidgetBase_h
 
-#include "QVTKOpenGLWidget.h"
+// It might possible to replace QVTKOpenGLWidget by QVTKOpenGLNativeWidget here,
+// eg, if you need to work with native widgets only. However this is not tested nor recommended.
+
+#include "QVTKOpenGLNativeWidget.h"
 class vtkGenericOpenGLRenderWindow;
-typedef QVTKOpenGLWidget pqQVTKWidgetBase;
+typedef QVTKOpenGLNativeWidget pqQVTKWidgetBase;
 typedef vtkGenericOpenGLRenderWindow pqQVTKWidgetBaseRenderWindowType;
 
 #endif

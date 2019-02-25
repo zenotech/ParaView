@@ -2,6 +2,7 @@
 
 #include "vtkActor.h"
 #include "vtkAlgorithmOutput.h"
+#include "vtkCompositeDataIterator.h"
 #include "vtkCompositeDataSet.h"
 #include "vtkCompositeDataToUnstructuredGridFilter.h"
 #include "vtkDataSet.h"
@@ -33,6 +34,7 @@ vtkStandardNewMacro(vtkPointGaussianRepresentation)
   this->LastScaleArrayComponent = 0;
   this->OpacityByArray = false;
   this->LastOpacityArray = NULL;
+  this->UseScaleFunction = true;
   this->SelectedPreset = vtkPointGaussianRepresentation::GAUSSIAN_BLUR;
   InitializeShaderPresets();
 }
@@ -125,6 +127,7 @@ bool vtkPointGaussianRepresentation::AddToView(vtkView* view)
   if (rview)
   {
     rview->GetRenderer()->AddActor(this->Actor);
+    rview->RegisterPropForHardwareSelection(this, this->Actor);
     return this->Superclass::AddToView(view);
   }
   return false;
@@ -197,17 +200,40 @@ int vtkPointGaussianRepresentation::RequestData(
   }
   else if (compositeInput)
   {
-    vtkNew<vtkCompositeDataToUnstructuredGridFilter> merge;
-    merge->SetInputData(compositeInput);
-    merge->Update();
-    input = merge->GetOutput();
+    // make sure all block of the composite dataset are polydata
+    vtkCompositeDataSet* compositeData = compositeInput->NewInstance();
+    this->ProcessedData.TakeReference(compositeData);
+    compositeData->CopyStructure(compositeInput);
+    vtkSmartPointer<vtkCompositeDataIterator> iter;
+    iter.TakeReference(compositeInput->NewIterator());
+    for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem())
+    {
+      vtkDataSet* ds = vtkDataSet::SafeDownCast(iter->GetCurrentDataObject());
+      vtkPolyData* pd = vtkPolyData::SafeDownCast(ds);
+      if (pd)
+      {
+        compositeData->SetDataSet(iter, pd);
+      }
+      else if (ds && ds->GetNumberOfPoints() > 0)
+      {
+        // The mapper underneath expect only PolyData or CompositePD
+        // Apply conversion - We do not need vertex list as we
+        // use all the points in that use case
+        vtkNew<vtkMaskPoints> unstructuredToPolyData;
+        unstructuredToPolyData->SetInputData(ds);
+        unstructuredToPolyData->SetMaximumNumberOfPoints(ds->GetNumberOfPoints());
+        unstructuredToPolyData->GenerateVerticesOff();
+        unstructuredToPolyData->SetOnRatio(1);
+        unstructuredToPolyData->Update();
+        compositeData->SetDataSet(iter, unstructuredToPolyData->GetOutput());
+      }
+    }
   }
-
-  // The mapper underneath expect only PolyData
-  // Apply conversion - We do not need vertex list as we
-  // use all the points in that use case
-  if (this->ProcessedData == NULL && input != NULL && input->GetNumberOfPoints() > 0)
+  else if (input != NULL && input->GetNumberOfPoints() > 0)
   {
+    // The mapper underneath expect only PolyData or CompositePD
+    // Apply conversion - We do not need vertex list as we
+    // use all the points in that use case
     vtkNew<vtkMaskPoints> unstructuredToPolyData;
     unstructuredToPolyData->SetInputData(input);
     unstructuredToPolyData->SetMaximumNumberOfPoints(input->GetNumberOfPoints());
@@ -244,8 +270,31 @@ int vtkPointGaussianRepresentation::ProcessViewRequest(
     // 1. Provide the data being rendered.
     if (this->ProcessedData)
     {
+      vtkPolyData* pd = vtkPolyData::SafeDownCast(this->ProcessedData);
+      vtkCompositeDataSet* cd = vtkCompositeDataSet::SafeDownCast(this->ProcessedData);
+      if (pd)
+      {
+        pd->GetBounds(bounds);
+      }
+      if (cd)
+      {
+        vtkBoundingBox bbox;
+        vtkCompositeDataIterator* iter = cd->NewIterator();
+        for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem())
+        {
+          vtkDataSet* ds = vtkDataSet::SafeDownCast(iter->GetCurrentDataObject());
+          if (ds)
+          {
+            double tmpBounds[6];
+            ds->GetBounds(tmpBounds);
+            bbox.AddBounds(tmpBounds);
+          }
+        }
+        bbox.GetBounds(bounds);
+        iter->Delete();
+      }
+
       vtkPVRenderView::SetPiece(inInfo, this, this->ProcessedData);
-      this->ProcessedData->GetBounds(bounds);
     }
 
     // 2. Provide the bounds.
@@ -356,9 +405,31 @@ void vtkPointGaussianRepresentation::SetScaleByArray(bool newVal)
 }
 
 //----------------------------------------------------------------------------
+void vtkPointGaussianRepresentation::SetUseScaleFunction(bool enable)
+{
+  if (this->UseScaleFunction != enable)
+  {
+    this->UseScaleFunction = enable;
+    this->Modified();
+    this->UpdateMapperScaleFunction();
+  }
+}
+
+//----------------------------------------------------------------------------
 void vtkPointGaussianRepresentation::SetScaleTransferFunction(vtkPiecewiseFunction* pwf)
 {
-  this->Mapper->SetScaleFunction(pwf);
+  if (this->ScaleFunction.Get() != pwf)
+  {
+    this->ScaleFunction = pwf;
+    this->Modified();
+    this->UpdateMapperScaleFunction();
+  }
+}
+
+//----------------------------------------------------------------------------
+void vtkPointGaussianRepresentation::UpdateMapperScaleFunction()
+{
+  this->Mapper->SetScaleFunction(this->UseScaleFunction ? this->ScaleFunction : nullptr);
 }
 
 //----------------------------------------------------------------------------

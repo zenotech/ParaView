@@ -47,7 +47,8 @@
     { "name":"vtkPVClientServerCoreCore",
       "path":"ParaViewCore/ClientServerCore/Core",
       "include":[
-        { "class":"vtkPVExtractSelection" }
+        { "class":"vtkPVExtractSelection" },
+        { "class":"vtkPythonSelector" }
       ],
       "patches":[
         { "path": "ClientServerCore-restore-extraction.patch",
@@ -60,6 +61,7 @@
     { "name":"vtkFiltersExtraction",
       "path":"VTK/Filters/Extraction",
       "include":[
+        { "class":"vtkBlockSelector" },
         { "class":"vtkConvertSelection" },
         { "class":"vtkExtractBlock" },
         { "class":"vtkExtractCells" },
@@ -69,7 +71,11 @@
         { "class":"vtkExtractSelectedThresholds" },
         { "class":"vtkExtractSelectedRows" },
         { "class":"vtkExtractSelection" },
-        { "class":"vtkProbeSelectedLocations" }
+        { "class":"vtkFrustumSelector" },
+        { "class":"vtkLocationSelector" },
+        { "class":"vtkProbeSelectedLocations" },
+        { "class":"vtkSelector" },
+        { "class":"vtkValueSelector" }
       ],
       "cswrap":true,
       "pythonwrap":true
@@ -93,6 +99,7 @@
       "path": "VTK/Filters/Parallel",
       "include": [
         { "class": "vtkAggregateDataSetFilter" },
+        { "class": "vtkIntegrateAttributes" },
         { "class": "vtkPCellDataToPointData" }
       ],
       "replace": [
@@ -141,7 +148,6 @@
         { "class":"vtkAttributeDataReductionFilter" },
         { "class":"vtkExtractHistogram" },
         { "class":"vtkFileSeriesWriter" },
-        { "class":"vtkIntegrateAttributes" },
         { "class":"vtkParallelSerialWriter" },
         { "class":"vtkPExtractHistogram" },
         { "class":"vtkPVNullSource" },
@@ -257,6 +263,7 @@
         "ExtractBlock",
         "ExtractHistogram",
         "Glyph",
+        "GlyphLegacy",
         "ImageDataToPointSet",
         "IntegrateAttributes",
         "PVExtractSelection",

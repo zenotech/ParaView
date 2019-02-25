@@ -306,11 +306,9 @@
         { "class": "vtkAnnotationLink" },
         { "class": "vtkAxes" },
         { "class": "vtkBoxClipDataSet" },
-        { "class": "vtkCellCenters" },
         { "class": "vtkDataSetTriangleFilter" },
         { "class": "vtkMergeCells" },
         { "class": "vtkMultiBlockDataGroupFilter" },
-        { "class": "vtkPassArrays" },
         { "class": "vtkPassThrough" },
         { "class": "vtkSplitColumnComponents" },
         { "class": "vtkTransformPolyDataFilter" }
@@ -941,14 +939,14 @@
     { "name": "vtkMetaIO",
       "path": "VTK/Utilities/MetaIO"
     },
-    { "name": "vtkParseOGLExt",
-      "path": "VTK/Utilities/ParseOGLExt"
-    },
     { "name": "vtkglew",
       "path": "VTK/ThirdParty/glew"
     },
     { "name": "vtkjpeg",
       "path": "VTK/ThirdParty/jpeg"
+    },
+    { "name": "vtkjsoncpp",
+      "path": "VTK/ThirdParty/jsoncpp"
     },
     { "name": "vtkpng",
       "path": "VTK/ThirdParty/png"

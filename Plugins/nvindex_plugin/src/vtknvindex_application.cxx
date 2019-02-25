@@ -41,8 +41,37 @@
 #include "vtknvindex_irregular_volume_importer.h"
 #include "vtknvindex_receiving_logger.h"
 #include "vtknvindex_regular_volume_properties.h"
+#include "vtknvindex_sparse_volume_importer.h"
 #include "vtknvindex_utilities.h"
+#include "vtknvindex_volume_compute.h"
 #include "vtknvindex_volume_importer.h"
+
+#ifdef _WIN32
+//-------------------------------------------------------------------------------------------------
+// Create a string with last error message
+static std::string get_last_error_as_str()
+{
+  DWORD error = GetLastError();
+  if (error)
+  {
+    LPVOID lpMsgBuf;
+    DWORD bufLen = FormatMessage(
+      FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+      NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL);
+
+    if (bufLen)
+    {
+      LPCSTR lpMsgStr = (LPCSTR)lpMsgBuf;
+      std::string result(lpMsgStr, lpMsgStr + bufLen);
+
+      LocalFree(lpMsgBuf);
+
+      return result;
+    }
+  }
+  return std::string();
+}
+#endif // _WIN32
 
 //-------------------------------------------------------------------------------------------------
 vtknvindex_application::vtknvindex_application()
@@ -67,64 +96,54 @@ bool vtknvindex_application::load_nvindex_library()
 {
   // Load shared libraries.
   std::string lib_name = "libnvindex";
+  void* index_lib_symbol = NULL;
 
 #ifdef _WIN32
-#ifdef NDEBUG
   lib_name += ".dll";
-#else  //  NDEBUG
-  lib_name += "d.dll";
-#endif // NDEBUG
-#else  // _WIN32
-  lib_name += ".so";
-#endif // _WIN32
-
-#ifdef _WIN32
   m_p_handle = LoadLibrary(TEXT(lib_name.c_str()));
-  if (!m_p_handle)
-  {
-    ERROR_LOG << "Unable to retrieve handle to the NVIDIA IndeX library.";
-    return false;
-  }
-  void* symbol = GetProcAddress((HMODULE)m_p_handle, "nv_index_factory");
-  if (!symbol)
-  {
-    ERROR_LOG << "Unable to retrieve the entry point into the " << lib_name.c_str() << " library.";
-    return false;
-  }
-#else // _WIN32
-  m_p_handle = dlopen(lib_name.c_str(), RTLD_LAZY);
-  if (!m_p_handle)
-  {
-    ERROR_LOG << "Unable to retrieve handle to the NVIDIA IndeX library: " << dlerror() << ".";
-    return false;
-  }
 
-  void* symbol = dlsym(m_p_handle, "nv_index_factory");
-  if (!symbol)
-  {
-    ERROR_LOG << "Unable to retrieve the entry point into the " << lib_name.c_str() << " library.";
-    return false;
-  }
+  if (m_p_handle)
+    index_lib_symbol = GetProcAddress((HMODULE)m_p_handle, "nv_index_factory");
+
+#else // _WIN32
+  lib_name += ".so";
+  m_p_handle = dlopen(lib_name.c_str(), RTLD_LAZY);
+
+  if (m_p_handle)
+    index_lib_symbol = dlsym(m_p_handle, "nv_index_factory");
 
 #endif // _WIN32
+
+  if (!index_lib_symbol)
+  {
+#ifdef _WIN32
+    const std::string error_str(get_last_error_as_str());
+
+    ERROR_LOG << "Failed to load the NVIDIA IndeX library.";
+    ERROR_LOG << error_str;
+    ERROR_LOG << "Please verify that the PATH environemnt contains"
+                 " the location of the NVIDIA IndeX libraries.";
+#else // _WIN32
+    const std::string error_str(dlerror());
+
+    ERROR_LOG << "Failed to load the NVIDIA IndeX library.";
+    ERROR_LOG << error_str;
+    ERROR_LOG << "Please verify that the LD_LIBRARY environemnt contains"
+                 " the location of the NVIDIA IndeX libraries.";
+#endif
+    return false;
+  }
 
   m_nvindexlib_fname = lib_name;
 
   typedef nv::index::IIndex*(IIndex_factory());
-  IIndex_factory* factory = (IIndex_factory*)symbol;
+  IIndex_factory* factory = (IIndex_factory*)index_lib_symbol;
 
   m_nvindex_interface = factory();
   if (!m_nvindex_interface.is_valid_interface())
   {
     ERROR_LOG << "Failed to Initialize NVIDIA IndeX library.";
-
-#ifdef _WIN32
-    ERROR_LOG << "Please verify that the PATH variable has been set appropriately and points to "
-                 "the location of the NVIDIA IndeX libraries.";
-#else  // _WIN32
-    ERROR_LOG << "Please verify that the environment variable LD_LIBRARY_PATH has been set "
-                 "appropriately and points to the location of the NVIDIA IndeX libraries.";
-#endif // _WIN32
+    // TODO: Is it possible to know the reason?
     return false;
   }
 
@@ -132,7 +151,7 @@ bool vtknvindex_application::load_nvindex_library()
   if (!authenticate_nvindex_library())
   {
     ERROR_LOG
-      << "Failed to authenticate NVIDIA IndeX library, please provide a valid license file.\n";
+      << "Failed to authenticate NVIDIA IndeX library, please provide a valid license file.";
     return false;
   }
 
@@ -189,15 +208,15 @@ bool vtknvindex_application::authenticate_nvindex_library()
   // No explicit license found, use default free license.
   if (!found_license)
   {
-    index_vendor_key = "NVIDIA IndeX License for ParaView - IndeX:PV:Free:v1 - 20180307 "
-                       "(oem:retail_cloud.20190331)";
-    index_secret_key = "776532b335999674f8492574fbccd8defeac1b30e9804d5d42b383c57dcfab8f";
+    index_vendor_key = "NVIDIA IndeX License for ParaView - IndeX:PV:Free:v1 - 20180927 "
+                       "(oem:retail_cloud.20210904)";
+    index_secret_key = "10aed4fb95a7fb230875decf11dd29c666612b4df39775df6256bc291bd0d346";
   }
 
   // Retrieve Flex license path.
   std::string flexnet_lic_path;
 
-  // Try reading Flex license path from enviroment.
+  // Try reading Flex license path from environment.
   const char* env_flexnet_lic_path = vtksys::SystemTools::GetEnv("NVINDEX_FLEXNET_PATH");
   if (env_flexnet_lic_path != NULL)
   {
@@ -423,6 +442,31 @@ mi::Uint32 vtknvindex_application::setup_nvindex_library(const std::vector<std::
     }
   }
 
+  {
+#ifdef USE_SPARSE_VOLUME
+    // Debug configuration.
+    mi::base::Handle<nv::index::IIndex_debug_configuration> idebug_configuration(
+      m_nvindex_interface->get_api_component<nv::index::IIndex_debug_configuration>());
+    assert(idebug_configuration.is_valid_interface());
+
+    std::string use_greater_than_comparison_for_sparse_volume_octree_builds =
+      std::string("use_greater_than_comparison_for_sparse_volume_octree_builds=1");
+    idebug_configuration->set_option(
+      use_greater_than_comparison_for_sparse_volume_octree_builds.c_str());
+
+    std::string disable_timeseries_data_prefetch =
+      std::string("timeseries_data_prefetch_disable=1");
+    idebug_configuration->set_option(disable_timeseries_data_prefetch.c_str());
+
+    // use strict domain subdivision only in cluster mode.
+    if (host_names.size() > 1)
+    {
+      std::string use_strict_domain_subdivision = std::string("use_strict_domain_subdivision=1");
+      idebug_configuration->set_option(use_strict_domain_subdivision.c_str());
+    }
+#endif
+  }
+
   // Register serializable classes.
   {
     bool is_registered = false;
@@ -432,6 +476,10 @@ mi::Uint32 vtknvindex_application::setup_nvindex_library(const std::vector<std::
 
     is_registered =
       m_nvindex_interface->register_serializable_class<vtknvindex_irregular_volume_importer>();
+    assert(is_registered);
+
+    is_registered =
+      m_nvindex_interface->register_serializable_class<vtknvindex_sparse_volume_importer>();
     assert(is_registered);
 
     is_registered = m_nvindex_interface->register_serializable_class<vtknvindex_affinity>();
@@ -451,6 +499,9 @@ mi::Uint32 vtknvindex_application::setup_nvindex_library(const std::vector<std::
     is_registered =
       m_nvindex_interface->register_serializable_class<vtknvindex_regular_volume_properties>();
     assert(is_registered);
+
+    is_registered = m_nvindex_interface->register_serializable_class<vtknvindex_volume_compute>();
+    assert(is_registered);
   }
 
   // Starting the NVIDIA IndeX library.
@@ -458,6 +509,51 @@ mi::Uint32 vtknvindex_application::setup_nvindex_library(const std::vector<std::
   if ((start_result = m_nvindex_interface->start(true)) != 0)
   {
     ERROR_LOG << "Start of the NVIDIA IndeX library failed.";
+  }
+
+  // Syncronize IndeX viewer with remote instances.
+  if (inetwork_configuration->get_mode() != mi::neuraylib::INetwork_configuration::MODE_OFF)
+  {
+    // IndeX viewer must wait until the remote nodes are connected
+    if (vtkMultiProcessController::GetGlobalController()->GetLocalProcessId() == 0)
+    {
+      mi::base::Handle<nv::index::ICluster_configuration> icluster_configuration(
+        m_nvindex_interface->get_api_component<nv::index::ICluster_configuration>());
+
+      std::vector<std::string> host_list;
+      for (mi::Uint32 i = 0; i < host_names.size(); ++i)
+      {
+        if (find(host_list.begin(), host_list.end(), host_names[i]) == host_list.end())
+          host_list.push_back(host_names[i]);
+      }
+
+      const mi::Uint32 cluster_size = static_cast<mi::Uint32>(host_list.size());
+      if (cluster_size > 0)
+      {
+        mi::Uint32 old_nb_hosts = 0;
+        mi::Uint32 nb_hosts = 0;
+        INFO_LOG << "Waiting until cluster size reaches " << cluster_size << " hosts";
+        while (nb_hosts < cluster_size)
+        {
+          nb_hosts = icluster_configuration->get_number_of_hosts();
+          if (nb_hosts > old_nb_hosts)
+          {
+            INFO_LOG << "Cluster now has " << nb_hosts << " host" << (nb_hosts == 1 ? "" : "s")
+                     << ", need " << (cluster_size - std::min(nb_hosts, cluster_size))
+                     << " more to continue";
+            old_nb_hosts = nb_hosts;
+          }
+          else if (nb_hosts < old_nb_hosts)
+          {
+            INFO_LOG << "Aborting because at least one host has left - had " << old_nb_hosts
+                     << " hosts, only " << nb_hosts << " left";
+            return false;
+          }
+          vtknvindex::util::sleep(0.5f);
+        }
+        INFO_LOG << "Cluster size " << cluster_size << " reached, continuing...";
+      }
+    }
   }
 
   return start_result;

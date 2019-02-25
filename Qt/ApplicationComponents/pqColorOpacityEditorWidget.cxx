@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqActiveObjects.h"
 #include "pqChooseColorPresetReaction.h"
 #include "pqColorTableModel.h"
+#include "pqCoreUtilities.h"
 #include "pqDataRepresentation.h"
 #include "pqOpacityTableModel.h"
 #include "pqPipelineRepresentation.h"
@@ -64,7 +65,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkWeakPointer.h"
 #include "vtk_jsoncpp.h"
 
-#include <QDoubleValidator>
 #include <QMessageBox>
 #include <QPointer>
 #include <QTimer>
@@ -120,18 +120,22 @@ public:
   QPointer<pqColorOpacityEditorWidgetDecorator> Decorator;
   vtkWeakPointer<vtkSMPropertyGroup> PropertyGroup;
   vtkWeakPointer<vtkSMProxy> ScalarOpacityFunctionProxy;
+  QScopedPointer<QAction> TempAction;
+  QScopedPointer<pqChooseColorPresetReaction> ChoosePresetReaction;
 
   // We use this pqPropertyLinks instance to simply monitor smproperty changes.
   pqPropertyLinks LinksForMonitoringChanges;
-  vtkNew<vtkEventQtSlotConnect> VTKConnector;
+  vtkNew<vtkEventQtSlotConnect> IndexedLookupConnector;
+  vtkNew<vtkEventQtSlotConnect> RangeConnector;
 
   pqInternals(pqColorOpacityEditorWidget* self, vtkSMPropertyGroup* group)
     : ColorTableModel(self)
     , OpacityTableModel(self)
     , PropertyGroup(group)
+    , TempAction(new QAction(self))
+    , ChoosePresetReaction(new pqChooseColorPresetReaction(this->TempAction.data(), false))
   {
     this->Ui.setupUi(self);
-    this->Ui.CurrentDataValue->setValidator(new QDoubleValidator(self));
     this->Ui.mainLayout->setMargin(pqPropertiesPanel::suggestedMargin());
     // this->Ui.mainLayout->setSpacing(
     //  pqPropertiesPanel::suggestedVerticalSpacing());
@@ -147,6 +151,9 @@ public:
     this->Ui.OpacityTable->horizontalHeader()->setHighlightSections(false);
     this->Ui.OpacityTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     this->Ui.OpacityTable->horizontalHeader()->setStretchLastSection(true);
+
+    QObject::connect(
+      this->ChoosePresetReaction.data(), SIGNAL(presetApplied()), self, SLOT(presetApplied()));
   }
 
   void render()
@@ -187,9 +194,9 @@ pqColorOpacityEditorWidget::pqColorOpacityEditorWidget(
       SIGNAL(xvmsPointsChanged()));
   }
   QObject::connect(&pqActiveObjects::instance(), SIGNAL(representationChanged(pqRepresentation*)),
-    this, SLOT(updateButtonEnableState()));
+    this, SLOT(representationOrViewChanged()));
   QObject::connect(&pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)), this,
-    SLOT(updateButtonEnableState()));
+    SLOT(representationOrViewChanged()));
 
   QObject::connect(ui.OpacityEditor, SIGNAL(currentPointChanged(vtkIdType)), this,
     SLOT(opacityCurrentChanged(vtkIdType)));
@@ -226,8 +233,8 @@ pqColorOpacityEditorWidget::pqColorOpacityEditorWidget(
   this->connect(
     ui.UseLogScaleOpacity, SIGNAL(clicked(bool)), SLOT(useLogScaleOpacityClicked(bool)));
   // if the user edits the "DataValue", we need to update the transfer function.
-  QObject::connect(
-    ui.CurrentDataValue, SIGNAL(textChangedAndEditingFinished()), this, SLOT(currentDataEdited()));
+  QObject::connect(ui.CurrentDataValue, SIGNAL(fullPrecisionTextChangedAndEditingFinished()), this,
+    SLOT(currentDataEdited()));
 
   vtkSMProperty* smproperty = smgroup->GetProperty("XRGBPoints");
   if (smproperty)
@@ -278,7 +285,7 @@ pqColorOpacityEditorWidget::pqColorOpacityEditorWidget(
     // we are not controlling the IndexedLookup property, we are merely
     // observing it to ensure the UI is updated correctly. Hence we don't fire
     // any signal to update the smproperty.
-    this->Internals->VTKConnector->Connect(smproxy->GetProperty("IndexedLookup"),
+    this->Internals->IndexedLookupConnector->Connect(smproxy->GetProperty("IndexedLookup"),
       vtkCommand::ModifiedEvent, this, SLOT(updateIndexedLookupState()));
     this->updateIndexedLookupState();
 
@@ -342,9 +349,26 @@ void pqColorOpacityEditorWidget::setScalarOpacityFunctionProxy(pqSMProxy sofProx
   internals.ScalarOpacityFunctionProxy = newSofProxy;
   if (internals.ScalarOpacityFunctionProxy)
   {
-    // FIXME: need to verify that repeated initializations are okay.
-    ui.OpacityEditor->initialize(
-      vtkScalarsToColors::SafeDownCast(this->proxy()->GetClientSideObject()), false, pwf, true);
+    pqDataRepresentation* repr = pqActiveObjects::instance().activeRepresentation();
+    vtkSMPVRepresentationProxy* proxy = static_cast<vtkSMPVRepresentationProxy*>(repr->getProxy());
+
+    // When representation changes, we have to initialize the opacity widget when
+    // "MultiComponentsMapping" is modified
+    this->Internals->RangeConnector->Disconnect();
+    vtkSMProperty* msProp = proxy->GetProperty("MapScalars");
+    vtkSMProperty* mcmProp = proxy->GetProperty("MultiComponentsMapping");
+    if (msProp && mcmProp)
+    {
+      this->Internals->RangeConnector->Connect(msProp, vtkCommand::ModifiedEvent, this,
+        SLOT(multiComponentsMappingChanged(vtkObject*, unsigned long, void*, void*)), pwf);
+
+      this->Internals->RangeConnector->Connect(mcmProp, vtkCommand::ModifiedEvent, this,
+        SLOT(multiComponentsMappingChanged(vtkObject*, unsigned long, void*, void*)), pwf);
+
+      // FIXME: need to verify that repeated initializations are okay.
+      this->initializeOpacityEditor(pwf);
+    }
+
     // add new property links.
     this->links().addPropertyLink(this, "xvmsPoints", SIGNAL(xvmsPointsChanged()),
       internals.ScalarOpacityFunctionProxy,
@@ -370,6 +394,48 @@ void pqColorOpacityEditorWidget::updateIndexedLookupState()
     bool val = vtkSMPropertyHelper(this->proxy(), "IndexedLookup").GetAsInt() != 0;
     this->Internals->Decorator->setHidden(val);
   }
+}
+
+//-----------------------------------------------------------------------------
+void pqColorOpacityEditorWidget::multiComponentsMappingChanged(vtkObject* vtkNotUsed(sender),
+  unsigned long vtkNotUsed(event), void* clientData, void* vtkNotUsed(callData))
+{
+  pqDataRepresentation* repr = pqActiveObjects::instance().activeRepresentation();
+  vtkSMPVRepresentationProxy* proxy = static_cast<vtkSMPVRepresentationProxy*>(repr->getProxy());
+
+  if (proxy->GetVolumeIndependentRanges())
+  {
+    // force separate color map
+    vtkSMProperty* separateProperty = proxy->GetProperty("UseSeparateColorMap");
+    bool sepEnabled = vtkSMPropertyHelper(separateProperty).GetAsInt() != 0;
+    if (!sepEnabled)
+    {
+      vtkSMPropertyHelper(separateProperty).Set(1);
+      vtkSMPropertyHelper helper(proxy->GetProperty("ColorArrayName"));
+      proxy->SetScalarColoring(helper.GetAsString(4), vtkDataObject::POINT);
+      proxy->RescaleTransferFunctionToDataRange();
+      return;
+    }
+  }
+
+  this->initializeOpacityEditor(static_cast<vtkPiecewiseFunction*>(clientData));
+  proxy->RescaleTransferFunctionToDataRange();
+}
+
+//-----------------------------------------------------------------------------
+void pqColorOpacityEditorWidget::initializeOpacityEditor(vtkPiecewiseFunction* pwf)
+{
+  Ui::ColorOpacityEditorWidget& ui = this->Internals->Ui;
+  pqDataRepresentation* repr = pqActiveObjects::instance().activeRepresentation();
+  vtkSMPVRepresentationProxy* proxy = static_cast<vtkSMPVRepresentationProxy*>(repr->getProxy());
+  vtkScalarsToColors* stc = nullptr;
+  vtkSMProperty* separateProperty = proxy->GetProperty("UseSeparateColorMap");
+  bool sepEnabled = vtkSMPropertyHelper(separateProperty).GetAsInt() != 0;
+  if (!proxy->GetVolumeIndependentRanges() || !sepEnabled)
+  {
+    stc = vtkScalarsToColors::SafeDownCast(this->proxy()->GetClientSideObject());
+  }
+  ui.OpacityEditor->initialize(stc, false, pwf, true);
 }
 
 //-----------------------------------------------------------------------------
@@ -421,7 +487,7 @@ void pqColorOpacityEditorWidget::updateCurrentData()
   {
     double xrgbms[6];
     stc->GetNodeValue(ui.ColorEditor->currentPoint(), xrgbms);
-    ui.CurrentDataValue->setText(QString::number(xrgbms[0]));
+    ui.CurrentDataValue->setFullPrecisionText(pqCoreUtilities::number(xrgbms[0]));
 
     // Don't enable widget for first/last control point. For those, users must
     // rescale the transfer function manually
@@ -432,7 +498,7 @@ void pqColorOpacityEditorWidget::updateCurrentData()
   {
     double xvms[4];
     pwf->GetNodeValue(ui.OpacityEditor->currentPoint(), xvms);
-    ui.CurrentDataValue->setText(QString::number(xvms[0]));
+    ui.CurrentDataValue->setFullPrecisionText(pqCoreUtilities::number(xvms[0]));
 
     // Don't enable widget for first/last control point. For those, users must
     // rescale the transfer function manually
@@ -583,18 +649,18 @@ void pqColorOpacityEditorWidget::currentDataEdited()
   Ui::ColorOpacityEditorWidget& ui = this->Internals->Ui;
   if (ui.ColorEditor->currentPoint() >= 0 && stc)
   {
-    ui.ColorEditor->setCurrentPointPosition(ui.CurrentDataValue->text().toDouble());
+    ui.ColorEditor->setCurrentPointPosition(ui.CurrentDataValue->fullPrecisionText().toDouble());
   }
   else if (ui.OpacityEditor->currentPoint() >= 0 && pwf)
   {
-    ui.OpacityEditor->setCurrentPointPosition(ui.CurrentDataValue->text().toDouble());
+    ui.OpacityEditor->setCurrentPointPosition(ui.CurrentDataValue->fullPrecisionText().toDouble());
   }
 
   this->updateCurrentData();
 }
 
 //-----------------------------------------------------------------------------
-void pqColorOpacityEditorWidget::updateButtonEnableState()
+void pqColorOpacityEditorWidget::representationOrViewChanged()
 {
   pqDataRepresentation* repr = pqActiveObjects::instance().activeRepresentation();
   bool hasRepresentation = repr != NULL;
@@ -605,6 +671,26 @@ void pqColorOpacityEditorWidget::updateButtonEnableState()
   ui.ResetRangeToData->setEnabled(hasRepresentation);
   ui.ResetRangeToDataOverTime->setEnabled(hasRepresentation);
   ui.ResetRangeToVisibleData->setEnabled(hasRepresentation && hasView);
+
+  vtkSMProxy* pwfProxy = this->scalarOpacityFunctionProxy();
+  vtkPiecewiseFunction* pwf =
+    pwfProxy ? vtkPiecewiseFunction::SafeDownCast(pwfProxy->GetClientSideObject()) : nullptr;
+
+  // When representation changes, we have to initialize the opacity widget when
+  // "MultiComponentsMapping" is modified
+  this->Internals->RangeConnector->Disconnect();
+  vtkSMProperty* msProp = repr->getProxy()->GetProperty("MapScalars");
+  vtkSMProperty* mcmProp = repr->getProxy()->GetProperty("MultiComponentsMapping");
+  if (msProp && mcmProp)
+  {
+    this->Internals->RangeConnector->Connect(msProp, vtkCommand::ModifiedEvent, this,
+      SLOT(multiComponentsMappingChanged(vtkObject*, unsigned long, void*, void*)), pwf);
+
+    this->Internals->RangeConnector->Connect(mcmProp, vtkCommand::ModifiedEvent, this,
+      SLOT(multiComponentsMappingChanged(vtkObject*, unsigned long, void*, void*)), pwf);
+
+    this->initializeOpacityEditor(pwf);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -709,13 +795,8 @@ void pqColorOpacityEditorWidget::invertTransferFunctions()
 //-----------------------------------------------------------------------------
 void pqColorOpacityEditorWidget::choosePreset(const char* presetName)
 {
-  QAction* tmp = new QAction(NULL);
-  pqChooseColorPresetReaction* ccpr = new pqChooseColorPresetReaction(tmp, false);
-  ccpr->setTransferFunction(this->proxy());
-  this->connect(ccpr, SIGNAL(presetApplied()), SLOT(presetApplied()));
-  ccpr->choosePreset(presetName);
-  delete ccpr;
-  delete tmp;
+  this->Internals->ChoosePresetReaction->setTransferFunction(this->proxy());
+  this->Internals->ChoosePresetReaction->choosePreset(presetName);
 }
 
 //-----------------------------------------------------------------------------

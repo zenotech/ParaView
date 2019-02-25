@@ -2942,7 +2942,7 @@ void readvars(FILE* gmvin, int ftype)
       fprintf(stderr,"Error, no cells exist for cell variable %s.\n",varname);
       errormsgvarlen = (int)strlen(varname);
       gmv_data.errormsg = (char *)malloc((42 + errormsgvarlen) * sizeof(char));
-      snprintf(gmv_data.errormsg,42,"Error, no cells exist for cell variable %s.",varname);
+      snprintf(gmv_data.errormsg,42 + errormsgvarlen,"Error, no cells exist for cell variable %s.",varname);
       gmv_data.keyword = GMVERROR;
       return;
      }
@@ -2951,7 +2951,7 @@ void readvars(FILE* gmvin, int ftype)
       fprintf(stderr,"Error, no nodes exist for node variable %s.\n",varname);
       errormsgvarlen = (int)strlen(varname);
       gmv_data.errormsg = (char *)malloc((42 + errormsgvarlen) * sizeof(char));
-      snprintf(gmv_data.errormsg,42,"Error, no nodes exist for node variable %s.",varname);
+      snprintf(gmv_data.errormsg,42 + errormsgvarlen,"Error, no nodes exist for node variable %s.",varname);
       gmv_data.keyword = GMVERROR;
       return;
      }
@@ -2960,7 +2960,7 @@ void readvars(FILE* gmvin, int ftype)
       fprintf(stderr,"Error, no faces exist for face variable %s.\n",varname);
       errormsgvarlen = (int)strlen(varname);
       gmv_data.errormsg = (char *)malloc((42 + errormsgvarlen) * sizeof(char));
-      snprintf(gmv_data.errormsg,42,"Error, no faces exist for face variable %s.",varname);
+      snprintf(gmv_data.errormsg,42 + errormsgvarlen,"Error, no faces exist for face variable %s.",varname);
       gmv_data.keyword = GMVERROR;
       return;
      }
@@ -3064,7 +3064,7 @@ void readflags(FILE* gmvin, int ftype)
       fprintf(stderr,"Error, no cells exist for cell flags %s.\n",flgname);
       errormsgvarlen = (int)strlen(flgname);
       gmv_data.errormsg = (char *)malloc((39 + errormsgvarlen) * sizeof(char));
-      snprintf(gmv_data.errormsg,39,"Error, no cells exist for cell flags %s.",flgname);
+      snprintf(gmv_data.errormsg,39 + errormsgvarlen,"Error, no cells exist for cell flags %s.",flgname);
       gmv_data.keyword = GMVERROR;
       return;
      }
@@ -3073,7 +3073,7 @@ void readflags(FILE* gmvin, int ftype)
       fprintf(stderr,"Error, no nodes exist for node flags %s.\n",flgname);
       errormsgvarlen = (int)strlen(flgname);
       gmv_data.errormsg = (char *)malloc((39 + errormsgvarlen) * sizeof(char));
-      snprintf(gmv_data.errormsg,39,"Error, no nodes exist for node flags %s.",flgname);
+      snprintf(gmv_data.errormsg,39 + errormsgvarlen,"Error, no nodes exist for node flags %s.",flgname);
       gmv_data.keyword = GMVERROR;
       return;
      }
@@ -3716,7 +3716,7 @@ void readunits(FILE* gmvin, int ftype)
          ioerrtst(gmvin);
         }
 
-      /*  Allocate two character stings.  */
+      /*  Allocate two character strings.  */
       fldstr = (char *)malloc(numunits*MAXCUSTOMNAMELENGTH*sizeof(char));
       unitstr = (char *)malloc(numunits*MAXCUSTOMNAMELENGTH*sizeof(char));
       if (fldstr == NULL || unitstr == NULL)
@@ -4916,7 +4916,8 @@ void readvects(FILE* gmvin, int ftype)
      {
       for (i = 0; i < ncomps; i++)
         {
-         sprintf(cvname,"%d-%s",i+1,vectname);
+         char cvname2[2*MAXCUSTOMNAMELENGTH];
+         sprintf(cvname2,"%d-%s",i+1,vectname);
          strncpy(&cvnames[i*MAXCUSTOMNAMELENGTH],cvname,MAXCUSTOMNAMELENGTH-1);
          *(cvnames+i*MAXCUSTOMNAMELENGTH+charsize_in) = (char) 0;
         }
@@ -5869,6 +5870,10 @@ void regcell(long icell, long nc)
                break;
       default: break;
      }
+
+   /* Avoid warning about possible use of uninitialized array element */
+   /* fverts[0] used below. */
+   fverts[0] = 0;
 
    /*  Build face information.  */
    for (i = 0; i < nfaces; i++)

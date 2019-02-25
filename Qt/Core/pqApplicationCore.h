@@ -82,7 +82,7 @@ class PQCORE_EXPORT pqApplicationCore : public QObject
   typedef QObject Superclass;
 
 public:
-  // Get the global instace for the pqApplicationCore.
+  // Get the global instance for the pqApplicationCore.
   static pqApplicationCore* instance();
 
   /**
@@ -373,6 +373,14 @@ protected slots:
   void onStateLoaded(vtkPVXMLElement* root, vtkSMProxyLocator* locator);
   void onStateSaved(vtkPVXMLElement* root);
   void onHelpEngineWarning(const QString&);
+
+private slots:
+  /**
+   * called when vtkPVGeneralSettings::GetInstance() fired
+   * `vtkCommand::ModifiedEvent`. We update pqDoubleLineEdit's global precision
+   * settings.
+   */
+  void generalSettingsChanged();
 
 protected:
   bool LoadingState;

@@ -188,7 +188,7 @@ private:
   Q_DISABLE_COPY(pqWidgetForCheckbox)
 };
 
-/// Returns pre-defined run-time environment. This includes the environement
+/// Returns pre-defined run-time environment. This includes the environment
 /// of this application itself as well as some predefined values.
 QProcessEnvironment getDefaultEnvironment(const pqServerConfiguration& configuration)
 {
@@ -624,7 +624,8 @@ bool pqServerLauncher::connectToPrelaunchedServer()
   }
 
   const pqServerResource& resource = this->Internals->Configuration.resource();
-  this->Internals->Server = builder->createServer(resource);
+  this->Internals->Server =
+    builder->createServer(resource, this->Internals->Configuration.connectionTimeout());
   return this->Internals->Server != NULL;
 }
 

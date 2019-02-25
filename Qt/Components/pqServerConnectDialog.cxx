@@ -157,7 +157,7 @@ pqServerConnectDialog::pqServerConnectDialog(
     SLOT(updateConfigurations()));
 
   QObject::connect(this->Internals->servers, SIGNAL(currentCellChanged(int, int, int, int)), this,
-    SLOT(onServerSelected(int)));
+    SLOT(onServerSelected()));
 
   QObject::connect(
     this->Internals->servers, SIGNAL(itemDoubleClicked(QTableWidgetItem*)), this, SLOT(connect()));
@@ -184,6 +184,9 @@ pqServerConnectDialog::pqServerConnectDialog(
     SLOT(acceptConfigurationPage2()));
 
   QObject::connect(this->Internals->deleteServer, SIGNAL(clicked()), this, SLOT(deleteServer()));
+
+  QObject::connect(this, SIGNAL(serverAdded()), this, SLOT(updateButtons()));
+  QObject::connect(this, SIGNAL(serverDeleted()), this, SLOT(updateButtons()));
 
   QObject::connect(this->Internals->connect, SIGNAL(clicked()), this, SLOT(connect()));
 
@@ -302,27 +305,52 @@ void pqServerConnectDialog::updateConfigurations()
 }
 
 //-----------------------------------------------------------------------------
-void pqServerConnectDialog::onServerSelected(int row)
+void pqServerConnectDialog::onServerSelected()
 {
   Q_ASSERT(this->Internals->servers->rowCount() == this->Internals->Configurations.size());
-
-  // covert the row number to original index (since servers can be sorted).
-  int original_index = this->Internals->servers->item(row, 0)->data(Qt::UserRole).toInt();
-
-  bool is_mutable = false;
-  if (original_index >= 0 && original_index < this->Internals->servers->rowCount())
-  {
-    is_mutable = this->Internals->Configurations[original_index].isMutable();
-  }
-  this->Internals->editServer->setEnabled(is_mutable);
-  this->Internals->deleteServer->setEnabled(is_mutable);
-  this->Internals->connect->setEnabled(true);
+  this->updateButtons();
 }
 
 //-----------------------------------------------------------------------------
 void pqServerConnectDialog::addServer()
 {
   this->editConfiguration(pqServerConfiguration());
+  emit serverAdded();
+}
+
+//-----------------------------------------------------------------------------
+void pqServerConnectDialog::updateButtons()
+{
+  // Handle the case where there are no servers.
+  if (this->Internals->servers->rowCount() == 0)
+  {
+    this->Internals->editServer->setEnabled(false);
+    this->Internals->deleteServer->setEnabled(false);
+    this->Internals->connect->setEnabled(false);
+    this->Internals->timeoutLabel->setVisible(false);
+    this->Internals->timeoutSpinBox->setVisible(false);
+    return;
+  }
+
+  int row = this->Internals->servers->currentRow();
+  if (row >= 0)
+  {
+    // Convert the row number to original index (since servers can be sorted).
+    int original_index = this->Internals->servers->item(row, 0)->data(Qt::UserRole).toInt();
+
+    bool is_mutable = false;
+    bool isReverse = false;
+    if (original_index >= 0 && original_index < this->Internals->servers->rowCount())
+    {
+      is_mutable = this->Internals->Configurations[original_index].isMutable();
+      isReverse = this->Internals->Configurations[original_index].resource().isReverse();
+    }
+    this->Internals->editServer->setEnabled(is_mutable);
+    this->Internals->deleteServer->setEnabled(is_mutable);
+    this->Internals->connect->setEnabled(true);
+    this->Internals->timeoutLabel->setVisible(!isReverse);
+    this->Internals->timeoutSpinBox->setVisible(!isReverse);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -602,6 +630,8 @@ void pqServerConnectDialog::deleteServer()
     pqApplicationCore::instance()->serverConfigurations().removeConfiguration(config.name());
     pqApplicationCore::instance()->serverConfigurations().saveNow();
   }
+
+  emit serverDeleted();
 }
 
 //-----------------------------------------------------------------------------
@@ -650,6 +680,7 @@ void pqServerConnectDialog::connect()
   Q_ASSERT(original_index >= 0 && original_index < this->Internals->Configurations.size());
 
   this->Internals->ToConnect = this->Internals->Configurations[original_index];
+  this->Internals->ToConnect.setConnectionTimeout(this->Internals->timeoutSpinBox->value());
   this->accept();
 }
 
@@ -830,8 +861,6 @@ void pqServerConnectDialog::importServersSelectionChanged()
 //-----------------------------------------------------------------------------
 void pqServerConnectDialog::importServers()
 {
-  // Make sure servers importer and server table widget are synchronized
-  this->updateImportableConfigurations();
   QList<QTableWidgetItem*> items = this->Internals->importServersTable->selectedItems();
   QSet<int> indexes;
   foreach (QTableWidgetItem* item, items)

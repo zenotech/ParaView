@@ -13,7 +13,7 @@ A simple example::
   # Apply a shrink filter
   shrink = Shrink(sphere)
 
-  # Turn the visiblity of the shrink object on.
+  # Turn the visibility of the shrink object on.
   Show(shrink)
 
   # Render the scene
@@ -81,16 +81,20 @@ def Disconnect(ns=None, force=True):
 
 # -----------------------------------------------------------------------------
 
-def Connect(ds_host=None, ds_port=11111, rs_host=None, rs_port=11111):
+def Connect(ds_host=None, ds_port=11111, rs_host=None, rs_port=11111, timeout = 60):
     """Creates a connection to a server. Example usage::
 
     > Connect("amber") # Connect to a single server at default port
     > Connect("amber", 12345) # Connect to a single server at port 12345
-    > Connect("amber", 11111, "vis_cluster", 11111) # connect to data server, render server pair"""
+    > Connect("amber", 11111, "vis_cluster", 11111) # connect to data server, render server pair
+    > Connect("amber", timeout=30) # Connect to a single server at default port with a 30s timeout instead of default 60s
+    > Connect("amber", timeout=-1) # Connect to a single server at default port with no timeout instead of default 60s
+    > Connect("amber", timeout=0)  # Connect to a single server at default port without retrying instead of retrying for the default 60s"""
     Disconnect(globals(), False)
-    connection = servermanager.Connect(ds_host, ds_port, rs_host, rs_port)
-    _initializeSession(connection)
-    _add_functions(globals())
+    connection = servermanager.Connect(ds_host, ds_port, rs_host, rs_port, timeout)
+    if not (connection is None):
+      _initializeSession(connection)
+      _add_functions(globals())
     return connection
 
 # -----------------------------------------------------------------------------
@@ -100,6 +104,15 @@ def ReverseConnect(port=11111):
     an incoming connection from the server."""
     Disconnect(globals(), False)
     connection = servermanager.ReverseConnect(port)
+    _initializeSession(connection)
+    _add_functions(globals())
+    return connection
+
+# -----------------------------------------------------------------------------
+
+def ResetSession():
+    """Reset the session to its initial state."""
+    connection = servermanager.ResetSession()
     _initializeSession(connection)
     _add_functions(globals())
     return connection
@@ -474,6 +487,15 @@ def Show(proxy=None, view=None, **params):
     return rep
 
 # -----------------------------------------------------------------------------
+def ShowAll(view=None):
+    """Show all pipeline sources in the given view.
+    If view is not specified, active view is used."""
+    if not view:
+        view = active_objects.view
+    controller = servermanager.ParaViewPipelineController()
+    controller.ShowAll(view)
+
+# -----------------------------------------------------------------------------
 def Hide(proxy=None, view=None):
     """Turns the visibility of a given pipeline object off in the given view.
     If pipeline object and/or view are not specified, active objects are used."""
@@ -673,6 +695,21 @@ def GetViewProperties(view=None):
     """"Same as GetActiveView(), this API is provided just for consistency with
     GetDisplayProperties()."""
     return GetActiveView()
+
+# -----------------------------------------------------------------------------
+def LoadPalette(paletteName):
+    """Load a color palette to override the default foreground and background
+    colors used by ParaView views.  The current global palette's colors are set
+    to the colors in the loaded palette."""
+    pxm = servermanager.ProxyManager()
+    palette = pxm.GetProxy("global_properties", "ColorPalette")
+    prototype = pxm.GetPrototypeProxy("palettes", paletteName)
+
+    if palette is None or prototype is None:
+        return
+
+    palette.Copy(prototype)
+    palette.UpdateVTKObjects()
 
 #==============================================================================
 # ServerManager methods
@@ -1219,7 +1256,7 @@ def SaveAnimation(filename, viewOrLayout=None, scene=None, **params):
           (smallest file size) and `2` is best quality (largest file size).
 
         UseSubsampling:
-          When set to 1 (or True), the video will be encoded uisng 4:2:0
+          When set to 1 (or True), the video will be encoded using 4:2:0
           subsampling for the color channels.
 
     **Obsolete Parameters**

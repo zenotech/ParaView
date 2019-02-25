@@ -514,7 +514,6 @@ public:
     vtkExtentTranslator* translator, const int whole_extents[6], const double origin[3],
     const double spacing[3]);
   static void SetOrderedCompositingInformation(vtkInformation* info, const double bounds[6]);
-  void ClearOrderedCompositingInformation();
   //@}
 
   //@{
@@ -535,6 +534,7 @@ public:
   }
   //@}
 
+  //@{
   /**
    * This is an temporary/experimental option and may be removed without notice.
    * This is intended to be used within some experimental representations that
@@ -548,6 +548,9 @@ public:
    * ordered compositing will also be disabled.
    */
   static void SetForceDataDistributionMode(vtkInformation* info, int flag);
+  bool IsForceDataDistributionModeSet() const { return this->ForceDataDistributionMode != -1; }
+  int GetForceDataDistributionMode() const { return this->ForceDataDistributionMode; }
+  //@}
 
   //@{
   /**
@@ -677,20 +680,36 @@ public:
   //@{
   /**
    * Returns whether the view will use distributed rendering for the next
-   * StillRender() call based on the geometry sizes determined by the most
-   * recent call to Update().
+   * full-resolution render. This uses the full resolution geometry sizes as
+   * determined by the most recent call to `Update`.
    */
-  vtkGetMacro(UseDistributedRenderingForStillRender, bool);
+  vtkGetMacro(UseDistributedRenderingForRender, bool);
   //@}
+
+  /**
+   * @deprecated ParaView 5.6.
+   *
+   * Please use `GetUseDistributedRenderingForRender` instead.
+   * The change was done to make the name better reflect the implementation.
+   */
+  VTK_LEGACY(bool GetUseDistributedRenderingForStillRender());
 
   //@{
   /**
    * Returns whether the view will use distributed rendering for the next
-   * InteractiveRender() call based on the geometry sizes determined by the most
-   * recent calls to Update() and UpdateLOD().
+   * low-resolution render. This uses the low-resolution (or LOD) geometry sizes
+   * as determined by the most recent call to `UpdateLOD`.
    */
-  vtkGetMacro(UseDistributedRenderingForInteractiveRender, bool);
+  vtkGetMacro(UseDistributedRenderingForLODRender, bool);
   //@}
+
+  /**
+   * @deprecated ParaView 5.6.
+   *
+   * Please use `GetUseDistributedRenderingForLODRender` instead. The change was
+   * done to make the name better reflect the implementation.
+   */
+  VTK_LEGACY(bool GetUseDistributedRenderingForInteractiveRender());
 
   //@{
   /**
@@ -1106,8 +1125,8 @@ protected:
   bool UsedLODForLastRender;
   bool UseLODForInteractiveRender;
   bool UseOutlineForLODRendering;
-  bool UseDistributedRenderingForStillRender;
-  bool UseDistributedRenderingForInteractiveRender;
+  bool UseDistributedRenderingForRender;
+  bool UseDistributedRenderingForLODRender;
 
   vtkTypeUInt32 StillRenderProcesses;
   vtkTypeUInt32 InteractiveRenderProcesses;
