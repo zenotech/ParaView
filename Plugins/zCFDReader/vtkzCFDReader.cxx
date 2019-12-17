@@ -39,6 +39,7 @@
 #include <hdf5/hdffile.hpp>
 #include <hdf5/hdfdataset.hpp>
 
+#include <Python.h>
 #include <boost/python.hpp>
 
 
@@ -212,7 +213,7 @@ void vtkzCFDReader::ReadPython(std::map<int,std::string> &zoneToBc)
   if(env)
   {
     PyObject *obj = PySys_GetObject("path");
-    PyObject *pPath = PyString_FromString(env);
+    PyObject *pPath = PyUnicode_FromString(env);
     PyList_Append(obj,pPath);
     Py_DECREF(pPath);
 
@@ -242,9 +243,10 @@ void vtkzCFDReader::ReadPython(std::map<int,std::string> &zoneToBc)
     PyErr_Fetch(&e, &v, &t);
 
     //Get error message
-    char *pStrErrorMessage = PyString_AsString(v);
+    Py_ssize_t size;
+    /*const char *pStrErrorMessage = PyUnicode_AsUTF8AndSize(v, &size);
 
-    std::cout << "Python Exception: " << pStrErrorMessage << std::endl;
+    std::cout << "Python Exception: " << pStrErrorMessage << std::endl;*/
 
     // A NULL e means that there is not available Python
     // exception
@@ -526,9 +528,9 @@ int vtkzCFDReader::RequestInformation(vtkInformation *vtkNotUsed(request),
       std::vector<int> cellZones(numCells,0);
       try{
         // Read cells zones
-        
+
         meshg->openDataset("cellZone")->readData(cellZones);
-        
+
       }
       catch(...){
       }
@@ -847,9 +849,9 @@ int vtkzCFDReader::RequestData(vtkInformation *vtkNotUsed(request),
   std::vector<int> cellZones(numCells,0);
   try{
     // Read cells zones
-    
+
     meshg->openDataset("cellZone")->readData(cellZones);
-    
+
   }
   catch(...){
   }
@@ -1050,7 +1052,7 @@ int vtkzCFDReader::RequestData(vtkInformation *vtkNotUsed(request),
           if(cellZones[i] == *it){
             cellList.push_back(i);
           }
-        }        
+        }
       }
 
       // Add interior

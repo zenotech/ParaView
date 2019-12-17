@@ -26,6 +26,8 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMUncheckedPropertyHelper.h"
 
+#include <cmath>
+
 vtkStandardNewMacro(vtkSMBoundsDomain);
 //---------------------------------------------------------------------------
 vtkSMBoundsDomain::vtkSMBoundsDomain()
@@ -309,7 +311,6 @@ void vtkSMBoundsDomain::SetDomainValues(double bounds[6])
     entries.push_back(vtkEntry(0, maxbounds));
     this->SetEntries(entries);
   }
-
   else if (this->Mode == vtkSMBoundsDomain::APPROXIMATE_CELL_LENGTH)
   {
     double diameter = sqrt((bounds[1] - bounds[0]) * (bounds[1] - bounds[0]) +
@@ -317,6 +318,19 @@ void vtkSMBoundsDomain::SetDomainValues(double bounds[6])
       (bounds[5] - bounds[4]) * (bounds[5] - bounds[4]));
     std::vector<vtkEntry> entries;
     entries.push_back(vtkEntry(0, diameter));
+    this->SetEntries(entries);
+  }
+  else if (this->Mode == vtkSMBoundsDomain::COMPONENT_MAGNITUDE)
+  {
+    if (vtkMath::AreBoundsInitialized(bounds) == 0)
+    {
+      return;
+    }
+
+    std::vector<vtkEntry> entries;
+    entries.emplace_back(vtkEntry(0, bounds[1] - bounds[0]));
+    entries.emplace_back(vtkEntry(0, bounds[3] - bounds[2]));
+    entries.emplace_back(vtkEntry(0, bounds[5] - bounds[4]));
     this->SetEntries(entries);
   }
 }
@@ -334,12 +348,12 @@ int vtkSMBoundsDomain::SetDefaultValues(vtkSMProperty* property, bool use_unchec
       double unitDistance = 1.0;
       if (vtkMath::AreBoundsInitialized(bounds))
       {
-        double diameter = sqrt((bounds[1] - bounds[0]) * (bounds[1] - bounds[0]) +
+        const double diameter = sqrt((bounds[1] - bounds[0]) * (bounds[1] - bounds[0]) +
           (bounds[3] - bounds[2]) * (bounds[3] - bounds[2]) +
           (bounds[5] - bounds[4]) * (bounds[5] - bounds[4]));
 
-        int numCells = dataInfo->GetNumberOfCells();
-        double linearNumCells = pow((double)numCells, (1.0 / 3.0));
+        const auto numCells = dataInfo->GetNumberOfCells();
+        const double linearNumCells = std::cbrt(numCells);
         unitDistance = diameter;
         if (linearNumCells != 0.0 && !vtkMath::IsNan(linearNumCells) &&
           !vtkMath::IsInf(linearNumCells))
@@ -379,6 +393,10 @@ int vtkSMBoundsDomain::ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement* e
     else if (strcmp(mode, "oriented_magnitude") == 0)
     {
       this->Mode = vtkSMBoundsDomain::ORIENTED_MAGNITUDE;
+    }
+    else if (strcmp(mode, "component_magnitude") == 0)
+    {
+      this->Mode = vtkSMBoundsDomain::COMPONENT_MAGNITUDE;
     }
     else if (strcmp(mode, "scaled_extent") == 0)
     {

@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# Test for flake8
+which flake8 > /dev/null 2>&1
+if [ $? != 0 ]; then
+    echo 'To enable pep-8 validation install flake8 and then run setup-hooks.sh'
+    exit 0
+fi
+
+files=`git diff --cached --name-only --diff-filter=ACM | grep -e '\.py$'`
+
+if [ -z "$files" ]
+then
+    exit 0
+else
+    output=`flake8 $files`
+    status=$?
+    if [ ${status} != 0 ]; then
+        echo 'PEP8 errors found in commit:'
+        echo "$output"
+    fi
+fi
+
+exit 0
