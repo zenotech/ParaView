@@ -1,7 +1,7 @@
 [submodule "VTK"]
 	path = VTK
-	url = https://gitlab.kitware.com/vtk/vtk.git
-	branch = paraview/release
+	url = https://github.com/zenotech/VTK.git
+	branch = pv580 
 [submodule "Utilities/VisItBridge"]
 	path = Utilities/VisItBridge
 	url = https://gitlab.kitware.com/paraview/visitbridge.git
