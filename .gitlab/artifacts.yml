@@ -33,6 +33,7 @@
             - build/CMakeCache.txt
             - build/build.ninja
             - build/rules.ninja
+            - build/CMakeFiles/rules.ninja
             - build/Clients/ParaView/Documentation/paraview.qch
             - build/cmake_install.cmake
             - build/*/cmake_install.cmake
@@ -63,6 +64,8 @@
             - build/*/*/*/*/*/*.h
             - build/*/*/*/*/*/*/*.h
             - build/*/*/*/*/*/*/*/*.h
+            - build/*/*/*/*/*.hxx
+            - build/*/*/*/*.mod
             - build/ExternalData/
             - build/Testing/
             - build/Testing/Temporary/
@@ -78,6 +81,18 @@
         expire_in: 1d
         # Tests failing should still upload the artifact for further testing.
         when: always
+        reports:
+            junit:
+                - build/junit.xml
         paths:
             # Debugging logs
             - build/Testing/Temporary/Last*.log
+
+.cmake_tidy_artifacts:
+    artifacts:
+        expire_in: 1d
+        # Because build logs are in here, we should always upload artifacts.
+        when: always
+        paths:
+            # Logs of the build
+            - compile_output.log

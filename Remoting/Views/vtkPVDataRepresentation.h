@@ -19,7 +19,7 @@
  * representations.
  * @sa
  * vtkPVDataRepresentationPipeline
-*/
+ */
 
 #ifndef vtkPVDataRepresentation_h
 #define vtkPVDataRepresentation_h
@@ -230,6 +230,13 @@ public:
   void AddInputConnection(int port, vtkAlgorithmOutput* input) override;
   using Superclass::AddInputConnection;
   //@}
+
+  /**
+   * Specify the array names used for the selection.
+   * Empty method to be implemented by inheriting classes
+   */
+  virtual void SetArrayIdNames(
+    const char* vtkNotUsed(pointArray), const char* vtkNotUsed(cellArray)){};
 
 protected:
   vtkPVDataRepresentation();

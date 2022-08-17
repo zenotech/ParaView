@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqApplicationCore.h"
 #include "pqApplyBehavior.h"
 #include "pqAutoLoadPluginXMLBehavior.h"
+#include "pqBlockContextMenu.h"
 #include "pqCollaborationBehavior.h"
 #include "pqCommandLineOptionsBehavior.h"
 #include "pqCoreTestUtility.h"
@@ -42,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqCustomShortcutBehavior.h"
 #include "pqDataTimeStepBehavior.h"
 #include "pqDefaultViewBehavior.h"
+#include "pqFileDialogFavoriteModel.h"
 #include "pqInterfaceTracker.h"
 #include "pqLiveSourceBehavior.h"
 #include "pqLockPanelsBehavior.h"
@@ -88,7 +90,7 @@ public:
     : QObject(obj)
   {
   }
-  ~WheelFilter() {}
+  ~WheelFilter() override = default;
   bool eventFilter(QObject* obj, QEvent* evt) override
   {
     assert(obj && evt);
@@ -135,6 +137,7 @@ PQ_BEHAVIOR_DEFINE_FLAG(StandardRecentlyUsedResourceLoader, true);
 PQ_BEHAVIOR_DEFINE_FLAG(DataTimeStepBehavior, true);
 PQ_BEHAVIOR_DEFINE_FLAG(SpreadSheetVisibilityBehavior, true);
 PQ_BEHAVIOR_DEFINE_FLAG(PipelineContextMenuBehavior, true);
+PQ_BEHAVIOR_DEFINE_FLAG(BlockContentMenu, true);
 PQ_BEHAVIOR_DEFINE_FLAG(ObjectPickingBehavior, false);
 PQ_BEHAVIOR_DEFINE_FLAG(DefaultViewBehavior, true);
 PQ_BEHAVIOR_DEFINE_FLAG(UndoRedoBehavior, true);
@@ -159,6 +162,7 @@ PQ_BEHAVIOR_DEFINE_FLAG(LiveSourceBehavior, true);
 PQ_BEHAVIOR_DEFINE_FLAG(CustomShortcutBehavior, true);
 PQ_BEHAVIOR_DEFINE_FLAG(MainWindowEventBehavior, true);
 PQ_BEHAVIOR_DEFINE_FLAG(UsageLoggingBehavior, false);
+PQ_BEHAVIOR_DEFINE_FLAG(AddExamplesInFavoritesBehavior, true);
 #undef PQ_BEHAVIOR_DEFINE_FLAG
 
 #define PQ_IS_BEHAVIOR_ENABLED(_name) enable##_name()
@@ -188,6 +192,9 @@ pqParaViewBehaviors::pqParaViewBehaviors(QMainWindow* mainWindow, QObject* paren
     pgm->addInterface(new pqStandardRecentlyUsedResourceLoaderImplementation(pgm));
   }
 
+  pqFileDialogFavoriteModel::AddExamplesInFavorites =
+    PQ_IS_BEHAVIOR_ENABLED(AddExamplesInFavoritesBehavior);
+
   // Define application behaviors.
   if (PQ_IS_BEHAVIOR_ENABLED(DataTimeStepBehavior))
   {
@@ -204,6 +211,12 @@ pqParaViewBehaviors::pqParaViewBehaviors(QMainWindow* mainWindow, QObject* paren
   if (PQ_IS_BEHAVIOR_ENABLED(PipelineContextMenuBehavior))
   {
     new pqPipelineContextMenuBehavior(this);
+
+    // this only makes sense when pqPipelineContextMenuBehavior is enabled.
+    if (PQ_IS_BEHAVIOR_ENABLED(BlockContentMenu))
+    {
+      pgm->addInterface(new pqBlockContextMenu(pgm));
+    }
   }
   if (PQ_IS_BEHAVIOR_ENABLED(ObjectPickingBehavior))
   {
@@ -264,10 +277,10 @@ pqParaViewBehaviors::pqParaViewBehaviors(QMainWindow* mainWindow, QObject* paren
     pqWidgetEventPlayer* player =
       pqApplicationCore::instance()->testUtility()->eventPlayer()->getWidgetEventPlayer(
         "pqStreamingTestingEventPlayer");
-    pqStreamingTestingEventPlayer* splayer = NULL;
+    pqStreamingTestingEventPlayer* splayer = nullptr;
     if (!player)
     {
-      splayer = new pqStreamingTestingEventPlayer(NULL);
+      splayer = new pqStreamingTestingEventPlayer(nullptr);
       // the testUtility takes ownership of the player.
       pqApplicationCore::instance()->testUtility()->eventPlayer()->addWidgetEventPlayer(splayer);
     }
@@ -344,8 +357,6 @@ pqParaViewBehaviors::pqParaViewBehaviors(QMainWindow* mainWindow, QObject* paren
 }
 
 //-----------------------------------------------------------------------------
-pqParaViewBehaviors::~pqParaViewBehaviors()
-{
-}
+pqParaViewBehaviors::~pqParaViewBehaviors() = default;
 
 #undef PQ_IS_BEHAVIOR_ENABLED

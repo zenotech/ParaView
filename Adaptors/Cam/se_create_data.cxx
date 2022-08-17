@@ -16,6 +16,7 @@
 #include "se_create_data.h"
 
 #include "Grid.h"
+#include "Grid.txx"
 
 #include "vtkCPDataDescription.h"
 #include "vtkCPInputDataDescription.h"
@@ -41,10 +42,7 @@ CamAdaptor::Grid<CamAdaptor::CUBE_SPHERE>* g_grid; /// 2d,3d cubed-spheres
 /// Deletes global data
 void se_finalize()
 {
-  if (g_grid)
-  {
-    delete g_grid;
-  }
+  delete g_grid;
 }
 
 //------------------------------------------------------------------------------
@@ -54,12 +52,12 @@ void se_coprocessorfinalize()
   if (g_coprocessor)
   {
     g_coprocessor->Delete();
-    g_coprocessor = NULL;
+    g_coprocessor = nullptr;
   }
   if (g_coprocessorData)
   {
     g_coprocessorData->Delete();
-    g_coprocessorData = NULL;
+    g_coprocessorData = nullptr;
   }
 }
 } // anonymous namespace
@@ -111,7 +109,7 @@ void se_create_grid_(int* ne, int* np, int* nlon, double* lonRad, int* nlat, dou
   {
     vtkGenericWarningMacro(<< "No input data description");
     delete g_grid;
-    g_grid = NULL;
+    g_grid = nullptr;
   }
 }
 
@@ -172,7 +170,7 @@ int se_needtocreategrid_()
   // assume that the grid is not changing so that we only build it
   // the first time, otherwise we clear out the field data
   vtkCPInputDataDescription* idd = g_coprocessorData->GetInputDescriptionByName("input");
-  return (idd == NULL || idd->GetGrid() == NULL);
+  return (idd == nullptr || idd->GetGrid() == nullptr);
 }
 
 //------------------------------------------------------------------------------

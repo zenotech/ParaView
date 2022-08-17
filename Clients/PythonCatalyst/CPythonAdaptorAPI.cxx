@@ -15,12 +15,12 @@
 #include "CPythonAdaptorAPI.h"
 #include "vtkCPProcessor.h"
 #include "vtkCPPythonAdaptorAPI.h"
-#include "vtkCPPythonScriptPipeline.h"
+#include "vtkCPPythonPipeline.h"
 
 void coprocessorinitializewithpython(char* pythonFileName, int* pythonFileNameLength)
 {
-  vtkCPPythonAdaptorAPI::CoProcessorInitialize(NULL);
-  if (pythonFileName != NULL || *pythonFileNameLength > 0)
+  vtkCPPythonAdaptorAPI::CoProcessorInitialize(nullptr);
+  if (pythonFileName != nullptr || *pythonFileNameLength > 0)
   { // we put in a check here so that we avoid the warning below
     coprocessoraddpythonscript(pythonFileName, pythonFileNameLength);
   }
@@ -28,7 +28,7 @@ void coprocessorinitializewithpython(char* pythonFileName, int* pythonFileNameLe
 
 void coprocessoraddpythonscript(char* pythonFileName, int* pythonFileNameLength)
 {
-  if (pythonFileName == NULL || *pythonFileNameLength == 0)
+  if (pythonFileName == nullptr || *pythonFileNameLength == 0)
   {
     vtkGenericWarningMacro("Bad Python file name or length.");
     return;
@@ -39,9 +39,8 @@ void coprocessoraddpythonscript(char* pythonFileName, int* pythonFileNameLength)
   memcpy(cPythonFileName, pythonFileName, sizeof(char) * length);
   cPythonFileName[length] = 0;
 
-  vtkCPPythonScriptPipeline* pipeline = vtkCPPythonScriptPipeline::New();
-  pipeline->Initialize(cPythonFileName);
-
-  vtkCPPythonAdaptorAPI::GetCoProcessor()->AddPipeline(pipeline);
-  pipeline->FastDelete();
+  if (auto pipeline = vtkCPPythonPipeline::CreateAndInitializePipeline(cPythonFileName))
+  {
+    vtkCPPythonAdaptorAPI::GetCoProcessor()->AddPipeline(pipeline);
+  }
 }

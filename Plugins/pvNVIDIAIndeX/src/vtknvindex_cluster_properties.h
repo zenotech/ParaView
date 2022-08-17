@@ -1,4 +1,4 @@
-/* Copyright 2020 NVIDIA Corporation. All rights reserved.
+/* Copyright 2021 NVIDIA Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -76,6 +76,7 @@ struct vtknvindex_dataset_parameters
 {
   vtknvindex_scene::Volume_type volume_type;
   std::string scalar_type;
+  mi::Sint32 scalar_components;
   mi::Float32 voxel_range[2];
   mi::Float32 scalar_range[2];
   mi::Float32 bounds[6];

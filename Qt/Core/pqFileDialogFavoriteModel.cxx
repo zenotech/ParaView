@@ -32,8 +32,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqFileDialogFavoriteModel.h"
 
+#include <QApplication>
+#include <QBrush>
+#include <QDir>
+#include <QFont>
+#include <QStyle>
+#include <pqApplicationCore.h>
+#include <pqCoreConfiguration.h>
 #include <pqFileDialogModel.h>
 #include <pqServer.h>
+#include <pqServerConfiguration.h>
+#include <pqServerResource.h>
+#include <pqSettings.h>
 #include <vtkClientServerStream.h>
 #include <vtkCollection.h>
 #include <vtkCollectionIterator.h>
@@ -49,149 +59,169 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqSMAdaptor.h"
 
+bool pqFileDialogFavoriteModel::AddExamplesInFavorites = true;
+
 /////////////////////////////////////////////////////////////////////
 // Icons
-
+// NOLINTNEXTLINE(readability-redundant-member-init)
 Q_GLOBAL_STATIC(pqFileDialogModelIconProvider, Icons);
 
-//////////////////////////////////////////////////////////////////////
-// FileInfo
-
-class pqFileDialogFavoriteModelFileInfo
+//-----------------------------------------------------------------------------
+pqFileDialogFavoriteModel::pqFileDialogFavoriteModel(
+  pqFileDialogModel* fileDialogModel, pqServer* server, QObject* p)
+  : Superclass(p)
+  , FileDialogModel(fileDialogModel)
 {
-public:
-  pqFileDialogFavoriteModelFileInfo() {}
+  this->Server = server;
+  // We need to determine the URI for this server to get the list of favorites directories
+  // from the pqSettings. If server==nullptr, we use the "builtin:" resource.
+  pqServerResource resource = server ? server->getResource() : pqServerResource("builtin:");
 
-  pqFileDialogFavoriteModelFileInfo(const QString& l, const QString& filepath, int t)
-    : Label(l)
-    , FilePath(filepath)
-    , Type(t)
+  QString uri = resource.configuration().URI();
+  pqApplicationCore* core = pqApplicationCore::instance();
+  pqSettings* settings = core->settings();
+
+  QString key = QString("UserFavorites/%1").arg(uri);
+  if (settings->contains(key))
   {
-  }
-
-  const QString& label() const { return this->Label; }
-
-  const QString& filePath() const { return this->FilePath; }
-
-  int type() const { return this->Type; }
-
-private:
-  QString Label;
-  QString FilePath;
-  int Type;
-};
-
-//////////////////////////////////////////////////////////////////
-// FavoriteModel
-
-class pqFileDialogFavoriteModel::pqImplementation
-{
-public:
-  QList<pqFileDialogFavoriteModelFileInfo> FavoriteList;
-
-  pqImplementation(pqServer* server)
-  {
-    vtkPVFileInformation* information = vtkPVFileInformation::New();
-
-    if (server)
+    QVariantList const fileInfos = settings->value(key).toList();
+    // ensure that the directories exist.
+    for (QVariant const& fileInfo : fileInfos)
     {
-      vtkSMSessionProxyManager* pxm = server->proxyManager();
+      auto fileInfoList = fileInfo.toList();
+      QString path = fileInfoList[1].toString();
 
-      vtkSMProxy* helper = pxm->NewProxy("misc", "FileInformationHelper");
-      pqSMAdaptor::setElementProperty(helper->GetProperty("SpecialDirectories"), true);
-      helper->UpdateVTKObjects();
-      helper->GatherInformation(information);
-      helper->Delete();
-    }
-    else
-    {
-      vtkPVFileInformationHelper* helper = vtkPVFileInformationHelper::New();
-      helper->SetSpecialDirectories(1);
-      information->CopyFromObject(helper);
-      helper->Delete();
-    }
-
-    vtkCollectionIterator* iter = information->GetContents()->NewIterator();
-    for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem())
-    {
-      vtkPVFileInformation* cur_info = vtkPVFileInformation::SafeDownCast(iter->GetCurrentObject());
-      if (!cur_info)
+      // If it is the Examples dir placeholder, replace it with the real path to the examples.
+      if (path == "_examples_path_")
       {
-        continue;
+        // this will not be stored in the favorites
+        path = QString::fromStdString(vtkPVFileInformation::GetParaViewExampleFilesDirectory());
       }
-      this->FavoriteList.push_back(pqFileDialogFavoriteModelFileInfo(
-        cur_info->GetName(), cur_info->GetFullPath(), cur_info->GetType()));
+
+      // Check type and existence on creation
+      int type = this->FileDialogModel->fileType(path);
+
+      this->FavoriteList.push_back(pqFileDialogFavoriteModelFileInfo{
+        fileInfoList[0].toString(), fileInfoList[1].toString(), type });
     }
-
-    iter->Delete();
-    information->Delete();
   }
-};
-
-pqFileDialogFavoriteModel::pqFileDialogFavoriteModel(pqServer* server, QObject* p)
-  : base(p)
-  , Implementation(new pqImplementation(server))
-{
+  else
+  {
+    this->LoadFavoritesFromSystem();
+  }
+  this->SettingsKey = key;
 }
 
+//-----------------------------------------------------------------------------
 pqFileDialogFavoriteModel::~pqFileDialogFavoriteModel()
 {
-  delete this->Implementation;
-}
-
-QString pqFileDialogFavoriteModel::filePath(const QModelIndex& Index) const
-{
-  if (Index.row() < this->Implementation->FavoriteList.size())
+  pqApplicationCore* core = pqApplicationCore::instance();
+  pqSettings* settings = core->settings();
+  if (settings)
   {
-    pqFileDialogFavoriteModelFileInfo& file = this->Implementation->FavoriteList[Index.row()];
-    return file.filePath();
+    QVariantList favoriteListVariant;
+    favoriteListVariant.reserve(this->FavoriteList.size());
+    for (pqFileDialogFavoriteModelFileInfo const& fileInfo : this->FavoriteList)
+    {
+      favoriteListVariant.push_back(
+        QVariant{ { fileInfo.Label, fileInfo.FilePath, fileInfo.Type } });
+    }
+    settings->setValue(this->SettingsKey, favoriteListVariant);
   }
-  return QString();
 }
 
-bool pqFileDialogFavoriteModel::isDir(const QModelIndex& Index) const
+//-----------------------------------------------------------------------------
+QString pqFileDialogFavoriteModel::filePath(const QModelIndex& index) const
 {
-  if (Index.row() >= this->Implementation->FavoriteList.size())
-    return false;
-
-  pqFileDialogFavoriteModelFileInfo& file = this->Implementation->FavoriteList[Index.row()];
-  return vtkPVFileInformation::IsDirectory(file.type());
+  return this->data(index, Qt::UserRole).toString();
 }
 
+//-----------------------------------------------------------------------------
+bool pqFileDialogFavoriteModel::isDir(const QModelIndex& index) const
+{
+  if (index.row() >= this->FavoriteList.size())
+  {
+    return false;
+  }
+
+  const pqFileDialogFavoriteModelFileInfo& file = this->FavoriteList[index.row()];
+  return vtkPVFileInformation::IsDirectory(file.Type);
+}
+
+//-----------------------------------------------------------------------------
 QVariant pqFileDialogFavoriteModel::data(const QModelIndex& idx, int role) const
 {
-  if (!idx.isValid())
+  if (!idx.isValid() || idx.row() >= this->FavoriteList.size() || idx.column() != 0)
+  {
     return QVariant();
+  }
 
-  if (idx.row() >= this->Implementation->FavoriteList.size())
-    return QVariant();
+  const pqFileDialogFavoriteModelFileInfo& file = this->FavoriteList[idx.row()];
+  auto dir = file.FilePath;
+  // If it is the Examples dir placeholder, replace it with the real path to the examples.
+  if (dir == "_examples_path_")
+  {
+    // FIXME when the shared resources dir is not found, this is equal to `/examples`. This might be
+    // confusing for people without the `Examples` directory (mostly ParaView devs). This directory
+    // can be hidden by setting the `AddExamplesInFavoritesBehavior` to `false`.
+    dir = QString::fromStdString(vtkPVFileInformation::GetParaViewExampleFilesDirectory());
+  }
 
-  const pqFileDialogFavoriteModelFileInfo& file = this->Implementation->FavoriteList[idx.row()];
+  QString temp;
   switch (role)
   {
     case Qt::DisplayRole:
-      switch (idx.column())
+    case Qt::EditRole:
+      return file.Label;
+    case Qt::UserRole:
+      return dir;
+    case Qt::ItemDataRole::ToolTipRole:
+      if (file.Type != vtkPVFileInformation::INVALID)
       {
-        case 0:
-          return file.label();
+        return dir;
       }
-      break;
+      else
+      {
+        return dir + " (Warning: invalid)";
+      }
+    case Qt::ItemDataRole::FontRole:
+      if (file.Type != vtkPVFileInformation::INVALID)
+      {
+        return {};
+      }
+      else
+      {
+        QFont font;
+        font.setItalic(true);
+        return font;
+      }
+
+    case Qt::ItemDataRole::ForegroundRole:
+      if (file.Type != vtkPVFileInformation::INVALID)
+      {
+        return {};
+      }
+      else
+      {
+        QBrush brush;
+        brush.setColor(QApplication::palette().color(QPalette::Disabled, QPalette::WindowText));
+        return brush;
+      }
+
     case Qt::DecorationRole:
-      switch (idx.column())
-      {
-        case 0:
-          return Icons()->icon(static_cast<vtkPVFileInformation::FileTypes>(file.type()));
-      }
+      return Icons()->icon(static_cast<vtkPVFileInformation::FileTypes>(file.Type));
   }
 
   return QVariant();
 }
 
+//-----------------------------------------------------------------------------
 int pqFileDialogFavoriteModel::rowCount(const QModelIndex&) const
 {
-  return this->Implementation->FavoriteList.size();
+  return this->FavoriteList.size();
 }
 
+//-----------------------------------------------------------------------------
 QVariant pqFileDialogFavoriteModel::headerData(int section, Qt::Orientation, int role) const
 {
   switch (role)
@@ -205,4 +235,145 @@ QVariant pqFileDialogFavoriteModel::headerData(int section, Qt::Orientation, int
   }
 
   return QVariant();
+}
+
+//-----------------------------------------------------------------------------
+void pqFileDialogFavoriteModel::addToFavorites(QString const& dirPath)
+{
+  QString temp;
+  if (!this->FileDialogModel->dirExists(dirPath, temp))
+  {
+    return;
+  }
+
+  QString const cleanDirPath = QDir::cleanPath(this->FileDialogModel->absoluteFilePath(dirPath));
+
+  QList<pqFileDialogFavoriteModelFileInfo>& favoriteList = this->FavoriteList;
+  auto foundIter = std::find_if(favoriteList.begin(), favoriteList.end(),
+    [&cleanDirPath](pqFileDialogFavoriteModelFileInfo const& favInfo) {
+      return favInfo.FilePath == cleanDirPath;
+    });
+
+  if (foundIter != favoriteList.end())
+  {
+    // No need to add to favorites because it is already present
+    return;
+  }
+
+  int type = this->FileDialogModel->fileType(dirPath);
+  this->beginInsertRows(QModelIndex(), favoriteList.size(), favoriteList.size());
+  favoriteList.push_back(
+    pqFileDialogFavoriteModelFileInfo{ QFileInfo(dirPath).baseName(), cleanDirPath, type });
+  this->endInsertRows();
+}
+
+//-----------------------------------------------------------------------------
+void pqFileDialogFavoriteModel::removeFromFavorites(QString const& dirPath)
+{
+  QString cleanDirPath = QDir::cleanPath(this->FileDialogModel->absoluteFilePath(dirPath));
+  // Check if this is the Examples directory, because it is not stored like the other directories
+  if (cleanDirPath ==
+    QString::fromStdString(vtkPVFileInformation::GetParaViewExampleFilesDirectory()))
+  {
+    cleanDirPath = "_examples_path_";
+  }
+
+  auto foundIter = std::find_if(this->FavoriteList.begin(), this->FavoriteList.end(),
+    [&](pqFileDialogFavoriteModelFileInfo const& fileInfo) {
+      return fileInfo.FilePath == cleanDirPath;
+    });
+
+  if (foundIter == this->FavoriteList.end())
+  {
+    return;
+  }
+
+  int const row = std::distance(this->FavoriteList.begin(), foundIter);
+  this->beginRemoveRows(QModelIndex(), row, row);
+  this->FavoriteList.erase(foundIter);
+  this->endRemoveRows();
+}
+
+//-----------------------------------------------------------------------------
+void pqFileDialogFavoriteModel::resetFavoritesToDefault()
+{
+  this->beginResetModel();
+  this->LoadFavoritesFromSystem();
+  this->endResetModel();
+}
+
+//-----------------------------------------------------------------------------
+bool pqFileDialogFavoriteModel::setData(const QModelIndex& index, const QVariant& value, int role)
+{
+  if (index.isValid() && role == Qt::EditRole)
+  {
+    this->FavoriteList[index.row()].Label = value.toString();
+
+    emit this->dataChanged(index, index);
+
+    return true;
+  }
+
+  return false;
+}
+
+//-----------------------------------------------------------------------------
+Qt::ItemFlags pqFileDialogFavoriteModel::flags(const QModelIndex& index) const
+{
+  if (index.isValid())
+  {
+    return Qt::ItemFlag::ItemIsEditable | Superclass::flags(index);
+  }
+
+  return Superclass::flags(index);
+}
+
+//-----------------------------------------------------------------------------
+void pqFileDialogFavoriteModel::LoadFavoritesFromSystem()
+{
+  vtkPVFileInformation* information = vtkPVFileInformation::New();
+
+  if (this->Server)
+  {
+    vtkSMSessionProxyManager* pxm = this->Server->proxyManager();
+
+    vtkSMProxy* helper = pxm->NewProxy("misc", "FileInformationHelper");
+    pqSMAdaptor::setElementProperty(helper->GetProperty("SpecialDirectories"), true);
+    helper->UpdateVTKObjects();
+    helper->GatherInformation(information);
+    helper->Delete();
+  }
+  else
+  {
+    vtkPVFileInformationHelper* helper = vtkPVFileInformationHelper::New();
+    helper->SetSpecialDirectories(1);
+    information->CopyFromObject(helper);
+    helper->Delete();
+  }
+
+  this->FavoriteList.clear();
+  if (pqFileDialogFavoriteModel::AddExamplesInFavorites)
+  {
+    // Adds the Examples entry in the favorites
+    // This is using `_examples_path_` as a placeholder because storing the absolute path to the
+    // `Examples` directory causes issues when switching to another ParaView version, because this
+    // path would still point to the previous version's examples. This entry is added even if the
+    // `Examples` directory is not present.
+    this->FavoriteList.push_back(pqFileDialogFavoriteModelFileInfo{
+      "Examples", "_examples_path_", vtkPVFileInformation::DIRECTORY });
+  }
+  vtkCollectionIterator* iter = information->GetContents()->NewIterator();
+  for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem())
+  {
+    vtkPVFileInformation* cur_info = vtkPVFileInformation::SafeDownCast(iter->GetCurrentObject());
+    if (!cur_info)
+    {
+      continue;
+    }
+    this->FavoriteList.push_back(pqFileDialogFavoriteModelFileInfo{
+      cur_info->GetName(), QDir::cleanPath(cur_info->GetFullPath()), cur_info->GetType() });
+  }
+
+  iter->Delete();
+  information->Delete();
 }

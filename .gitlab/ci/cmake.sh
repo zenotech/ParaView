@@ -2,18 +2,18 @@
 
 set -e
 
-readonly version="3.17.4"
+readonly version="3.21.0"
 
 case "$( uname -s )" in
     Linux)
         shatool="sha256sum"
-        sha256sum="126cc8356907913787d4ff35237ae1854c09b927a35dbe5270dd571ae224bdd3"
-        platform="Linux"
+        sha256sum="d54ef6909f519740bc85cec07ff54574cd1e061f9f17357d9ace69f61c6291ce"
+        platform="linux-x86_64"
         ;;
     Darwin)
         shatool="shasum -a 256"
-        sha256sum="125eaf2befeb8099237298424c6e382b40cb23353ee26ce96545db29ed899b4a"
-        platform="Darwin"
+        sha256sum="c1c6f19dfc9c658a48b5aed22806595b2337bb3aedb71ab826552f74f568719f"
+        platform="macos-universal"
         ;;
     *)
         echo "Unrecognized platform $( uname -s )"
@@ -24,7 +24,7 @@ readonly shatool
 readonly sha256sum
 readonly platform
 
-readonly filename="cmake-$version-$platform-x86_64"
+readonly filename="cmake-$version-$platform"
 readonly tarball="$filename.tar.gz"
 
 cd .gitlab
@@ -37,4 +37,13 @@ mv "$filename" cmake
 
 if [ "$( uname -s )" = "Darwin" ]; then
     ln -s CMake.app/Contents/bin cmake/bin
+fi
+
+if [ "$CI_JOB_NAME" = "build:spack-centos7" ]; then
+    mkdir -p "$CI_PROJECT_DIR/build/spack"
+    sed \
+        -e "s/CMAKE_VERSION/$version/" \
+        -e "s,CMAKE_PREFIX,$PWD/cmake," \
+        < "$CI_PROJECT_DIR/Utilities/spack/configs/gitlab-ci/packages.yaml.in" \
+        > "$CI_PROJECT_DIR/build/spack/packages.yaml"
 fi

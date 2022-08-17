@@ -22,7 +22,7 @@
 
 .fedora33:
     extends: .linux
-    image: "kitware/paraview:ci-fedora33-20201202"
+    image: "kitware/paraview:ci-fedora33-20210903"
 
 .fedora31_icc:
     extends: .linux
@@ -90,6 +90,15 @@
         CMAKE_CONFIGURATION: fedora33_shared_mpi_python_qt
         CMAKE_BUILD_TYPE: Debug
 
+.fedora33_tidy:
+    extends:
+        - .fedora33
+        - .fedora_mpich_addon
+
+    variables:
+        CMAKE_CONFIGURATION: fedora33_shared_mpi_python_qt_tidy
+        CTEST_NO_WARNINGS_ALLOWED: 1
+
 .linux_builder_tags:
     tags:
         - build
@@ -102,7 +111,23 @@
         - docker
         - paraview
         - linux
-        - x11
+        - x11-gnome
+
+.linux_qt_builder_tags:
+    tags:
+        - build
+        - docker
+        - linux
+        - linux-3.17 # needed to run Qt binaries from Fedora 33
+        - paraview
+
+.linux_qt_tester_tags:
+    tags:
+        - docker
+        - paraview
+        - linux
+        - linux-3.17
+        - x11-gnome
 
 ## Linux-specific scripts
 
@@ -119,7 +144,7 @@
     # will be necessary.
     - '[ "$CC" = "icc" ] && dnf install --setopt=install_weak_deps=False -y git-lfs'
     - "git submodule update --init --recursive || :"
-    - git submodule foreach --recursive cmake "-Dusername:STRING=$CI_PROJECT_NAMESPACE" "-Durl_prefix:STRING=https://$CI_SERVER_HOST" -P "$PWD/.gitlab/ci/fetch_submodule.cmake"
+    - git submodule foreach --recursive cmake -P "$PWD/.gitlab/ci/fetch_submodule.cmake"
     - git submodule sync --recursive
     - git submodule update --init --recursive
     # Load any modules that may be necessary.
@@ -145,6 +170,8 @@
 
     script:
         - *before_script_linux
+        # For libnvindex.so
+        - export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
         - ctest -V --output-on-failure -S .gitlab/ci/ctest_test.cmake
 
     interruptible: true
@@ -157,7 +184,7 @@
         # root
         FORCE_UNSAFE_CONFIGURE: 1
 
-        spack: "$CI_BUILDS_DIR/spack/bin/spack -C Utilities/spack/configs/gitlab-ci"
+        spack: "$CI_BUILDS_DIR/spack/bin/spack -C $CI_PROJECT_DIR/build/spack"
         paraview_spec: "paraview+osmesa^mesa~glx^mpich"
 
     before_script:
@@ -184,9 +211,10 @@
         - if [ "$CI_MERGE_REQUEST_ID" ]; then TRACK="merge-requests" ; fi
         - $LAUNCHER $spack spec $paraview_spec
         - $LAUNCHER $spack install --no-check-signature --only dependencies -j $(nproc) $paraview_spec
+        - $LAUNCHER $spack clean
         - export dependency_specs=`$LAUNCHER $spack find --format "{name}{@version}{%compiler}"`
         - $LAUNCHER $spack buildcache create -a -f -u -d $PWD/spack-cache $dependency_specs
-        - $LAUNCHER $spack install --no-check-signature -j $(nproc) --cdash-upload-url="http://open.cdash.org/submit.php?project=ParaView" --cdash-track $TRACK --cdash-build="paraview-spack-$CI_COMMIT_REF_NAME" $paraview_spec
+        - $LAUNCHER $spack install --no-check-signature -j $(nproc) --cdash-upload-url="http://open.cdash.org/submit.php?project=ParaView" --cdash-track $TRACK --cdash-build="[paraview-spack-$paraview_spec]-$CI_COMMIT_REF_NAME" $paraview_spec
         - eval `$spack load --sh paraview`
         - pvserver --version
         - .gitlab/sccache --show-stats
@@ -218,7 +246,7 @@
         - $LAUNCHER cmake -DCMAKE_PREFIX_PATH=/usr/lib64/openmpi -DPARAVIEW_USE_PYTHON=ON -DVTK_WRAP_PYTHON=ON \
           -DVTK_ENABLE_WRAPPING=ON -DPARAVIEW_BUILD_DEVELOPER_DOCUMENTATION=ON -DPARAVIEW_USE_MPI=ON \
           -DPARAVIEW_BUILD_EDITION=CATALYST -DDOCUMENTATION_HTML_TARZ=ON ..
-        - cmake --build . -j &> $GIT_CLONE_PATH/compile_output.log
+        - cmake --build . -j $(nproc) &> $GIT_CLONE_PATH/compile_output.log
         - make ParaViewDoc-TGZ &> $GIT_CLONE_PATH/doxygen_output.log
         - cd $GIT_CLONE_PATH/paraview-docs
         - test -n "$CI_COMMIT_TAG" && CURRENT_RELEASE="$CI_COMMIT_TAG"

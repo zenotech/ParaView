@@ -23,7 +23,7 @@
  * To make such information available, we use vtkPVFileInformationHelper.
  * One creates a server side representation of vtkPVFileInformationHelper and
  * sets attributes on it, then requests a gather information on the helper object.
-*/
+ */
 
 #ifndef vtkPVFileInformationHelper_h
 #define vtkPVFileInformationHelper_h
@@ -100,6 +100,18 @@ public:
   vtkSetMacro(FastFileTypeDetection, int);
   //@}
 
+  ///@{
+  /**
+   * Groups file sequences when found. A file sequence could be [foo1.png, foo2.png, foo6.png].
+   * When turned on, the series of files is grouped and our sequence example is named foo..png
+   * and original files are discarded from the listing.
+   * By default, this flag is set to true.
+   */
+  vtkGetMacro(GroupFileSequences, bool);
+  vtkSetMacro(GroupFileSequences, bool);
+  vtkBooleanMacro(GroupFileSequences, bool);
+  ///@}
+
   //@{
   /**
    * Returns the platform specific path separator.
@@ -116,18 +128,6 @@ public:
    * Returns if this->Path is a directory.
    */
   bool GetActiveFileIsDirectory();
-
-  /**
-   * Transform local code page string to UTF8 string
-   * on windows only, pass through otherwise
-   */
-  static std::string LocalToUtf8Win32(const std::string& path);
-
-  /**
-   * Transform utf8 string to local code page string
-   * on windows only, pass through otherwise
-   */
-  static std::string Utf8ToLocalWin32(const std::string& path);
 
   //@{
   /**
@@ -148,6 +148,7 @@ protected:
   int DirectoryListing;
   int SpecialDirectories;
   int FastFileTypeDetection;
+  bool GroupFileSequences;
 
   bool ReadDetailedFileInformation;
   char* PathSeparator;

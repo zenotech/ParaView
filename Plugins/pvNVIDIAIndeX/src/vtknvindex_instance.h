@@ -1,4 +1,4 @@
-/* Copyright 2020 NVIDIA Corporation. All rights reserved.
+/* Copyright 2021 NVIDIA Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -44,7 +44,6 @@ public:
   ~vtknvindex_instance();
 
   static vtknvindex_instance* get();
-  static vtknvindex_instance* create();
 
   bool is_index_viewer() const;
   bool is_index_rank() const;
@@ -52,7 +51,9 @@ public:
 
   // Initialize IndeX
   void init_index();
-  bool is_index_initialized() const;
+
+  // Returns if IndeX is initialized and logs and error if it is not
+  bool ensure_index_initialized() const;
 
   // Cameras
   mi::neuraylib::Tag get_perspective_camera() const;
@@ -108,7 +109,7 @@ private:
   bool setup_nvindex();
 
   // Shutting down NVIDIA IndeX library.
-  bool shutdown_nvindex();
+  void shutdown_nvindex();
 
   // Initialize IndeX session
   void initialize_session();
@@ -120,8 +121,8 @@ private:
   bool m_is_index_viewer;
   bool m_is_index_initialized;
 
-  std::map<std::string, std::vector<mi::Sint32> > m_hostname_to_rankids; // Hostname to rank_id.
-  std::vector<std::string> m_host_list;                                  // List of host
+  std::map<std::string, std::vector<mi::Sint32>> m_hostname_to_rankids; // Hostname to rank_id.
+  std::vector<std::string> m_host_list;                                 // List of host
 
   std::string m_nvindexlib_fname;                          // libnvindex.so/dll string name.
   void* m_p_handle;                                        // Library handle.
@@ -138,9 +139,6 @@ private:
 
   // Colormaps manager
   vtknvindex_colormap* m_nvindex_colormaps; // NVIDIA IndeX colormaps manager.
-
-  // IndeX instance
-  static vtknvindex_instance* s_index_instance;
 
   // Name of the configuration file for the plugin.
   static const std::string s_config_filename;

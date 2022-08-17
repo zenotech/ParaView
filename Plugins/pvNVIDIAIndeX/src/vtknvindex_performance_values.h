@@ -1,4 +1,4 @@
-/* Copyright 2020 NVIDIA Corporation. All rights reserved.
+/* Copyright 2021 NVIDIA Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -58,7 +58,7 @@ private:
   std::string to_string(mi::Uint64 memory) const;
 
   bool m_print_header;
-  std::string m_performance_log_file;
+  std::string m_last_log_file;
 };
 
 // General use system information

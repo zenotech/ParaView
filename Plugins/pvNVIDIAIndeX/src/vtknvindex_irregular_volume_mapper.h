@@ -1,4 +1,4 @@
-/* Copyright 2020 NVIDIA Corporation. All rights reserved.
+/* Copyright 2021 NVIDIA Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -99,7 +99,7 @@ public:
   void set_subregion_bounds(const vtkBoundingBox& bbox);
 
   // The CUDA code need to be updated on changes applied in the GUI.
-  void rtc_kernel_changed(vtknvindex_rtc_kernels kernel, const std::string& kernel_program,
+  bool rtc_kernel_changed(vtknvindex_rtc_kernels kernel, const std::string& kernel_program,
     const void* params_buffer, mi::Uint32 buffer_size);
 
   // Returns true if NVIDIA IndeX is initialized by this mapper.

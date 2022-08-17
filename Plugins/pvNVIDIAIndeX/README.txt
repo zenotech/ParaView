@@ -25,6 +25,7 @@ The NVIDIA IndeX for ParaView Plugin is compatible with:
     The NVIDIA IndeX for ParaView Plugin will typically also run on other Linux
     distributions.
   - Microsoft Windows 10.
+  - macOS (remote rendering only, see "Known Limitations" below).
 
 #-------------------------------------------------------------------------------
 # Features and Licensing
@@ -41,15 +42,15 @@ nvidia-index@nvidia.com.
 ----------
 
 * Real-time and interactive high-quality volume data visualization of both
-  structured and unstructured volume grids
+  structured and unstructured volume grids.
 
 * Interactive visualization of time-varying structured volume grids.
 
 * Support for 8-bit and 16-bit signed/unsigned integer, and 32-bit floating
-  point volume data types. 64-bit floating point is supported via automatic
+  point volume data types. 64-bit floating point data is supported via automatic
   conversion.
 
-* XAC (NVIDIA IndeX Accelerated Computing) visual elements for volumes
+* XAC (NVIDIA IndeX Accelerated Computing) visual elements for volume rendering
   with four different configurable presets: Iso-surfaces, depth enhancement,
   edge enhancement, gradient.
 
@@ -67,9 +68,6 @@ nvidia-index@nvidia.com.
 * Depth-correct integration of ParaView geometry rendering into NVIDIA IndeX
   volume rendering.
 
-* Multi-volume support in the scene graph (currently limited to one visible
-  volume at a time).
-
 * Multi-GPU and GPU cluster support for scalable real-time visualization of
   datasets of arbitrary size. Requires an appropriate license
   (please contact NVIDIA).
@@ -85,7 +83,7 @@ nvidia-index@nvidia.com.
   won't get distributed to multiple ranks by ParaView, and only a single GPU
   will be utilized. The NVIDIA IndeX for ParaView Plugin will print a warning if
   this case is detected. Please use a different data format such as *.pvti that
-  supports distributed data. Since this issue is ParaView specific, please
+  supports distributed data. Since this issue is specific to ParaView, please
   contact Kitware for additional details.
 
 # Unstructured grids
@@ -101,6 +99,10 @@ nvidia-index@nvidia.com.
 * The Windows version of the NVIDIA IndeX plugin for ParaView is restricted
   to run on a single workstation/computer only, i.e., cluster rendering
   is not supported on Windows platforms.
+
+* The macOS version of the NVIDIA IndeX plugin for ParaView does not support
+  local rendering. However, it can be used for remote rendering together with
+  a Linux host that runs pvserver.
 
 * When loading an older state file with both volumetric and geometry data
   without the NVIDIA IndeX representation saved in it, the first frame will show
@@ -122,4 +124,4 @@ NVIDIA IndeX for ParaView website: https://www.nvidia.com/en-us/data-center/inde
 NVIDIA IndeX website: https://developer.nvidia.com/nvidia-index
 
 
-Copyright 2020 NVIDIA Corporation. All rights reserved.
+Copyright 2021 NVIDIA Corporation. All rights reserved.

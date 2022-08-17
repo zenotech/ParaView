@@ -16,6 +16,7 @@
 
 #include "vtkClientServerStream.h"
 #include "vtkDataArraySelection.h"
+#include "vtkDataSetAttributes.h"
 #include "vtkObjectFactory.h"
 #include "vtkPVXMLElement.h"
 #include "vtkSMMessage.h"
@@ -30,9 +31,7 @@ vtkSIDataArraySelectionProperty::vtkSIDataArraySelectionProperty()
 }
 
 //----------------------------------------------------------------------------
-vtkSIDataArraySelectionProperty::~vtkSIDataArraySelectionProperty()
-{
-}
+vtkSIDataArraySelectionProperty::~vtkSIDataArraySelectionProperty() = default;
 
 //----------------------------------------------------------------------------
 void vtkSIDataArraySelectionProperty::PrintSelf(ostream& os, vtkIndent indent)
@@ -111,7 +110,7 @@ bool vtkSIDataArraySelectionProperty::Push(vtkSMMessage* message, int offset)
     {
       for (int cc = 0; (cc + 1) < num_elems; cc += 2)
       {
-        const auto name = variant.txt(cc);
+        const auto& name = variant.txt(cc);
         const int status = variant.txt(cc + 1) == "0" ? 0 : 1;
         selection->SetArraySetting(name.c_str(), status);
       }
@@ -119,6 +118,14 @@ bool vtkSIDataArraySelectionProperty::Push(vtkSMMessage* message, int offset)
     else if (this->NumberOfElementsPerCommand == 1)
     {
       selection->RemoveAllArrays();
+
+      // Ghost type arrays are kind of oddballs - some filters such as
+      // vtkPassSelectedArrays assume that if a ghost array is not explicitly
+      // marked disabled that it should be treated as enabled. Make sure we
+      // explicitly disable these in a selection. If they are present in the
+      // selection property, they will be re-enabled in the loop below.
+      selection->SetArraySetting(vtkDataSetAttributes::GhostArrayName(), 0);
+
       for (int cc = 0; cc < num_elems; ++cc)
       {
         selection->EnableArray(variant.txt(cc).c_str());

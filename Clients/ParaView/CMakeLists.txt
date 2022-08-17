@@ -20,7 +20,10 @@ if (DEFINED PARAVIEW_VERSION_NICKNAME)
 else ()
   set(paraview_version "${PARAVIEW_VERSION_FULL}")
 endif ()
-set(paraview_title "")
+set(paraview_title "ParaView ${paraview_version}")
+if (PARAVIEW_BRANCH)
+  set(paraview_title "ParaView ${paraview_version} (${PARAVIEW_BRANCH})")
+endif ()
 
 set(CMAKE_AUTOMOC 1)
 set(CMAKE_AUTOUIC 1)
@@ -61,7 +64,7 @@ paraview_client_add(
   NAMESPACE         "ParaView"
   EXPORT            "ParaViewClient"
   APPLICATION_NAME  "ParaView"
-  TITLE             "ParaView ${paraview_version}"
+  TITLE             "${paraview_title}"
   ORGANIZATION      "ParaView"
   VERSION           "${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}.${PARAVIEW_VERSION_PATCH}"
   ${style_args}
@@ -81,25 +84,29 @@ target_link_libraries(paraview
     Qt5::Core
     Qt5::Widgets)
 
+target_compile_definitions(paraview
+  PRIVATE
+    "PARAVIEW_ENABLE_EMBEDDED_DOCUMENTATION=$<BOOL:${PARAVIEW_ENABLE_EMBEDDED_DOCUMENTATION}>")
 if (PARAVIEW_ENABLE_EMBEDDED_DOCUMENTATION)
-  target_compile_definitions(paraview
-    PRIVATE
-      PARAVIEW_ENABLE_EMBEDDED_DOCUMENTATION)
   target_link_libraries(paraview
     PRIVATE
       vtkParaViewDocumentation)
 endif ()
 
+target_compile_definitions(paraview
+  PRIVATE
+    "PARAVIEW_USE_PYTHON=$<BOOL:${PARAVIEW_USE_PYTHON}>")
 if (PARAVIEW_USE_PYTHON)
-  target_compile_definitions(paraview
-    PRIVATE
-      PARAVIEW_USE_PYTHON)
   target_link_libraries(paraview
     PRIVATE
       ParaView::pvpythonmodules
       ParaView::pqPython
       ParaView::PythonInitializer)
 endif ()
+
+target_compile_definitions(paraview
+  PRIVATE
+    "PARAVIEW_USE_MATERIALEDITOR=$<BOOL:${paraview_use_materialeditor}>")
 
 if (PARAVIEW_INSTALL_DEVELOPMENT_FILES)
   export(

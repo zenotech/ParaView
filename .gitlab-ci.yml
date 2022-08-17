@@ -86,7 +86,7 @@ build:fedora33-shared-debug-mpi-python-qt:
     extends:
         - .fedora33_shared_debug_mpi_python_qt
         - .cmake_build_linux
-        - .linux_builder_tags
+        - .linux_qt_builder_tags
         - .cmake_build_artifacts
         - .run_manually
 
@@ -94,7 +94,7 @@ test:fedora33-shared-debug-mpi-python-qt:
     extends:
         - .fedora33_shared_debug_mpi_python_qt
         - .cmake_test_linux
-        - .linux_tester_tags
+        - .linux_qt_tester_tags
         - .cmake_test_artifacts
         - .run_automatically
     dependencies:
@@ -102,8 +102,6 @@ test:fedora33-shared-debug-mpi-python-qt:
     needs:
         - build:fedora33-shared-debug-mpi-python-qt
     timeout: 120 minutes
-    # some tests are failing. investigation needed
-    allow_failure: true
 
 ## Catalyst editions
 
@@ -126,8 +124,6 @@ test:fedora33-shared-mpi-core:
         - build:fedora33-shared-mpi-core
     needs:
         - build:fedora33-shared-mpi-core
-    # editions testing needs some work.
-    allow_failure: true
 
 build:fedora33-shared-mpi-python-core:
     extends:
@@ -148,30 +144,60 @@ test:fedora33-shared-mpi-python-core:
         - build:fedora33-shared-mpi-python-core
     needs:
         - build:fedora33-shared-mpi-python-core
-    # editions testing needs some work.
-    allow_failure: true
+
+## Static analysis
+
+build:fedora33-tidy:
+    extends:
+        - .fedora33_tidy
+        - .cmake_build_linux
+        - .linux_qt_builder_tags
+        - .cmake_tidy_artifacts
+        - .run_manually
+    # clang-tidy is *really* slow because it isn't cached.
+    timeout: 3 hours
 
 # macOS
 
-build:macos-python-qt:
+build:macos-arm64-python-qt:
     extends:
-        - .macos_python_qt
+        - .macos_arm64_python_qt
+        - .cmake_build_macos
+        - .macos_arm64_builder_tags
+        - .cmake_build_artifacts
+        - .run_manually
+
+test:macos-arm64-python-qt:
+    extends:
+        - .macos_arm64_python_qt
+        - .cmake_test_macos
+        - .macos_arm64_builder_tags
+        - .cmake_test_artifacts
+        - .run_automatically
+    dependencies:
+        - build:macos-arm64-python-qt
+    needs:
+        - build:macos-arm64-python-qt
+
+build:macos-x86_64-python-qt:
+    extends:
+        - .macos_x86_64_python_qt
         - .cmake_build_macos
         - .macos_builder_tags
         - .cmake_build_artifacts
         - .run_manually
 
-test:macos-python-qt:
+test:macos-x86_64-python-qt:
     extends:
-        - .macos_python_qt
+        - .macos_x86_64_python_qt
         - .cmake_test_macos
         - .macos_builder_tags
         - .cmake_test_artifacts
         - .run_automatically
     dependencies:
-        - build:macos-python-qt
+        - build:macos-x86_64-python-qt
     needs:
-        - build:macos-python-qt
+        - build:macos-x86_64-python-qt
 
 # Windows
 
@@ -224,9 +250,9 @@ build:documentation:
     extends:
         - .fedora33
         - .doxygen_build_linux
-        - .linux_builder_tags
+        - .linux_qt_builder_tags
         - .doxygen_log_artifacts
-        - .run_scheduled
+        - .doxygen_only
 
 # Triggers
 
