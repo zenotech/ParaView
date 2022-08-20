@@ -21,7 +21,8 @@ function (paraview_add_executable name)
 
   target_link_libraries("${name}"
     PRIVATE
-      ParaView::paraview_plugins)
+      ParaView::paraview_plugins
+      VTK::hdf5)
 
   if (PARAVIEW_USE_PYTHON)
     target_compile_definitions("${name}"
