@@ -180,11 +180,19 @@ if (NOT DEFINED CMAKE_INSTALL_RPATH_USE_LINK_PATH)
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif ()
 
+cmake_dependent_option(PARAVIEW_USE_HIP "Support HIP backend accelerator" OFF
+  "CMAKE_VERSION VERSION_GREATER_EQUAL 3.21 AND NOT PARAVIEW_USE_CUDA" OFF)
+mark_as_advanced(PARAVIEW_USE_HIP)
+
+# The following `enable_language` needs to be a top level flag as
+# enable_language needs to be called from CMake entry point for variables to
+# have the correct scope.
 if(PARAVIEW_USE_CUDA)
-  # This needs to be a top level flag as enable_language needs
-  # to be called from CMake entry point for variables to have
-  # the correct scope.
   enable_language(CUDA)
+endif()
+
+if(PARAVIEW_USE_HIP)
+  enable_language(HIP)
 endif()
 
 set(BUILD_TESTING OFF)
@@ -469,6 +477,8 @@ else ()
 
   # Forward CUDA option to VTK
   set(VTK_USE_CUDA "${PARAVIEW_USE_CUDA}")
+  # Forward HIP option to VTK
+  set(VTK_USE_HIP "${PARAVIEW_USE_HIP}")
   # Forward Memkind option to VTK.
   set(VTK_USE_MEMKIND "${PARAVIEW_USE_MEMKIND}")
   # Forward OpenVDB option to VTK.
@@ -766,6 +776,7 @@ if (PARAVIEW_USE_PYTHON)
       CMAKE_DESTINATION   "${paraview_cmake_destination}/vtk"
       LIBRARY_DESTINATION "${CMAKE_INSTALL_LIBDIR}"
       USE_DEBUG_SUFFIX    "${PARAVIEW_WINDOWS_PYTHON_DEBUGGABLE}"
+      HEADERS_DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/paraview${paraview_version_suffix}/vtkpythonmodules"
       WRAPPED_MODULES vtk_python_wrapped_modules
       TARGET          VTK::vtkpythonmodules)
 
@@ -804,6 +815,7 @@ if (PARAVIEW_USE_PYTHON)
     CMAKE_DESTINATION   "${paraview_cmake_destination}"
     LIBRARY_DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     USE_DEBUG_SUFFIX    "${PARAVIEW_WINDOWS_PYTHON_DEBUGGABLE}"
+    HEADERS_DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/paraview${paraview_version_suffix}/pvpythonmodules"
     WRAPPED_MODULES paraview_python_wrapped_modules
     TARGET          ParaView::pvpythonmodules
     DEPENDS         VTK::vtkpythonmodules)

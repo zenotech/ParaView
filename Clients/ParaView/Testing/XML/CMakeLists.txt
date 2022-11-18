@@ -436,6 +436,7 @@ ExternalData_Expand_Arguments(ParaViewData _
   "DATA{${CMAKE_CURRENT_SOURCE_DIR}/../Data/Baseline/NonlinearSubdivision3Display_1.png}"
   "DATA{${CMAKE_CURRENT_SOURCE_DIR}/../Data/Baseline/NonlinearSubdivision4Display.png}"
   "DATA{${CMAKE_CURRENT_SOURCE_DIR}/../Data/Baseline/NonlinearSubdivision4Display_1.png}"
+  "DATA{${CMAKE_CURRENT_SOURCE_DIR}/../Data/Baseline/EmptyInitialCompositeReader.png}"
   "DATA{${CMAKE_CURRENT_SOURCE_DIR}/../Data/Baseline/OBBMajorAxis.png}"
   "DATA{${CMAKE_CURRENT_SOURCE_DIR}/../Data/Baseline/OBBMediumAxis.png}"
   "DATA{${CMAKE_CURRENT_SOURCE_DIR}/../Data/Baseline/OBBMinorAxis.png}"
@@ -854,6 +855,7 @@ SET(TESTS_WITH_BASELINES
   DataAxesGrid.xml
   MergeVectorComponents.xml
   MoleculeScalarBar.xml
+  EmptyInitialCompositeReader.xml # Issue #21293
   PassArrays.xml
   PerlinNoise.xml
   ResampleToLine.xml
@@ -1031,6 +1033,7 @@ list(APPEND TESTS_WITH_BASELINES
   ColorOpacityTableEditing.xml
   ColorOpacityEditorFreehandDrawing.xml
   ColorOpacityEditorRangeHandles.xml
+  CombineFrustumSelections.xml
   CategoricalAutomaticAnnotations.xml
   CategoricalColors.xml
   CategoricalOpacities.xml
@@ -1640,6 +1643,7 @@ set(ExpandSelection_DISABLE_CRS TRUE)
 set(ExportSelectionToCSV_DISABLE_CRS TRUE)
 set(BlockOpacities_DISABLE_CRS TRUE)
 set(SaveExodus_DISABLE_CRS TRUE) # yes, this test does a selection
+set(CombineFrustumSelections_DISABLE_CRS TRUE) # yes, this test does a selection
 
 # ZoomToData is not working as well in crs
 set(ZoomToData_DISABLE_CRS TRUE)

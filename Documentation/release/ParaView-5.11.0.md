@@ -575,11 +575,11 @@ When opening some file formats, ParaView needs help to determine which reader to
 
 You can now change the file of a reader by right-clicking on it in the *Pipeline Browser*, and then clicking on `Change File` in the menu.
 
-A `Delete This and Downstream Filters` option has been added to the context menu and _Edit_ menu. When selected, this will delete the selection and all downstream filters, eliminating the need to delete each filter individually.
+A `Delete Downstream Pipeline` option has been added to the context menu and _Edit_ menu. When selected, this will delete the selection and all downstream filters, eliminating the need to delete each filter individually.
 
 > ![pipeline browser context menu items](img/5.11.0/context-menu-new-items.png)
 >
-> The "Delete This and Downstream Filters" and "Change File" items are new options in the _Pipeline Browser_ context menu.
+> The "Delete Downstream Pipeline" and "Change File" items are new options in the _Pipeline Browser_ context menu.
 
 ## Light Controls toolbar
 
@@ -774,11 +774,11 @@ The `VTKExtensions/Conduit` module is now part of VTK, as `IO/CatalystConduit` m
 
 As a side effect, `Catalyst` (our `Conduit` provider) is no more a ThirdParty of ParaView but instead an external dependency of VTK.
 
-The CMake option `PARAVIEW_ENABLE_CATALYST` controls the build of the VTK module and of the ParaView Catalyst implementation (default OFF).
+The CMake option `PARAVIEW_ENABLE_CATALYST` controls the build of the VTK module and of the ParaView Catalyst implementation (default OFF). A local build of [Catalyst](https://gitlab.kitware.com/paraview/catalyst) should be provided (via `cmake -Dcatalyst_DIR`).
 
 ## Enable Catalyst to use Fides Reader
 
-Catalyst can now use the Fides reader, when using the ADIOS2 Inline engine. ParaView also builds an ADIOS plugin for use with ADIOS v2.8.0 or later, that simplifies using Catalyst for ADIOS2-enabled codes. Documentation for using ParaView Catalyst with the Fides reader is located in the [Fides User Guide](https://fides.readthedocs.io/en/latest/paraview/paraview.html).
+Catalyst can now use the Fides reader, when using the ADIOS2 Inline engine. Documentation for using ParaView Catalyst with the Fides reader is located in the [Fides User Guide](https://fides.readthedocs.io/en/latest/paraview/paraview.html).
 
 ## Allows `vtkConduitSource` to output MultiBlock datasets
 
