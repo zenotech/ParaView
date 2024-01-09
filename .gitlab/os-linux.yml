@@ -22,7 +22,7 @@
 
 .fedora35:
     extends: .linux
-    image: "kitware/paraview:ci-fedora35-20230808"
+    image: "kitware/paraview:ci-fedora35-20231206"
 
 .el7_mindeps:
     extends: .linux
@@ -163,6 +163,7 @@
 
     script:
         - *before_script_linux
+        - .gitlab/ci/clang-tidy-cache.sh
         - sccache --start-server
         - sccache --show-stats
         - $LAUNCHER ctest -VV -S .gitlab/ci/ctest_configure.cmake

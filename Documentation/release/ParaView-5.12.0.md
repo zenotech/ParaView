@@ -303,6 +303,46 @@ If you don't specify a size for one type of tick, its size will be computed as a
 The Plugin Manager now prompts you to confirm the removal of a plugin.
 
 
+## NVIDIA IndeX plugin improvements
+
+### Multi-GPU and cluster rendering available by default
+
+The NVIDIA IndeX plugin now comes with a free evaluation license that enables all features for a limited time, including full scalability to run on multiple NVIDIA GPUs and on a cluster of GPU hosts. NVIDIA IndeX will continue to run after the evaluation period, but with multi-GPU features disabled. Please see the NVIDIA IndeX ParaView Plugin User Guide for details.
+
+### Optimizations for unstructured grids
+
+Generating the on-device acceleration structure used by NVIDIA IndeX for unstructured grid data is significantly faster now, thanks to optimizations that make use of the available GPU hardware resources. This can speed up the time to first rendering with the "NVIDIA IndeX" representation by 2x or more.
+
+### NVIDIA IndeX upgraded to CUDA 12, new driver/GPU requirements
+
+NVIDIA IndeX now uses CUDA 12.3, which has improved support for new GPU architectures.
+
+The minimum NVIDIA driver versions required are 525.60.13 (Linux) and 527.41 (Windows). Recommended driver versions are 545.23.06 (Linux) and 545.84 (Windows) or newer.
+
+CUDA 12 requires an NVIDIA GPU that supports at least CUDA compute capability 5.0, i.e., has "Maxwell" GPU architecture or newer. Support for the older "Kepler" GPU architecture (e.g., NVIDIA Tesla K10, K40, K80) was removed. Information about the compute capability of a specific GPU model can be found on the
+[NVIDIA website](https://developer.nvidia.com/cuda-gpus).
+
+### Added support for ARM architecture (aarch64) on Linux
+
+Linux binaries of the NVIDIA IndeX library are now also provided for the ARM architecture (aarch64).
+
+Please see the NVIDIA IndeX ParaView Plugin User Guide for details on how to build ParaView with NVIDIA IndeX on this platform.
+
+### Removed support for POWER9 architecture (ppc64le)
+
+The POWER9 architecture (ppc64le) is no longer supported by the NVIDIA IndeX plugin.
+
+### Additional improvements
+
+- Data that is outside the camera's view frustum will now be imported immediately by the NVIDIA IndeX plugin. Previously, data import could get delayed until the camera was moved, which would temporarily interrupt user interaction.
+
+- The color map for (signed) `char` and `short` data is now applied to the full value range, for consistency with other ParaView representations.
+
+- `signed char` (`VTK_SIGNED_CHAR`) data is supported in addition to `char` (`VTK_CHAR`) and `unsigned char` (`VTK_UNSIGNED_CHAR`) for structured volumes.
+
+- Platform dependent `char` data, which is used by the legacy VTK data format (.vtk) and when loading raw binary data (.raw), is now correctly interpreted as `unsigned char` on aarch64, while it is `signed char` on x86-64. A warning message will be given, recommending to use one of the explicit data types instead of `char`.
+
+
 ## Looking Glass plugin updated
 
 ParaView supports a new Looking Glass device: 8k generation 2.
@@ -963,13 +1003,13 @@ The _Choose Preset_ dialog no longer gets stuck behind other control panels on m
 In the _Properties_ panel, two icons at the top of each section let you save the current values shown in property widgets as the defaults for the next time this source/filter is created, or reset all values to the application defaults. Now each property widget has a context menu, available by right-clicking on the widget's label, to "Use as Default", or "Reset to Application Default" for just that property. The context menu is not shown if the property cannot take these actions.
 
 
-## Rearrange views in layouts
+## Equalize view size in layouts
 
-ParaView now provides the ability to evenly rearrange the views size inside a layout.
+ParaView now provides the ability to make the size of all views inside a layout the same.
 
-When using multiples views in the same layout, you can create and manually resize views, while keeping a overall rectangle global shape. However, it may get frustrating to create an evenly spaced layout manually.
+When using multiples views in the same layout, you can create and manually resize views, while keeping a overall rectangle global shape. However, it may get frustrating to create an equally sized layout manually.
 
-Now you can use the "Rearrange Views" action from the "Views" menu to independently resize width, height or both (horizontal, vertical or grid mode). This is also available in context menu from the _Layout_ tab.
+Now you can use the "Equalize Views" action from the "Views" menu to resize width, height or both with the "Horizontally", "Vertically", or "Grid" modes). This is also available in context menu from each _Layout_ tab.
 
 > ![Before rearranging](img/5.12.0/rearrange-layout-creation.png)
 >
