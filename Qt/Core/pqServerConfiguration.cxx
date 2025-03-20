@@ -337,17 +337,33 @@ void pqServerConfiguration::parseSshPortForwardingXML()
           else
           {
             this->PortForwarding = true;
-            this->PortForwardingLocalPort = QString(sshForwardXML->GetAttributeOrDefault(
-              "local", QString::number(this->resource().port()).toUtf8().data()));
 
-            // rc connection do not need to set the actual URI
-            // as connection is managed server side with pvserver arguments
-            if (!resource.isReverse())
+            const char* portString = sshForwardXML->GetAttribute("local");
+            if (portString)
             {
-              resource.setHost("localhost");
-              resource.setPort(this->PortForwardingLocalPort.toInt());
-              this->ActualURI = resource.schemeHostsPorts().toURI();
+              QString qPortString(portString);
+
+              // Special case to handle https://gitlab.kitware.com/paraview/paraview/-/issues/22795
+              if (qPortString == "$PV_SERVER_PORT$")
+              {
+                // PARAVIEW_DEPRECATED_IN_5_14_0
+                qWarning("Using <PortForwarding local=\"$PV_SERVER_PORT$\"/> is not supported "
+                         "anymore, just use <PortForwarding/> instead");
+                this->PortForwardingLocalPort = QString::number(this->resource().port());
+              }
+              else
+              {
+                this->PortForwardingLocalPort = qPortString;
+              }
             }
+            else
+            {
+              this->PortForwardingLocalPort = QString::number(this->resource().port());
+            }
+
+            resource.setHost("localhost");
+            resource.setPort(this->PortForwardingLocalPort.toInt());
+            this->ActualURI = resource.schemeHostsPorts().toURI();
           }
         }
       }
@@ -504,13 +520,18 @@ QString pqServerConfiguration::sshFullCommand(
   vtkPVXMLElement* sshForwardXML = sshConfigXML->FindNestedElementByName("PortForwarding");
   if (sshForwardXML)
   {
-    QString sshFlag = "-L ";
     if (this->resource().isReverse())
     {
-      sshFlag = "-R ";
+      // Reverse tunnelling
+      sshStream << "-R " << QString::number(this->resource().port())
+                << ":localhost:" << this->PortForwardingLocalPort << " ";
     }
-    sshStream << sshFlag << this->PortForwardingLocalPort
-              << ":localhost:" << QString::number(this->resource().port()) << " ";
+    else
+    {
+      // Forward tunnelling
+      sshStream << "-L " << this->PortForwardingLocalPort
+                << ":localhost:" << QString::number(this->resource().port()) << " ";
+    }
   }
 
   QString sshUser = sshConfigXML->GetAttributeOrDefault("user", "");
@@ -518,7 +539,7 @@ QString pqServerConfiguration::sshFullCommand(
   {
     sshStream << sshUser << "@";
   }
-  sshStream << this->resource().host();
+  sshStream << this->resource().host() << " ";
   return sshFullCommand;
 }
 

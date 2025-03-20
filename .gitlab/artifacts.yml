@@ -9,7 +9,8 @@
             - compile_output.log
             - doxygen_output.log
             - prepare_output.log
-            - paraview-docs-doxygen.tgz
+            - build/CMakeCache.txt
+            - build/Documentation/ParaViewGeneratedDocs.tar.gz
 
 .cmake_translations_artifacts:
     artifacts:
@@ -73,6 +74,10 @@
 
             # SPDX files
             - build/**/*.spdx
+            - build/cdash-build-id
+        reports:
+            annotations:
+                - build/annotations.json
 
 .cmake_test_artifacts:
     artifacts:
@@ -82,6 +87,8 @@
         reports:
             junit:
                 - build/junit.xml
+            annotations:
+                - build/annotations.json
         paths:
             # Debugging logs
             - build/Testing/Temporary/Last*.log
@@ -102,3 +109,7 @@
         paths:
             # Logs of the build
             - compile_output.log
+            - build/cdash-build-id
+        reports:
+            annotations:
+                - build/annotations.json

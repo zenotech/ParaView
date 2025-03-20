@@ -27,8 +27,6 @@ set(classes
   vtkPVInformation
   vtkPVLogInformation
   vtkPVMemoryUseInformation
-  vtkPVOptions
-  vtkPVOptionsXMLParser
   vtkPVPlugin
   vtkPVPluginLoader
   vtkPVPluginsInformation
@@ -91,6 +89,10 @@ set_source_files_properties(vtkProcessModule.cxx
   PROPERTIES
     COMPILE_DEFINITIONS "${vtkProcessModule_defines}")
 
+set_source_files_properties(vtkProcessModuleConfiguration.cxx
+  PROPERTIES
+    COMPILE_DEFINITIONS "PARAVIEW_USE_PYTHON=$<BOOL:${PARAVIEW_USE_PYTHON}>")
+
 # TODO: Expose CMake options for these?
 set(vtkPVOptions_defines)
 if (PARAVIEW_ALWAYS_SECURE_CONNECTION)
@@ -113,8 +115,8 @@ set(PARAVIEW_PLUGIN_LOADER_PATHS ""
   CACHE STRING "Extra paths to search for plugins")
 mark_as_advanced(PARAVIEW_PLUGIN_LOADER_PATHS)
 if (PARAVIEW_PLUGIN_LOADER_PATHS)
-  set_source_files_properties(vtkPVPluginLoader.cxx
-    PROPERTIES
+  set_property(SOURCE vtkPVPluginLoader.cxx APPEND
+    PROPERTY
       COMPILE_DEFINITIONS PARAVIEW_PLUGIN_LOADER_PATHS=\"${PARAVIEW_PLUGIN_LOADER_PATHS}\")
 endif ()
 

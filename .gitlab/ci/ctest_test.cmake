@@ -24,6 +24,8 @@ list(APPEND test_exclusions
   "\\.TraceExodus$"
   # see https://gitlab.kitware.com/paraview/paraview/-/issues/22349
   "\\.SplitViewTrace$"
+  # see https://gitlab.kitware.com/paraview/paraview/-/issues/22478
+  "\\.BivariateTextureRepresentation$"
   )
 
 if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "_mpi")
@@ -56,6 +58,10 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "fedora")
     "\\.SpreadSheet1$"
     "\\.VariableSelector1$"
     "\\.VolumeCrop$"
+
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/22352
+    "\\.FeatureEdgesFilterHTG$"
+    "\\.FeatureEdgesRepresentationHTG$"
 
     # Image corruption.
     # https://gitlab.kitware.com/paraview/paraview/-/issues/21429
@@ -102,7 +108,27 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "fedora")
     "pv\\.TooltipCopy$"
     "pvcs\\.ShaderReplacement"
     "pvcrs\\.ShaderReplacement"
+
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/22598
+    "^pv\\.HelpWindowHistory$"
+
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/22599
+    "\\.NetCDFTimeAnnotationFilter$"
+
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/22600
+    "\\.DigitalRockPhysicsAnalysisFilter$"
+
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/22601
+    "\\.ConvertToMolecule$"
     )
+
+  if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "static")
+    list(APPEND test_exclusions
+      # https://gitlab.kitware.com/paraview/paraview/-/issues/22398
+      "^ParaViewExample-Catalyst2/PythonFullExample$"
+      "^ParaViewExample-Catalyst2/PythonSteeringExample$")
+  endif ()
+
 endif ()
 
 if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "macos")
@@ -116,6 +142,56 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "macos")
 
     # https://gitlab.kitware.com/paraview/paraview/-/issues/21421
     "\\.PythonEditorRun$"
+
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/22827
+    # Unclassified
+    "^pv\\.ExtrusionRepresentationCellData$"
+    "^pv\\.UndoRedo1$"
+    "^pvcrs\\.UndoRedo1$"
+    "^pvcs\\.UndoRedo1$"
+
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/22823
+    # Floating point subtleties
+    "^pv\\.AnimateProperty$"
+
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/22824
+    # Shading differences
+    "^pv\\.PointGaussianMultiBlockDataSet$"
+    "^pvcrs\\.PointGaussianMultiBlockDataSet$"
+    "^pvcs\\.PointGaussianMultiBlockDataSet$"
+    "^pv\\.CONVERGECFDReader$"
+    "^pvcrs\\.CONVERGECFDReader$"
+    "^pvcs\\.CONVERGECFDReader$"
+
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/22825
+    # M4 geometry filter
+    "^pv\\.FeatureEdgesFilterHTG$"
+    "^pvcrs\\.FeatureEdgesFilterHTG$"
+    "^pvcs\\.FeatureEdgesFilterHTG$"
+    "^pv\\.FeatureEdgesRepresentationHTG$"
+    "^pvcrs\\.FeatureEdgesRepresentationHTG$"
+    "^pvcs\\.FeatureEdgesRepresentationHTG$"
+    "^pv\\.MultipleColorOnSelection$"
+    "^pvcs\\.MultipleColorOnSelection$"
+
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/22826
+    # SpyPlotUniReader error messages
+    "^pv\\.CTHAMRBaseline$"
+    "^pvcrs\\.CTHAMRBaseline$"
+    "^pvcs\\.CTHAMRBaseline$"
+    "^pv\\.CTHAMRClip$"
+    "^pv\\.CTHAMRContour$"
+    "^pv\\.CTHAMRDualClip$"
+    "^pv\\.CTHAMRMaterialInterfaceFilter$"
+    "^pv\\.CTHDerivedDensity2DCylinder$"
+    "^pvcrs\\.CTHDerivedDensity2DCylinder$"
+    "^pvcs\\.CTHDerivedDensity2DCylinder$"
+    "^pv\\.SPTimeseries$"
+    "^pvcrs\\.SPTimeseries$"
+    "^pvcs\\.SPTimeseries$"
+    "^pv\\.TestIsoVolume$"
+    "^pvcrs\\.TestIsoVolume$"
+    "^pvcs\\.TestIsoVolume$"
     )
 endif ()
 
@@ -123,6 +199,9 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "macos_arm64")
   list(APPEND test_exclusions
     # https://gitlab.kitware.com/paraview/paraview/-/issues/20743
     "^pv\\.ExtrusionRepresentationCellData$"
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/22353
+    "\\.FeatureEdgesFilterHTG$"
+    "\\.FeatureEdgesRepresentationHTG$"
     # paraview/paraview/#21397
     "\\.TextSourceBorder$"
     # https://gitlab.kitware.com/paraview/paraview/-/issues/21462
@@ -217,6 +296,17 @@ ctest_test(APPEND
   OUTPUT_JUNIT "${CTEST_BINARY_DIRECTORY}/junit.xml"
   REPEAT UNTIL_PASS:3)
 ctest_submit(PARTS Test)
+
+include("${CMAKE_CURRENT_LIST_DIR}/ctest_annotation.cmake")
+if (DEFINED build_id)
+  ctest_annotation_report("${CTEST_BINARY_DIRECTORY}/annotations.json"
+    "Build Summary" "https://open.cdash.org/build/${build_id}"
+    "All Tests"     "https://open.cdash.org/viewTest.php?buildid=${build_id}"
+    "Test Failures" "https://open.cdash.org/viewTest.php?onlyfailed&buildid=${build_id}"
+    "Tests Not Run" "https://open.cdash.org/viewTest.php?onlynotrun&buildid=${build_id}"
+    "Test Passes"   "https://open.cdash.org/viewTest.php?onlypassed&buildid=${build_id}"
+  )
+endif ()
 
 if (test_result)
   message(FATAL_ERROR
