@@ -42,14 +42,17 @@ Please remove this comment.
     - Make a commit for each of these `release` changes on a single topic
       (suggested branch name: `update-to-v@VERSION@`):
       - [ ] Assemble release notes into `Documentation/release/ParaView-@VERSION@.md`.
+<!-- if RC1 and patch == 0 -->
+      - [ ] Update `version.txt` to bump the minor version number.
+<!-- endif -->
+    - Make a commit for each of these `release`-only changes
       - [ ] Update `version.txt` and tag the commit (tag this commit below)
         ```
         git checkout -b update-to-v@VERSION@@RC@ @BRANCHPOINT@
         echo @VERSION@@RC@ > version.txt
         git commit -m 'Update version number to @VERSION@@RC@' version.txt
         ```
-    - Make a commit for each of these `release`-only changes
-<!-- if not RC1 and patch == 0 -->
+<!-- if RC1 and patch == 0 -->
       - [ ] Update VTK's `paraview/release` branch. The
             [`release-mr`][release-mr]  script should be used to do this. Pass
             `-c .kitware-release-paraview.json` to use the appropriate
@@ -64,18 +67,19 @@ Please remove this comment.
           git remote add gitlab <vtk fork url>
           ```
         - [ ] Obtain a GitLab API token for the `kwrobot.release.paraview` user
-              (ask @ben.boeckel if you do not have one)
+              (ask `@utils/maintainers/release` if you do not have one)
         - [ ] Add the `kwrobot.release.paraview` user to your fork with at least
               `Developer` privileges (so it can open MRs)
 <!-- endif -->
         - [ ] Merge the VTK `paraview/release` update MR
-        - [ ] Update kwrobot with the new `paraview/release` branch rules (@ben.boeckel)
+        - [ ] Update kwrobot with the new `paraview/release` branch rules
+              (`@utils/maintainers/ghostflow`)
       - [ ] `.gitmodules` to track the `paraview/release` branch of VTK
       - [ ] Update `.gitlab/ci/cdash-groups.json` to track the `release` CDash
             groups
     - Create a merge request targeting `release`
       - [ ] Obtain a GitLab API token for the `kwrobot.release.paraview` user
-            (ask @ben.boeckel if you do not have one)
+            (ask `@utils/maintainers/release` if you do not have one)
       - [ ] Add the `kwrobot.release.paraview` user to your fork with at least
             `Developer` privileges (so it can open MRs)
       - [ ] Use [the `release-mr`][release-mr] script to open the create the
@@ -102,7 +106,7 @@ Please remove this comment.
     - [ ] Setup your `~/.ssh/config` and add the web host (@vbolea).
     - [ ] `rsync -rptv $tarballs web:ParaView_Release/v@MAJOR@.@MINOR@/`
   - Software process updates (these can all be done independently)
-    - [ ] Update kwrobot with the new `release` branch rules (@ben.boeckel)
+    - [ ] Update kwrobot with the new `release` branch rules (`@utils/maintainers/ghostflow`)
     - [ ] Run [this script][cdash-update-groups] to update the CDash groups
       - This must be done after a nightly run to ensure all builds are in the
         `release` group
@@ -127,8 +131,10 @@ git submodule update --recursive --init
 
   - Integrate changes.
     - Update versions
-      - [ ] Guide selections in `versions.cmake` and ensure that the paraview
-            http URL source is the _DEFAULT_ source.
+<!-- if not RC -->
+      - [ ] Update the version in the `Buliding a specific version` section
+            example in `README.md`
+<!-- endif -->
       - [ ] `paraview_SOURCE_SELECTION` version in `README.md`
       - [ ] `PARAVIEW_VERSION_DEFAULT` in  CMakeLists.txt
       - [ ] Commit changes
@@ -140,7 +146,7 @@ git submodule update --recursive --init
       - [ ] Create a commit which will be tagged:
         - [ ] `git commit --allow-empty -m "paraview: add release @VERSION@"`
         - [ ] Create tag: `git tag -a -m 'ParaView superbuild @VERSION@@RC@' v@VERSION@@RC@ HEAD`
-<!-- if not RC and patch == 0 -->
+<!-- if RC1 and patch == 0 -->
       - [ ] Create a commit that changes the paraview _DEFAULT_ source to the git
             url source in the `versions.cmake` file.
 <!-- endif -->
@@ -161,7 +167,7 @@ git submodule update --recursive --init
           Merge Request (see script for usage)
       - [ ] Pull the script for each release; it may have been updated since it
         was last used
-      - [ ] `release-mr.py -t TOKEN_STRING -c .kitware-release.json -m @BRANCHPOINT@`
+      - [ ] `release-mr.py -t TOKEN_STRING -c .kitware-release.json -m @BASEBRANCH@`
 <!-- if not RC and patch == 0-->
       - [ ] Make sure that the backporting directive in the merge-request
             description skips the last commit such as: `Backport: master:HEAD~`
@@ -190,21 +196,30 @@ git submodule update --recursive --init
 
 # Sign macOS binaries
   - [ ] Upload to signing server, run script, download resulting .pkg and .dmg files
-  - [ ] Install from .pkg and verify that it is signed with `codesign -dvvv /Applications/ParaView-@VERSION@@RC@.app/`
-  - [ ] Install from .dmg and verify that it is signed with `codesign -dvvv /Applications/ParaView-@VERSION@@RC@.app/`
+  - [ ] Install on x86\_64 from .pkg and verify that it is signed with `codesign -dvvv /Applications/ParaView-@VERSION@@RC@.app/`
+  - [ ] Install on arm64 from .pkg and verify that it is signed with `codesign -dvvv /Applications/ParaView-@VERSION@@RC@.app/`
+  - [ ] Install on x86\_64 from .dmg and verify that it is signed with `codesign -dvvv /Applications/ParaView-@VERSION@@RC@.app/`
+  - [ ] Install on arm64 from .dmg and verify that it is signed with `codesign -dvvv /Applications/ParaView-@VERSION@@RC@.app/`
 
 # Validating binaries
 
 
 ## Linux
 
-Run in client-server configuration with 4 server ranks. Run through the [Classroom Tutorials][classroom-tutorials]. Try a few sources and filters in each section. Be sure to try the **Ghost Cell Generator** as well.
+- Run in client-server configuration with 4 server ranks.
+
+```
+> mpirun -n 4 pvserver --mpi --hostname=localhost -p 11111 &
+> paraview --server localhost:11111
+```
+
+- Start trace. Open disk_out_ref. Clip.Create Screenshot. Create Animation. Stop trace. Save macro. Reset Session. Delete screenshot and animation. Run macro. Check generate screenshots and animations are correct.
+- Open View -> Memory Inspector.
+- Change opacity to 0.3 and ensure rendering looks correct.
 
 ## All other binaries
 
-Open the Python shell and run the following:
-
-For each binary, open the Python shell and run the following:
+Open ParaView's _Python Shell_ and run the following:
 
 ```python
 import numpy
@@ -213,16 +228,25 @@ ColorBy(s, ('POINTS', 'Normals', 'X'))
 Show(Text(Text="$A^2$"))
 ```
 
-  Check that
-  - Check that Help -> Getting Started with ParaView menu opens PDF document
-  - Check that Help -> Reader, Filter, and Writer lists filter information properly
-  - Check that each visualization in Help -> Example Visualizations load and match thumbnails in dialog
+Check that
+  - Help -> Getting Started with ParaView menu opens PDF document
+  - Help -> Reader, Filter, and Writer lists information about selected sources properly
+  - Help -> try every other item in the menu. Note that the Release Notes link will bring you to a missing page until the release notes are published, which may not be until the very end of the release cycle. Check that the URL is the expected one, though.
+  - Run remote server with 8 ranks. Connect the client to it and check that each visualization in Help -> Example Visualizations load and match thumbnails in dialog:
+
+```
+> mpirun -n 8 pvserver --mpi --hostname=localhost -p 11111 &
+> paraview --server localhost:11111
+```
+
+  - Help -> About shows reasonable and accurate information
   - Check that plugins are present and load properly. Select Tools -> Manage Plugins menu item and load each plugin in the list.
-  - OSPRay raycasting and pathtracing runs ("Enable Ray Tracing" property in View panel)
+  - OSPRay raycasting and pathtracing runs ("Enable Ray Tracing" property in View panel). With Samples Per Pixel set to 4, leave the Denoise option on.
   - OptiX pathtracing runs (not macOS)
     - ref. !22372 for current expected results
-  - IndeX runs (load pvNVIDIAIndeX plugin, add a Wavelet dataset, change representaiton to NVIDIA IndeX)
-  - (All binaries) Open can.ex2 example. Split screen horizontally. Switch to Volume rendering in one view, ray tracing in the other. Save screenshot (.png). Save Animation (.avi).
+  -
+  - IndeX runs (load pvNVIDIAIndeX plugin, add a Wavelet dataset, change representation to NVIDIA IndeX)
+  - Open can.ex2 example. Split screen horizontally. Switch to Volume rendering in one view, ray tracing in the other. Save screenshot (.png). Save Animation (.avi).
 
 Binary checklist
   - [ ] macOS arm64
@@ -240,8 +264,8 @@ Binary checklist
   - [ ] Ask @cory.quammen to regenerate `https://www.paraview.org/files/listing.txt` and `md5sum.txt` on the website from within the directory corresponding to www.paraview.org/files/
 
 ```
-buildListing.sh
 updateMD5sum.sh v@MAJOR@.@MINOR@
+buildListing.sh
 ```
 
   - [ ] Test download links on https://www.paraview.org/download
@@ -266,8 +290,6 @@ If making a non-RC release:
   - [ ] Go to readthedocs.org and activate
   - [ ] Head to [ParaView developer docs](github.com/Kitware/paraview-docs) and generate the new developer documentation, following the directions in the README.
   - [ ] Write and publish blog post with release notes.
-  - [ ] Update release notes
-    (https://www.paraview.org/Wiki/ParaView_Release_Notes)
 -->
 
 # Post-release
@@ -287,13 +309,9 @@ If making a non-RC release:
 
 /cc @cory.quammen
 
-/cc @charles.gueunet
-
 /cc @mwestphal
 
 /cc @wascott
-
-/cc @phismith25
 
 /label ~"priority:required"
 

@@ -26,6 +26,17 @@ list(APPEND test_exclusions
   "\\.SplitViewTrace$"
   # see https://gitlab.kitware.com/paraview/paraview/-/issues/22478
   "\\.BivariateTextureRepresentation$"
+  # see https://gitlab.kitware.com/paraview/paraview/-/issues/22694
+  "\\.HyperTreeGridObliquePlaneCutter$"
+  # Random segfault that would require deep investigation
+  # https://gitlab.kitware.com/paraview/paraview/-/issues/21484
+  "\\.ColorOpacityTableEditing$"
+  # https://gitlab.kitware.com/paraview/paraview/-/issues/21656
+  "\\.ShaderReplacements$"
+  # https://gitlab.kitware.com/paraview/paraview/-/issues/21752
+  "\\.ComparativeViewOverlay$"
+  # https://gitlab.kitware.com/paraview/paraview/-/issues/17941
+  "^paraviewPython-TestGeometryBoundsClobber$"
   )
 
 if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "_mpi")
@@ -49,24 +60,16 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "fedora")
     "\\.BlockLinkedSelection$"
     "\\.BoxWidget$"
     "\\.CTHAMRClip$"
-    "\\.CTHAMRContour$"
     "\\.MultiSliceWavelet$"
     "\\.NonConvexPolygon$"
-    "\\.SelectCellsTrace$"
     "\\.SelectionLinkMultiple$"
     "\\.SelectionModifiersBlocks$"
     "\\.SpreadSheet1$"
-    "\\.VariableSelector1$"
     "\\.VolumeCrop$"
 
     # https://gitlab.kitware.com/paraview/paraview/-/issues/22352
     "\\.FeatureEdgesFilterHTG$"
     "\\.FeatureEdgesRepresentationHTG$"
-
-    # Image corruption.
-    # https://gitlab.kitware.com/paraview/paraview/-/issues/21429
-    "^pv\\.StreamLinesRepresentationThick$"
-    "^pv\\.StreamLinesRepresentationTransform$"
 
     # Transfer function image corruption
     # https://gitlab.kitware.com/paraview/paraview/-/issues/21428
@@ -84,21 +87,8 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "fedora")
     # incorrect size, ignore for now.
     "\\.MultiSliceMultiBlock$"
 
-    # Random segfault that would require deep investigation
-    # https://gitlab.kitware.com/paraview/paraview/-/issues/21484
-    "\\.ColorOpacityTableEditing$"
-
-    # https://gitlab.kitware.com/paraview/paraview/-/issues/21656
-    "^pv\\.ShaderReplacements$"
-
-    # https://gitlab.kitware.com/paraview/paraview/-/issues/21657
-    "^pv\\.StreamLinesRepresentationColor$"
-
     # https://gitlab.kitware.com/paraview/paraview/-/issues/21752
     "\\.ComparativeViewOverlay$"
-
-    # https://gitlab.kitware.com/paraview/paraview/-/issues/21774
-    "pvcs\\.CDISimpleRead$"
 
     # https://gitlab.kitware.com/paraview/paraview/-/issues/22427
     "pqCoreKeySequences$"
@@ -106,20 +96,25 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "fedora")
     "pv\\.ComputeArrayMagnitudeSetting$"
     "TestPythonView$"
     "pv\\.TooltipCopy$"
-    "pvcs\\.ShaderReplacement"
-    "pvcrs\\.ShaderReplacement"
 
     # https://gitlab.kitware.com/paraview/paraview/-/issues/22598
     "^pv\\.HelpWindowHistory$"
 
-    # https://gitlab.kitware.com/paraview/paraview/-/issues/22599
-    "\\.NetCDFTimeAnnotationFilter$"
-
     # https://gitlab.kitware.com/paraview/paraview/-/issues/22600
     "\\.DigitalRockPhysicsAnalysisFilter$"
+    "\\.DigitalRockPhysicsExplodeFilter$"
 
     # https://gitlab.kitware.com/paraview/paraview/-/issues/22601
     "\\.ConvertToMolecule$"
+
+    # Timeouts https://gitlab.kitware.com/paraview/paraview/-/issues/20108
+    "^ParaViewExample-Catalyst$"
+
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/21462
+    "\\.UndoRedo1"
+
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/22743
+    "^pv.SimpleSSHServerTermExec$"
     )
 
   if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "static")
@@ -127,6 +122,22 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "fedora")
       # https://gitlab.kitware.com/paraview/paraview/-/issues/22398
       "^ParaViewExample-Catalyst2/PythonFullExample$"
       "^ParaViewExample-Catalyst2/PythonSteeringExample$")
+  endif ()
+
+  if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "viskoresoverride")
+    list(APPEND test_exclusions
+      # https://gitlab.kitware.com/paraview/paraview/-/issues/22801
+      "^paraviewPython-TestCatalystClient$"
+
+      # https://gitlab.kitware.com/paraview/paraview/-/issues/22941
+      "^pv\\.AdaptiveResampleToImage$"
+      "^pvcs\\.AdaptiveResampleToImage$")
+  endif ()
+
+  if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "_qt")
+    list(APPEND test_exclusions
+      # Test fails when PARAVIEW_ENABLE_VISITBRIDGE is ON (it doesn't know which Fluent reader to chose)
+      "FluentReaderZoneSelection$")
   endif ()
 
 endif ()
@@ -143,9 +154,29 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "macos")
     # https://gitlab.kitware.com/paraview/paraview/-/issues/21421
     "\\.PythonEditorRun$"
 
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/22674
+    "^paraviewPython-Batch-TestStereoSaveScreenshot$"
+    "^paraviewPython-TestStereoSaveScreenshot$"
+
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/22800
+    "^paraviewPython-SaveTransparentImages$"
+
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/22676
+    "^paraviewPython-TestHTGContourMonoHT$"
+    "^paraviewPython-TestHTG3DContourPolyhedron$"
+
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/22696
+    "^pv\\.LagrangianSurfaceHelperComposite$"
+
     # https://gitlab.kitware.com/paraview/paraview/-/issues/22827
     # Unclassified
+    "^pv\\.BivariateNoiseRepresentation$"
+    "^pv\\.DecimatePolyline$"
+    "^pvcrs\\.DecimatePolyline$"
+    "^pvcs\\.DecimatePolyline$"
     "^pv\\.ExtrusionRepresentationCellData$"
+    "^pvcrs\\.GroupDataSetOutputType$"
+    "^pvcs\\.GroupDataSetOutputType$"
     "^pv\\.UndoRedo1$"
     "^pvcrs\\.UndoRedo1$"
     "^pvcs\\.UndoRedo1$"
@@ -159,12 +190,29 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "macos")
     "^pv\\.PointGaussianMultiBlockDataSet$"
     "^pvcrs\\.PointGaussianMultiBlockDataSet$"
     "^pvcs\\.PointGaussianMultiBlockDataSet$"
+    "^pv\\.PointGaussianNoScaleTransferFunction$"
+    "^pvcrs\\.PointGaussianNoScaleTransferFunction$"
+    "^pvcs\\.PointGaussianNoScaleTransferFunction$"
+    "^pv\\.UniformInverseTransformSamplingGlyph$"
+    "^pvcrs\\.UniformInverseTransformSamplingGlyph$"
+    "^pvcs\\.UniformInverseTransformSamplingGlyph$"
     "^pv\\.CONVERGECFDReader$"
     "^pvcrs\\.CONVERGECFDReader$"
     "^pvcs\\.CONVERGECFDReader$"
+    # The following tests seem to have some geometry differences too
+    "^pv\\.AxisAlignedCutterMBHierarchy$"
+    "^pvcrs\\.AxisAlignedCutterMBHierarchy$"
+    "^pvcs\\.AxisAlignedCutterMBHierarchy$"
+    "^pv\\.AxisAlignedCutterPDCNoHierarchy$"
+    "^pvcrs\\.AxisAlignedCutterPDCNoHierarchy$"
+    "^pvcs\\.AxisAlignedCutterPDCNoHierarchy$"
+    "^pv\\.AxisAlignedPDCNoHierarchy$"
+    "^pvcrs\\.AxisAlignedPDCNoHierarchy$"
+    "^pvcs\\.AxisAlignedPDCNoHierarchy$"
 
     # https://gitlab.kitware.com/paraview/paraview/-/issues/22825
     # M4 geometry filter
+    "^pvcs-tile-display\\.LinkCameraFromView-1x1$"
     "^pv\\.FeatureEdgesFilterHTG$"
     "^pvcrs\\.FeatureEdgesFilterHTG$"
     "^pvcs\\.FeatureEdgesFilterHTG$"
@@ -202,8 +250,6 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "macos_arm64")
     # https://gitlab.kitware.com/paraview/paraview/-/issues/22353
     "\\.FeatureEdgesFilterHTG$"
     "\\.FeatureEdgesRepresentationHTG$"
-    # paraview/paraview/#21397
-    "\\.TextSourceBorder$"
     # https://gitlab.kitware.com/paraview/paraview/-/issues/21462
     "\\.UndoRedo1"
     # https://gitlab.kitware.com/paraview/paraview/-/issues/21768
@@ -211,6 +257,9 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "macos_arm64")
     # https://gitlab.kitware.com/paraview/paraview/-/issues/21786
     "^pv\\.MultipleColorOnSelection"
     "^pvcs\\.MultipleColorOnSelection"
+    # https://gitlab.kitware.com/paraview/paraview/-/merge_requests/7083
+    "^pvcs\\.GroupDataSetOutputType$"
+    "^pvcrs\\.GroupDataSetOutputType$"
     )
 endif ()
 
@@ -230,7 +279,6 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "windows")
     "^pvcrs\\.FindDataDialog$"
     "^pvcs\\.ColorOpacityTableEditorHistogram$"
     "^pvcs\\.SplitViewTrace$"
-    "^pvcs-tile-display\\.LinkCameraFromView-1x1$"
 
     # The generated paths are too long and don't work in MSVC.
     # See https://gitlab.kitware.com/paraview/paraview/-/issues/20589
@@ -253,9 +301,6 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "windows")
     # Flaky with timeouts
     "^pvcs\\.UndoRedo1"
 
-    # Flaky with timeouts paraview/paraview#21591
-    "^pvcrs\\.OctreeImageFilters"
-
     # Fails on windows-vs2019-qt
     # See https://gitlab.kitware.com/paraview/paraview/-/issues/21771
     "^pv\\.HelpWindowHistory$"
@@ -263,6 +308,11 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "windows")
     # Flaky for some reasons
     # https://gitlab.kitware.com/paraview/paraview/-/issues/21421
     "\\.PythonEditorRun$"
+
+    # Fails on windows-vs2022-qt
+    # https://gitlab.kitware.com/paraview/paraview/-/merge_requests/7083
+    "^pvcs\\.GroupDataSetOutputType$"
+    "^pvcrs\\.GroupDataSetOutputType$"
     )
 endif ()
 

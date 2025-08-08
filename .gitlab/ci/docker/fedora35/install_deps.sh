@@ -33,6 +33,10 @@ dnf install -y --setopt=install_weak_deps=False \
     gcc gcc-c++ gcc-gfortran \
     ninja-build
 
+# Testing dependencies
+dnf install -y --setopt=install_weak_deps=False \
+    openssh-server
+
 # External dependencies
 dnf install -y --setopt=install_weak_deps=False \
     libXcursor-devel libharu-devel utf8cpp-devel pugixml-devel libtiff-devel \
@@ -57,12 +61,6 @@ dnf install -y --setopt=install_weak_deps=False \
 # External repository support
 dnf install -y --setopt=install_weak_deps=False \
     dnf-plugins-core
-
-# Openturns dependencies
-# Disabling for now because Fedora 35 is no longer provided by the OpenSuse science team.
-# dnf config-manager --add-repo https://download.opensuse.org/repositories/science:/openturns/Fedora_35/science:openturns.repo
-# dnf install -y --setopt=install_weak_deps=False \
-#     openturns-libs openturns-devel
 
 # RPMFusion
 dnf install -y --setopt=install_weak_deps=False \

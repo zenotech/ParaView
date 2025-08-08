@@ -168,12 +168,24 @@ QString pqServerConfiguration::portForwardingLocalPort() const
 {
   if (this->PortForwarding)
   {
-    return this->PortForwardingLocalPort;
+    return QString::number(this->LocalPortForwardingPort);
   }
   else
   {
     return QString::number(this->resource().port(11111));
   }
+}
+
+//-----------------------------------------------------------------------------
+void pqServerConfiguration::setDefaultLocalPortForwardingPort(int port)
+{
+  this->DefaultLocalPortForwardingPort = port;
+}
+
+//-----------------------------------------------------------------------------
+int pqServerConfiguration::localPortForwardingPort() const
+{
+  return this->LocalPortForwardingPort;
 }
 
 //-----------------------------------------------------------------------------
@@ -208,7 +220,8 @@ QString pqServerConfiguration::termCommand()
   QStringList termNames = { qgetenv("TERMINAL"), "x-terminal-emulator", "urxvt", "rxvt", "termit",
     "terminator", "Eterm", "aterm", "uxterm", "xterm", "gnome-terminal", "roxterm",
     "xfce4-terminal", "termite", "lxterminal", "mate-terminal", "terminology", "st", "qterminal",
-    "lilyterm", "tilix", "terminix", "konsole", "kitty", "guake", "tilda", "alacritty", "hyper" };
+    "lilyterm", "tilix", "terminix", "konsole", "kitty", "guake", "tilda", "alacritty", "hyper",
+    "wezterm", "rio" };
 #elif defined(__APPLE__)
   QStringList termNames = {}; // No default term command on mac
 #elif defined(_WIN32)
@@ -337,7 +350,7 @@ void pqServerConfiguration::parseSshPortForwardingXML()
           else
           {
             this->PortForwarding = true;
-
+            this->LocalPortForwardingPort = this->DefaultLocalPortForwardingPort;
             const char* portString = sshForwardXML->GetAttribute("local");
             if (portString)
             {
@@ -346,23 +359,21 @@ void pqServerConfiguration::parseSshPortForwardingXML()
               // Special case to handle https://gitlab.kitware.com/paraview/paraview/-/issues/22795
               if (qPortString == "$PV_SERVER_PORT$")
               {
-                // PARAVIEW_DEPRECATED_IN_5_14_0
                 qWarning("Using <PortForwarding local=\"$PV_SERVER_PORT$\"/> is not supported "
                          "anymore, just use <PortForwarding/> instead");
-                this->PortForwardingLocalPort = QString::number(this->resource().port());
+                this->LocalPortForwardingPort = this->resource().port();
               }
               else
               {
-                this->PortForwardingLocalPort = qPortString;
+                this->LocalPortForwardingPort = qPortString.toInt();
               }
             }
-            else
+            if (this->LocalPortForwardingPort < 0)
             {
-              this->PortForwardingLocalPort = QString::number(this->resource().port());
+              this->LocalPortForwardingPort = this->resource().port();
             }
-
             resource.setHost("localhost");
-            resource.setPort(this->PortForwardingLocalPort.toInt());
+            resource.setPort(this->LocalPortForwardingPort);
             this->ActualURI = resource.schemeHostsPorts().toURI();
           }
         }
@@ -404,7 +415,7 @@ QString pqServerConfiguration::command(double& processWait, double& delay) const
       return QString();
     }
 
-    // Recover a sssh command
+    // Recover a ssh command
     // It can be specified in the XML.
     // If not we look for default ssh names.
     vtkPVXMLElement* sshCommandExecXML = sshConfigXML->FindNestedElementByName("SSH");
@@ -442,6 +453,7 @@ QString pqServerConfiguration::command(double& processWait, double& delay) const
       // If not we look for default terminal names
       vtkPVXMLElement* sshTermXML = sshConfigXML->FindNestedElementByName("Terminal");
       QString termCommand;
+      QString termCommandOption;
       if (sshTermXML)
       {
         termCommand = sshTermXML->GetAttributeOrDefault("exec", "");
@@ -454,8 +466,9 @@ QString pqServerConfiguration::command(double& processWait, double& delay) const
         }
         if (!termCommand.isEmpty())
         {
+          termCommandOption = sshTermXML->GetAttributeOrDefault("command_option", "-e");
 #if defined(__linux__)
-          stream << termCommand << " -e ";
+          stream << termCommand << " " << termCommandOption << " ";
 #elif defined(_WIN32)
           stream << "cmd /C start \"SSH Terminal\" " << termCommand << " /C ";
 #endif
@@ -484,6 +497,7 @@ QString pqServerConfiguration::command(double& processWait, double& delay) const
            rm script to clean up at the end.
          */
         stream << "/bin/sh -c \"tmpFile=`mktemp`; echo \'#!/bin/sh\n"
+               // FIXME: Quoting needs to be performed on the command.
                << sshFullCommand << " " << execCommand
                << ";pid=`ps -o ppid= -p $PPID`; ppid=`ps -o ppid= -p $pid`; kill -2 $ppid; exit\'"
                   "> $tmpFile; chmod +x $tmpFile; chmod -rw ~/Library/Saved\\ Application\\ "
@@ -496,7 +510,7 @@ QString pqServerConfiguration::command(double& processWait, double& delay) const
         // MacOS support for standard terminal emulator like xterm
         if (sshTermXML && !termCommand.isEmpty())
         {
-          stream << termCommand << " -e ";
+          stream << termCommand << " " << termCommandOption << " ";
         }
 #else
       {
@@ -505,7 +519,10 @@ QString pqServerConfiguration::command(double& processWait, double& delay) const
       }
     }
   }
-  else { stream << execCommand; }
+  else
+  {
+    stream << execCommand;
+  }
   return reply;
 }
 
@@ -517,6 +534,12 @@ QString pqServerConfiguration::sshFullCommand(
   QTextStream sshStream(&sshFullCommand);
   sshStream << sshCommand << " ";
 
+  QString sshPort = sshConfigXML->GetAttributeOrDefault("port", "");
+  if (!sshPort.isEmpty())
+  {
+    sshStream << "-p " << sshPort << " ";
+  }
+
   vtkPVXMLElement* sshForwardXML = sshConfigXML->FindNestedElementByName("PortForwarding");
   if (sshForwardXML)
   {
@@ -524,14 +547,20 @@ QString pqServerConfiguration::sshFullCommand(
     {
       // Reverse tunnelling
       sshStream << "-R " << QString::number(this->resource().port())
-                << ":localhost:" << this->PortForwardingLocalPort << " ";
+                << ":localhost:" << QString::number(this->LocalPortForwardingPort) << " ";
     }
     else
     {
       // Forward tunnelling
-      sshStream << "-L " << this->PortForwardingLocalPort
+      sshStream << "-L " << QString::number(this->LocalPortForwardingPort)
                 << ":localhost:" << QString::number(this->resource().port()) << " ";
     }
+  }
+
+  QString options = qgetenv("PARAVIEW_SSH_OPTIONS");
+  if (!options.isEmpty())
+  {
+    sshStream << options << " ";
   }
 
   QString sshUser = sshConfigXML->GetAttributeOrDefault("user", "");

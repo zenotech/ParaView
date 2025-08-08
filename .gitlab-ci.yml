@@ -64,24 +64,6 @@ el7-mindeps-shared-mpi-python:build:
 #     needs:
 #         - el7-mindeps-shared-mpi-python:build
 
-fedora35-static-mpi-offscreen-osmesa-python:build:
-    extends:
-        - .fedora35_static_mpi_offscreen_osmesa_python
-        - .cmake_build_linux
-        - .linux_builder_tags
-        - .cmake_build_artifacts
-        - .run_manually
-
-fedora35-static-mpi-offscreen-osmesa-python:test:
-    extends:
-        - .fedora35_static_mpi_offscreen_osmesa_python
-        - .cmake_test_linux
-        - .linux_builder_tags
-        - .cmake_test_artifacts
-        - .run_automatically
-    needs:
-        - fedora35-static-mpi-offscreen-osmesa-python:build
-
 el8-shared-icc-mpi-python:build:
     extends:
         - .el8_shared_icc_mpi_python
@@ -117,26 +99,37 @@ fedora35-shared-debug-mpi-python-qt:test:
         - .run_automatically
     needs:
         - fedora35-shared-debug-mpi-python-qt:build
-    timeout: 180 minutes
+    timeout: 240 minutes
 
-fedora35-shared-mpi-python-qt-vtkmoverride:build:
+fedora35-shared-mpi-python-qt-viskoresoverride:build:
     extends:
-        - .fedora35_shared_mpi_python_qt_vtkmoverride
+        - .fedora35_shared_mpi_python_qt_viskoresoverride
         - .cmake_build_linux
         - .linux_builder_tags
         - .cmake_build_artifacts
         - .run_manually
 
-fedora35-shared-mpi-python-qt-vtkmoverride:test:
+fedora35-shared-mpi-python-qt-viskoresoverride:test:
     extends:
-        - .fedora35_shared_mpi_python_qt_vtkmoverride
+        - .fedora35_shared_mpi_python_qt_viskoresoverride
         - .cmake_test_linux
         - .linux_tester_tags
         - .cmake_test_artifacts
         - .run_automatically
     needs:
-        - fedora35-shared-mpi-python-qt-vtkmoverride:build
-    timeout: 120 minutes
+        - fedora35-shared-mpi-python-qt-viskoresoverride:build
+    timeout: 180 minutes
+
+fedora35-shared-mpi-offscreen-osmesa-python-qt-viskoresoverride:test:
+    extends:
+        - .fedora35_shared_mpi_offscreen_osmesa_python_qt_viskoresoverride
+        - .cmake_test_linux
+        - .linux_tester_tags
+        - .cmake_test_artifacts
+        - .run_automatically
+    needs:
+        - fedora35-shared-mpi-python-qt-viskoresoverride:build
+    timeout: 180 minutes
 
 # Translations
 
@@ -199,7 +192,7 @@ fedora35-tidy:build:
         - .cmake_tidy_artifacts
         - .run_manually
     # clang-tidy is *really* slow because it isn't cached.
-    timeout: 3 hours
+    timeout: 4 hours
 
 # macOS
 
@@ -220,6 +213,7 @@ macos-arm64-python-qt:test:
         - .run_automatically
     needs:
         - macos-arm64-python-qt:build
+    timeout: 180 minutes
 
 macos-x86_64-python-qt:build:
     extends:
@@ -287,7 +281,7 @@ windows-vs2022-qt:test:
 
 documentation:build:
     extends:
-        - .fedora35
+        - .fedora35_documentation
         - .doxygen_build_linux
         - .linux_builder_tags
         - .doxygen_log_artifacts
@@ -295,14 +289,11 @@ documentation:build:
 
 fedora35-doxygen:build:
     extends:
-        - .fedora35
+        - .fedora35_doxygen
         - .cmake_build_linux
         - .linux_builder_tags
         - .cmake_doxygen_artifacts
         - .run_manually
-
-    variables:
-        CMAKE_CONFIGURATION: fedora35_doxygen
 
 # Triggers
 

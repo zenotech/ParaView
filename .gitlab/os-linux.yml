@@ -22,14 +22,14 @@
 
 .fedora35:
     extends: .linux
-    image: "kitware/paraview:ci-fedora35-20240723"
+    image: "kitware/paraview:ci-fedora35-20250606"
 
 .el7_mindeps:
     extends: .linux
-    image: "kitware/paraview:ci-el7-mindeps-20240521"
+    image: "kitware/paraview:ci-el7-mindeps-20250116"
 
     variables:
-        LAUNCHER: "scl enable rh-python38 --"
+        LAUNCHER: "scl enable rh-python38 devtoolset-8 --"
 
 .el8_icc:
     extends: .linux
@@ -77,13 +77,29 @@
     variables:
         CMAKE_CONFIGURATION: el8_shared_icc_mpi_python
 
-.fedora35_static_mpi_offscreen_osmesa_python:
+.fedora35_documentation:
+    extends:
+        - .fedora35
+        - .fedora_openmpi_addon
+
+    variables:
+        CMAKE_CONFIGURATION: fedora35_documentation_mpi_python
+
+.fedora35_doxygen:
+    extends:
+        - .fedora35
+
+    variables:
+        CMAKE_CONFIGURATION: fedora35_doxygen
+
+.fedora35_shared_mpi_offscreen_osmesa_python_qt_viskoresoverride:
     extends:
         - .fedora35
         - .fedora_mpich_addon
 
     variables:
-        CMAKE_CONFIGURATION: fedora35_static_mpi_offscreen_osmesa_python
+        CMAKE_CONFIGURATION: fedora35_shared_mpi_offscreen_osmesa_python_qt_viskoresoverride
+        VTK_DEFAULT_OPENGL_WINDOW: vtkOSOpenGLRenderWindow
 
 .fedora35_shared_mpi_core:
     extends:
@@ -110,13 +126,13 @@
         CMAKE_CONFIGURATION: fedora35_shared_mpi_python_qt
         CMAKE_BUILD_TYPE: Debug
 
-.fedora35_shared_mpi_python_qt_vtkmoverride:
+.fedora35_shared_mpi_python_qt_viskoresoverride:
     extends:
         - .fedora35
         - .fedora_mpich_addon
 
     variables:
-        CMAKE_CONFIGURATION: fedora35_shared_mpi_python_qt_vtkmoverride
+        CMAKE_CONFIGURATION: fedora35_shared_mpi_python_qt_viskoresoverride
 
 .fedora35_tidy:
     extends:
@@ -180,8 +196,16 @@
 .cmake_test_linux:
     stage: test
 
+    # enable XML tests "stack trace" on failure
+    variables:
+        PV_DEBUG_TEST: "1"
+
     script:
         - *before_script_linux
+        - .gitlab/ci/ssh-test-conf.sh
+        # Ignore host keys from the temporary server set up in the above
+        # script.
+        - export PARAVIEW_SSH_OPTIONS="-o StrictHostKeyChecking=no"
         # For libnvindex.so
         - export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
         - ctest -V --output-on-failure -S .gitlab/ci/ctest_test.cmake
@@ -266,14 +290,14 @@
             CURRENT_RELEASE="$CI_COMMIT_TAG";
             MAYBE_UPDATE_LATEST="-u";
           fi
-        - $LAUNCHER cmake -S $GIT_CLONE_PATH -B $GIT_CLONE_PATH/build
-            -GNinja
-            -DDOCUMENTATION_HTML_TARZ=ON
-            -DPARAVIEW_BUILD_DEVELOPER_DOCUMENTATION=ON
-            -DPARAVIEW_USE_MPI=ON
-            -DPARAVIEW_USE_PYTHON=ON
-        - $LAUNCHER cmake --build $GIT_CLONE_PATH/build -j $(nproc) &> $GIT_CLONE_PATH/compile_output.log
-        - $LAUNCHER cmake --build $GIT_CLONE_PATH/build --target ParaViewDoc-TGZ &> $GIT_CLONE_PATH/doxygen_output.log
+        - sccache --start-server
+        - sccache --show-stats
+        - python3 -m venv venv
+        - . venv/bin/activate
+        - pip install -r .gitlab/ci/requirements-docs.txt
+        - $LAUNCHER ctest -VV -S .gitlab/ci/ctest_configure.cmake
+        - $LAUNCHER ctest -VV -S .gitlab/ci/ctest_build.cmake &> $GIT_CLONE_PATH/compile_output.log
+        - sccache --show-stats
         - $LAUNCHER bash -x $GIT_CLONE_PATH/Utilities/DocsUploader/Scripts/paraview_docs_uploader
             -s "$GIT_CLONE_PATH"
             -b "$GIT_CLONE_PATH/build"
@@ -284,7 +308,6 @@
             &> $GIT_CLONE_PATH/prepare_output.log
 
     variables:
-        CMAKE_PREFIX_PATH: "/usr/lib64/openmpi:$CMAKE_PREFIX_PATH"
         CURRENT_RELEASE: nightly
         MAYBE_SSH_KEY_PATH:
         MAYBE_UPDATE_LATEST:

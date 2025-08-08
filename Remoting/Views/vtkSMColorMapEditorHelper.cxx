@@ -184,7 +184,7 @@ vtkSMColorMapEditorHelper::HasBlocksProperties(vtkSMProxy* proxy,
     return { "/", BlockPropertyState::Disabled };
   }
   std::vector<std::pair<std::string, BlockPropertyState>> blockPropertyStates;
-  for (const std::string blockSelector : blockSelectors)
+  for (const std::string& blockSelector : blockSelectors)
   {
     blockPropertyStates.push_back(
       vtkSMColorMapEditorHelper::HasBlockProperties(proxy, blockSelector, propertyNames));
@@ -3080,7 +3080,10 @@ bool vtkSMColorMapEditorHelper::UpdateScalarBarRange(
     }
 
     double updatedRange[2];
-    sbProxy->GetRange(updatedRange);
+    const int component = vtkSMPropertyHelper(lut, "VectorMode").GetAsInt() != 0
+      ? vtkSMPropertyHelper(lut, "VectorComponent").GetAsInt()
+      : -1;
+    sbProxy->GetRange(updatedRange, component);
     minRangePropHelper.Set(updatedRange[0]);
     maxRangePropHelper.Set(updatedRange[1]);
   }
@@ -3152,7 +3155,10 @@ std::vector<vtkTypeBool> vtkSMColorMapEditorHelper::UpdateBlocksScalarBarRange(
       }
 
       double updatedRange[2];
-      sbProxy->GetRange(updatedRange);
+      const int component = vtkSMPropertyHelper(blockLuts[i], "VectorMode").GetAsInt() != 0
+        ? vtkSMPropertyHelper(blockLuts[i], "VectorComponent").GetAsInt()
+        : -1;
+      sbProxy->GetRange(updatedRange, component);
       minRangePropHelper.Set(updatedRange[0]);
       maxRangePropHelper.Set(updatedRange[1]);
     }

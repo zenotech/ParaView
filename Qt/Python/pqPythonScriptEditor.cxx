@@ -24,18 +24,6 @@
 
 #include <vtkPythonInterpreter.h>
 
-namespace details
-{
-void FillMenu(QMenu* menu, std::vector<QAction*>& actions)
-{
-  menu->clear();
-  for (auto const& action : actions)
-  {
-    menu->addAction(action);
-  }
-}
-}
-
 pqPythonScriptEditor* pqPythonScriptEditor::UniqueInstance = nullptr;
 
 //-----------------------------------------------------------------------------
@@ -55,17 +43,21 @@ pqPythonScriptEditor::pqPythonScriptEditor(QWidget* p)
 
   this->setWindowTitle(tr("ParaView Python Script Editor"));
 
-  this->connect(this->TabWidget, &pqPythonTabWidget::fileSaved, [this](const QString& filename) {
-    this->setWindowTitle(
-      tr("%1[*] - %2").arg(details::stripFilename(filename)).arg(tr("Script Editor")));
-    this->statusBar()->showMessage(tr("File %1 saved").arg(filename), 4000);
-  });
+  this->connect(this->TabWidget, &pqPythonTabWidget::fileSaved,
+    [this](const QString& filename)
+    {
+      this->setWindowTitle(
+        tr("%1[*] - %2").arg(details::stripFilename(filename)).arg(tr("Script Editor")));
+      this->statusBar()->showMessage(tr("File %1 saved").arg(filename), 4000);
+    });
 
-  this->connect(this->TabWidget, &pqPythonTabWidget::fileOpened, [this](const QString& filename) {
-    this->setWindowTitle(
-      tr("%1[*] - %2").arg(details::stripFilename(filename)).arg(tr("Script Editor")));
-    this->statusBar()->showMessage(tr("File %1 opened").arg(filename), 4000);
-  });
+  this->connect(this->TabWidget, &pqPythonTabWidget::fileOpened,
+    [this](const QString& filename)
+    {
+      this->setWindowTitle(
+        tr("%1[*] - %2").arg(details::stripFilename(filename)).arg(tr("Script Editor")));
+      this->statusBar()->showMessage(tr("File %1 opened").arg(filename), 4000);
+    });
 
   connect(this->TabWidget, &QTabWidget::currentChanged,
     [this]() { this->TabWidget->updateActions(this->Actions); });
