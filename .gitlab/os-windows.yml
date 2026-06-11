@@ -1,5 +1,12 @@
 # Windows-specific builder configurations and build commands
 
+---
+spec:
+    inputs:
+        project-tag:
+            description: "The project tag to use for selecting runners"
+
+---
 ## Base configurations
 
 .windows:
@@ -49,7 +56,7 @@
 
 .windows_builder_tags:
     tags:
-        - paraview # Since this is a bare runner, pin to a project.
+        - $[[ inputs.project-tag ]]
         - msvc-19.35
         - nonconcurrent
         - shell
@@ -58,7 +65,7 @@
 
 .windows_test_tags:
     tags:
-        - paraview # Since this is a bare runner, pin to a project.
+        - $[[ inputs.project-tag ]]
         - msvc-19.35
         - nonconcurrent
         - shell
@@ -74,6 +81,8 @@
     - Set-Item -Force -Path "env:PATH" -Value "$pwdpath\.gitlab\cmake\bin;$env:PATH"
     - powershell -File ".gitlab/ci/ninja.ps1"
     - Set-Item -Force -Path "env:PATH" -Value "$pwdpath\.gitlab;$env:PATH"
+    - powershell -File ".gitlab/ci/xsltproc.ps1"
+    - Set-Item -Force -Path "env:PATH" -Value "$pwdpath\.gitlab\xsltproc\bin;$env:PATH"
     - cmake --version
     - ninja --version
     # Support submodule references to the user's fork.
@@ -82,8 +91,8 @@
     - git submodule update --init --recursive
 
 .before_script_windows_deps: &before_script_windows_deps
-    - cmake -P .gitlab/ci/download_qt.cmake
-    - Set-Item -Force -Path "env:PATH" -Value "$pwdpath\.gitlab\qt\bin;$env:PATH"
+    - cmake -P .gitlab/ci/download_qt6.cmake
+    - Set-Item -Force -Path "env:PATH" -Value "$pwdpath\.gitlab\qt6\bin;$env:PATH"
     - cmake -P .gitlab/ci/download_index.cmake
     - Set-Item -Force -Path "env:PATH" -Value "$pwdpath\.gitlab\nvidia-index\lib;$env:PATH"
     - cmake -P .gitlab/ci/download_python.cmake
@@ -118,7 +127,7 @@
 
     # enable XML tests "stack trace" on failure
     variables:
-      PV_DEBUG_TEST: "1"
+        PV_DEBUG_TEST: "1"
 
     script:
         - *before_script_windows

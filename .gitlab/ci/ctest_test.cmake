@@ -49,6 +49,18 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "_mpi")
     # see paraview/paraview#20741
     "pvcs\\.CategoricalAutomaticAnnotations$"
     "pvcrs\\.CategoricalAutomaticAnnotations$"
+
+    # see https://gitlab.kitware.com/paraview/paraview/-/issues/23071
+    "pvcs\\.LagrangianParticleTrackerParallelDistributed$"
+    "pvcrs\\.LagrangianParticleTrackerParallelDistributed$"
+    "pvcs\\.LagrangianParticleTrackerParallel$"
+    "pvcrs\\.LagrangianParticleTrackerParallel$"
+    "ParaViewExample-Plugins/LagrangianIntegrationModel$"
+
+    # see https://gitlab.kitware.com/paraview/paraview/-/issues/23183
+    # See also, the "^paraviewPython-Batch-VolumeCellSelection$" exclusion below
+    # in the "macos" exclusions.
+    "^paraviewPython-MPI-Batch-VolumeCellSelection$"
   )
 endif()
 
@@ -97,6 +109,11 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "fedora")
     "TestPythonView$"
     "pv\\.TooltipCopy$"
 
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/22801
+    # There are warnings about initialization order confusion, but there are
+    # then GL context errors. Not sure if these are related.
+    "^paraviewPython-TestCatalystClient$"
+
     # https://gitlab.kitware.com/paraview/paraview/-/issues/22598
     "^pv\\.HelpWindowHistory$"
 
@@ -115,7 +132,99 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "fedora")
 
     # https://gitlab.kitware.com/paraview/paraview/-/issues/22743
     "^pv.SimpleSSHServerTermExec$"
+
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/23073
+    "^pvcrs\\.AMReXParticlesReader$"
+    "^pvcrs\\.ComputeConnectedSurfaceProperties$"
+    "^pvcrs\\.CONVERGECFDReaderWithVisItBridge$"
+    "^pvcrs\\.EDLWithSubsampling$"
+    "^pvcrs\\.ExtractLevel$"
+    "^pvcrs\\.FidesReaderADIOS2$"
+    "^pvcrs\\.Glyph3DRepresentation$"
+    "^pvcrs\\.LoadState$"
+    "^pvcrs\\.MemoryInspectorPanel$"
+    "^pvcrs\\.MultiBlockInspectorMultiBlock$"
+    "^pvcrs\\.OctreeImageFilters$"
+    "^pvcrs\\.OMFReader$"
+    "^pvcrs\\.PropertyLink$"
+    "^pvcrs\\.ReadPartitionedCGNS$"
+    "^pvcrs\\.SelectedProxyPanelVisibility$"
+    "^pvcrs\\.TestGroupDataFromTimeSeries$"
+    "^pvcrs\\.TestOpacityRendering$"
+    "^pvcrs\\.UnstructuredVolumeRenderingVectorComponent$"
+  )
+
+  if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "_asserts")
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/23180
+    list(APPEND test_exclusions
+      ## Missing widgets
+      # PropertiesFrame/ProxyPanel
+      "^pv\\.BagPlots$"
+      "^pv\\.FunctionalBagPlots$"
+      "^pv\\.ExportSpreadsheetFormatting$"
+      "^pv\\.PartialArrayInLineChart$"
+      "^pv\\.ThresholdTable$"
+      "^(pv|pvcs|pvcrs)\\.CSVPreview$"
+      "^(pv|pvcs|pvcrs)\\.StringInLineChartView$"
+      "^(pv|pvcs|pvcrs)\\.SeriesPreset$"
+      "^(pv|pvcs|pvcrs)\\.SeriesPresetRegexp$"
+      "^(pv|pvcs|pvcrs)\\.HistogramKernelSmoothing$"
+      "^(pv|pvcs|pvcrs)\\.PlotMatrixViewDensityMaps$"
+      "^pv\\.ExportSceneSpreadSheetView2$"
+      "^(pv|pvcs)\\.ExportSelectionToCSV$"
+      # DisplayFrame/ProxyPanel
+      "^(pv|pvcs|pvcrs)\\.ColorAnnotationsVisibilitiesAndOpacities$"
+      "^(pv|pvcs|pvcrs)\\.XYBarChart$"
+      # ProxyPanel/ShowLegend
+      "^(pv|pvcs|pvcrs)\\.TableHistogram$"
+      # ProxyPanel/XYColumn
+      "^(pv|pvcs|pvcrs)\\.SaveTSV$"
+
+      ## Frame numbering
+      # expect: Frame.5, actual: Frame.1 or Frame.2
+      "^(pv|pvcs|pvcrs)\\.ExportLinePlotToCSV$"
+      "^(pv|pvcs|pvcrs)\\.SelectionLinkHistogram$"
+      "^ParaViewExample-Plugins/DockWidgetCustomProxy$"
+      # expect: Frame.5, actual: Frame.0
+      "^pv\\.BagPlotsSelection$"
+      # expect: Frame.2, actual: Frame.0
+      "^pv\\.DelimitedTextReader$"
+      "^(pv|pvcs|pvcrs)\\.SaveCSV$"
+      "^(pv|pvcs|pvcrs)\\.SaveMultiBlockCSV$"
+      "^(pv|pvcs|pvcrs)\\.SaveTXT$"
+      "^(pv|pvcs|pvcrs)\\.PlotMatrixViewArraySelection$"
+      "^(pv|pvcs|pvcrs)\\.PlotMatrixViewParameters$"
+      "^(pv|pvcs|pvcrs)\\.TraceExportAndSaveData$"
+      # expect: Frame.1, actual: Frame.0
+      "^pv\\.BagPlotMatrixView$"
+      "^(pv|pvcs|pvcrs)\\.PointChartView$"
+      # Something else frame related
+      "^pv\\.DynamicFieldDataDomain$"
+
+      ## Baseline failures
+      "^(pv|pvcs|pvcrs)\\.ParallelCoordinatesView$"
+      "^(pvcs|pvcrs)\\.PreviewFontScaling$"
+
+      ## Invalid widget values
+      # Invalid items
+      "^pv\\.ExportFilteredColumnsSpreadsheet$"
+      "^(pv|pvcs|pvcrs)\\.SelectionLinkParallelCoordinatesView$"
+      # "Cylinders" is not defined
+      # Also had a frame failure, but may just be fallout of missing value.
+      "^pv\\.PythonCalculatorInput$"
+      # expect: "Row Data", actual: "Cell Data"
+      "^(pv|pvcs|pvcrs)\\.CalculatorInput$"
+
+      ## Timeouts
+      "^(pv|pvcs|pvcrs)\\.LANLLoadSESAME$"
+      "^(pv|pvcs|pvcrs)\\.EnSight$"
+      "^(pv|pvcs|pvcrs)\\.PlotDataOverTime-NonDistributed$"
+
+      ## Memory corruption
+      # free(): invalid next size (fast)
+      "^CDIReaderPlugin::pvcs\\.CDIDimensionsTest$"
     )
+  endif ()
 
   if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "static")
     list(APPEND test_exclusions
@@ -126,9 +235,6 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "fedora")
 
   if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "viskoresoverride")
     list(APPEND test_exclusions
-      # https://gitlab.kitware.com/paraview/paraview/-/issues/22801
-      "^paraviewPython-TestCatalystClient$"
-
       # https://gitlab.kitware.com/paraview/paraview/-/issues/22941
       "^pv\\.AdaptiveResampleToImage$"
       "^pvcs\\.AdaptiveResampleToImage$")
@@ -174,7 +280,7 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "macos")
     "^pv\\.DecimatePolyline$"
     "^pvcrs\\.DecimatePolyline$"
     "^pvcs\\.DecimatePolyline$"
-    "^pv\\.ExtrusionRepresentationCellData$"
+    "^pv\\.TestExtrusionRepresentationCellData$"
     "^pvcrs\\.GroupDataSetOutputType$"
     "^pvcs\\.GroupDataSetOutputType$"
     "^pv\\.UndoRedo1$"
@@ -222,31 +328,27 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "macos")
     "^pv\\.MultipleColorOnSelection$"
     "^pvcs\\.MultipleColorOnSelection$"
 
-    # https://gitlab.kitware.com/paraview/paraview/-/issues/22826
-    # SpyPlotUniReader error messages
-    "^pv\\.CTHAMRBaseline$"
-    "^pvcrs\\.CTHAMRBaseline$"
-    "^pvcs\\.CTHAMRBaseline$"
-    "^pv\\.CTHAMRClip$"
-    "^pv\\.CTHAMRContour$"
-    "^pv\\.CTHAMRDualClip$"
-    "^pv\\.CTHAMRMaterialInterfaceFilter$"
-    "^pv\\.CTHDerivedDensity2DCylinder$"
-    "^pvcrs\\.CTHDerivedDensity2DCylinder$"
-    "^pvcs\\.CTHDerivedDensity2DCylinder$"
-    "^pv\\.SPTimeseries$"
-    "^pvcrs\\.SPTimeseries$"
-    "^pvcs\\.SPTimeseries$"
-    "^pv\\.TestIsoVolume$"
-    "^pvcrs\\.TestIsoVolume$"
-    "^pvcs\\.TestIsoVolume$"
+    # macOS 15+ local network permission requests. New macOS requires
+    # applications to get user permission to access localhost network
+    # resources. There is no good way to automate answering these dialogs in CI
+    # jobs. Until there is a resolution, skip network-based tests.
+    "^pvcs\\."
+    "^pvcrs\\."
+    # Plugin tests.
+    "::pvcs\\."
+    "::pvcrs\\."
+
+    # see https://gitlab.kitware.com/paraview/paraview/-/issues/23183
+    # See also the "^paraviewPython-MPI-Batch-VolumeCellSelection$" exclusion
+    # in the "_mpi" list above.
+    "^paraviewPython-Batch-VolumeCellSelection$"
     )
 endif ()
 
 if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "macos_arm64")
   list(APPEND test_exclusions
     # https://gitlab.kitware.com/paraview/paraview/-/issues/20743
-    "^pv\\.ExtrusionRepresentationCellData$"
+    "^pv\\.TestExtrusionRepresentationCellData$"
     # https://gitlab.kitware.com/paraview/paraview/-/issues/22353
     "\\.FeatureEdgesFilterHTG$"
     "\\.FeatureEdgesRepresentationHTG$"
@@ -288,6 +390,7 @@ if ("$ENV{CMAKE_CONFIGURATION}" MATCHES "windows")
     # rendering bug, but our machines all use nVidia cards today.
     "^paraviewPython-TestColorHistogram$"
 
+    # https://gitlab.kitware.com/paraview/paraview/-/issues/22801
     # There are warnings about initialization order confusion, but there are
     # then GL context errors. Not sure if these are related.
     "^paraviewPython-TestCatalystClient$"

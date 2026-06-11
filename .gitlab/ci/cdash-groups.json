@@ -1,13 +1,13 @@
 {
     "latest-release": [
-        { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[el7_shared_mindeps_mpi_python]" },
+        { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[el7_shared_mindeps_mpi_qt5]" },
         { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[el8_shared_icc_mpi_python]" },
-        { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[fedora35_documentation_mpi_python]" },
-        { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[fedora35_doxygen]" },
-        { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[fedora35_shared_mpi_offscreen_osmesa_python_qt_viskoresoverride]" },
-        { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[fedora35_shared_mpi_python_qt]" },
-        { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[fedora35_shared_mpi_python_qt_tidy]" },
-        { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[fedora35_shared_mpi_python_qt_viskoresoverride]" },
+        { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[fedora42_documentation_mpi_python]" },
+        { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[fedora42_doxygen]" },
+        { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[fedora42_shared_mpi_offscreen_osmesa_python_qt_viskoresoverride]" },
+        { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[fedora42_asserts_shared_mpi_python_qt]" },
+        { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[fedora42_shared_mpi_python_qt_tidy]" },
+        { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[fedora42_shared_mpi_python_qt_viskoresoverride]" },
         { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[macos_arm64_python_qt]" },
         { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[macos_x86_64_python_qt]" },
         { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[windows_vs2022_kits_mpi_python_qt]" },
@@ -15,7 +15,7 @@
         { "group": "release-packages", "site": "ANY", "buildname": "paraview-branch-release-[paraview-spack-paraview+osmesa^mesa~glx^mpich]" }
     ],
     "latest-release-editions": [
-        { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[fedora35_shared_mpi_core]" },
-        { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[fedora35_shared_mpi_python_core]" }
+        { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[fedora42_shared_mpi_core]" },
+        { "group": "release", "site": "gitlab-ci", "buildname": "paraview-branch-release-[fedora42_shared_mpi_python_core]" }
     ]
 }

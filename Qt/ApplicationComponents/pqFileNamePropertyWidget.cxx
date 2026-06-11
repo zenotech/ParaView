@@ -17,6 +17,7 @@
 #include "pqPropertiesPanel.h"
 #include "pqSignalAdaptors.h"
 #include "pqWidgetRangeDomain.h"
+#include "pqWidgetUtilities.h"
 
 #include <QDoubleSpinBox>
 #include <QHBoxLayout>
@@ -60,7 +61,7 @@ pqFileNamePropertyWidget::pqFileNamePropertyWidget(
   pqHighlightableToolButton* resetButton = new pqHighlightableToolButton(this);
   resetButton->setObjectName("Reset");
   QAction* resetActn = new QAction(resetButton);
-  resetActn->setToolTip(tr("Reset using current data values"));
+  resetActn->setToolTip(pqWidgetUtilities::formatTooltip(tr("Reset using current data values")));
   resetActn->setIcon(QIcon(":/pqWidgets/Icons/pqReset.svg"));
   resetButton->addAction(resetActn);
   resetButton->setDefaultAction(resetActn);
@@ -91,19 +92,19 @@ void pqFileNamePropertyWidget::resetButtonClicked()
   vtkSMProxy* smproxy = this->proxy();
   vtkSMProperty* smproperty = this->property();
 
-  const char* fileName = "";
+  std::string fileName;
   if (auto domain = smproperty->FindDomain<vtkSMInputFileNameDomain>())
   {
     if (!domain->GetFileName().empty())
     {
-      fileName = domain->GetFileName().c_str();
+      fileName = domain->GetFileName();
     }
   }
 
   vtkSMUncheckedPropertyHelper helper(smproperty);
-  if (strcmp(helper.GetAsString(), fileName) != 0)
+  if (helper.GetAsString() != fileName)
   {
-    vtkSMUncheckedPropertyHelper(smproxy, "FileName").Set(fileName);
+    vtkSMUncheckedPropertyHelper(smproxy, "FileName").Set(fileName.c_str());
     Q_EMIT this->changeAvailable();
     Q_EMIT this->changeFinished();
     return;

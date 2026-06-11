@@ -87,7 +87,8 @@ void pqChooseColorPresetReaction::setRepresentation(
 //-----------------------------------------------------------------------------
 void pqChooseColorPresetReaction::updateTransferFunction()
 {
-  this->setTransferFunctions(this->Representation
+  this->setTransferFunctions(
+    this->Representation && this->Representation->getProxy()->GetProperty("LookupTable")
       ? this->ColorMapEditorHelper->GetSelectedLookupTables(this->Representation->getProxy())
       : std::vector<vtkSMProxy*>{});
 }
@@ -104,7 +105,7 @@ void pqChooseColorPresetReaction::setTransferFunctions(std::vector<vtkSMProxy*> 
   this->TransferFunctionProxies.clear();
   for (auto& lut : luts)
   {
-    this->TransferFunctionProxies.push_back(lut);
+    this->TransferFunctionProxies.emplace_back(lut);
   }
   this->updateEnableState();
 }

@@ -1,5 +1,12 @@
 # Linux-specific builder configurations and build commands
 
+---
+spec:
+    inputs:
+        project-tag:
+            description: "The project tag to use for selecting runners"
+
+---
 ## Base images
 
 ### CentOS
@@ -20,16 +27,18 @@
     variables:
         LAUNCHER: "scl enable devtoolset-7 --"
 
-.fedora35:
+.fedora42:
     extends: .linux
-    image: "kitware/paraview:ci-fedora35-20250606"
+    image: "kitware/paraview:ci-fedora42-20250915"
+    variables:
+        LC_ALL: "en_US.utf8"
 
 .el7_mindeps:
     extends: .linux
     image: "kitware/paraview:ci-el7-mindeps-20250116"
 
     variables:
-        LAUNCHER: "scl enable rh-python38 devtoolset-8 --"
+        LAUNCHER: "scl enable devtoolset-8 --"
 
 .el8_icc:
     extends: .linux
@@ -43,10 +52,13 @@
 .fedora_mpich_addon:
     variables:
         MODULES: mpi/mpich-x86_64
-        # Even with SHM size of 512m, SIGBUS still happened. Let's just use the
-        # network instead for reliability.
-        # https://wiki.mpich.org/mpich/index.php/Frequently_Asked_Questions#Q:_Why_MPI_Put_raises_SIGBUS_error_inside_docker.3F
+        # Even with SHM size of 512m, SIGBUS still happened. Let's just use the network instead for reliability.
+        # https://github.com/pmodels/mpich/blob/main/doc/wiki/faq/Frequently_Asked_Questions.md#q-why-mpi_put-raises-sigbus-error-inside-docker
         MPIR_CVAR_NOLOCAL: 1
+        # Tell libfabric to NOT use psm3 (potentially use sockets) to adhere to the MPIR_CVAR_NOLOCAL
+        FI_PROVIDER: "^psm3"
+        # Fails inside of CI containers.
+        PSM3_KASSIST_MODE: none
 
 .fedora_openmpi_addon:
     variables:
@@ -61,13 +73,13 @@
         # Disable shared memory; it doesn't work so well inside of containers.
         I_MPI_SHM: disable
 
-.el7_mindeps_shared_mpi_python:
+.el7_mindeps_shared_mpi_qt5:
     extends:
         - .el7_mindeps
         - .fedora_mpich_addon
 
     variables:
-        CMAKE_CONFIGURATION: el7_shared_mindeps_mpi_python
+        CMAKE_CONFIGURATION: el7_shared_mindeps_mpi_qt5
 
 .el8_shared_icc_mpi_python:
     extends:
@@ -77,84 +89,84 @@
     variables:
         CMAKE_CONFIGURATION: el8_shared_icc_mpi_python
 
-.fedora35_documentation:
+.fedora42_documentation:
     extends:
-        - .fedora35
+        - .fedora42
         - .fedora_openmpi_addon
 
     variables:
-        CMAKE_CONFIGURATION: fedora35_documentation_mpi_python
+        CMAKE_CONFIGURATION: fedora42_documentation_mpi_python
 
-.fedora35_doxygen:
+.fedora42_doxygen:
     extends:
-        - .fedora35
+        - .fedora42
 
     variables:
-        CMAKE_CONFIGURATION: fedora35_doxygen
+        CMAKE_CONFIGURATION: fedora42_doxygen
 
-.fedora35_shared_mpi_offscreen_osmesa_python_qt_viskoresoverride:
+.fedora42_shared_mpi_offscreen_osmesa_python_qt_viskoresoverride:
     extends:
-        - .fedora35
+        - .fedora42
         - .fedora_mpich_addon
 
     variables:
-        CMAKE_CONFIGURATION: fedora35_shared_mpi_offscreen_osmesa_python_qt_viskoresoverride
+        CMAKE_CONFIGURATION: fedora42_shared_mpi_offscreen_osmesa_python_qt_viskoresoverride
         VTK_DEFAULT_OPENGL_WINDOW: vtkOSOpenGLRenderWindow
 
-.fedora35_shared_mpi_core:
+.fedora42_shared_mpi_core:
     extends:
-        - .fedora35
+        - .fedora42
         - .fedora_mpich_addon
 
     variables:
-        CMAKE_CONFIGURATION: fedora35_shared_mpi_core
+        CMAKE_CONFIGURATION: fedora42_shared_mpi_core
 
-.fedora35_shared_mpi_python_core:
+.fedora42_shared_mpi_python_core:
     extends:
-        - .fedora35
+        - .fedora42
         - .fedora_mpich_addon
 
     variables:
-        CMAKE_CONFIGURATION: fedora35_shared_mpi_python_core
+        CMAKE_CONFIGURATION: fedora42_shared_mpi_python_core
 
-.fedora35_shared_debug_mpi_python_qt:
+.fedora42_shared_asserts_mpi_python_qt:
     extends:
-        - .fedora35
+        - .fedora42
         - .fedora_mpich_addon
 
     variables:
-        CMAKE_CONFIGURATION: fedora35_shared_mpi_python_qt
-        CMAKE_BUILD_TYPE: Debug
+        CMAKE_CONFIGURATION: fedora42_shared_asserts_mpi_python_qt
+        CMAKE_BUILD_TYPE: RelWithDebInfo
 
-.fedora35_shared_mpi_python_qt_viskoresoverride:
+.fedora42_shared_mpi_python_qt_viskoresoverride:
     extends:
-        - .fedora35
+        - .fedora42
         - .fedora_mpich_addon
 
     variables:
-        CMAKE_CONFIGURATION: fedora35_shared_mpi_python_qt_viskoresoverride
+        CMAKE_CONFIGURATION: fedora42_shared_mpi_python_qt_viskoresoverride
 
-.fedora35_tidy:
+.fedora42_tidy:
     extends:
-        - .fedora35
+        - .fedora42
         - .fedora_mpich_addon
 
     variables:
-        CMAKE_CONFIGURATION: fedora35_shared_mpi_python_qt_tidy
+        CMAKE_CONFIGURATION: fedora42_shared_mpi_python_qt_tidy
 
 .linux_builder_tags:
     tags:
         - build
         - docker
         - linux-x86_64
-        - paraview
+        - $[[ inputs.project-tag ]]
 
 .linux_tester_tags:
     tags:
         - docker
-        - paraview
+        - $[[ inputs.project-tag ]]
         - linux-x86_64
-        - x11-gnome
+        - x11
 
 ## Linux-specific scripts
 
@@ -165,6 +177,10 @@
     - .gitlab/ci/doxygen.sh
     - .gitlab/ci/sccache.sh
     - export PATH=$PWD/.gitlab:$PWD/.gitlab/cmake/bin:$PWD/.gitlab/doxygen/bin:$PATH
+    # Download Qt
+    - cmake -P .gitlab/ci/download_qt6.cmake
+    - cmake -P .gitlab/ci/download_onnxruntime.cmake
+    - export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:$PWD/.gitlab/qt6:$PWD/.gitlab/onnxruntime
     - cmake --version
     - ninja --version
     - doxygen --version
@@ -218,13 +234,16 @@
       name: translations
 
     script:
+        # Download Qt
+        - cmake -P .gitlab/ci/download_qt6.cmake
+        - export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:$PWD/.gitlab/qt6
         - echo "Pushing translation artifacts"
         - git config --global user.email "kwrobot+paraview-ci@kitware.com"
         - git config --global user.name "gitlab-ci"
         - git clone https://gitlab.kitware.com/paraview/paraview-translations.git
         - cmake -DNEW_TRANSLATIONS_DIR=./translations -DTRANSLATIONS_DIR=./paraview-translations/en/ -P .gitlab/ci/update_translations.cmake
         - cd paraview-translations
-        - cmake -B build -DQt5_DIR=/lib64/cmake/Qt5
+        - cmake -B build
         - cmake --build ./build/ --target files_update
         - if [ -n "$( git status -s )" ]; then git add -A; git commit -m "New strings from $CI_COMMIT_SHORT_SHA"; git push https://token:$PARAVIEW_TRANSLATIONS_TOKEN@gitlab.kitware.com/paraview/paraview-translations.git; else echo "No new string to push to paraview-translations for $CI_COMMIT_SHORT_SHA"; fi
 
@@ -287,7 +306,7 @@
             MAYBE_SSH_KEY_PATH="-k $RSYNC_SSH_PRIVATE_KEY";
           fi
         - if [ -n "$CI_COMMIT_TAG" ]; then
-            CURRENT_RELEASE="$CI_COMMIT_TAG";
+            CURRENT_RELEASE="${CI_COMMIT_TAG%%-RC*}";
             MAYBE_UPDATE_LATEST="-u";
           fi
         - sccache --start-server

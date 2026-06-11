@@ -30,6 +30,7 @@
 #include "vtksys/SystemTools.hxx"
 
 #include <cassert>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -142,7 +143,7 @@ bool vtkInitializationHelper::Initialize(const char* executable, int type)
   std::vector<char*> argv;
   argv.push_back(vtksys::SystemTools::DuplicateString(executable));
   argv.push_back(nullptr);
-  return vtkInitializationHelper::Initialize(static_cast<int>(argv.size()) - 1, &argv[0], type);
+  return vtkInitializationHelper::Initialize(static_cast<int>(argv.size()) - 1, argv.data(), type);
 }
 
 //----------------------------------------------------------------------------
@@ -154,7 +155,7 @@ bool vtkInitializationHelper::Initialize(vtkStringList* slist, int type)
     argv.push_back(const_cast<char*>(slist->GetString(cc)));
   }
   argv.push_back(nullptr);
-  return vtkInitializationHelper::Initialize(static_cast<int>(argv.size()) - 1, &argv[0], type);
+  return vtkInitializationHelper::Initialize(static_cast<int>(argv.size()) - 1, argv.data(), type);
 }
 
 //----------------------------------------------------------------------------
@@ -397,14 +398,6 @@ elif not os.path.exists(VENV_BASE):
 }
 
 //----------------------------------------------------------------------------
-bool vtkInitializationHelper::InitializeMiscellaneous(int type)
-{
-  bool status = vtkInitializationHelper::InitializeSettings(type, false);
-  status &= vtkInitializationHelper::InitializeOthers();
-  return status;
-}
-
-//----------------------------------------------------------------------------
 bool vtkInitializationHelper::InitializeSettings(int type, bool defaultCoreConfig)
 {
   auto coreConfig = vtkRemotingCoreConfiguration::GetInstance();
@@ -485,6 +478,22 @@ bool vtkInitializationHelper::InitializeOthers()
   // Make sure the ProxyManager get created...
   vtkSMProxyManager::GetProxyManager();
 
+  // Set up any virtual environment prior to loading plugins which may be Python plugins.
+#if PARAVIEW_USE_PYTHON
+  // Set up virtual environment if requested.
+  auto pmConfig = vtkProcessModuleConfiguration::GetInstance();
+  if (!pmConfig->GetVirtualEnvironmentPath().empty())
+  {
+    // Note - this may initialize Python at server startup, even if
+    // Python is not invoked later on, which could add some startup
+    // cost. We need to do it here because there are many
+    // places Python could be initialized in the ParaView and VTK
+    // code base, and we can't initialize the virtual environment
+    // in all those places.
+    InitializePythonVirtualEnvironment();
+  }
+#endif
+
   // Now load any plugins located in the PV_PLUGIN_PATH environment variable.
   // These are always loaded (not merely located).
   vtkNew<vtkPVPluginLoader> loader;
@@ -520,23 +529,8 @@ bool vtkInitializationHelper::InitializeOthers()
   // smTestDriver
   if (vtksys::SystemTools::HasEnv("PARAVIEW_SMTESTDRIVER"))
   {
-    cout << "Process started" << endl;
+    std::cout << "Process started" << endl;
   }
-
-#if PARAVIEW_USE_PYTHON
-  // Set up virtual environment if requested.
-  auto pmConfig = vtkProcessModuleConfiguration::GetInstance();
-  if (!pmConfig->GetVirtualEnvironmentPath().empty())
-  {
-    // Note - this may initialize Python at server startup, even if
-    // Python is not invoked later on, which could add some startup
-    // cost. We need to do it here because there are many
-    // places Python could be initialized in the ParaView and VTK
-    // code base, and we can't initialize the virtual environment
-    // in all those places.
-    InitializePythonVirtualEnvironment();
-  }
-#endif
 
   // This checks if the environment has VTK_DEFAULT_OPENGL_WINDOW set. If it is not set,
   // it sets the environment variable to the OpenGL window backend specified in the
@@ -662,18 +656,6 @@ void vtkInitializationHelper::LoadSettings()
   settings->DistributeSettings();
 
   vtkInitializationHelper::SaveUserSettingsFileDuringFinalization = true;
-}
-
-//----------------------------------------------------------------------------
-std::string vtkInitializationHelper::GetUserSettingsDirectory()
-{
-  return vtkPVStandardPaths::GetUserSettingsDirectory();
-}
-
-//----------------------------------------------------------------------------
-std::string vtkInitializationHelper::GetUserSettingsFilePath()
-{
-  return vtkPVStandardPaths::GetUserSettingsFilePath();
 }
 
 //----------------------------------------------------------------------------

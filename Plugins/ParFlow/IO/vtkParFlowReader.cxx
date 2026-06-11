@@ -15,6 +15,7 @@
 #include "vtksys/FStream.hxx"
 
 #include <cctype>
+#include <iostream>
 #include <sstream>
 
 static constexpr std::streamoff headerSize = 6 * sizeof(double) + 4 * sizeof(int);
@@ -293,9 +294,9 @@ void vtkParFlowReader::BroadcastBlocks()
       this->IJKDivs[ijk].resize(len[ijk]);
     }
   }
-  mpc->Broadcast(&this->IJKDivs[0][0], len[0], 0);
-  mpc->Broadcast(&this->IJKDivs[1][0], len[1], 0);
-  mpc->Broadcast(&this->IJKDivs[2][0], len[2], 0);
+  mpc->Broadcast(this->IJKDivs[0].data(), len[0], 0);
+  mpc->Broadcast(this->IJKDivs[1].data(), len[1], 0);
+  mpc->Broadcast(this->IJKDivs[2].data(), len[2], 0);
 }
 
 std::streamoff vtkParFlowReader::GetBlockOffset(int blockId) const

@@ -3,6 +3,7 @@
 set(PARAVIEW_BUILD_LEGACY_REMOVE ON CACHE BOOL "")
 set(PARAVIEW_BUILD_TESTING WANT CACHE STRING "")
 set(PARAVIEW_ENABLE_EXAMPLES ON CACHE BOOL "")
+set(PARAVIEW_ENABLE_EXTRA_BUILD_WARNINGS ON CACHE BOOL "")
 set(PARAVIEW_USE_SERIALIZATION ON CACHE BOOL "")
 
 set(VTK_DEBUG_LEAKS ON CACHE BOOL "")
@@ -18,11 +19,13 @@ set(PARAVIEW_GENERATE_SPDX ON CACHE BOOL "")
 # Enable default-off plugins.
 set(PARAVIEW_PLUGIN_ENABLE_TemporalParallelismScriptGenerator ON CACHE BOOL "")
 set(PARAVIEW_XRInterface_OpenVR_Support OFF CACHE BOOL "")
+set(PARAVIEW_PLUGIN_ENABLE_ParFlow ON CACHE BOOL "")
 
 # We run the install right after the build. Avoid rerunning it when installing.
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY "ON" CACHE BOOL "")
 
 include("${CMAKE_CURRENT_LIST_DIR}/configure_options.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/configure_contract_testing.cmake")
 
 # Default to Release builds.
 if ("$ENV{CMAKE_BUILD_TYPE}" STREQUAL "")

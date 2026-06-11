@@ -36,6 +36,7 @@
 #include "pqObjectBuilder.h"
 #include "pqServerManagerModel.h"
 #include "pqView.h"
+#include "pqWidgetUtilities.h"
 
 #include <QAbstractTableModel>
 #include <QDockWidget>
@@ -553,6 +554,7 @@ public:
   pqInternals(pqMaterialEditor* self)
   {
     this->Ui.setupUi(self);
+    pqWidgetUtilities::formatChildTooltips(self);
 
     this->Ui.PropertiesView->setModel(&this->AttributesModel);
 
@@ -923,7 +925,7 @@ void pqMaterialEditor::propertyChanged(const QModelIndex& topLeft, const QModelI
   {
     vtkSMProxy* proxy = vtkSMProxy::SafeDownCast(obj);
 
-    if (matName == vtkSMPropertyHelper(proxy, "OSPRayMaterial").GetAsString())
+    if (matName == vtkSMPropertyHelper(proxy, "OSPRayMaterial", true).GetAsString())
     {
       vtkSMPropertyHelper(proxy, "OSPRayMaterial").Set("None");
       proxy->UpdateVTKObjects();

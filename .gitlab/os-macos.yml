@@ -1,5 +1,12 @@
 # macOS-specific builder configurations and build commands
 
+---
+spec:
+    inputs:
+        project-tag:
+            description: "The project tag to use for selecting runners"
+
+---
 ## Base configurations
 
 .macos:
@@ -7,7 +14,7 @@
         GIT_CLONE_PATH: "$CI_BUILDS_DIR/paraview-ci-ext/$CI_CONCURRENT_ID"
         # TODO: Factor this out so that each job selects the Xcode version to
         # use so that different versions can be tested in a single pipeline.
-        DEVELOPER_DIR: "/Applications/Xcode-16.1.app/Contents/Developer"
+        DEVELOPER_DIR: "/Applications/Xcode-16.4.app/Contents/Developer"
 
 ### Build and test
 
@@ -38,18 +45,18 @@
 
 .macos_x86_64_builder_tags:
     tags:
-        - paraview
+        - $[[ inputs.project-tag ]]
         - macos-x86_64
         - shell
-        - xcode-16.1
+        - xcode-16.4
         - nonconcurrent
 
 .macos_arm64_builder_tags:
     tags:
-        - paraview
+        - $[[ inputs.project-tag ]]
         - macos-arm64
         - shell
-        - xcode-16.1
+        - xcode-16.4
         - nonconcurrent
 
 ## macOS-specific scripts
@@ -57,13 +64,15 @@
 .before_script_macos: &before_script_macos
     - .gitlab/ci/cmake.sh
     - .gitlab/ci/ninja.sh
-    - export PATH=$PWD/.gitlab:$PWD/.gitlab/cmake/bin:$PATH
+    - .gitlab/ci/xsltproc.sh
+    - export PATH=$PWD/.gitlab:$PWD/.gitlab/cmake/bin:$PWD/.gitlab/xsltproc/bin:$PATH
     - cmake --version
     - ninja --version
     # Download Qt
-    - cmake -P .gitlab/ci/download_qt.cmake
+    - cmake -P .gitlab/ci/download_qt6.cmake
     - cmake -P .gitlab/ci/download_cdi.cmake
-    - export CMAKE_PREFIX_PATH=$PWD/.gitlab/qt:$PWD/.gitlab/cdi
+    - cmake -P .gitlab/ci/download_onnxruntime.cmake
+    - export CMAKE_PREFIX_PATH=$PWD/.gitlab/qt6:$PWD/.gitlab/cdi:$PWD/.gitlab/onnxruntime
     - git submodule foreach --recursive cmake -P "$PWD/.gitlab/ci/fetch_submodule.cmake"
     - git submodule sync --recursive
     - git submodule update --init --recursive
