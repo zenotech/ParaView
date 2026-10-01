@@ -13,10 +13,10 @@
 #define vtkPVArrayInformation_h
 
 #include "vtkObject.h"
-#include "vtkParaViewDeprecation.h"
-#include "vtkRemotingCoreModule.h" //needed for exports
+#include "vtkRemotingCoreModule.h" // needed for exports
 #include "vtkTuple.h"              // for vtkTuple
 
+#include <array>  // for std::array
 #include <set>    // for std::set
 #include <string> // for std::string
 #include <vector> // for std::vector
@@ -119,6 +119,29 @@ public:
 
   ///@{
   /**
+   * If IsGlobal is true, this array comes from the field data of the root node
+   * of a composite dataset (as opposed to per-leaf field data). By default,
+   * IsGlobal is false.
+   */
+  vtkGetMacro(IsGlobal, bool);
+  ///@}
+
+  /**
+   * Returns true if this array information was populated from a vtkCellAttribute
+   * (i.e., the containing dataset is a vtkCellGrid).
+   */
+  vtkGetMacro(IsCellGrid, bool);
+
+  /// Return the [min, max] range of polynomial orders found.
+  ///
+  /// An invalid range (range[0] > range[1]) means no attributes were encountered.
+  vtkGetVector2Macro(PolynomialOrderRange, int);
+
+  /// Return the DOF count for a specific attribute (0 if not found).
+  vtkGetMacro(DegreesOfFreedom, vtkTypeInt64);
+
+  ///@{
+  /**
    * Get information on the InformationKeys of this array
    */
   int GetNumberOfInformationKeys() const;
@@ -141,10 +164,6 @@ public:
    */
   void CopyFromArray(vtkAbstractArray* array);
   void CopyFromArray(vtkFieldData* fieldData, int fdArrayIdx);
-
-  PARAVIEW_DEPRECATED_IN_6_0_0("Please use the CopyFromArray(vtkAbstractArray*) or "
-                               "CopyFromArray(vtkFieldData*, int) overloads")
-  void CopyFromArray(vtkAbstractArray* array, vtkFieldData* fieldData);
   /// @}
 
   void CopyFromCellAttribute(vtkCellGrid* grid, vtkCellAttribute* attribute);
@@ -166,6 +185,7 @@ protected:
   void DeepCopy(vtkPVArrayInformation* info);
   void AddInformation(vtkPVArrayInformation*, int fieldAssociation);
   vtkSetMacro(IsPartial, bool);
+  vtkSetMacro(IsGlobal, bool);
   ///@}
 
   vtkSetMacro(Name, std::string);
@@ -175,6 +195,10 @@ private:
   int DataType = -1;
   vtkTypeInt64 NumberOfTuples = 0;
   bool IsPartial = false;
+  bool IsGlobal = false;
+  bool IsCellGrid = false;
+  int PolynomialOrderRange[2] = { VTK_INT_MAX, -VTK_INT_MAX };
+  vtkTypeInt64 DegreesOfFreedom = 0;
 
   struct ComponentInfo
   {

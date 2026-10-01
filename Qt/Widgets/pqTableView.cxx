@@ -7,8 +7,11 @@
 #include <cassert>
 
 #include <QAbstractItemModel>
+#include <QApplication>
+#include <QClipboard>
 #include <QEvent>
 #include <QHeaderView>
+#include <QKeyEvent>
 #include <QLayout>
 #include <QScrollBar>
 #include <QtDebug>
@@ -62,6 +65,39 @@ void pqTableView::wheelEvent(QWheelEvent* evt)
   if (this->hasFocus())
   {
     this->Superclass::wheelEvent(evt);
+  }
+}
+
+//-----------------------------------------------------------------------------
+void pqTableView::keyPressEvent(QKeyEvent* evt)
+{
+  if (evt->matches(QKeySequence::Copy))
+  {
+    int previousRow = 0;
+    auto selection = this->selectedIndexes();
+    QStringList row;
+    QStringList table;
+    for (const auto& index : selection)
+    {
+      if (index.row() > previousRow && !row.isEmpty())
+      {
+        table << row.join('\t');
+        row.clear();
+      }
+      previousRow = index.row();
+      row << index.data().toString();
+    }
+    if (!row.empty())
+    {
+      table << row.join('\t');
+    }
+
+    QClipboard* clipboard = QApplication::clipboard();
+    clipboard->setText(table.join("\r\n"));
+  }
+  else
+  {
+    Superclass::keyPressEvent(evt);
   }
 }
 

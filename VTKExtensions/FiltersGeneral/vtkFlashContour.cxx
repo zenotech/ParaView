@@ -1,7 +1,11 @@
 // SPDX-FileCopyrightText: Copyright (c) Kitware Inc.
 // SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
 // SPDX-License-Identifier: BSD-3-Clause
+// PARAVIEW_DEPRECATED_IN_6_2_0()
+#define PARAVIEW_DEPRECATION_LEVEL 0
+
 #include "vtkFlashContour.h"
+
 #include "vtkCellArray.h"
 #include "vtkCellData.h"
 #include "vtkDataArray.h"
@@ -9,7 +13,7 @@
 #include "vtkImageData.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
-#include "vtkMarchingCubesTriangleCases.h"
+#include "vtkMarchingCellsContourCases.h"
 #include "vtkMultiBlockDataSet.h"
 #include "vtkMultiPieceDataSet.h"
 #include "vtkObjectFactory.h"
@@ -30,11 +34,6 @@ vtkStandardNewMacro(vtkFlashContour);
 // for shared regions we will have to interpolated between two blocks.
 // We cannot use InterpolatePoint (whatever it is called in vtkDataArray).
 // I would have to write a similar method that takes two FieldDatas as input.
-
-static int vtkFlashIsoEdgeToPointsTable[12][2] = { { 0, 1 }, { 1, 3 }, { 2, 3 }, { 0, 2 }, { 4, 5 },
-  { 5, 7 }, { 6, 7 }, { 4, 6 }, { 0, 4 }, { 1, 5 }, { 2, 6 }, { 3, 7 } };
-static int vtkFlashIsoEdgeToVTKPointsTable[12][2] = { { 0, 1 }, { 1, 2 }, { 3, 2 }, { 0, 3 },
-  { 4, 5 }, { 5, 6 }, { 7, 6 }, { 4, 7 }, { 0, 4 }, { 1, 5 }, { 3, 7 }, { 2, 6 } };
 
 //============================================================================
 //----------------------------------------------------------------------------
@@ -229,7 +228,7 @@ int vtkFlashContour::RequestData(vtkInformation* vtkNotUsed(request),
     vtkErrorMacro("Missing block map.");
     return 0;
   }
-  this->GlobalToLocalMap = (int*)(globalToLocalMapArray->GetVoidPointer(0));
+  this->GlobalToLocalMap = globalToLocalMapArray->GetPointer(0);
   this->NumberOfGlobalBlocks = globalToLocalMapArray->GetNumberOfTuples();
 
   da = mbdsInput->GetFieldData()->GetArray("BlockChildren");
@@ -239,7 +238,7 @@ int vtkFlashContour::RequestData(vtkInformation* vtkNotUsed(request),
     vtkErrorMacro("Missing children array.");
     return 0;
   }
-  this->GlobalChildrenArray = (int*)(childrenIdArray->GetVoidPointer(0));
+  this->GlobalChildrenArray = childrenIdArray->GetPointer(0);
 
   da = mbdsInput->GetFieldData()->GetArray("BlockNeighbors");
   vtkIntArray* neighborIdArray = vtkIntArray::SafeDownCast(da);
@@ -248,7 +247,7 @@ int vtkFlashContour::RequestData(vtkInformation* vtkNotUsed(request),
     vtkErrorMacro("Missing children array.");
     return 0;
   }
-  this->GlobalNeighborArray = (int*)(neighborIdArray->GetVoidPointer(0));
+  this->GlobalNeighborArray = neighborIdArray->GetPointer(0);
 
   da = mbdsInput->GetFieldData()->GetArray("BlockLevel");
   vtkIntArray* levelArray = vtkIntArray::SafeDownCast(da);
@@ -257,7 +256,7 @@ int vtkFlashContour::RequestData(vtkInformation* vtkNotUsed(request),
     vtkErrorMacro("Missing level array.");
     return 0;
   }
-  this->GlobalLevelArray = (int*)(levelArray->GetVoidPointer(0));
+  this->GlobalLevelArray = levelArray->GetPointer(0);
 
   // Get the outputs
   // 0
@@ -674,25 +673,25 @@ void vtkFlashContour::ProcessBlock(vtkImageData* image)
   // How to do the dual grid contour?
   // Simple marching cubes (marching corners for dual :)
   vtkDataArray* da = image->GetCellData()->GetArray(this->CellArrayNameToProcess);
-  if (da->GetDataType() != VTK_DOUBLE)
+  auto* doubleArray = vtkAOSDataArrayTemplate<double>::FastDownCast(da);
+  if (!doubleArray)
   {
-    vtkErrorMacro("Expecting doubles");
+    vtkErrorMacro("Expecting a vtkDoubleArray");
     return;
   }
-  void* ptr = da->GetVoidPointer(0);
-  double* dPtr = (double*)(ptr);
+  double* dPtr = doubleArray->GetPointer(0);
   // For passing / interpolating one double array.
   double* pPtr = nullptr;
   if (this->PassArray)
   {
     da = image->GetCellData()->GetArray(this->PassAttribute);
-    if (da->GetDataType() != VTK_DOUBLE)
+    doubleArray = vtkAOSDataArrayTemplate<double>::FastDownCast(da);
+    if (!doubleArray)
     {
-      vtkErrorMacro("Expecting doubles");
+      vtkErrorMacro("Expecting a vtkDoubleArray");
       return;
     }
-    ptr = da->GetVoidPointer(0);
-    pPtr = (double*)(ptr);
+    pPtr = doubleArray->GetPointer(0);
   }
 
   double origin[3];
@@ -942,12 +941,13 @@ void vtkFlashContour::ProcessNeighborhoodSharedRegion(
     }
     // Get the pointer for the corner.
     vtkDataArray* da = image2->GetCellData()->GetArray(this->CellArrayNameToProcess);
-    if (da->GetDataType() != VTK_DOUBLE)
+    auto* doubleArray = vtkAOSDataArrayTemplate<double>::FastDownCast(da);
+    if (!doubleArray)
     {
-      vtkErrorMacro("Expecting doubles");
+      vtkErrorMacro("Expecting a vtkDoubleArray");
       return;
     }
-    ptrs[cornerId] = (double*)(da->GetVoidPointer(0));
+    ptrs[cornerId] = doubleArray->GetPointer(0);
     // Move pointer to the correct position.
     ptrs[cornerId] +=
       incs[0] * dualPoint2Index[0] + incs[1] * dualPoint2Index[1] + incs[2] * dualPoint2Index[2];
@@ -955,12 +955,13 @@ void vtkFlashContour::ProcessNeighborhoodSharedRegion(
     if (this->PassArray)
     {
       da = image2->GetCellData()->GetArray(this->PassAttribute);
-      if (da->GetDataType() != VTK_DOUBLE)
+      doubleArray = vtkAOSDataArrayTemplate<double>::FastDownCast(da);
+      if (!doubleArray)
       {
-        vtkErrorMacro("Expecting doubles");
+        vtkErrorMacro("Expecting a vtkDoubleArray");
         return;
       }
-      aptrs[cornerId] = (double*)(da->GetVoidPointer(0));
+      aptrs[cornerId] = doubleArray->GetPointer(0);
       // Move pointer to the correct position.
       aptrs[cornerId] +=
         incs[0] * dualPoint2Index[0] + incs[1] * dualPoint2Index[1] + incs[2] * dualPoint2Index[2];
@@ -1213,15 +1214,13 @@ void vtkFlashContour::ProcessCellFinal(const double cornerPoints[32], const doub
   int cubeCase, const double passValues[8])
 {
   vtkIdType pointIds[6];
-  vtkMarchingCubesTriangleCases *triCase, *triCases;
-  int* edge;
   double k, v0, v1;
-  triCases = vtkMarchingCubesTriangleCases::GetCases();
 
   // We have the points, now contour the cell.
   // Get edges.
-  triCase = triCases + cubeCase;
-  edge = triCase->edges;
+  static const auto voxelEdges = vtkMarchingCellsContourCases::GetCellEdges(VTK_VOXEL);
+  static const auto hexEdges = vtkMarchingCellsContourCases::GetCellEdges(VTK_HEXAHEDRON);
+  auto edge = vtkMarchingCellsContourCases::GetHexahedronCase(cubeCase);
   double pt[3];
 
   // loop over triangles
@@ -1239,12 +1238,12 @@ void vtkFlashContour::ProcessCellFinal(const double cornerPoints[32], const doub
       if (ptId == -1)
       {
         // Compute the interpolation factor.
-        v0 = cornerValues[vtkFlashIsoEdgeToVTKPointsTable[*edge][0]];
-        v1 = cornerValues[vtkFlashIsoEdgeToVTKPointsTable[*edge][1]];
+        v0 = cornerValues[hexEdges[*edge][0]];
+        v1 = cornerValues[hexEdges[*edge][1]];
         k = (this->IsoValue - v0) / (v1 - v0);
         // Add the point to the output and get the index of the point.
-        int pt1Idx = (vtkFlashIsoEdgeToPointsTable[*edge][0] << 2);
-        int pt2Idx = (vtkFlashIsoEdgeToPointsTable[*edge][1] << 2);
+        int pt1Idx = (voxelEdges[*edge][0] << 2);
+        int pt2Idx = (voxelEdges[*edge][1] << 2);
         // I wonder if this is any faster than incrementing a pointer.
         pt[0] = cornerPoints[pt1Idx] + k * (cornerPoints[pt2Idx] - cornerPoints[pt1Idx]);
         pt[1] =
@@ -1257,8 +1256,8 @@ void vtkFlashContour::ProcessCellFinal(const double cornerPoints[32], const doub
         {
           double p0;
           double p1;
-          p0 = passValues[vtkFlashIsoEdgeToVTKPointsTable[*edge][0]];
-          p1 = passValues[vtkFlashIsoEdgeToVTKPointsTable[*edge][1]];
+          p0 = passValues[hexEdges[*edge][0]];
+          p1 = passValues[hexEdges[*edge][1]];
           double value = p0 + k * (p1 - p0);
           this->PassArray->InsertNextValue(value);
         }

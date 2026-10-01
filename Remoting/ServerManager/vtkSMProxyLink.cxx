@@ -26,7 +26,7 @@ struct vtkSMProxyLinkInternals
     LinkedProxy(vtkSMProxy* proxy, int updateDir)
       : Proxy(proxy)
       , UpdateDirection(updateDir)
-      , Observer(nullptr){};
+      , Observer(nullptr) {};
     ~LinkedProxy()
     {
       if (this->Observer && this->Proxy.GetPointer())
@@ -185,10 +185,10 @@ unsigned int vtkSMProxyLink::GetNumberOfLinkedObjects()
 }
 
 //-----------------------------------------------------------------------------
+// PARAVIEW_DEPRECATED_IN_6_1_0: GetNumerOfLinkedProxies is deprectated, please use
+// GetNumberOfLinkedObjects instead.
 unsigned int vtkSMProxyLink::GetNumberOfLinkedProxies()
 {
-  vtkWarningMacro("GetNumberOfLinkedProxies() is deprecated, "
-                  "please use GetNumberOfLinkedObjects() instead");
   return this->GetNumberOfLinkedObjects();
 }
 

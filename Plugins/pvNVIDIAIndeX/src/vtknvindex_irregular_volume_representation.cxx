@@ -41,7 +41,6 @@
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPKdTree.h"
-#include "vtkPVGeometryFilter.h"
 #include "vtkPVLODVolume.h"
 #include "vtkPVRenderView.h"
 #include "vtkPVRenderViewDataDeliveryManager.h"
@@ -650,6 +649,7 @@ void vtknvindex_irregular_volume_representation::set_light_type(int light_type)
       update_current_kernel();
       break;
     case RTC_KERNELS_EDGE_ENHANCEMENT:
+    case RTC_KERNELS_GRADIENT:
     case RTC_KERNELS_CUSTOM:
     case RTC_KERNELS_NONE:
       break;
@@ -670,6 +670,7 @@ void vtknvindex_irregular_volume_representation::set_light_angle(double light_an
       update_current_kernel();
       break;
     case RTC_KERNELS_EDGE_ENHANCEMENT:
+    case RTC_KERNELS_GRADIENT:
     case RTC_KERNELS_CUSTOM:
     case RTC_KERNELS_NONE:
       break;
@@ -692,6 +693,7 @@ void vtknvindex_irregular_volume_representation::set_light_elevation(double ligh
       update_current_kernel();
       break;
     case RTC_KERNELS_EDGE_ENHANCEMENT:
+    case RTC_KERNELS_GRADIENT:
     case RTC_KERNELS_CUSTOM:
     case RTC_KERNELS_NONE:
       break;
@@ -711,6 +713,7 @@ void vtknvindex_irregular_volume_representation::set_surf_ambient(double ambient
       update_current_kernel();
       break;
     case RTC_KERNELS_EDGE_ENHANCEMENT:
+    case RTC_KERNELS_GRADIENT:
     case RTC_KERNELS_CUSTOM:
     case RTC_KERNELS_NONE:
       break;
@@ -730,6 +733,7 @@ void vtknvindex_irregular_volume_representation::set_surf_specular(double specul
       update_current_kernel();
       break;
     case RTC_KERNELS_EDGE_ENHANCEMENT:
+    case RTC_KERNELS_GRADIENT:
     case RTC_KERNELS_CUSTOM:
     case RTC_KERNELS_NONE:
       break;
@@ -749,6 +753,7 @@ void vtknvindex_irregular_volume_representation::set_surf_specular_power(double 
       update_current_kernel();
       break;
     case RTC_KERNELS_EDGE_ENHANCEMENT:
+    case RTC_KERNELS_GRADIENT:
     case RTC_KERNELS_CUSTOM:
     case RTC_KERNELS_NONE:
       break;

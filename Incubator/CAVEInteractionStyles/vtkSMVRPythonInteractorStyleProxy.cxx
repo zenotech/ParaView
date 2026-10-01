@@ -74,6 +74,24 @@ vtkSMVRPythonInteractorStyleProxy::vtkSMVRPythonInteractorStyleProxy()
 {
   this->Internals = new Internal;
   this->FileName = nullptr;
+
+#if vtkSMVRPythonInteractorStyleProxy_WITH_PYTHON
+  // Initialize Python if not already initialized
+  vtkPythonInterpreter::Initialize();
+
+  vtkPythonScopeGilEnsurer gilEnsurer;
+
+  // Import the interactor styles module from here because it's easy to
+  // forget and looks like an unused import from Python. Without this import,
+  // vtkSMVRPythonInteractorStyleProxy objects are treated as the base class
+  // (vtkSMProxy), leaving scripts unable to call subclass methods.
+  const char* thisModuleName = "paraview.incubator.vtkPVIncubatorCAVEInteractionStyles";
+  vtkSmartPyObject thisModule(PyImport_ImportModule(thisModuleName));
+  if (CheckAndFlushPythonErrors() || !thisModule)
+  {
+    vtkErrorMacro("'Python' failed to import module " << thisModuleName);
+  }
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -150,9 +168,6 @@ void vtkSMVRPythonInteractorStyleProxy::ReloadPythonFile()
   }
 
 #if vtkSMVRPythonInteractorStyleProxy_WITH_PYTHON
-  // Initialize Python is not already initialized.
-  vtkPythonInterpreter::Initialize();
-
   vtkPythonScopeGilEnsurer gilEnsurer;
 
   // Import Module --------------------------------------------------------
@@ -204,6 +219,7 @@ void vtkSMVRPythonInteractorStyleProxy::UpdateVTKObjects()
   this->ReloadPythonFile();
 }
 
+// ----------------------------------------------------------------------------
 bool vtkSMVRPythonInteractorStyleProxy::Update()
 {
 #if vtkSMVRPythonInteractorStyleProxy_WITH_PYTHON
@@ -327,10 +343,8 @@ void vtkSMVRPythonInteractorStyleProxy::HandleButton(const vtkVREvent& event)
 }
 
 // ----------------------------------------------------------------------------
-vtkPVXMLElement* vtkSMVRPythonInteractorStyleProxy::SaveConfiguration()
+void vtkSMVRPythonInteractorStyleProxy::SaveProxyProperties(vtkPVXMLElement* xml)
 {
-  vtkPVXMLElement* elt = Superclass::SaveConfiguration();
-
   vtkSMStringVectorProperty* svp;
 
   // Save the FileName
@@ -340,15 +354,13 @@ vtkPVXMLElement* vtkSMVRPythonInteractorStyleProxy::SaveConfiguration()
   vtkPVXMLElement* fileNameElt = vtkPVXMLElement::New();
   fileNameElt->SetName("FileName");
   fileNameElt->AddAttribute("value", fileName);
-  elt->AddNestedElement(fileNameElt);
+  xml->AddNestedElement(fileNameElt);
   fileNameElt->FastDelete();
-
-  return elt;
 }
 
 // ----------------------------------------------------------------------------
-bool vtkSMVRPythonInteractorStyleProxy::Configure(
-  vtkPVXMLElement* child, vtkSMProxyLocator* locator)
+bool vtkSMVRPythonInteractorStyleProxy::LoadProxyProperties(
+  vtkPVXMLElement* child, vtkSMProxyLocator* vtkNotUsed(locator))
 {
   bool result = true;
 
@@ -377,7 +389,6 @@ bool vtkSMVRPythonInteractorStyleProxy::Configure(
   if (result)
   {
     this->UpdateVTKObjects();
-    result = Superclass::Configure(child, locator);
   }
 
   return result;

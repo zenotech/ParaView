@@ -241,6 +241,11 @@ public:
    */
   void InvokeCommand(const char* name) { this->UpdateProperty(name, 1); }
 
+  /**
+   * Returns if the underlying VTK object needs to be updated or not
+   */
+  vtkGetMacro(NeedsUpdate, bool);
+
   ///@{
   /**
    * Returns the type of object managed by the proxy.
@@ -620,7 +625,7 @@ protected:
   /**
    * Invoke that takes a vtkClientServerStream as the argument.
    */
-  void ExecuteStream(
+  virtual void ExecuteStream(
     const vtkClientServerStream& msg, bool ignore_errors = false, vtkTypeUInt32 location = 0);
 
   // Any method changing the annotations will trigger this method that will

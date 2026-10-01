@@ -30,6 +30,7 @@
 #include <QtDebug>
 
 #include <algorithm>
+#include <vtkAOSDataArrayTemplate.h>
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 using pqHashType = uint;
@@ -349,8 +350,9 @@ void pqAnimationScene::initializeCue(
       vtkPoints* pts = vtkSMUtilities::CreateOrbit(center,
         vtkSMPropertyHelper(kf0, "ViewUp").GetDoubleArray().data(), 5 * bbox.GetMaxLength() / 2.0,
         10);
+      auto points = vtkAOSDataArrayTemplate<double>::FastDownCast(pts->GetData());
       vtkSMPropertyHelper(kf0, "PositionPathPoints")
-        .Set(reinterpret_cast<double*>(pts->GetVoidPointer(0)), pts->GetNumberOfPoints() * 3);
+        .Set(points->GetPointer(0), pts->GetNumberOfPoints() * 3);
       vtkSMPropertyHelper(kf0, "ClosedPositionPath").Set(1);
       vtkSMPropertyHelper(kf0, "FocalPathPoints").Set(center, 3);
       kf0->UpdateVTKObjects();
@@ -403,16 +405,12 @@ pqAnimationCue* pqAnimationScene::createCueInternal(
     pqSMAdaptor::setElementProperty(cueProxy->GetProperty("AnimatedPropertyName"), propertyname);
     pqSMAdaptor::setElementProperty(cueProxy->GetProperty("AnimatedElement"), index);
     cueProxy->UpdateVTKObjects();
+    this->initializeCue(proxy, propertyname, index, cue);
   }
 
   vtkSMProxy* sceneProxy = this->getProxy();
   pqSMAdaptor::addProxyProperty(sceneProxy->GetProperty("Cues"), cueProxy);
   sceneProxy->UpdateVTKObjects();
-
-  if (proxy)
-  {
-    this->initializeCue(proxy, propertyname, index, cue);
-  }
 
   // We don't directly add this cue to the internal Cues, it will get added
   // as a side effect of the change in the "Cues" property.

@@ -120,7 +120,7 @@ std::string vtkLocatePluginOrConfigFile(const char* plugin, const char* hint, bo
 
 // .app bundles
 #if defined(__APPLE__)
-    std::string("../Plugins/") + plugin,
+    std::string("../Plugins/") + plugin, //
     std::string("../Plugins/"),
 #endif
     std::string()
@@ -185,20 +185,6 @@ std::string vtkLocatePluginOrConfigFile(const char* plugin, const char* hint, bo
 
   vtkVLogF(PARAVIEW_LOG_PLUGIN_VERBOSITY(), "failed!!!");
   return std::string();
-}
-
-/**
- * Converts a filename for a plugin to it's name i.e. removes the library
- * prefix and suffix, if any.
- */
-std::string vtkGetPluginNameFromFileName(const std::string& filename)
-{
-  std::string defaultname = vtksys::SystemTools::GetFilenameWithoutExtension(filename);
-  if (defaultname.size() > 3 && VTKSTRNCASECMP(defaultname.c_str(), "lib", 3) == 0)
-  {
-    defaultname.erase(0, 3);
-  }
-  return defaultname;
 }
 }
 
@@ -451,7 +437,9 @@ void vtkPVPluginTracker::LoadPluginConfigurationXMLHinted(
         std::string filename = child->GetAttribute("filename");
         if (hint && !vtksys::SystemTools::FileIsFullPath(filename))
         {
-          std::string basedir = vtksys::SystemTools::GetFilenamePath(hint);
+          std::string basedir =
+            vtksys::SystemTools::CollapseFullPath(vtksys::SystemTools::GetFilenamePath(hint));
+
           plugin_filename = vtksys::SystemTools::CollapseFullPath(filename, basedir);
 
           // Ensure the path is under the base directory given.
@@ -617,34 +605,6 @@ void vtkPVPluginTracker::LoadPluginConfigurationXMLHinted(
 unsigned int vtkPVPluginTracker::GetNumberOfPlugins()
 {
   return static_cast<unsigned int>(this->PluginsList->size());
-}
-
-//----------------------------------------------------------------------------
-unsigned int vtkPVPluginTracker::RegisterAvailablePlugin(const char* filename)
-{
-  std::string defaultname = vtkGetPluginNameFromFileName(filename);
-  vtkPluginsList::iterator iter = this->PluginsList->LocateUsingFileName(filename);
-  if (iter == this->PluginsList->end())
-  {
-    iter = this->PluginsList->LocateUsingPluginName(defaultname.c_str());
-  }
-  if (iter == this->PluginsList->end())
-  {
-    vtkItem item;
-    item.FileName = filename;
-    item.PluginName = defaultname;
-    this->PluginsList->push_back(item);
-    this->InvokeEvent(vtkPVPluginTracker::RegisterAvailablePluginEvent);
-    return static_cast<unsigned int>(this->PluginsList->size() - 1);
-  }
-  else
-  {
-    // don't update the filename here. This avoids clobbering of paths for
-    // distributed plugins between servers that are named the same (as far as
-    // the client goes).
-    // iter->FileName = filename;
-    return static_cast<unsigned int>(iter - this->PluginsList->begin());
-  }
 }
 
 //----------------------------------------------------------------------------

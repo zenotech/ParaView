@@ -215,8 +215,7 @@ int vtkPEnSightGoldBinaryReader::InitializeFile(const char* fileName)
 
   if (subLine != "Binary" && subLine != "binary")
   {
-    vtkErrorMacro("This is not a binary data set. Try "
-      << "vtkEnSightGoldReader.");
+    vtkErrorMacro("This is not a binary data set. Try vtkEnSightGoldReader.");
     return 0;
   }
   return 1;
@@ -1136,8 +1135,7 @@ int vtkPEnSightGoldBinaryReader::ReadMeasuredGeometryFile(
   auto subLine = std::get<1>(resultSubLine->values());
   if (subLine != "Binary")
   {
-    vtkErrorMacro("This is not a binary data set. Try "
-      << "vtkEnSightGoldReader.");
+    vtkErrorMacro("This is not a binary data set. Try vtkEnSightGoldReader.");
     return 0;
   }
 
@@ -1227,7 +1225,7 @@ int vtkPEnSightGoldBinaryReader::ReadMeasuredGeometryFile(
   yCoords = new float[this->NumberOfMeasuredPoints];
   zCoords = new float[this->NumberOfMeasuredPoints];
 
-  points->Allocate(this->GetPointIds(partId)->GetLocalNumberOfIds());
+  points->Reserve(this->GetPointIds(partId)->GetLocalNumberOfIds());
   pd->Allocate(this->GetPointIds(partId)->GetLocalNumberOfIds());
 
   // Extract the array of point indices. Note EnSight Manual v8.2 (pp. 559,
@@ -1976,7 +1974,7 @@ int vtkPEnSightGoldBinaryReader::ReadScalarsPerElement(const char* fileName,
               lineRead = this->ReadLine(line);
             }
           } // end else
-        }   // end if (numCells)
+        } // end if (numCells)
         else
         {
           lineRead = this->ReadLine(line);
@@ -2078,7 +2076,7 @@ int vtkPEnSightGoldBinaryReader::ReadScalarsPerElement(const char* fileName,
           }
           delete[] scalarsRead;
         } // end while
-      }   // end else
+      } // end else
       if (component == 0)
       {
         scalars->SetName(description);
@@ -2222,7 +2220,7 @@ int vtkPEnSightGoldBinaryReader::ReadVectorsPerElement(const char* fileName,
               this->IFile->seekg(sizeof(float) * 3 * numCellsPerElement, ios::cur);
               lineRead = this->ReadLine(line);
             } // end while
-          }   // end else
+          } // end else
         }
         else
         {
@@ -2331,7 +2329,7 @@ int vtkPEnSightGoldBinaryReader::ReadVectorsPerElement(const char* fileName,
           delete[] comp2;
           delete[] comp3;
         } // end while
-      }   // end else
+      } // end else
       vectors->SetName(description);
       output->GetCellData()->AddArray(vectors);
       if (!output->GetCellData()->GetVectors())
@@ -2468,8 +2466,8 @@ int vtkPEnSightGoldBinaryReader::ReadTensorsPerElement(const char* fileName,
               this->IFile->seekg(sizeof(float) * 6 * numCellsPerElement, ios::cur);
               lineRead = this->ReadLine(line);
             } // end while
-          }   // end else
-        }     // end if (numCells)
+          } // end else
+        } // end if (numCells)
         else
         {
           lineRead = this->ReadLine(line);
@@ -2602,7 +2600,7 @@ int vtkPEnSightGoldBinaryReader::ReadTensorsPerElement(const char* fileName,
           delete[] comp5;
           delete[] comp6;
         } // end while
-      }   // end else
+      } // end else
       tensors->SetName(description);
       output->GetCellData()->AddArray(tensors);
       tensors->Delete();
@@ -3731,7 +3729,7 @@ int vtkPEnSightGoldBinaryReader::CreateStructuredGridOutput(
   output->SetDimensions(newDimensions);
   //   output->SetWholeExtent(
   //                          0, newDimensions[0]-1, 0, newDimensions[1]-1, 0, newDimensions[2]-1);
-  points->Allocate(this->GetPointIds(partId)->GetLocalNumberOfIds());
+  points->Reserve(this->GetPointIds(partId)->GetLocalNumberOfIds());
 
   long currentPositionInFile = this->IFile->tellg();
 
@@ -3891,9 +3889,9 @@ int vtkPEnSightGoldBinaryReader::CreateRectilinearGridOutput(
   output->SetDimensions(newDimensions);
   //   output->SetWholeExtent(
   //                          0, newDimensions[0]-1, 0, newDimensions[1]-1, 0, newDimensions[2]-1);
-  xCoords->Allocate(newDimensions[0]);
-  yCoords->Allocate(newDimensions[1]);
-  zCoords->Allocate(newDimensions[2]);
+  xCoords->ReserveValues(newDimensions[0]);
+  yCoords->ReserveValues(newDimensions[1]);
+  zCoords->ReserveValues(newDimensions[2]);
 
   int beginDimension[3];
 
@@ -4342,7 +4340,6 @@ int vtkPEnSightGoldBinaryReader::ReadOrSkipCoordinates(
       // Inject really needed points
       vtkIdType i;
       int localNumberOfIds = this->GetPointIds(partId)->GetLocalNumberOfIds();
-      points->Allocate(localNumberOfIds);
       points->SetNumberOfPoints(localNumberOfIds);
       int maxId = -1;
       int minId = -1;

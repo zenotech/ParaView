@@ -4,6 +4,7 @@
 
 #include "vtkClientServerStream.h"
 #include "vtkDisplayConfiguration.h"
+#include "vtkMultiProcessController.h"
 #include "vtkObjectFactory.h"
 #include "vtkProcessModule.h"
 #include "vtkRemotingCoreConfiguration.h"
@@ -28,6 +29,14 @@ public:
   std::vector<double> LowerLefts;
   std::vector<double> LowerRights;
   std::vector<double> UpperRights;
+  std::vector<std::string> Names;
+  int Rank;
+  std::vector<int> StereoEnabled;
+  std::vector<int> StereoTypes;
+  std::vector<int> ViewerIds;
+  int NumberOfViewers;
+  std::vector<int> Ids;
+  std::vector<double> EyeSeparations;
 };
 
 //----------------------------------------------------------------------------
@@ -45,12 +54,16 @@ vtkPVCAVEConfigInformation::~vtkPVCAVEConfigInformation() = default;
 //----------------------------------------------------------------------------
 void vtkPVCAVEConfigInformation::CopyFromObject(vtkObject* vtkNotUsed(obj))
 {
+  auto controller = vtkMultiProcessController::GetGlobalController();
+  const int rank = controller->GetLocalProcessId();
+
   auto config = vtkRemotingCoreConfiguration::GetInstance();
   auto caveConfig = config->GetDisplayConfiguration();
 
   config->GetIsInCave();
 
   int numberOfDisplays = caveConfig->GetNumberOfDisplays();
+  this->Internal->Rank = rank;
   this->Internal->IsInCAVE = config->GetIsInCave();
   this->Internal->NumberOfDisplays = numberOfDisplays;
   this->Internal->EyeSeparation = caveConfig->GetEyeSeparation();
@@ -64,6 +77,10 @@ void vtkPVCAVEConfigInformation::CopyFromObject(vtkObject* vtkNotUsed(obj))
   this->Internal->LowerLefts.resize(0);
   this->Internal->LowerRights.resize(0);
   this->Internal->UpperRights.resize(0);
+  this->Internal->Names.resize(0);
+  this->Internal->StereoEnabled.resize(0);
+  this->Internal->StereoTypes.resize(0);
+  this->Internal->ViewerIds.resize(0);
 
   for (int i = 0; i < numberOfDisplays; ++i)
   {
@@ -93,6 +110,32 @@ void vtkPVCAVEConfigInformation::CopyFromObject(vtkObject* vtkNotUsed(obj))
     this->Internal->UpperRights.push_back(upperRight[0]);
     this->Internal->UpperRights.push_back(upperRight[1]);
     this->Internal->UpperRights.push_back(upperRight[2]);
+
+    const char* name = caveConfig->GetName(i) ? caveConfig->GetName(i) : "";
+    this->Internal->Names.emplace_back(name);
+
+    this->Internal->StereoTypes.push_back(-1);
+    this->Internal->StereoEnabled.push_back(0);
+
+    int viewerId = caveConfig->GetViewerId(i);
+    this->Internal->ViewerIds.push_back(viewerId);
+  }
+
+  if (rank < numberOfDisplays)
+  {
+    this->Internal->StereoTypes[rank] = config->GetStereoType();
+    this->Internal->StereoEnabled[rank] = config->GetUseStereoRendering() ? 1 : 0;
+  }
+
+  int numberOfViewers = caveConfig->GetNumberOfViewers();
+  this->Internal->NumberOfViewers = numberOfViewers;
+  this->Internal->Ids.resize(0);
+  this->Internal->EyeSeparations.resize(0);
+
+  for (int i = 0; i < numberOfViewers; ++i)
+  {
+    this->Internal->Ids.push_back(caveConfig->GetId(i));
+    this->Internal->EyeSeparations.push_back(caveConfig->GetEyeSeparation(i));
   }
 }
 
@@ -121,6 +164,8 @@ void vtkPVCAVEConfigInformation::AddInformation(vtkPVInformation* pvinfo)
   this->Internal->LowerLefts.resize(0);
   this->Internal->LowerRights.resize(0);
   this->Internal->UpperRights.resize(0);
+  this->Internal->Names.resize(0);
+  this->Internal->ViewerIds.resize(0);
 
   for (int i = 0; i < numberOfDisplays; ++i)
   {
@@ -150,6 +195,27 @@ void vtkPVCAVEConfigInformation::AddInformation(vtkPVInformation* pvinfo)
     this->Internal->UpperRights.push_back(upperRight[0]);
     this->Internal->UpperRights.push_back(upperRight[1]);
     this->Internal->UpperRights.push_back(upperRight[2]);
+
+    this->Internal->Names.emplace_back(info->GetName(i));
+    this->Internal->ViewerIds.push_back(info->GetViewerId(i));
+  }
+
+  int otherRank = info->GetRank();
+
+  if (otherRank < numberOfDisplays)
+  {
+    this->Internal->StereoTypes[otherRank] = info->GetStereoType(otherRank);
+    this->Internal->StereoEnabled[otherRank] = info->GetStereoEnabled(otherRank);
+  }
+
+  int numberOfViewers = info->GetNumberOfViewers();
+  this->Internal->Ids.resize(0);
+  this->Internal->EyeSeparations.resize(0);
+
+  for (int i = 0; i < numberOfViewers; ++i)
+  {
+    this->Internal->Ids.push_back(info->GetId(i));
+    this->Internal->EyeSeparations.push_back(info->GetEyeSeparation(i));
   }
 }
 
@@ -161,7 +227,7 @@ void vtkPVCAVEConfigInformation::CopyToStream(vtkClientServerStream* css)
   *css << vtkClientServerStream::Reply;
   *css << this->Internal->IsInCAVE << this->Internal->NumberOfDisplays
        << this->Internal->EyeSeparation << this->Internal->UseOffAxisProjection
-       << this->Internal->ShowBorders << this->Internal->FullScreen;
+       << this->Internal->ShowBorders << this->Internal->FullScreen << this->Internal->Rank;
 
   for (std::size_t i = 0; i < this->Internal->Show2DOverlays.size(); ++i)
   {
@@ -191,6 +257,38 @@ void vtkPVCAVEConfigInformation::CopyToStream(vtkClientServerStream* css)
   for (std::size_t i = 0; i < this->Internal->UpperRights.size(); ++i)
   {
     *css << this->Internal->UpperRights[i];
+  }
+
+  for (std::size_t i = 0; i < this->Internal->Names.size(); ++i)
+  {
+    *css << this->Internal->Names[i];
+  }
+
+  for (std::size_t i = 0; i < this->Internal->StereoEnabled.size(); ++i)
+  {
+    *css << this->Internal->StereoEnabled[i];
+  }
+
+  for (std::size_t i = 0; i < this->Internal->StereoTypes.size(); ++i)
+  {
+    *css << this->Internal->StereoTypes[i];
+  }
+
+  for (std::size_t i = 0; i < this->Internal->ViewerIds.size(); ++i)
+  {
+    *css << this->Internal->ViewerIds[i];
+  }
+
+  *css << this->Internal->NumberOfViewers;
+
+  for (std::size_t i = 0; i < this->Internal->Ids.size(); ++i)
+  {
+    *css << this->Internal->Ids[i];
+  }
+
+  for (std::size_t i = 0; i < this->Internal->EyeSeparations.size(); ++i)
+  {
+    *css << this->Internal->EyeSeparations[i];
   }
 
   *css << vtkClientServerStream::End;
@@ -228,6 +326,11 @@ void vtkPVCAVEConfigInformation::CopyFromStream(const vtkClientServerStream* css
   if (!css->GetArgument(0, idx++, &this->Internal->FullScreen))
   {
     vtkErrorMacro("Error parsing FullScreen from message.");
+    return;
+  }
+  if (!css->GetArgument(0, idx++, &this->Internal->Rank))
+  {
+    vtkErrorMacro("Error parsing Rank from message.");
     return;
   }
 
@@ -321,6 +424,86 @@ void vtkPVCAVEConfigInformation::CopyFromStream(const vtkClientServerStream* css
       }
     }
   }
+
+  // Copy the Names values from the stream
+  this->Internal->Names.resize(numberOfDisplays);
+
+  for (int i = 0; i < numberOfDisplays; ++i)
+  {
+    if (!css->GetArgument(0, idx++, &(this->Internal->Names[i])))
+    {
+      vtkErrorMacro("Error parsing Names from message.");
+      return;
+    }
+  }
+
+  // Copy the StereoEnabled values from the stream
+  this->Internal->StereoEnabled.resize(numberOfDisplays);
+
+  for (int i = 0; i < numberOfDisplays; ++i)
+  {
+    if (!css->GetArgument(0, idx++, &(this->Internal->StereoEnabled[i])))
+    {
+      vtkErrorMacro("Error parsing StereoEnabled from message.");
+      return;
+    }
+  }
+
+  // Copy the StereoTypes values from the stream
+  this->Internal->StereoTypes.resize(numberOfDisplays);
+
+  for (int i = 0; i < numberOfDisplays; ++i)
+  {
+    if (!css->GetArgument(0, idx++, &(this->Internal->StereoTypes[i])))
+    {
+      vtkErrorMacro("Error parsing StereoTypes from message.");
+      return;
+    }
+  }
+
+  // Copy the ViewerId values from the stream
+  this->Internal->ViewerIds.resize(numberOfDisplays);
+
+  for (int i = 0; i < numberOfDisplays; ++i)
+  {
+    if (!css->GetArgument(0, idx++, &(this->Internal->ViewerIds[i])))
+    {
+      vtkErrorMacro("Error parsing ViewerIds from message.");
+      return;
+    }
+  }
+
+  if (!css->GetArgument(0, idx++, &this->Internal->NumberOfViewers))
+  {
+    vtkErrorMacro("Error parsing NumberOfViewers from message.");
+    return;
+  }
+
+  int numberOfViewers = this->Internal->NumberOfViewers;
+
+  // Copy the Id values from the stream
+  this->Internal->Ids.resize(numberOfViewers);
+
+  for (int i = 0; i < numberOfViewers; ++i)
+  {
+    if (!css->GetArgument(0, idx++, &(this->Internal->Ids[i])))
+    {
+      vtkErrorMacro("Error parsing Ids from message.");
+      return;
+    }
+  }
+
+  // Copy the EyeSeparation values from the stream
+  this->Internal->EyeSeparations.resize(numberOfViewers);
+
+  for (int i = 0; i < numberOfViewers; ++i)
+  {
+    if (!css->GetArgument(0, idx++, &(this->Internal->EyeSeparations[i])))
+    {
+      vtkErrorMacro("Error parsing EyeSeparations from message.");
+      return;
+    }
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -351,6 +534,12 @@ bool vtkPVCAVEConfigInformation::GetShowBorders()
 bool vtkPVCAVEConfigInformation::GetFullScreen()
 {
   return this->Internal->FullScreen;
+}
+
+//----------------------------------------------------------------------------
+int vtkPVCAVEConfigInformation::GetRank()
+{
+  return this->Internal->Rank;
 }
 
 //----------------------------------------------------------------------------
@@ -414,6 +603,48 @@ vtkTuple<double, 3> vtkPVCAVEConfigInformation::GetUpperRight(int index)
   ithTuple[1] = this->Internal->UpperRights.at(idx++);
   ithTuple[2] = this->Internal->UpperRights.at(idx++);
   return ithTuple;
+}
+
+//----------------------------------------------------------------------------
+bool vtkPVCAVEConfigInformation::GetStereoEnabled(int index)
+{
+  return this->Internal->StereoEnabled.at(index) == 1 ? true : false;
+}
+
+//----------------------------------------------------------------------------
+int vtkPVCAVEConfigInformation::GetStereoType(int index)
+{
+  return this->Internal->StereoTypes.at(index);
+}
+
+//----------------------------------------------------------------------------
+const char* vtkPVCAVEConfigInformation::GetName(int index)
+{
+  return this->Internal->Names.at(index).c_str();
+}
+
+//----------------------------------------------------------------------------
+int vtkPVCAVEConfigInformation::GetViewerId(int index)
+{
+  return this->Internal->ViewerIds.at(index);
+}
+
+//----------------------------------------------------------------------------
+int vtkPVCAVEConfigInformation::GetNumberOfViewers()
+{
+  return this->Internal->NumberOfViewers;
+}
+
+//----------------------------------------------------------------------------
+int vtkPVCAVEConfigInformation::GetId(int viewerIndex)
+{
+  return this->Internal->Ids.at(viewerIndex);
+}
+
+//----------------------------------------------------------------------------
+double vtkPVCAVEConfigInformation::GetEyeSeparation(int viewerIndex)
+{
+  return this->Internal->EyeSeparations.at(viewerIndex);
 }
 
 //----------------------------------------------------------------------------

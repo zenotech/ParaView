@@ -15,11 +15,20 @@ list(APPEND TESTS_WITH_BASELINES
 
 list(APPEND TESTS_WITH_INLINE_COMPARES
   # needs parallel server for the columns to match those in the test.
-  SpreadSheetParallelData.xml)
+  SpreadSheetParallelData.xml
+)
+
+list(APPEND TESTS_WITHOUT_BASELINES
+  # needs parallel server for the columns to match those in the test.
+  CellGridSpreadSheetViewServer.xml
+  DescriptiveStatisticsByAssemblyParallel.xml
+)
 
 # test only checks for spreadsheet columns correctly in
 # parallel client-server mode.
 set (SpreadSheetParallelData_DISABLE_C TRUE)
+set (CellGridSpreadSheetViewServer_DISABLE_C TRUE)
+set (DescriptiveStatisticsByAssemblyParallel_DISABLE_C TRUE)
 
 # DistributePoints is only tested in non-built-in mode.
 paraview_add_client_server_tests(
@@ -86,6 +95,14 @@ paraview_add_client_server_render_tests(
   BASELINE_DIR ${PARAVIEW_TEST_BASELINE_DIR}
   TEST_SCRIPTS GhostCellsGenerator.xml
   )
+paraview_add_client_server_tests(
+  BASELINE_DIR ${PARAVIEW_TEST_BASELINE_DIR}
+  TEST_SCRIPTS HyperTreeGridGhostCellsGenerator.xml
+  )
+paraview_add_client_server_render_tests(
+  BASELINE_DIR ${PARAVIEW_TEST_BASELINE_DIR}
+  TEST_SCRIPTS HyperTreeGridGhostCellsGenerator.xml
+  )
 
 # HTG Source has special features when used in an MPI setting
 paraview_add_client_server_tests(
@@ -124,7 +141,7 @@ paraview_add_client_server_tests(
   NUMSERVERS 4
   )
 paraview_add_client_server_tests(
-  TEST_SCRIPTS GhostCellsHTGMultiblock.xml
+  TEST_SCRIPTS GhostCellsHTGComposite.xml
   NUMSERVERS 2
 )
 
@@ -132,6 +149,13 @@ paraview_add_client_server_tests(
 paraview_add_client_server_tests(
   TEST_SCRIPTS vtkAppendReduceFilter.xml
   NUMSERVERS 4
+)
+
+# Piece distribution makes sense only in parallel
+# using 3 servers to showcase the different distribution modes
+paraview_add_client_server_tests(
+  TEST_SCRIPTS VTKHDFReaderPieceDistribution.xml
+  NUMSERVERS 3
 )
 
 paraview_add_client_server_tests(

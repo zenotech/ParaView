@@ -109,11 +109,15 @@ public:
    * Captures a image from this view. Default implementation returns nullptr.
    * Subclasses should override CaptureWindowInternal() to do the actual image
    * capture.
+   * Return a NEW instance of vtkImageData for each call.
+   * The caller is responsible for calling Delete() on the returned object.
    */
+  VTK_NEWINSTANCE
   vtkImageData* CaptureWindow(int magnification)
   {
     return this->CaptureWindow(magnification, magnification);
   }
+  VTK_NEWINSTANCE
   vtkImageData* CaptureWindow(int magnificationX, int magnificationY);
   ///@}
   /**
@@ -135,15 +139,6 @@ public:
    * DEPRECATED: Use GetNeedsUpdate() instead.
    */
   virtual bool HasDirtyRepresentation() { return this->GetNeedsUpdate(); }
-
-  ///@{
-  /**
-   * Returns true if the subsequent call to Update() will result in an actual
-   * update. If returned true, it means that the view thinks its rendering is
-   * obsolete and needs to be re-generated.
-   */
-  vtkGetMacro(NeedsUpdate, bool);
-  ///@}
 
   /**
    * Return the vtkRenderWindow used by this view, if any. Note, views like

@@ -25,13 +25,11 @@
         <Documentation>Available timestep values.</Documentation>
       </DoubleVectorProperty>
 
-      <!-- this is the property to get the status -->
       <StringVectorProperty name="CellArrayInfo"
                             command="GetCellDataArraySelection"
                             number_of_elements_per_command="2"
                             information_only="1"
                             si_class="vtkSIDataArraySelectionProperty" />
-      <!-- this is the property to set he status -->
       <StringVectorProperty name="CellArrayStatus"
                             command="GetCellDataArraySelection"
                             information_property="CellArrayInfo"
@@ -47,13 +45,11 @@
         <Documentation>Select the cell arrays to read.</Documentation>
       </StringVectorProperty>
 
-      <!-- this is the property to get the status -->
       <StringVectorProperty name="PointArrayInfo"
                             command="GetPointDataArraySelection"
                             number_of_elements_per_command="2"
                             information_only="1"
                             si_class="vtkSIDataArraySelectionProperty" />
-      <!-- this is the property to set he status -->
       <StringVectorProperty name="PointArrayStatus"
                             command="GetPointDataArraySelection"
                             information_property="PointArrayInfo"
@@ -69,13 +65,11 @@
         <Documentation>Select the point arrays to read.</Documentation>
       </StringVectorProperty>
 
-      <!-- this is the property to get the status -->
       <StringVectorProperty name="FieldArrayInfo"
                             command="GetFieldDataArraySelection"
                             number_of_elements_per_command="2"
                             information_only="1"
                             si_class="vtkSIDataArraySelectionProperty" />
-      <!-- this is the property to set he status -->
       <StringVectorProperty name="FieldArrayStatus"
                             command="GetFieldDataArraySelection"
                             information_property="FieldArrayInfo"
@@ -88,6 +82,9 @@
             <Property function="ArrayList" name="FieldArrayInfo" />
           </RequiredProperties>
         </ArraySelectionDomain>
+        <Hints>
+          <ArraySelectionWidget icon_type="field"/>
+        </Hints>
         <Documentation>Select the field arrays to read.</Documentation>
       </StringVectorProperty>
 
@@ -113,6 +110,20 @@
           time step if possible.
         </Documentation>
       </IntVectorProperty>
+
+      <IntVectorProperty command="SetPieceDistribution"
+                         default_values="0"
+                         name="PieceDistribution"
+                         number_of_elements="1">
+        <Documentation>Control how partitioned datasets are loaded in distributed mode.</Documentation>
+        <EnumerationDomain name="enum">
+          <Entry text="Block"
+                 value="0" />
+          <Entry text="Interleave"
+                 value="1" />
+        </EnumerationDomain>
+      </IntVectorProperty>
+
       <!-- End HDFReaderCore -->
     </Proxy>
 
@@ -135,16 +146,19 @@
                proxygroup="internal_sources"
                proxyname="HDFReaderCore"></Proxy>
         <ExposedProperties>
-          <PropertyGroup label="Cell/Point Array Status"
-                         name="CellPointArrayStatus"
+          <PropertyGroup label="Array Selection"
+                         name="ArrayStatus"
                          panel_visibility="default"
                          panel_widget="ArrayStatus">
             <Property name="CellArrayInfo" />
             <Property name="CellArrayStatus" />
             <Property name="PointArrayInfo" />
             <Property name="PointArrayStatus" />
+            <Property name="FieldArrayInfo" />
+            <Property name="FieldArrayStatus" />
           </PropertyGroup>
           <Property name="MaximumLevelsToReadByDefaultForAMR" />
+          <Property name="PieceDistribution" />
           <Property name="UseCache" />
         </ExposedProperties>
       </SubProxy>

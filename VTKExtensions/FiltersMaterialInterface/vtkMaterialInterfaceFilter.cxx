@@ -203,7 +203,7 @@ vtkCartesianGrid* GetReferenceGrid(vtkNonOverlappingAMR* amrds)
         return (refGrid);
       }
     } // END for all datasets
-  }   // END for all number of levels
+  } // END for all number of levels
 
   // This process has no grids
   return nullptr;
@@ -266,7 +266,7 @@ public:
   void Squeeze() { this->EquivalenceArray->Squeeze(); }
 
   // Report used memory
-  vtkIdType Capacity() { return this->EquivalenceArray->GetSize(); }
+  vtkIdType Capacity() { return this->EquivalenceArray->GetCapacity(); }
 
   // We should fix the pointer API and hide this ivar.
   int Resolved;
@@ -688,7 +688,8 @@ void vtkMaterialInterfaceFilterBlock::InitializeVolumeFractionArray(int invertVo
   vtkMaterialInterfaceFilterHalfSphere* implicitFunction, vtkDataArray* volumeFractionArray)
 {
   double tmp;
-  unsigned char* inPtr = (unsigned char*)(volumeFractionArray->GetVoidPointer(0));
+  unsigned char* inPtr =
+    vtkAOSDataArrayTemplate<unsigned char>::FastDownCast(volumeFractionArray)->GetPointer(0);
 
   if (implicitFunction == nullptr)
   {
@@ -6566,12 +6567,6 @@ void vtkMaterialInterfaceFilter::ComputeGeometricAttributes()
 #endif
           // who has the pieces?
           vector<int> owners = f2pm.WhoHasAPiece(fragmentId);
-          // how much load will he add to the recipient?
-          vtkIdType loading = 0;
-          for (int i = 0; i < nSplitOver; ++i)
-          {
-            loading += loadingArrays[owners[i]][fragmentId];
-          }
           // who will do processing??
           int recipient = procRing.GetNextId();
 
@@ -8313,13 +8308,13 @@ void vtkMaterialInterfaceFilter::ShareGhostEquivalences(
             (ext[1] - ext[0] + 1) * (ext[3] - ext[2] + 1) * (ext[5] - ext[4] + 1), otherProc,
             722266);
         } // End if ghost  block owned by other process.
-      }   // End loop over all blocks.
+      } // End loop over all blocks.
       // Send the message that indicates we have nothing more to send.
       sendMsg[0] = myProcId;
       sendMsg[1] = -1;
       this->Controller->Send(sendMsg, 8, otherProc, 722265);
     } // End if we should send or receive.
-  }   // End loop over all processes.
+  } // End loop over all processes.
 }
 
 //----------------------------------------------------------------------------

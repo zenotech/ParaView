@@ -6,7 +6,6 @@
 #include "vtkAlgorithm.h"
 #include "vtkArrayDispatch.h"
 #include "vtkArrayDispatchArrayList.h"
-#include "vtkArrayIteratorIncludes.h"
 #include "vtkAttributeDataToTableFilter.h"
 #include "vtkCellData.h"
 #include "vtkDataArray.h"
@@ -30,6 +29,7 @@
 #include "vtksys/FStream.hxx"
 #include "vtksys/SystemTools.hxx"
 
+#include <iostream>
 #include <regex>
 #include <sstream>
 #include <vector>
@@ -171,7 +171,7 @@ int vtkCSVWriter::RequestData(vtkInformation* request,
     request->Set(vtkStreamingDemandDrivenPipeline::CONTINUE_EXECUTING(), 1);
   }
 
-  this->WriteData();
+  bool ret = this->WriteDataAndReturn();
 
   this->CurrentTimeIndex++;
   if (this->CurrentTimeIndex >= this->NumberOfTimeSteps)
@@ -184,7 +184,7 @@ int vtkCSVWriter::RequestData(vtkInformation* request,
     }
   }
 
-  return this->GetErrorCode() == vtkErrorCode::NoError ? 1 : 0;
+  return (ret && this->GetErrorCode() == vtkErrorCode::NoError) ? 1 : 0;
 }
 
 //----------------------------------------------------------------------------
@@ -218,6 +218,8 @@ struct AbstractStreamWorker
     : NumberOfComponents(arr->GetNumberOfComponents())
   {
   }
+
+  virtual ~AbstractStreamWorker() = default;
 
   virtual void operator()(ostream& stream, vtkCSVWriter* writer, vtkIdType index) = 0;
   vtkIdType NumberOfComponents;
@@ -561,11 +563,11 @@ static bool SuffixValidation(char* fileNameSuffix)
 }
 
 //-----------------------------------------------------------------------------
-void vtkCSVWriter::WriteData()
+bool vtkCSVWriter::WriteDataAndReturn()
 {
   if (!this->FileName)
   {
-    return;
+    return false;
   }
   auto input = this->GetInput();
 
@@ -581,8 +583,8 @@ void vtkCSVWriter::WriteData()
     {
       // Print this->CurrentTimeIndex to a string using this->FileNameSuffix as format
       char suffix[100];
-      auto result =
-        vtk::format_to_n(suffix, sizeof(suffix), this->FileNameSuffix, this->CurrentTimeIndex);
+      auto result = vtk::format_to_n(
+        suffix, sizeof(suffix), vtk::runtime(this->FileNameSuffix), this->CurrentTimeIndex);
       *result.out = '\0';
       if (!path.empty())
       {
@@ -595,7 +597,7 @@ void vtkCSVWriter::WriteData()
       vtkErrorMacro(
         "Invalid file suffix:" << (this->FileNameSuffix ? this->FileNameSuffix : "null")
                                << ". Expected valid std::format style format specifiers!");
-      return;
+      return false;
     }
   }
   else
@@ -658,13 +660,15 @@ void vtkCSVWriter::WriteData()
       ? CSVFile::OpenMode::Append
       : CSVFile::OpenMode::Write;
     int error_code = file.Open(filename.str().c_str(), openMode);
+    bool ret = false;
     if (error_code == vtkErrorCode::NoError)
     {
       file.WriteHeader(table, this, openMode);
       file.WriteData(table, this);
+      ret = true;
     }
     this->SetErrorCode(error_code);
-    return;
+    return ret;
   }
 
   const int myRank = controller->GetLocalProcessId();
@@ -676,7 +680,7 @@ void vtkCSVWriter::WriteData()
     if (error_code != vtkErrorCode::NoError)
     {
       this->SetErrorCode(error_code);
-      return;
+      return false;
     }
 
     vtkIdType row_count = table->GetNumberOfRows();
@@ -703,6 +707,7 @@ void vtkCSVWriter::WriteData()
     }
     controller->Broadcast(&error_code, 1, 0);
     this->SetErrorCode(error_code);
+    return error_code != vtkErrorCode::NoError ? false : true;
   }
   else
   {
@@ -716,7 +721,7 @@ void vtkCSVWriter::WriteData()
     if (error_code != vtkErrorCode::NoError)
     {
       this->SetErrorCode(error_code);
-      return;
+      return false;
     }
 
     const vtkIdType row_count = table->GetNumberOfRows();
@@ -774,6 +779,7 @@ void vtkCSVWriter::WriteData()
     error_code = vtkErrorCode::NoError;
     controller->Broadcast(&error_code, 1, 0);
     this->SetErrorCode(error_code);
+    return error_code != vtkErrorCode::NoError ? false : true;
   }
 
   // the writer can be used for multiple timesteps
@@ -784,6 +790,7 @@ void vtkCSVWriter::WriteData()
     this->TimeValues->Delete();
     this->TimeValues = nullptr;
   }
+  return true;
 }
 
 //-----------------------------------------------------------------------------

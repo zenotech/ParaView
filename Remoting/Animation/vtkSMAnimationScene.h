@@ -24,8 +24,7 @@
 
 #include "vtkAnimationCue.h"
 #include "vtkCommand.h"                 // needed for vtkCommand::UserEvent
-#include "vtkParaViewDeprecation.h"     // For PARAVIEW_DEPRECATED_IN_5_13_0
-#include "vtkRemotingAnimationModule.h" //needed for exports
+#include "vtkRemotingAnimationModule.h" // needed for exports
 
 class vtkCompositeAnimationPlayer;
 class vtkEventForwarderCommand;
@@ -135,6 +134,12 @@ public:
   vtkGetVector2Macro(PlaybackTimeWindow, double);
   ///@}
 
+  /**
+   * Clamp frameWindow to be inside [0, maxFrame].
+   * Also fill timeWindow with the time values counterpart of frameWindow.
+   */
+  void SanitizeFrameWindow(int frameWindow[2], double timeWindow[2]);
+
   ///@{
   /**
    * Forwarded to vtkCompositeAnimationPlayer.
@@ -151,6 +156,7 @@ public:
   void SetPlayMode(int val);
   int GetPlayMode();
   void SetNumberOfFrames(int val);
+  int GetNumberOfFrames();
 
   void SetFramesPerTimestep(int val);
   void SetStride(int val);
@@ -183,17 +189,6 @@ public:
    */
   vtkSetMacro(OverrideStillRender, bool);
   vtkGetMacro(OverrideStillRender, bool);
-
-  ///@{
-  /**
-   * Turn caching on/off globally. Typically, on uses vtkPVGeneralSettings to
-   * toggle cache settings rather than using this API directly.
-   */
-  PARAVIEW_DEPRECATED_IN_6_0_0("Use vtkPVGeneralSettings::SetCacheGeometryForAnimation")
-  static void SetGlobalUseGeometryCache(bool);
-  PARAVIEW_DEPRECATED_IN_6_0_0("Use vtkPVGeneralSettings::GetCacheGeometryForAnimation")
-  static bool GetGlobalUseGeometryCache();
-  ///@}
 
 protected:
   vtkSMAnimationScene();

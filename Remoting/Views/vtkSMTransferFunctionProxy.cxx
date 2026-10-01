@@ -3,17 +3,14 @@
 #include "vtkSMTransferFunctionProxy.h"
 
 #include "vtkAlgorithm.h"
-#include "vtkCommunicator.h"
 #include "vtkDoubleArray.h"
 #include "vtkIntArray.h"
-#include "vtkMultiProcessController.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPVArrayInformation.h"
 #include "vtkPVProminentValuesInformation.h"
 #include "vtkPVXMLElement.h"
 #include "vtkPVXMLParser.h"
-#include "vtkProcessModule.h"
 #include "vtkSMColorMapEditorHelper.h"
 #include "vtkSMCoreUtilities.h"
 #include "vtkSMNamedPropertyIterator.h"
@@ -323,18 +320,6 @@ bool vtkSMTransferFunctionProxy::RescaleTransferFunction(
   {
     rangeMin = std::min(rangeMin, preNormalizationRange[0]);
     rangeMax = std::max(rangeMax, preNormalizationRange[1]);
-  }
-
-  if (vtkProcessModule::GetProcessModule()->GetSymmetricMPIMode())
-  {
-    double globalRangeMin, globalRangeMax;
-    // In symmetric mode, we need to get the global range
-    vtkMultiProcessController::GetGlobalController()->AllReduce(
-      &rangeMin, &globalRangeMin, 1, vtkCommunicator::MIN_OP);
-    vtkMultiProcessController::GetGlobalController()->AllReduce(
-      &rangeMax, &globalRangeMax, 1, vtkCommunicator::MAX_OP);
-    rangeMin = globalRangeMin;
-    rangeMax = globalRangeMax;
   }
 
   // Setting the "LastRange" here because, it should match the current range of the control points.
@@ -649,13 +634,10 @@ vtkTable* vtkSMTransferFunctionProxy::ComputeDataHistogramTable(int numberOfBins
 
   // Copy histogram values, currently stored in an int array,
   // into a double array in order to be able to use shift scale in the related plots
-  vtkIdType nValue = valueArray->GetNumberOfTuples();
-  int* valuePointer = static_cast<int*>(valueArray->GetPointer(0));
   vtkNew<vtkDoubleArray> doubleValueArray;
   doubleValueArray->SetName(valueArray->GetName());
   doubleValueArray->SetNumberOfTuples(valueArray->GetNumberOfTuples());
-  std::copy(
-    valuePointer, valuePointer + nValue, static_cast<double*>(doubleValueArray->GetVoidPointer(0)));
+  doubleValueArray->DeepCopy(valueArray);
   this->HistogramTableCache->RemoveColumn(1);
   this->HistogramTableCache->AddColumn(doubleValueArray);
   return this->HistogramTableCache;

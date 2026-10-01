@@ -136,7 +136,7 @@ public:
     std::string client_url;
     if (pvserver.find(url))
     {
-      int port;
+      int port = -1;
       VTK_FROM_CHARS_IF_ERROR_BREAK(pvserver.match(3), port);
       port = (port < 0) ? 11111 : port;
 
@@ -150,7 +150,7 @@ public:
     else if (pvserver_reverse.find(url))
     {
       std::string hostname = pvserver_reverse.match(1);
-      int port;
+      int port = -1;
       VTK_FROM_CHARS_IF_ERROR_BREAK(pvserver_reverse.match(3), port);
       port = (port <= 0) ? 11111 : port;
       std::ostringstream stream;
@@ -159,7 +159,8 @@ public:
     }
     else if (pvrenderserver.find(url))
     {
-      int dsport, rsport;
+      int dsport = -1;
+      int rsport = -1;
       VTK_FROM_CHARS_IF_ERROR_BREAK(pvrenderserver.match(3), dsport);
       dsport = (dsport < 0) ? 11111 : dsport;
 
@@ -184,7 +185,8 @@ public:
     }
     else if (pvrenderserver_reverse.find(url))
     {
-      int dsport, rsport;
+      int dsport = -1;
+      int rsport = -1;
       std::string dataserverhost = pvrenderserver_reverse.match(1);
       VTK_FROM_CHARS_IF_ERROR_BREAK(pvrenderserver_reverse.match(3), dsport);
       dsport = (dsport <= 0) ? 11111 : dsport;
@@ -507,10 +509,10 @@ int vtkPVSessionServer::GetConnectID()
 }
 
 //----------------------------------------------------------------------------
-void vtkPVSessionServer::OnClientServerMessageRMI(void* message, int message_length)
+void vtkPVSessionServer::OnClientServerMessageRMI(void* message, int messageLength)
 {
   vtkMultiProcessStream stream;
-  stream.SetRawData(reinterpret_cast<const unsigned char*>(message), message_length);
+  stream.SetRawData(reinterpret_cast<const unsigned char*>(message), messageLength);
   int type;
   stream >> type;
   switch (type)
@@ -578,14 +580,21 @@ void vtkPVSessionServer::OnClientServerMessageRMI(void* message, int message_len
 
     case vtkPVSessionServer::EXECUTE_STREAM:
     {
-      int ignore_errors, size;
-      stream >> ignore_errors >> size;
+      int ignoreErrors, sendReply, size;
+      stream >> ignoreErrors >> sendReply >> size;
       unsigned char* css_data = new unsigned char[size + 1];
       this->Internal->GetActiveController()->Receive(
         css_data, size, 1, vtkPVSessionServer::EXECUTE_STREAM_TAG);
       vtkClientServerStream cssStream;
       cssStream.SetData(css_data, size);
-      this->ExecuteStream(vtkPVSession::CLIENT_AND_SERVERS, cssStream, ignore_errors != 0);
+      this->ExecuteStream(vtkPVSession::CLIENT_AND_SERVERS, cssStream, ignoreErrors != 0);
+
+      if (sendReply)
+      {
+        const unsigned char dummy = 0;
+        this->Internal->GetActiveController()->Send(
+          &dummy, 1, 1, vtkPVSessionServer::STREAM_EXECUTED);
+      }
       delete[] css_data;
     }
     break;

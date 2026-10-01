@@ -541,12 +541,14 @@ def setattr(proxy, pname, value):
                     proxy.GetProperty("ReflectionPlane").GetData().Normal = [0, 0, 1]
                 raise Continue()
             else:
-                raise NotSupportedException("'PlaneNormal' property has been removed in ParaView 6.0. Please use ReflectionPlane to define the plane instead.")
+                raise NotSupportedException(
+                    "'PlaneNormal' property has been removed in ParaView 6.0. Please use ReflectionPlane to define the plane instead.")
         if pname == "PlanePosition":
             if compatibility_version < (6, 0):
                 proxy.GetProperty("ReflectionPlane").GetData().Origin = [value, value, value]
             else:
-                raise NotSupportedException("'PlanePosition' property has been removed in ParaView 6.0. Please use ReflectionPlane to define the plane instead.")
+                raise NotSupportedException(
+                    "'PlanePosition' property has been removed in ParaView 6.0. Please use ReflectionPlane to define the plane instead.")
 
     # 5.13 -> 6.0 Reflect replaced by AxisAlignedReflect
     # Plane and Center have been replaced by a vtkPlane 'ReflectionPlane'
@@ -584,17 +586,20 @@ def setattr(proxy, pname, value):
                         proxy.GetProperty("ReflectionPlane").GetData().Normal = [0, 0, 1]
                 raise Continue()
             else:
-                raise NotSupportedException("'Plane' property has been removed in ParaView 6.0. Please use ReflectionPlane to define the plane instead.")
+                raise NotSupportedException(
+                    "'Plane' property has been removed in ParaView 6.0. Please use ReflectionPlane to define the plane instead.")
         if pname == "Center":
             if compatibility_version < (6, 0):
                 proxy.GetProperty("ReflectionPlane").GetData().Origin = [value, value, value]
             else:
-                raise NotSupportedException("'Center' property has been removed in ParaView 6.0. Please use ReflectionPlane to define the plane instead.")
+                raise NotSupportedException(
+                    "'Center' property has been removed in ParaView 6.0. Please use ReflectionPlane to define the plane instead.")
         if pname == "FlipAllInputArrays":
             if compatibility_version < (6, 0):
                 proxy.GetProperty("ReflectAllInputArrays").SetData(value)
             else:
-                raise NotSupportedException("'FlipAllInputArrays' was renamed in 'ReflectAllInputArrays' since ParaView 6.0")
+                raise NotSupportedException(
+                    "'FlipAllInputArrays' was renamed in 'ReflectAllInputArrays' since ParaView 6.0")
 
     # 6.0 -> 6.1 vtkParticleTracerBase have been reworked
     # Caching is now automated, DisableResetCache has been removed
@@ -677,6 +682,38 @@ def setattr(proxy, pname, value):
             raise NotSupportedException("Since ParaView 6.1, SaveScreenshot no longer "
                                         "supports 'EmbedParaViewState' and it has been replaced by "
                                         "'Format.EmbedParaViewState'.")
+
+    # 6.1 -> 6.2: InterpolatorType (int) replaced by CellLocator (proxy)
+    # Target filters: StreamTracer, ParticleTracer, etc.
+    if pname == "InterpolatorType" and proxy.SMProxy.GetProperty("CellLocator"):
+        if compatibility_version < (6, 2):
+            # Map 0 -> JumpAndWalk, 1 -> Static
+            locator_type = "JumpAndWalkCellLocator" if value == 0 else "StaticCellLocator"
+
+            # Create the sub-proxy for the locator
+            locator_proxy = sm.CreateProxy("cell_locators", locator_type)
+            if locator_proxy:
+                # Update the CellLocator property with the new proxy
+                proxy.GetProperty("CellLocator").SetData(locator_proxy)
+                raise Continue()
+        else:
+            raise NotSupportedException(
+                "'InterpolatorType' is obsolete as of ParaView 6.2. "
+                "Please use the 'CellLocator' property to specify a locator proxy instead.")
+    # 6.1 -> 6.2: ChoosetheoutputblocksarraysfortheExodusEntityType replaced by EntityType
+    if pname == "ChoosetheoutputblocksarraysfortheExodusEntityType":
+        if compatibility_version < (6, 2):
+            return proxy.GetProperty("EntityType").SetData(value)
+        else:
+            raise NotSupportedException(
+                "'Chooseth outputblocksarraysfortheExodusEntityType' is obsolete as of ParaView 6.2. "
+                "Please use the 'EntityType' property to specify the Exodus entity type instead.")
+    if pname == "WindowResizeNonInteractiveRenderDelay":
+        if compatibility_version <= (6, 2):
+            raise Continue()
+        else:
+            raise NotSupportedException(
+                "'WindowResizeNonInteractiveRenderDelay' is obsolete. Simply remove it from your script.")
 
     if not hasattr(proxy, pname):
         raise AttributeError()
@@ -1200,7 +1237,6 @@ def getattr(proxy, pname):
             else:
                 raise NotSupportedException("'Position' property has been removed in ParaView 5.13")
 
-
     # 5.13 -> 6.0 breaking change in PolarAxes representation
     # Properties Renaming
     if proxy.SMProxy and proxy.SMProxy.GetXMLName() == "PolarAxesRepresentation":
@@ -1223,7 +1259,8 @@ def getattr(proxy, pname):
             if compatibility_version < (6, 0):
                 return proxy.GetProperty("RadialLabelVisibility").GetData()
             else:
-                raise NotSupportedException("'RadialTitleVisibility' was renamed in 'RadialLabelVisibility' since ParaView 6.0")
+                raise NotSupportedException(
+                    "'RadialTitleVisibility' was renamed in 'RadialLabelVisibility' since ParaView 6.0")
 
         # "RadialTitleFormat" -> "RadialLabelFormat"
         if pname == "RadialTitleFormat":
@@ -1237,7 +1274,8 @@ def getattr(proxy, pname):
             if compatibility_version < (6, 0):
                 return proxy.GetProperty("RadialLabelLocation").GetData()
             else:
-                raise NotSupportedException("'RadialTitleLocation' was renamed in 'RadialLabelLocation' since ParaView 6.0")
+                raise NotSupportedException(
+                    "'RadialTitleLocation' was renamed in 'RadialLabelLocation' since ParaView 6.0")
 
         # "RadialTitleOffset" -> "RadialLabelOffset"
         if pname == "RadialTitleOffset":
@@ -1251,7 +1289,8 @@ def getattr(proxy, pname):
             if compatibility_version < (6, 0):
                 return proxy.GetProperty("AllTicksVisibility").GetData()
             else:
-                raise NotSupportedException("'PolarTicksVisibility' was renamed in 'AllTicksVisibility' since ParaView 6.0")
+                raise NotSupportedException(
+                    "'PolarTicksVisibility' was renamed in 'AllTicksVisibility' since ParaView 6.0")
 
     # 5.13 -> 6.0 HyperTreeGridAxisReflection replaced by AxisAlignedReflect
     # PlaneNormal and PlanePosition have been replaced by a vtkPlane 'ReflectionPlane'
@@ -1266,7 +1305,8 @@ def getattr(proxy, pname):
                 if normal[2] == 1:
                     return 8
             else:
-                raise NotSupportedException("'PlaneNormal' property has been removed in ParaView 6.0. Please use ReflectionPlane to define the plane instead.")
+                raise NotSupportedException(
+                    "'PlaneNormal' property has been removed in ParaView 6.0. Please use ReflectionPlane to define the plane instead.")
         if pname == "PlanePosition":
             if compatibility_version < (6, 0):
                 normal = proxy.GetProperty("ReflectionPlane").GetData().Normal
@@ -1278,7 +1318,8 @@ def getattr(proxy, pname):
                 if normal[2] == 1:
                     return origin[2]
             else:
-                raise NotSupportedException("'PlanePosition' property has been removed in ParaView 6.0. Please use ReflectionPlane to define the plane instead.")
+                raise NotSupportedException(
+                    "'PlanePosition' property has been removed in ParaView 6.0. Please use ReflectionPlane to define the plane instead.")
 
     # 5.13 -> 6.0 Reflect replaced by AxisAlignedReflect
     # Plane and Center have been replaced by a vtkPlane 'ReflectionPlane'
@@ -1298,7 +1339,8 @@ def getattr(proxy, pname):
                 else:
                     return planeMode
             else:
-                raise NotSupportedException("'Plane' property has been removed in ParaView 6.0. Please use ReflectionPlane to define the plane instead.")
+                raise NotSupportedException(
+                    "'Plane' property has been removed in ParaView 6.0. Please use ReflectionPlane to define the plane instead.")
         if pname == "Center":
             if compatibility_version < (6, 0):
                 normal = proxy.GetProperty("ReflectionPlane").GetData().Normal
@@ -1310,12 +1352,14 @@ def getattr(proxy, pname):
                 if normal[2] == 1:
                     return origin[2]
             else:
-                raise NotSupportedException("'Center' property has been removed in ParaView 6.0. Please use ReflectionPlane to define the plane instead.")
+                raise NotSupportedException(
+                    "'Center' property has been removed in ParaView 6.0. Please use ReflectionPlane to define the plane instead.")
         if pname == "FlipAllInputArrays":
             if compatibility_version < (6, 0):
                 return proxy.GetProperty("ReflectAllInputArrays").GetData()
             else:
-                raise NotSupportedException("'FlipAllInputArrays' was renamed in 'ReflectAllInputArrays' since ParaView 6.0")
+                raise NotSupportedException(
+                    "'FlipAllInputArrays' was renamed in 'ReflectAllInputArrays' since ParaView 6.0")
 
     # 6.0 -> 6.1 onwards chart representations cannot provide a value for CompositeDataSetIndex
     chart_proxies = ["ImageChartRepresentation", "XYChartRepresentationBase", "XYChartRepresentation",
@@ -1377,6 +1421,27 @@ def getattr(proxy, pname):
             raise NotSupportedException(
                 "'EmbedParaViewState' property has been removed in ParaView 6.1. Please use the "
                 "'Format.EmbedParaViewState' property to get/set the EmbedParaViewState instead.")
+
+    # 6.1 -> 6.2: InterpolatorType (int) replaced by CellLocator (proxy)
+    if pname == "InterpolatorType" and proxy.SMProxy.GetProperty("CellLocator"):
+        if compatibility_version < (6, 2):
+            # Get the currently assigned locator proxy
+            locator = proxy.CellLocator
+            if locator:
+                xml_name = locator.GetXMLName()
+                # Return 0 for JumpAndWalk, 1 for everything else (usually Static)
+                return 0 if xml_name == "JumpAndWalkCellLocator" else 1
+            return 0
+        else:
+            raise NotSupportedException(
+                "'InterpolatorType' is obsolete as of ParaView 6.2. "
+                "Please access the 'CellLocator' property instead.")
+    if pname == "WindowResizeNonInteractiveRenderDelay":
+        if compatibility_version <= (6, 2):
+            raise Continue()
+        else:
+            raise NotSupportedException(
+                "'WindowResizeNonInteractiveRenderDelay' is obsolete. Simply remove it from your script.")
 
     raise Continue()
 
@@ -1461,6 +1526,22 @@ def GetProxy(module, key, **kwargs):
             ioss_reader.ReadAllFilesToDetermineStructure = 1
             return ioss_reader
 
+    if compatibility_version <= (6, 1):
+        # In 6.2, the default for SidesToShow changed from NextLowestDimension (37) to
+        # SurfacesOfInputs (32) in CellGridSurfaceRepresentation. Restore the old default
+        # so scripts written against 6.1 keep their previous rendering behavior.
+        if key in ["CellGridRepresentation", "CellGridSurfaceRepresentation"]:
+            rep = builtins.getattr(module, key)(**kwargs)
+            if "SidesToShow" not in kwargs:
+                rep.SidesToShow = 37
+            return rep
+        # In 6.2, the default ArrayName for PythonCalculator changed from "result" to "Result".
+        if key == "PythonCalculator":
+            calc = builtins.getattr(module, key)(**kwargs)
+            if "ArrayName" not in kwargs:
+                calc.ArrayName = "result"
+            return calc
+
     # deprecation case
     if type(key) == tuple and len(key) == 2:
         proxy = builtins.getattr(module, key[1])(**kwargs)
@@ -1507,6 +1588,10 @@ def get_deprecated_proxies(proxiesNS):
         proxies[proxiesNS.filters] += [("ProcessIdScalars", "ProcessIds")]
         proxies[proxiesNS.filters] += [("Reflect", "AxisAlignedReflect")]
         proxies[proxiesNS.filters] += [("HyperTreeGridVisibleLeavesSize", "HyperTreeGridGenerateFields")]
+
+    if compatibility_version <= (6, 2):
+        proxies[proxiesNS.filters] += [("XMLHierarchicalBoxDataReader", "XMLUniformGridAMRReader")]
+        proxies[proxiesNS.filters] += [("XMLHierarchicalBoxDataReaderCore", "XMLUniformGridAMRReaderCore")]
 
     return proxies
 
@@ -1580,4 +1665,76 @@ def handle_legacy_view_creation(view_xml_name, view, controller):
             view.RightAxisTitleFontSize = 18
             view.TopAxisTitleFontSize = 18
 
+    if paraview.compatibility.GetVersion() <= (6, 1):
+        if hasattr(view, "PolarGrid"):
+            # default font size of polar grid labels was changed from 12
+            view.PolarGrid.AxesLabelBold = False
+            view.PolarGrid.AxesLabelFontSize = 12
+
+        if hasattr(view, "AxesGrid"):
+            # default font size of axis labels was changed from 12
+            view.AxesGrid.XTitleBold = False
+            view.AxesGrid.XTitleFontSize = 12
+            view.AxesGrid.YTitleBold = False
+            view.AxesGrid.YTitleFontSize = 12
+            view.AxesGrid.ZTitleBold = False
+            view.AxesGrid.ZTitleFontSize = 12
+            view.AxesGrid.XLabelBold = False
+            view.AxesGrid.XLabelFontSize = 12
+            view.AxesGrid.YLabelBold = False
+            view.AxesGrid.YLabelFontSize = 12
+            view.AxesGrid.ZLabelBold = False
+            view.AxesGrid.ZLabelFontSize = 12
+
     return view
+
+def handle_legacy_scalarbar_creation(scalarbar):
+    """
+    Provide backwards compatibility for scalar bar creation
+    """
+    if paraview.compatibility.GetVersion() <= (6, 1):
+        # older versions allowed overlapping labels to be shown
+        scalarbar.AllowOverlappingLabels = True
+
+
+def handle_representation_creation(representation):
+    """
+    Provide backwards compatibility for show creation by reverting to previous default
+    values for some properties on the representation.
+    """
+    if paraview.compatibility.GetVersion() <= (6, 1):
+        # Check if this is a representation based on "PVRepresentationBase"
+        # If so, revert the default font size and boldness for axis titles and labels in DataAxesGrid and PolarAxes to the previous values.
+        if sm.ActiveConnection and sm.ActiveConnection.Session:
+            xml_group = representation.GetXMLGroup()
+            xml_name = representation.GetXMLName()
+            pxm = sm.ActiveConnection.Session.GetSessionProxyManager()
+            xml = pxm.GetProxyDefinition(xml_group, xml_name)
+            if not xml:
+                return
+
+            xml_base_proxyname = xml.GetAttribute("base_proxyname")
+            if xml_group == "representations" and xml_base_proxyname == "PVRepresentationBase":
+                representation.DataAxesGrid.XTitleBold = False
+                representation.DataAxesGrid.YTitleBold = False
+                representation.DataAxesGrid.ZTitleBold = False
+                representation.DataAxesGrid.XTitleFontSize = 12
+                representation.DataAxesGrid.YTitleFontSize = 12
+                representation.DataAxesGrid.ZTitleFontSize = 12
+                representation.DataAxesGrid.XLabelBold = False
+                representation.DataAxesGrid.YLabelBold = False
+                representation.DataAxesGrid.ZLabelBold = False
+                representation.DataAxesGrid.XLabelFontSize = 12
+                representation.DataAxesGrid.YLabelFontSize = 12
+                representation.DataAxesGrid.ZLabelFontSize = 12
+
+                representation.PolarAxes.PolarAxisTitleBold = False
+                representation.PolarAxes.PolarAxisTitleFontSize = 12
+                representation.PolarAxes.PolarAxisLabelBold = False
+                representation.PolarAxes.PolarAxisLabelFontSize = 12
+                representation.PolarAxes.LastRadialAxisTextBold = False
+                representation.PolarAxes.LastRadialAxisTextFontSize = 12
+                representation.PolarAxes.SecondaryRadialAxesTextBold = False
+                representation.PolarAxes.SecondaryRadialAxesTextFontSize = 12
+
+    return

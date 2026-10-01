@@ -102,6 +102,12 @@ public:
    */
   void wheelEvent(QWheelEvent* event) override;
 
+  /**
+   * Overridden to copy table into the clipboard on standard shortcut event.
+   * It uses tab (`\t`) as value separator and `\r\n` as line separator.
+   */
+  void keyPressEvent(QKeyEvent* event) override;
+
 private Q_SLOTS:
   void invalidateLayout();
 

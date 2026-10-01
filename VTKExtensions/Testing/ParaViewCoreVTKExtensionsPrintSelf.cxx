@@ -14,12 +14,12 @@
 #include "vtkCSVWriter.h"
 #include "vtkCacheSizeKeeper.h"
 #include "vtkCameraInterpolator2.h"
-#include "vtkCameraManipulator.h"
 #include "vtkCameraManipulatorGUIHelper.h"
 #include "vtkCellIntegrator.h"
 #include "vtkCleanArrays.h"
 #include "vtkCleanUnstructuredGrid.h"
 #include "vtkDataSetToRectilinearGrid.h"
+#include "vtkPVCameraManipulator.h"
 // #include "vtkEnzoReader.h"
 #include "vtkEquivalenceSet.h"
 #include "vtkExodusFileSeriesReader.h"
@@ -84,7 +84,6 @@
 #include "vtkPVExponentialKeyFrame.h"
 #include "vtkPVExtractVOI.h"
 #include "vtkPVFrustumActor.h"
-#include "vtkPVGeometryFilter.h"
 #include "vtkPVInteractorStyle.h"
 #include "vtkPVJoystickFly.h"
 #include "vtkPVJoystickFlyIn.h"
@@ -103,6 +102,7 @@
 #include "vtkPVTrackballMoveActor.h"
 #include "vtkPVTrackballMultiRotate.h"
 #include "vtkPVTrackballPan.h"
+#include "vtkPVTrackballPanAxisConstrained.h"
 #include "vtkPVTrackballRoll.h"
 #include "vtkPVTrackballRotate.h"
 #include "vtkPVTrackballZoom.h"
@@ -130,7 +130,6 @@
 #include "vtkSurfaceVectors.h"
 #include "vtkTilesHelper.h"
 #include "vtkTimeToTextConvertor.h"
-#include "vtkTrackballPan.h"
 #include "vtkTransferFunctionEditorRepresentation.h"
 #include "vtkTransferFunctionEditorRepresentation1D.h"
 #include "vtkTransferFunctionEditorRepresentationShapes1D.h"
@@ -184,7 +183,7 @@ int ParaViewCoreVTKExtensionsPrintSelf(int, char*[])
   PRINT_SELF(vtkBlockDeliveryPreprocessor);
   PRINT_SELF(vtkBSPCutsGenerator);
   PRINT_SELF(vtkCameraInterpolator2);
-  PRINT_SELF(vtkCameraManipulator);
+  PRINT_SELF(vtkPVCameraManipulator);
   PRINT_SELF(vtkCameraManipulatorGUIHelper);
   PRINT_SELF(vtkCellIntegrator);
   PRINT_SELF(vtkCleanArrays);
@@ -261,7 +260,6 @@ int ParaViewCoreVTKExtensionsPrintSelf(int, char*[])
   PRINT_SELF(vtkPVExponentialKeyFrame);
   PRINT_SELF(vtkPVExtractVOI);
   PRINT_SELF(vtkPVFrustumActor);
-  PRINT_SELF(vtkPVGeometryFilter);
   PRINT_SELF(vtkPVInteractorStyle);
   PRINT_SELF(vtkPVJoystickFly);
   PRINT_SELF(vtkPVJoystickFlyIn);
@@ -280,6 +278,7 @@ int ParaViewCoreVTKExtensionsPrintSelf(int, char*[])
   PRINT_SELF(vtkPVTrackballMoveActor);
   PRINT_SELF(vtkPVTrackballMultiRotate);
   PRINT_SELF(vtkPVTrackballPan);
+  PRINT_SELF(vtkPVTrackballPanAxisConstrained);
   PRINT_SELF(vtkPVTrackballRoll);
   PRINT_SELF(vtkPVTrackballRotate);
   PRINT_SELF(vtkPVTrackballZoom);
@@ -303,7 +302,6 @@ int ParaViewCoreVTKExtensionsPrintSelf(int, char*[])
   PRINT_SELF(vtkSurfaceVectors);
   // PRINT_SELF(vtkTilesHelper);
   PRINT_SELF(vtkTimeToTextConvertor);
-  PRINT_SELF(vtkTrackballPan);
   PRINT_SELF(vtkTransferFunctionEditorRepresentation);
   PRINT_SELF(vtkTransferFunctionEditorRepresentation1D);
   PRINT_SELF(vtkTransferFunctionEditorRepresentationShapes1D);

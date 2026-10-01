@@ -119,6 +119,7 @@ endif()
 paraview_add_test_python(
   NO_DATA NO_VALID NO_OUTPUT NO_RT
   AppendDatasetsPolyData.py
+  CopyProperties.py
   MergeBlocksPolyData.py
   PointPicking.py
   TestGhostCellsGenerator.py
@@ -278,7 +279,7 @@ if (PARAVIEW_USE_MPI AND MPIEXEC_EXECUTABLE AND TARGET pvserver AND TARGET pvpyt
         --enable-bt
         --force-offscreen-rendering
         --pvx
-        "${CMAKE_CURRENT_SOURCE_DIR}/../XML/LeftRightHide2DOverlay.pvx"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../XML/CAVEFeatures.pvx"
       --client $<TARGET_FILE:ParaView::pvpython>
         --enable-bt
         --dr

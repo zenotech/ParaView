@@ -409,8 +409,7 @@ vtkSmartPointer<vtkDoubleArray> vtkCDIReader::ReadTimeAxis()
   }
 
   auto timeValues = vtkSmartPointer<vtkDoubleArray>::New();
-  timeValues->Allocate(this->NumberOfTimeSteps);
-  timeValues->SetNumberOfComponents(1);
+  timeValues->ReserveValues(this->NumberOfTimeSteps);
   int start = 0;
   int counter = 0;
   for (int step = 0; step < this->FileSeriesNumber; step++)
@@ -2249,14 +2248,14 @@ void vtkCDIReader::OutputPoints(bool init)
   if (init)
   {
     points = vtkSmartPointer<vtkPoints>::New();
-    points->Allocate(this->MaximumPoints, this->MaximumPoints);
+    points->Reserve(this->MaximumPoints);
     this->Output->SetPoints(points);
   }
   else
   {
     points = this->Output->GetPoints();
     points->Initialize();
-    points->Allocate(this->MaximumPoints, this->MaximumPoints);
+    points->Reserve(this->MaximumPoints);
   }
 
   if (this->DepthVar.empty())
@@ -2665,7 +2664,7 @@ int vtkCDIReader::LoadCellVarDataTemplate(
   int variableIndex, double dTimeStep, vtkDataArray* dataArray)
 {
   vtkDebugMacro("In vtkCDIReader::LoadCellVarData");
-  ValueType* dataBlock = static_cast<ValueType*>(dataArray->GetVoidPointer(0));
+  ValueType* dataBlock = vtkAOSDataArrayTemplate<ValueType>::FastDownCast(dataArray)->GetPointer(0);
   cdi_tools::CDIVar* cdiVar = &(this->Internals->CellVars[variableIndex]);
   int varType = cdiVar->Type;
 
@@ -2782,18 +2781,17 @@ int vtkCDIReader::ReplaceFillWithNan(const int varID, vtkDataArray* dataArray)
   // NaN only available with float and double.
   if (dataArray->GetDataType() == VTK_FLOAT)
   {
-
+    auto floatArray = vtkAOSDataArrayTemplate<float>::FastDownCast(dataArray);
     float fillValue = miss;
-    std::replace(reinterpret_cast<float*>(dataArray->GetVoidPointer(0)),
-      reinterpret_cast<float*>(dataArray->GetVoidPointer(dataArray->GetNumberOfTuples())),
+    std::replace(floatArray->GetPointer(0), floatArray->GetPointer(floatArray->GetNumberOfTuples()),
       fillValue, static_cast<float>(vtkMath::Nan()));
   }
   else if (dataArray->GetDataType() == VTK_DOUBLE)
   {
+    auto doubleArray = vtkAOSDataArrayTemplate<float>::FastDownCast(dataArray);
     double fillValue = miss;
-    std::replace(reinterpret_cast<double*>(dataArray->GetVoidPointer(0)),
-      reinterpret_cast<double*>(dataArray->GetVoidPointer(dataArray->GetNumberOfTuples())),
-      fillValue, vtkMath::Nan());
+    std::replace(doubleArray->GetPointer(0),
+      doubleArray->GetPointer(doubleArray->GetNumberOfTuples()), fillValue, vtkMath::Nan());
   }
   else
   {
@@ -2815,7 +2813,7 @@ int vtkCDIReader::LoadPointVarDataTemplate(
   int varType = cdiVar->Type;
 
   vtkDebugMacro("getting pointer in vtkICONReader::LoadPointVarData");
-  ValueType* dataBlock = static_cast<ValueType*>(dataArray->GetVoidPointer(0));
+  ValueType* dataBlock = vtkAOSDataArrayTemplate<ValueType>::FastDownCast(dataArray)->GetPointer(0);
   ValueType* dataTmp;
   if (this->ShowMultilayerView)
   {

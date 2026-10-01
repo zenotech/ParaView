@@ -4,6 +4,8 @@
 
 #include "vtkAlgorithm.h"
 #include "vtkAlgorithmOutput.h"
+#include "vtkClientServerInterpreter.h"
+#include "vtkClientServerStream.h"
 #include "vtkClientServerStreamInstantiator.h"
 #include "vtkCommand.h"
 #include "vtkErrorCode.h"
@@ -215,8 +217,6 @@ void vtkSISourceProxy::UpdatePipeline(int port, double time, bool doTime)
 
   vtkAlgorithm* algo = output_port->GetProducer();
   assert(algo);
-  // reset AbortExecute flag if the algorithm was aborted.
-  algo->SetAbortExecute(false);
 
   auto sddp = vtkStreamingDemandDrivenPipeline::SafeDownCast(algo->GetExecutive());
 
@@ -261,6 +261,56 @@ void vtkSISourceProxy::UpdatePipeline(int port, double time, bool doTime)
               << "There was an error on a server process. Please check the server console or log "
                  "output for details.";
       vtkErrorMacro(<< message.str());
+    }
+  }
+}
+
+//----------------------------------------------------------------------------
+void vtkSISourceProxy::EnableAbortCheck()
+{
+  if (this->DisablePipelineExecution)
+  {
+    return;
+  }
+
+  // Enable CheckAbort in progress handler for underlying VTK object on first process only
+  auto controller = vtkMultiProcessController::GetGlobalController();
+  const int processid = controller->GetLocalProcessId();
+  if (processid == 0 && this->GetVTKObject())
+  {
+    vtkVLogScopeF(
+      PARAVIEW_LOG_PIPELINE_VERBOSITY(), "%s: enable CheckAbort", this->GetLogNameOrDefault());
+
+    vtkClientServerStream substream;
+    substream << vtkClientServerStream::Invoke << vtkClientServerID(1) << "GetActiveProgressHandler"
+              << vtkClientServerStream::End;
+    vtkClientServerStream stream;
+    stream << vtkClientServerStream::Invoke << substream << "EnableAbortCheck"
+           << static_cast<int>(this->GetGlobalID()) << vtkClientServerStream::End;
+    this->Interpreter->ProcessStream(stream);
+  }
+}
+
+//----------------------------------------------------------------------------
+void vtkSISourceProxy::ClearAbortFlags()
+{
+  if (this->DisablePipelineExecution)
+  {
+    return;
+  }
+
+  auto controller = vtkMultiProcessController::GetGlobalController();
+  const int processid = controller->GetLocalProcessId();
+  if (processid == 0 && this->GetVTKObject())
+  {
+    vtkVLogScopeF(
+      PARAVIEW_LOG_PIPELINE_VERBOSITY(), "%s: clear  abort flags", this->GetLogNameOrDefault());
+
+    vtkAlgorithm* algo = vtkAlgorithm::SafeDownCast(this->GetVTKObject());
+    if (algo)
+    {
+      algo->AbortExecuteOff();
+      algo->AbortOutputOff();
     }
   }
 }

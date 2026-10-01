@@ -1721,7 +1721,7 @@ void vtkRectilinearGridConnectivity::ExtractFragmentPolyhedra(
   estiSize = estiSize / 1024 * 1024;
   estiSize = (estiSize < 1024) ? 1024 : estiSize;
   surfPnts = vtkPoints::New();
-  surfPnts->Allocate(estiSize, estiSize >> 1);
+  surfPnts->Reserve(estiSize);
 
   // create a vtkIncrementalOctreePointLocator and attach it to the vtkPoints
   // such that the point locator will reject duplicates as points are inserted
@@ -1741,12 +1741,12 @@ void vtkRectilinearGridConnectivity::ExtractFragmentPolyhedra(
   // form a volume.
   uniVIdxs = vtkIdTypeArray::New();
   uniVIdxs->SetName("VolumeId");
-  uniVIdxs->Allocate(estiSize, estiSize >> 1);
+  uniVIdxs->ReserveValues(estiSize);
 
   // create a vtkDoubleArray of material volumes for the surfaces
   mVolumes = vtkDoubleArray::New();
   mVolumes->SetName("MaterialVolume");
-  mVolumes->Allocate(estiSize, estiSize >> 1);
+  mVolumes->ReserveValues(estiSize);
 
   // create vtkDoubleArray objects to integrate non-fraction volume arrays and
   volArays = new vtkDoubleArray*[numArays];
@@ -1755,7 +1755,7 @@ void vtkRectilinearGridConnectivity::ExtractFragmentPolyhedra(
     volArays[a] = vtkDoubleArray::New();
     volArays[a]->SetName(this->Internal->IntegrableAttributeNames[a].c_str());
     volArays[a]->SetNumberOfComponents(numComps[a]);
-    volArays[a]->Allocate(estiSize, estiSize >> 1);
+    volArays[a]->ReserveValues(estiSize);
   }
 
   // marching cubes to create surfaces for the greater-than-isovalue sub-volumes
@@ -2135,8 +2135,8 @@ void vtkRectilinearGridConnectivity::ExtractFragmentPolyhedra(
         }
 
       } // for each i
-    }   // for each j
-  }     // for each k
+    } // for each j
+  } // for each k
 
   // fill the output vtkPolyData
   plyHedra->SetPoints(surfPnts);
@@ -2415,7 +2415,7 @@ void vtkRectilinearGridConnectivity::AddPolygonsToFaceHash(int blockIdx, vtkPoly
             newFaces[newIndex++] = hashFace;
           }
         } // end if a new face is added to the hash
-      }   // end if the input face is valid
+      } // end if the input face is valid
 
       // process the next 2D polygon by updating the index of the face
       i++;
@@ -2477,7 +2477,6 @@ void vtkRectilinearGridConnectivity::IntegrateFragmentAttributes(
   if (fragSize <= fragIndx)
   {
     vtkIdType xtntSize = (fragIndx << 1) + 200;
-    this->FragmentValues->Resize(xtntSize);
     this->FragmentValues->SetNumberOfTuples(fragIndx + 1);
 
     attrsPtr = this->FragmentValues->GetPointer(fragSize * numComps);
@@ -2680,7 +2679,7 @@ void vtkRectilinearGridConnectivity::ExtractFragmentPolygons(int blockIdx, int& 
 
   // the vtkPoints of the output vtkPolyData
   polyPnts = vtkPoints::New();
-  polyPnts->Allocate(numFaces << 1, numFaces);
+  polyPnts->Reserve(numFaces << 1);
 
   // a local (block-dependent) point locator used to insert the points
   // of the exterior polygons to the output vtkPolyData
@@ -2691,7 +2690,7 @@ void vtkRectilinearGridConnectivity::ExtractFragmentPolygons(int blockIdx, int& 
   // array of global point Ids (one per unique point)
   uniPIdxs = vtkIdTypeArray::New();
   uniPIdxs->SetName("GlobalNodeId");
-  uniPIdxs->Allocate(numFaces << 1, numFaces);
+  uniPIdxs->ReserveValues(numFaces << 1);
 
   // the polygons / cells of the output vtkPolyData (with exterior faces only)
   plyCells = vtkCellArray::New();
@@ -2702,7 +2701,7 @@ void vtkRectilinearGridConnectivity::ExtractFragmentPolygons(int blockIdx, int& 
   // grouping the exterior polygons only
   fragIdxs = vtkIntArray::New();
   fragIdxs->SetName("FragmentId");
-  fragIdxs->Allocate(numFaces, numFaces >> 4);
+  fragIdxs->ReserveValues(numFaces);
 
   // allocate a buffer for a tuple of integrated component values (including
   // the material volume) to be extracted from the global fragment attributes
@@ -2715,8 +2714,7 @@ void vtkRectilinearGridConnectivity::ExtractFragmentPolygons(int blockIdx, int& 
   numComps[0] = 1;
   attrVals[0] = vtkDoubleArray::New();
   attrVals[0]->SetName("MaterialVolume");
-  attrVals[0]->SetNumberOfComponents(1);
-  attrVals[0]->Allocate(numFaces, numFaces >> 4);
+  attrVals[0]->ReserveValues(numFaces);
   for (i = 1; i < numArays; i++)
   {
     theArray = vtkDoubleArray::SafeDownCast(
@@ -2725,7 +2723,7 @@ void vtkRectilinearGridConnectivity::ExtractFragmentPolygons(int blockIdx, int& 
     attrVals[i] = vtkDoubleArray::New();
     attrVals[i]->SetName(theArray->GetName());
     attrVals[i]->SetNumberOfComponents(numComps[i]);
-    attrVals[i]->Allocate(numFaces, numFaces >> 4);
+    attrVals[i]->ReserveTuples(numFaces);
     theArray = nullptr;
   }
 
@@ -3100,7 +3098,7 @@ void vtkRectilinearGridConnectivity::AddPolygonsToFaceHash(
             newFaces[newIndex++] = hashFace;
 
           } // end if a new face is added to the hash
-        }   // end if the input face is valid
+        } // end if the input face is valid
 
         // process the next 2D polygon by updating the index of the face
         i++;
@@ -3316,7 +3314,7 @@ void vtkRectilinearGridConnectivity::GenerateOutputFromSingleProcess(
       }
 
     } // end if it is an exterior face
-  }   // end loop over faces in the hash
+  } // end loop over faces in the hash
 
   thisFace = nullptr;
   surfPnts = nullptr;
@@ -3771,7 +3769,7 @@ void vtkRectilinearGridConnectivity::AddInterProcessPolygonsToFaceHash(
             newFaces[newIndex++] = hashFace;
 
           } // end if a new face is added to the hash
-        }   // end if the input face is valid
+        } // end if the input face is valid
 
         // process the next 2D polygon by updating the index of the face
         i++;
@@ -3991,7 +3989,7 @@ void vtkRectilinearGridConnectivity::GenerateOutputFromMultiProcesses(
       }
 
     } // end if it is an exterior face
-  }   // end loop over faces in the hash
+  } // end loop over faces in the hash
 
   thisFace = nullptr;
   surfPnts = nullptr;

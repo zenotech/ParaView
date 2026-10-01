@@ -10,16 +10,15 @@
 #include "vtkDummyController.h"
 #include "vtkFloatingPointExceptions.h"
 #include "vtkInformation.h"
-#include "vtkLegacy.h"
 #include "vtkLogger.h"
 #include "vtkMultiThreader.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkOutputWindow.h"
 #include "vtkPSystemTools.h"
+#include "vtkPVSessionIterator.h"
 #include "vtkPolyData.h"
 #include "vtkProcessModuleConfiguration.h"
-#include "vtkSessionIterator.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStringFormatter.h"
 #include "vtkTCPNetworkAccessManager.h"
@@ -38,7 +37,7 @@
 #endif
 
 #ifdef _WIN32
-#include "vtkDynamicLoader.h"
+#include "vtkWindows.h"
 #else
 #include <csignal>
 #endif
@@ -160,9 +159,17 @@ bool vtkProcessModule::Initialize(ProcessTypes type, int& argc, char**& argv)
   options->GenerateWarningsOff();
   config->PopulateOptions(options, type);
 
-  // At this point, the args are loaded with stuff we don't parse,
-  // so it's essential to set allow-extras to true.
+  // At this point, the args are loaded with stuff we don't parse (e.g.
+  // `vtkRemotingCoreConfiguration`'s options, which are registered and parsed later),
+  // so it's essential to set AllowExtras to true.
   options->SetAllowExtras(true);
+
+  // Force lenient parsing of unrecognized arguments with SetStopOnUnrecognizedArgument(true)
+  // so that not-yet-registered arguments (e.g. `--dr`) are skipped
+  // over individually instead of parsing just stopping at the first unrecognized
+  // argument. This allows arguments that *are* registered here (e.g.
+  // `--log`) to be recognized when they appear after one that isn't.
+  options->SetStopOnUnrecognizedArgument(true);
   options->Parse(argc, argv);
 
 #if VTK_MODULE_ENABLE_VTK_ParallelMPI
@@ -258,18 +265,12 @@ bool vtkProcessModule::Initialize(ProcessTypes type, int& argc, char**& argv)
   HandleDisplay(argc, argv);
 
 #ifdef _WIN32
-  // Avoid Ghost windows on windows XP
-  typedef void (*VOID_FUN)();
-  vtkLibHandle lib = vtkDynamicLoader::OpenLibrary("user32.dll");
-  if (lib)
-  {
-    VOID_FUN func =
-      (VOID_FUN)vtkDynamicLoader::GetSymbolAddress(lib, "DisableProcessWindowsGhosting");
-    if (func)
-    {
-      (*func)();
-    }
-  }
+  // Windows replaces any window whose thread has not serviced its message
+  // queue for 5 seconds with a "ghost" showing a stale snapshot. Server and
+  // batch processes that render into on-screen windows (e.g. tile display,
+  // CAVE) don't run a message loop, and without this disable call, their
+  // windows show up black or freeze on the last frame.
+  DisableProcessWindowsGhosting();
 #endif // _WIN32
 
 #ifdef PARAVIEW_ENABLE_FPE
@@ -426,7 +427,7 @@ bool vtkProcessModule::GetSymmetricMPIMode()
 }
 
 //----------------------------------------------------------------------------
-vtkIdType vtkProcessModule::RegisterSession(vtkSession* session)
+vtkIdType vtkProcessModule::RegisterSession(vtkPVSession* session)
 {
   assert(session != nullptr);
   this->MaxSessionId++;
@@ -455,7 +456,7 @@ bool vtkProcessModule::UnRegisterSession(vtkIdType sessionID)
 }
 
 //----------------------------------------------------------------------------
-bool vtkProcessModule::UnRegisterSession(vtkSession* session)
+bool vtkProcessModule::UnRegisterSession(vtkPVSession* session)
 {
   vtkProcessModuleInternals::MapOfSessions::iterator iter;
   for (iter = this->Internals->Sessions.begin(); iter != this->Internals->Sessions.end(); ++iter)
@@ -475,7 +476,7 @@ bool vtkProcessModule::UnRegisterSession(vtkSession* session)
 }
 
 //----------------------------------------------------------------------------
-vtkSession* vtkProcessModule::GetSession(vtkIdType sessionID)
+vtkPVSession* vtkProcessModule::GetSession(vtkIdType sessionID)
 {
   vtkProcessModuleInternals::MapOfSessions::iterator iter =
     this->Internals->Sessions.find(sessionID);
@@ -488,7 +489,7 @@ vtkSession* vtkProcessModule::GetSession(vtkIdType sessionID)
 }
 
 //----------------------------------------------------------------------------
-vtkIdType vtkProcessModule::GetSessionID(vtkSession* session)
+vtkIdType vtkProcessModule::GetSessionID(vtkPVSession* session)
 {
   vtkProcessModuleInternals::MapOfSessions::iterator iter;
   for (iter = this->Internals->Sessions.begin(); iter != this->Internals->Sessions.end(); ++iter)
@@ -502,9 +503,9 @@ vtkIdType vtkProcessModule::GetSessionID(vtkSession* session)
 }
 
 //----------------------------------------------------------------------------
-vtkSessionIterator* vtkProcessModule::NewSessionIterator()
+vtkPVSessionIterator* vtkProcessModule::NewSessionIterator()
 {
-  vtkSessionIterator* iter = vtkSessionIterator::New();
+  vtkPVSessionIterator* iter = vtkPVSessionIterator::New();
   return iter;
 }
 
@@ -533,7 +534,7 @@ bool vtkProcessModule::IsMPIInitialized()
 }
 
 //----------------------------------------------------------------------------
-void vtkProcessModule::PushActiveSession(vtkSession* session)
+void vtkProcessModule::PushActiveSession(vtkPVSession* session)
 {
   assert(session != nullptr);
 
@@ -541,7 +542,7 @@ void vtkProcessModule::PushActiveSession(vtkSession* session)
 }
 
 //----------------------------------------------------------------------------
-void vtkProcessModule::PopActiveSession(vtkSession* session)
+void vtkProcessModule::PopActiveSession(vtkPVSession* session)
 {
   assert(session != nullptr);
 
@@ -554,7 +555,7 @@ void vtkProcessModule::PopActiveSession(vtkSession* session)
 }
 
 //----------------------------------------------------------------------------
-vtkSession* vtkProcessModule::GetActiveSession()
+vtkPVSession* vtkProcessModule::GetActiveSession()
 {
   if (this->Internals->ActiveSessionStack.empty())
   {
@@ -564,9 +565,9 @@ vtkSession* vtkProcessModule::GetActiveSession()
 }
 
 //----------------------------------------------------------------------------
-vtkSession* vtkProcessModule::GetSession()
+vtkPVSession* vtkProcessModule::GetSession()
 {
-  vtkSession* activeSession = this->GetActiveSession();
+  vtkPVSession* activeSession = this->GetActiveSession();
   if (activeSession)
   {
     return activeSession;

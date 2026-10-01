@@ -100,19 +100,19 @@ def _collectSelectionPorts(selectedReps, selectionSources, SelectBlocks=False, M
         return outputPorts
 
     for i in range(0, selectedReps.GetNumberOfItems()):
-        repr = selectedReps.GetItemAsObject(i)
+        representation = selectedReps.GetItemAsObject(i)
         selectionSource = selectionSources.GetItemAsObject(i)
 
-        if not repr:
+        if not representation:
             continue
 
         # Ensure selected representation is registered with the proxy manager
-        pxm = repr.GetSessionProxyManager()
+        pxm = representation.GetSessionProxyManager()
         if not pxm:
             return
 
         # Get the output port from the representation input
-        inputProperty = repr.GetProperty("Input")
+        inputProperty = representation.GetProperty("Input")
         selectedDataSource = inputProperty.GetProxy(0)
         portNumber = inputProperty.GetOutputPortForConnection(0)
 
@@ -329,11 +329,11 @@ def _selectIDsHelper(proxyname, IDs=[], FieldType='POINT', ContainingCells=False
     if not Source:
         Source = paraview.simple.GetActiveSource()
 
-    repr = paraview.simple.GetRepresentation(Source)
+    representation = paraview.simple.GetRepresentation(Source)
 
     import paraview.vtk as vtk
     reprCollection = vtk.vtkCollection()
-    reprCollection.AddItem(repr.SMProxy)
+    reprCollection.AddItem(representation.SMProxy)
 
     selection = _createSelection(proxyname, IDs=IDs, FieldType=FieldType, ContainingCells=ContainingCells)
     if selection:
@@ -434,11 +434,11 @@ def SelectThresholds(Thresholds=[], ArrayName='', FieldType='POINT', Source=None
     if not Source:
         Source = paraview.simple.GetActiveSource()
 
-    repr = paraview.simple.GetRepresentation(Source)
+    representation = paraview.simple.GetRepresentation(Source)
 
     import paraview.vtk as vtk
     reprCollection = vtk.vtkCollection()
-    reprCollection.AddItem(repr.SMProxy)
+    reprCollection.AddItem(representation.SMProxy)
 
     selection = _createSelection('ThresholdSelectionSource', Thresholds=Thresholds, ArrayName=ArrayName,
                                  FieldType=FieldType)
@@ -460,11 +460,11 @@ def SelectLocation(Locations=[], Source=None, Modifier=None):
     if not Source:
         Source = paraview.simple.GetActiveSource()
 
-    repr = paraview.simple.GetRepresentation(Source)
+    representation = paraview.simple.GetRepresentation(Source)
 
     import paraview.vtk as vtk
     reprCollection = vtk.vtkCollection()
-    reprCollection.AddItem(repr.SMProxy)
+    reprCollection.AddItem(representation.SMProxy)
 
     selection = _createSelection('LocationSelectionSource', Locations=Locations, FieldType='POINT')
     if selection:
@@ -495,11 +495,11 @@ def QuerySelect(QueryString='', FieldType='POINT', Source=None, InsideOut=False)
     if not Source:
         Source = paraview.simple.GetActiveSource()
 
-    repr = paraview.simple.GetRepresentation(Source)
+    representation = paraview.simple.GetRepresentation(Source)
 
     import paraview.vtk as vtk
     reprCollection = vtk.vtkCollection()
-    reprCollection.AddItem(repr.SMProxy)
+    reprCollection.AddItem(representation.SMProxy)
 
     # convert FieldType to ElementType. Eventually, all public API should change
     # to accepting ElementType but we'll do that after all selection sources use
@@ -562,3 +562,133 @@ def ShrinkSelection(Source=None, Layers=1):
     :type Layers: int
     :rtype: None"""
     GrowSelection(Source, -Layers)
+
+def _selectDataByArrayValueHelper(ArrayName, IdValue, Source, Modifier, FieldType):
+    """Helper function to select points/cells by a value of a vtkIdTypeArray using fast selection.
+    WARNING: This work only for vtkIdTypeArray
+
+    :param ArrayName: The name of the vtkIdType array on which to make the selection.
+    :type ArrayName: str
+    :param IdValue: The value of the id to select in the array.
+    :type IdValue: int
+    :param Source: The source whose selection should be modified.
+    :type Source: Source proxy
+    :param Modifier: 'ADD', 'SUBTRACT', 'TOGGLE', or None to define whether and how the selection
+        should modify the existing selection.
+    :type Modifier: str
+    :param FieldType: 'CELL' or 'POINT' : whether to make a selection of points or cells
+    :type FieldType: str
+    """
+    from paraview.vtk import vtkCollection
+    from vtkmodules.vtkCommonCore import vtkIdTypeArray
+    from vtkmodules.vtkCommonDataModel import vtkDataObject
+
+    view = paraview.simple.GetActiveView()
+
+    if Source == None:
+        Source = paraview.simple.GetActiveSource()
+
+    FieldTypeDO = vtkDataObject.POINT
+    if(FieldType == "CELL"):
+        FieldTypeDO = vtkDataObject.CELL
+
+    if not Source.GetDataInformation().GetArrayInformation(ArrayName, FieldTypeDO).GetDataTypeAsString() == "idtype":
+        raise ValueError("'%s' is not a vtkIdTypeArray" % ArrayName)
+
+    representation = paraview.simple.GetRepresentation(Source)
+
+    selectedReps = vtkCollection()
+    selectionSources = vtkCollection()
+    if(FieldType == "POINT"):
+        view.SelectPointsByArrayValue(selectedReps, selectionSources, representation, ArrayName, IdValue)
+    else:
+        view.SelectCellsByArrayValue(selectedReps, selectionSources, representation, ArrayName, IdValue)
+
+    _collectSelectionPorts(selectedReps, selectionSources, False, Modifier=Modifier)
+
+    paraview.simple.Render(view)
+
+def SelectPointsDataByArrayValue(ArrayName, IdValue, Source=None, Modifier=None):
+    """Select points by a value of a vtkIdTypeArray using fast selection.
+    WARNING: This work only for vtkIdTypeArray
+
+    :param ArrayName: The name of the vtkIdType array on which to make the selection.
+    :type ArrayName: str
+    :param IdValue: The value of the id to select in the array.
+    :type IdValue: int
+    :param Source: If provided, the source whose selection should be modified. Defaults to the active source.
+    :type Source: Source proxy
+    :param Modifier: 'ADD', 'SUBTRACT', 'TOGGLE', or None to define whether and how the selection
+        should modify the existing selection. None by default.
+    :type Modifier: str
+    """
+    _selectDataByArrayValueHelper(ArrayName, IdValue, Source, Modifier, "POINT")
+
+def SelectCellsDataByArrayValue(ArrayName, IdValue, Source=None, Modifier=None):
+    """Select cells by a value of a vtkIdTypeArray using fast selection.
+    WARNING: This work only for vtkIdTypeArray
+
+    :param ArrayName: The name of the vtkIdType array on which to make the selection.
+    :type ArrayName: str
+    :param IdValue: The value of the id to select in the array.
+    :type IdValue: int
+    :param Source: If provided, the source whose selection should be modified. Defaults to the active source.
+    :type Source: Source proxy
+    :param Modifier: 'ADD', 'SUBTRACT', 'TOGGLE', or None to define whether and how the selection
+        should modify the existing selection. None by default.
+    :type Modifier: str
+    """
+    _selectDataByArrayValueHelper(ArrayName, IdValue, Source, Modifier, "CELL")
+
+def SelectBlocks(BlockSelector, Source=None, FieldType='POINT', Modifier=None):
+    """Select all the points or cells from a block of a Composite DataSet
+
+    :param BlockSelector: The block(s) we want to select (example: "/Root/Block1").
+    :type BlockSelector: str
+    :param Source: If provided, the source whose selection should be modified. Defaults to the active source.
+    :type Source: Source proxy
+    :param FieldType: attribute to select, 'POINT' or 'CELL'
+    :type FieldType: str
+    :param Modifier: 'ADD', 'SUBTRACT', 'TOGGLE', or None to define whether and how the selection
+        should modify the existing selection. None by default.
+    :type Modifier: str
+    """
+    from paraview.vtk import vtkCollection
+
+    view = paraview.simple.GetActiveView()
+
+    if Source == None:
+        Source = paraview.simple.GetActiveSource()
+
+    reprProxy = paraview.simple.GetRepresentation(Source).SMProxy
+
+    from vtkmodules.vtkFiltersSources import vtkSelectionSource
+    from paraview.vtk import vtkSelectionNode
+    from paraview.modules.vtkRemotingViews import vtkSMSelectionHelper
+
+    selectionSource = vtkSelectionSource()
+    if FieldType.upper() == 'CELL':
+        selectionSource.SetFieldType(vtkSelectionNode.CELL)
+    elif FieldType.upper() == 'POINT':
+        selectionSource.SetFieldType(vtkSelectionNode.POINT)
+    else:
+        raise RuntimeError("Invalid type %s" % FieldType)
+    selectionSource.SetContentType(vtkSelectionNode.BLOCK_SELECTORS)
+    if reprProxy.GetProperty("Assembly") != 0:
+        selectionSource.SetArrayName(sm.vtkSMPropertyHelper(reprProxy, "Assembly").GetAsString())
+    else:
+        selectionSource.SetArrayName("Hierarchy")
+    selectionSource.AddBlockSelector(BlockSelector)
+    selectionSource.Update()
+    selectionSourceProxy = vtkSMSelectionHelper.NewSelectionSourceFromSelection(Source.GetSession(), selectionSource.GetOutput())
+
+    selectedReps = vtkCollection()
+    selectionSources = vtkCollection()
+
+    selectionSources.AddItem(selectionSourceProxy)
+    selectedReps.AddItem(reprProxy)
+
+    _collectSelectionPorts(selectedReps, selectionSources, False, Modifier=Modifier)
+    selectionSourceProxy.UnRegister(None)
+
+    paraview.simple.Render(view)

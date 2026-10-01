@@ -71,6 +71,8 @@ public:
   ///@{
   /**
    * Set the name of the output array.
+   *
+   * The default is Result.
    */
   vtkSetStringMacro(ArrayName);
   vtkGetStringMacro(ArrayName);
@@ -94,6 +96,21 @@ public:
   vtkGetMacro(UseMultilineExpression, bool);
   vtkSetMacro(UseMultilineExpression, bool);
   ///@}
+
+  ///@{
+  /**
+   * Set/Get an association between an input name and an index to get access to inputs with
+   * their name instead of their index. Inputs can then be accessed by
+   * `Sphere2` or `inputs["Sphere2"]` instead of `inputs[1]`
+   */
+  void SetInputName(int index, const std::string& inputName);
+  std::string GetInputName(int index);
+  ///@}
+
+  /**
+   * Clears all assigned input names.
+   */
+  void ClearInputNames();
 
   /**
    * For internal use only.
@@ -137,6 +154,8 @@ protected:
 private:
   vtkPythonCalculator(const vtkPythonCalculator&) = delete;
   void operator=(const vtkPythonCalculator&) = delete;
+
+  std::vector<std::string> InputsName;
 };
 
 #endif

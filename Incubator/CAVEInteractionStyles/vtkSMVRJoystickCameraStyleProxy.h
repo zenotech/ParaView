@@ -46,6 +46,14 @@ public:
 
   ///@{
   /**
+   * Set/Get the joystick sensitivity value, used as exponent (2.0 by default).
+   */
+  vtkSetMacro(MoveJoystickSensitivity, double);
+  vtkGetMacro(MoveJoystickSensitivity, double);
+  ///@}
+
+  ///@{
+  /**
    * Set the sensitivity when moving the camera (0.1 by default).
    */
   vtkSetMacro(MoveCameraSensitivity, double);
@@ -60,6 +68,25 @@ public:
   vtkGetMacro(InvertXAxis, bool);
   vtkSetMacro(InvertYAxis, bool);
   vtkGetMacro(InvertYAxis, bool);
+  ///@}
+
+  ///@{
+  /**
+   * Set/Get the inversion of the movements of the camera (false by default).
+   */
+  vtkSetMacro(InvertFwdMovement, bool);
+  vtkGetMacro(InvertFwdMovement, bool);
+  vtkSetMacro(InvertRightMovement, bool);
+  vtkGetMacro(InvertRightMovement, bool);
+  ///@}
+
+  ///@{
+  /**
+   * Set the multiplier for the movement speed when the fast button movement is
+   * pressed (4.0 by default).
+   */
+  vtkSetMacro(FastMovementMultiplier, double);
+  vtkGetMacro(FastMovementMultiplier, double);
   ///@}
 
   /**
@@ -96,11 +123,18 @@ protected:
   vtkSMVRJoystickCameraStyleProxy();
   ~vtkSMVRJoystickCameraStyleProxy() override = default;
 
+  void HandleButton(const vtkVREvent& event) override;
   void HandleValuator(const vtkVREvent& event) override;
 
 private:
   vtkSMVRJoystickCameraStyleProxy(const vtkSMVRJoystickCameraStyleProxy&) = delete;
   void operator=(const vtkSMVRJoystickCameraStyleProxy&) = delete;
+
+  /**
+   * Compute and return a movement value using provided valuatorValue and invert, using the joystick
+   * sensitivity member.
+   */
+  double GetMovementValue(double valuatorValue, bool invert);
 
   double OrientationX = 0;
   bool InvertXAxis = false;
@@ -108,12 +142,19 @@ private:
   bool InvertYAxis = false;
 
   double MoveForward = 0;
+  bool InvertFwdMovement = false;
   double MoveRight = 0;
+  bool InvertRightMovement = false;
+
+  double FastMovementMultiplier = 4.0;
+  bool FastMovement = false;
 
   Axis UpAxis = Y_AXIS;
 
   double LookRotationSensitivity = 0.01;
   double MoveCameraSensitivity = 0.1;
+
+  double MoveJoystickSensitivity = 2.0;
 };
 
 #endif //  vtkSMVRJoystickCameraStyleProxy_h

@@ -3,28 +3,32 @@
 #include "vtkPVPlaneCutter.h"
 
 #include "vtkAMRCutPlane.h"
-#include "vtkAMRSliceFilter.h"
-#include "vtkCompositeDataPipeline.h"
-#include "vtkDataSet.h"
+#include "vtkDataObjectMeshCache.h"
+#include "vtkDemandDrivenPipeline.h"
 #include "vtkHyperTreeGrid.h"
-#include "vtkHyperTreeGridAxisCut.h"
 #include "vtkHyperTreeGridPlaneCutter.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
+#include "vtkMeshCacheRunner.h"
 #include "vtkMultiBlockDataSet.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkOverlappingAMR.h"
 #include "vtkPlane.h"
 #include "vtkPlaneCutter.h"
-#include "vtkPolyData.h"
-#include "vtkSmartPointer.h"
+
+#include "Private/vtkEdgesCacheInternal.h"
 
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkPVPlaneCutter);
 
 //----------------------------------------------------------------------------
-vtkPVPlaneCutter::vtkPVPlaneCutter() = default;
+vtkPVPlaneCutter::vtkPVPlaneCutter()
+  : EdgesCache(std::make_unique<vtkEdgesCacheInternal>())
+{
+  this->MeshCache->SetConsumer(this);
+  this->MeshCache->ForwardAttribute(vtkDataObject::CELL);
+}
 
 //----------------------------------------------------------------------------
 vtkPVPlaneCutter::~vtkPVPlaneCutter() = default;
@@ -55,127 +59,53 @@ int vtkPVPlaneCutter::RequestData(
     return 0;
   }
 
+  vtkMeshCacheRunner runner{ this->MeshCache, input, output, false };
+  if (runner.GetCacheLoaded())
+  {
+    this->EdgesCache->UpdateAttributes(input, output);
+    return 1;
+  }
+
+  this->EdgesCache->InvalidateCache();
+
+  int ret = 0;
   if (auto inHyperTreeGrid = vtkHyperTreeGrid::SafeDownCast(input))
   {
     double* normal = plane->GetNormal();
-    if (plane->GetAxisAligned())
-    {
-      // PARAVIEW_DEPRECATED_IN_5_13_0("Use vtkAxisAlignedCutter instead")
-      vtkWarningMacro("Axis-Aligned plane cut function usage in this filter is deprecated."
-        << "Please consider using the dedicated \"Axis-Aligned Slice\" filter instead.");
-      int planeNormalAxis = 0;
-      if (normal[1] > normal[0])
-      {
-        planeNormalAxis = 1;
-      }
-      if (normal[2] > normal[0])
-      {
-        planeNormalAxis = 2;
-      }
-      this->HTGAxisAlignedPlaneCutter->SetPlanePosition(-plane->FunctionValue(0, 0, 0));
-      this->HTGAxisAlignedPlaneCutter->SetPlaneNormalAxis(planeNormalAxis);
-      this->HTGAxisAlignedPlaneCutter->SetInputData(inHyperTreeGrid);
-      this->HTGAxisAlignedPlaneCutter->Update();
-      output->ShallowCopy(this->HTGAxisAlignedPlaneCutter->GetOutput());
-      return 1;
-    }
-    else
-    {
-      this->HTGPlaneCutter->SetPlane(
-        normal[0], normal[1], normal[2], -plane->FunctionValue(0, 0, 0));
-      this->HTGPlaneCutter->SetDual(this->GetDual());
-      this->HTGPlaneCutter->SetInputData(inHyperTreeGrid);
-      this->HTGPlaneCutter->Update();
-      output->ShallowCopy(this->HTGPlaneCutter->GetOutput());
-      return 1;
-    }
+    this->HTGPlaneCutter->SetPlane(normal[0], normal[1], normal[2], -plane->FunctionValue(0, 0, 0));
+    this->HTGPlaneCutter->SetDual(this->GetDual());
+    this->HTGPlaneCutter->SetInputData(inHyperTreeGrid);
+    this->HTGPlaneCutter->Update();
+    output->ShallowCopy(this->HTGPlaneCutter->GetOutput());
+    ret = 1;
   }
   else if (auto inOverlappingAMR = vtkOverlappingAMR::SafeDownCast(input))
   {
     double* normal = plane->GetNormal();
     double* origin = plane->GetOrigin();
-    if (plane->GetAxisAligned())
-    {
-      // PARAVIEW_DEPRECATED_IN_5_13_0("Use vtkAxisAlignedCutter instead")
-      vtkWarningMacro("Axis-Aligned plane cut function usage in this filter is deprecated."
-        << "Please consider using the dedicated \"Axis-Aligned Slice\" filter instead.");
-      int planeNormalAxis = vtkAMRSliceFilter::X_NORMAL;
-      if (normal[1] > normal[0])
-      {
-        planeNormalAxis = vtkAMRSliceFilter::Y_NORMAL;
-      }
-      if (normal[2] > normal[0])
-      {
-        planeNormalAxis = vtkAMRSliceFilter::Z_NORMAL;
-      }
-      double bounds[6];
-      inOverlappingAMR->GetBounds(bounds);
-      double offset;
-      switch (planeNormalAxis)
-      {
-        case vtkAMRSliceFilter::X_NORMAL:
-          offset = origin[0] - bounds[0];
-          break;
-        case vtkAMRSliceFilter::Y_NORMAL:
-          offset = origin[1] - bounds[2];
-          break;
-        case vtkAMRSliceFilter::Z_NORMAL:
-        default:
-          offset = origin[2] - bounds[4];
-          break;
-      }
-      this->AMRAxisAlignedPlaneCutter->SetOffsetFromOrigin(offset);
-      this->AMRAxisAlignedPlaneCutter->SetNormal(planeNormalAxis);
-      this->AMRAxisAlignedPlaneCutter->SetMaxResolution(this->GetLevelOfResolution());
-      this->AMRAxisAlignedPlaneCutter->SetInputData(inOverlappingAMR);
-      this->AMRAxisAlignedPlaneCutter->Update();
-      output->ShallowCopy(this->AMRAxisAlignedPlaneCutter->GetOutput());
-      return 1;
-    }
-    else
-    {
-      this->AMRPlaneCutter->SetInitialRequest(false);
-      this->AMRPlaneCutter->SetNormal(normal);
-      this->AMRPlaneCutter->SetCenter(origin);
-      this->AMRPlaneCutter->SetLevelOfResolution(this->GetLevelOfResolution());
-      this->AMRPlaneCutter->SetUseNativeCutter(this->GetUseNativeCutter());
-      this->AMRPlaneCutter->SetInputData(inOverlappingAMR);
-      this->AMRPlaneCutter->Update();
-      vtkMultiBlockDataSet::SafeDownCast(output)->CompositeShallowCopy(
-        this->AMRPlaneCutter->GetOutput());
-      return 1;
-    }
+    this->AMRPlaneCutter->SetInitialRequest(false);
+    this->AMRPlaneCutter->SetNormal(normal);
+    this->AMRPlaneCutter->SetCenter(origin);
+    this->AMRPlaneCutter->SetLevelOfResolution(this->GetLevelOfResolution());
+    this->AMRPlaneCutter->SetUseNativeCutter(this->GetUseNativeCutter());
+    this->AMRPlaneCutter->SetInputData(inOverlappingAMR);
+    this->AMRPlaneCutter->Update();
+    vtkMultiBlockDataSet::SafeDownCast(output)->CompositeShallowCopy(
+      this->AMRPlaneCutter->GetOutput());
+    ret = 1;
   }
-  // Not dealing with hyper tree grids, we execute RequestData of vktCutter
-  return this->Superclass::RequestData(request, inputVector, outputVector);
-}
-
-//----------------------------------------------------------------------------
-int vtkPVPlaneCutter::ProcessRequest(
-  vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
-{
-  // create the output
-  if (request->Has(vtkDemandDrivenPipeline::REQUEST_DATA_OBJECT()))
+  else
   {
-    return this->RequestDataObject(request, inputVector, outputVector);
+    // Not dealing with hyper tree grids, we execute RequestData of vtkCutter
+    ret = this->Superclass::RequestData(request, inputVector, outputVector);
   }
 
-  return this->Superclass::ProcessRequest(request, inputVector, outputVector);
-}
+  if (ret == 1)
+  {
+    runner.UpdateCache();
+  }
 
-//----------------------------------------------------------------------------
-int vtkPVPlaneCutter::FillInputPortInformation(int port, vtkInformation* info)
-{
-  this->Superclass::FillInputPortInformation(port, info);
-  info->Append(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkHyperTreeGrid");
-  return 1;
-}
-
-//----------------------------------------------------------------------------
-int vtkPVPlaneCutter::FillOutputPortInformation(int vtkNotUsed(port), vtkInformation* info)
-{
-  info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataObject");
-  return 1;
+  return ret;
 }
 
 //----------------------------------------------------------------------------
@@ -194,27 +124,11 @@ int vtkPVPlaneCutter::RequestDataObject(
 
   if (vtkHyperTreeGrid::SafeDownCast(inputDO))
   {
-    if (plane->GetAxisAligned())
-    {
-      // PARAVIEW_DEPRECATED_IN_5_13_0("Use vtkAxisAlignedCutter instead")
-      outputType = VTK_HYPER_TREE_GRID;
-    }
-    else
-    {
-      outputType = VTK_POLY_DATA;
-    }
+    outputType = VTK_POLY_DATA;
   }
   else if (vtkOverlappingAMR::SafeDownCast(inputDO))
   {
-    if (plane->GetAxisAligned())
-    {
-      // PARAVIEW_DEPRECATED_IN_5_13_0("Use vtkAxisAlignedCutter instead")
-      outputType = VTK_OVERLAPPING_AMR;
-    }
-    else
-    {
-      outputType = VTK_MULTIBLOCK_DATA_SET;
-    }
+    outputType = VTK_MULTIBLOCK_DATA_SET;
   }
   if (outputType != -1)
   {

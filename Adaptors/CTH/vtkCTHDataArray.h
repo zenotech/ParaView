@@ -7,6 +7,7 @@
 #include "vtkDataArray.h"
 #include "vtkDoubleArray.h"         // For multiple usage in implemented methods
 #include "vtkPVAdaptorsCTHModule.h" //For export macro
+#include "vtkParaViewDeprecation.h" // For PARAVIEW_DEPRECATED_IN_6_2_0
 
 class VTKPVADAPTORSCTH_EXPORT vtkCTHDataArray : public vtkDataArray
 {
@@ -59,26 +60,25 @@ public:
 
   // Description:
   // Returns an ArrayIterator over doubles, this will end up with a deep copy
+  PARAVIEW_DEPRECATED_IN_6_2_0("Use vtkArrayDispatch instead.")
   vtkArrayIterator* NewIterator() override;
 
   vtkIdType LookupValue(vtkVariant value) override;
   void LookupValue(vtkVariant value, vtkIdList* ids) override;
   void SetVariantValue(vtkIdType vtkNotUsed(index), vtkVariant vtkNotUsed(value)) override
-  { /* TODO */
-  }
+  { /* TODO */ }
 
   // Description:
   // Get the address of a particular data index. Performs no checks
   // to verify that the memory has been allocated etc.
   double* GetPointer(vtkIdType id);
   void* GetVoidPointer(vtkIdType id) override { return this->GetPointer(id); }
+  PARAVIEW_DEPRECATED_IN_6_2_0("Use DeepCopy with an vtkAOSDataArrayTemplate array")
   void ExportToVoidPointer(void* out_ptr) override;
 
-  int Allocate(vtkIdType sz, vtkIdType ext = 1000) override
-  {
-    BuildFallback();
-    return Fallback->Allocate(sz, ext);
-  }
+  PARAVIEW_DEPRECATED_IN_6_2_0(
+    "Use ReserveValues/Tuples() to allocate or Initialize() to deallocate.")
+  int Allocate(vtkIdType sz, vtkIdType ext = 1000) override;
 
   void SetNumberOfComponents(int number) override
   {
@@ -93,7 +93,7 @@ public:
   {
     this->BuildFallback();
     this->Fallback->SetNumberOfTuples(number);
-    this->Size = this->Fallback->GetSize();
+    this->Capacity = this->Fallback->GetCapacity();
     this->MaxId = this->Fallback->GetMaxId();
   }
 
@@ -146,7 +146,7 @@ public:
   {
     this->BuildFallback();
     vtkIdType ret = this->Fallback->InsertNextTuple(i, aa);
-    this->Size = this->Fallback->GetSize();
+    this->Capacity = this->Fallback->GetCapacity();
     this->MaxId = this->Fallback->GetMaxId();
     return ret;
   }
@@ -154,7 +154,7 @@ public:
   {
     this->BuildFallback();
     vtkIdType ret = this->Fallback->InsertNextTuple(f);
-    this->Size = this->Fallback->GetSize();
+    this->Capacity = this->Fallback->GetCapacity();
     this->MaxId = this->Fallback->GetMaxId();
     return ret;
   }
@@ -162,7 +162,7 @@ public:
   {
     this->BuildFallback();
     vtkIdType ret = this->Fallback->InsertNextTuple(d);
-    this->Size = this->Fallback->GetSize();
+    this->Capacity = this->Fallback->GetCapacity();
     this->MaxId = this->Fallback->GetMaxId();
     return ret;
   }
@@ -189,10 +189,12 @@ public:
     this->Fallback->RemoveLastTuple();
   }
 
+  PARAVIEW_DEPRECATED_IN_6_2_0("Use vtkAOSDataArrayTemplate::WritePointer(valueIdx, numValues) or "
+                               "vtkAbstractArray::SetNumberOf[Values/Tuples]() instead")
   void* WriteVoidPointer(vtkIdType i, vtkIdType j) override
   {
     this->BuildFallback();
-    return this->Fallback->WriteVoidPointer(i, j);
+    return this->Fallback->WritePointer(i, j);
   }
 
   void DeepCopy(vtkAbstractArray* aa) override
@@ -222,17 +224,20 @@ public:
   {
     if (this->Fallback)
     {
-      this->Size = this->Fallback->GetSize();
+      this->Capacity = this->Fallback->GetCapacity();
       this->MaxId = this->Fallback->GetMaxId();
       this->Fallback->Squeeze();
     }
   }
 
   // Description:
-  int Resize(vtkIdType numTuples) override
+  PARAVIEW_DEPRECATED_IN_6_2_0("Use ReserveTuples, Squeeze or Initialize")
+  int Resize(vtkIdType numTuples) override;
+
+  vtkTypeBool ReserveTuples(vtkIdType numTuples) override
   {
     this->BuildFallback();
-    return this->Fallback->Resize(numTuples);
+    return this->Fallback->ReserveTuples(numTuples);
   }
 
   void DataChanged() override

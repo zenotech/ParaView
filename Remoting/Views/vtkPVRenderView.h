@@ -48,6 +48,7 @@ class vtkPVCenterAxesActor;
 class vtkPVDataRepresentation;
 class vtkPVGridAxes3DActor;
 class vtkPVHardwareSelector;
+class vtkIndependentViewerCollection;
 class vtkPVInteractorStyle;
 class vtkPVMaterialLibrary;
 class vtkPVSynchronizedRenderer;
@@ -138,6 +139,8 @@ public:
   vtkCamera* GetActiveCamera();
   virtual void SetActiveCamera(vtkCamera*);
   ///@}
+
+  virtual void SetIndependentViewers(vtkIndependentViewerCollection* viewers);
 
   /**
    * Returns the interactor.
@@ -377,6 +380,13 @@ public:
   }
   void Select(int field_association, int region[4], const char* array = nullptr);
   ///@}
+
+  /**
+   * Make a selection by using value of an array.
+   * WARNING: it only works for vtkIdType array.
+   */
+  void SelectByArrayValue(
+    int fieldAssociation, vtkDataRepresentation* dataRepr, const char* array, vtkIdType id);
 
   ///@{
   /**
@@ -757,6 +767,17 @@ public:
    */
   void AddLight(vtkLight*);
   void RemoveLight(vtkLight*);
+  ///@}
+
+  ///@{
+  /**
+   * Convenience methods used to ensure stereo types used on client
+   * and servers remain compatible with each other, i.e. require the
+   * same number of render passes.
+   */
+  static int GetNumberOfRendersPerFrame(int stereoMode);
+  static int GetCompatibleStereoType(int stereoMode);
+  static bool AreStereoTypesCompatible(int mode1, int mode2);
   ///@}
 
   ///@{
@@ -1311,6 +1332,7 @@ protected:
   vtkSmartPointer<vtkPolarAxesActor2D> PolarAxesActor;
   vtkNew<vtkSkybox> Skybox;
   vtkNew<vtkCameraOrientationWidget> CameraOrientationWidget;
+  vtkSmartPointer<vtkIndependentViewerCollection> ViewerCollection;
 
   int StillRenderImageReductionFactor;
   int InteractiveRenderImageReductionFactor;

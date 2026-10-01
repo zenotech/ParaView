@@ -70,7 +70,7 @@ option(PARAVIEW_USE_EXTERNAL_VTK "Use an external VTK." OFF)
 mark_as_advanced(PARAVIEW_USE_EXTERNAL_VTK)
 
 if (PARAVIEW_USE_EXTERNAL_VTK)
-  find_package(VTK 9.6.1 CONFIG COMPONENTS CommonCore)
+  find_package(VTK CONFIG COMPONENTS CommonCore)
   if (NOT VTK_FOUND)
     message(FATAL_ERROR
       "External VTK not found but ParaView requires VTK to function")
@@ -302,6 +302,7 @@ if (NOT PARAVIEW_USE_EXTERNAL_VTK)
   include(vtkOpenGLOptions)
   include(vtkExternalData)
   include(vtkVersion)
+  include(vtkModuleThirdParty)
   include(VTKDetermineVersion)
   set(VTK_VERSION
       "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}.${VTK_BUILD_VERSION}")
@@ -376,7 +377,11 @@ set(paraview_default_plugins
   pvblot
   XArrayCFReader)
 
-if (PARAVIEW_BUILD_TRANSLATIONS)
+if (PARAVIEW_BUILD_TESTING)
+  list(APPEND paraview_default_plugins AbortTesting)
+endif()  
+
+if (PARAVIEW_BUILD_TRANSLATIONS AND PARAVIEW_BUILD_TESTING)
   list(APPEND paraview_default_plugins TranslationsTesting)
 endif()
 
@@ -602,7 +607,7 @@ if (PARAVIEW_USE_EXTERNAL_VTK)
     endforeach()
   endmacro()
   search_dependent_targets(${vtk_modules})
-  find_package(VTK CONFIG REQUIRED COMPONENTS "${vtk_components}")  
+  find_package(VTK CONFIG REQUIRED COMPONENTS "${vtk_components}")
   if (PARAVIEW_USE_PYTHON)
     find_package(Python3 3.3 QUIET REQUIRED COMPONENTS Interpreter)
     set(PYTHON_VERSION_MAJOR "${Python3_VERSION_MAJOR}")
@@ -1084,12 +1089,12 @@ if (PARAVIEW_USE_PYTHON)
       vtk_python_copy)
     if (TARGET VTK::WebPython)
       list(APPEND paraview_python_targets
-        WebPython-vtkmodules.web)
+        vtkWebPython-vtkmodules.web)
     endif ()
   endif ()
   if (TARGET ParaView::PVWebPython)
     list(APPEND paraview_python_targets
-      PVWebPython-paraview.web)
+      vtkPVWebPython-paraview.web)
   endif ()
   if (TARGET ParaView::CinemaSci)
     list(APPEND paraview_python_targets

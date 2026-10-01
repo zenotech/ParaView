@@ -1,3 +1,7 @@
+if (NOT DEFINED PARAVIEW_TEST_DIR)
+  set(PARAVIEW_TEST_DIR "${CMAKE_BINARY_DIR}/Testing/Temporary")
+endif ()
+
 function (paraview_add_test_python)
   set(_vtk_testing_python_exe "$<TARGET_FILE:ParaView::pvpython>")
   set(_vtk_test_python_args --dr ${paraview_python_args})
@@ -321,7 +325,7 @@ function(_get_prefix varname default)
   endif()
 endfunction()
 
-# If NUMSERVERS is specified in ${ARGN} then returns in varname the number of servers to use for the test, 
+# If NUMSERVERS is specified in ${ARGN} then returns in varname the number of servers to use for the test,
 # otherwise returns the "NOT_FOUND" value.
 function(_get_num_servers varname)
   cmake_parse_arguments(_get_num_servers

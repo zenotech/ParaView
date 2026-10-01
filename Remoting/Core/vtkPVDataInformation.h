@@ -124,10 +124,11 @@ public:
 
   /**
    * Finds and returns array information associated with the chosen array.
-   * `fieldAssociation` must be one of `vtkDataObject::FieldAssociations` or
-   * `vtkDataObject::AttributeTypes`.
+   * `attributeType` must be one of `vtkDataObject::AttributeTypes`,
+   * or one of CellGrid attribute types. Returns nullptr if no array is found matching the
+   * criteria.
    */
-  vtkPVArrayInformation* GetArrayInformation(const char* arrayname, int fieldAssociation) const;
+  vtkPVArrayInformation* GetArrayInformation(const char* arrayname, int attributeType) const;
 
   /**
    * Returns the data set type. Returned values are defined in `vtkType.h`.
@@ -237,8 +238,8 @@ public:
    * Returns number of elements of the chosen type in the data. For a composite dataset,
    * this is a sum of the element count across all leaf nodes.
    *
-   * `elementType` must be `vtkDataObject::AttributeTypes`. For `vtkDataObject::FIELD`,
-   * and `vtkDataObject::POINT_THEN_CELL` returns 0.
+   * `elementType` must be `vtkDataObject::AttributeTypes`. For
+   * `vtkDataObject::POINT_THEN_CELL` it returns 0.
    */
   vtkTypeInt64 GetNumberOfElements(int elementType) const;
 
@@ -321,17 +322,22 @@ public:
    * `vtkPVDataSetAttributesInformation` can be used to determine available arrays and get meta-data
    * about each of the available arrays.
    *
-   * `fieldAssociation` must be `vtkDataObject::FieldAssociations` (or
-   * `vtkDataObject::AttributeTypes`). vtkDataObject::FIELD_ASSOCIATION_POINTS_THEN_CELLS (or
-   * vtkDataObject::POINT_THEN_CELL) is not supported.
+   * `attributeType` must be `vtkDataObject::AttributeTypes`.
+   * vtkDataObject::POINT_THEN_CELL is not supported.
+   *
+   * For vtkCellGrid, this can be the hash value of the string token of each dataset attribute.
    */
-  vtkPVDataSetAttributesInformation* GetAttributeInformation(int fieldAssociation) const;
+  int GetNumberOfAttributeTypes() const;
+  std::vector<int> GetAttributeTypes() const;
+  std::vector<std::string> GetAttributeNames() const;
+  std::string GetAttributeName(int attributeType) const;
+  vtkPVDataSetAttributesInformation* GetAttributeInformation(int attributeType) const;
   ///@}
 
   ///@{
   /**
    * Convenience methods to get vtkPVDataSetAttributesInformation for specific
-   * field type. Same as calling `GetAttributeInformation` with appropriate type.
+   * attribute type. Same as calling `GetAttributeInformation` with appropriate type.
    */
   vtkPVDataSetAttributesInformation* GetPointDataInformation() const
   {
@@ -409,11 +415,11 @@ public:
   bool HasUnstructuredData() const;
 
   /**
-   * Returns true if provided fieldAssociation is valid for this dataset,
+   * Returns true if provided attributeType is valid for this dataset,
    * false otherwise. For composite datasets, this returns true if the attribute type if
    * valid for any of the datasets in the collection.
    */
-  bool IsAttributeValid(int fieldAssociation) const;
+  bool IsAttributeValid(int attributeType) const;
 
   /**
    * Returns the extent type for a given data-object type.
@@ -529,9 +535,13 @@ private:
   std::vector<vtkTypeInt64> AMRNumberOfDataSets;
 
   std::vector<int> UniqueBlockTypes;
-  vtkTypeInt64 NumberOfElements[vtkDataObject::NUMBER_OF_ATTRIBUTE_TYPES] = { 0, 0, 0, 0, 0, 0, 0 };
-  vtkNew<vtkPVDataSetAttributesInformation>
-    AttributeInformations[vtkDataObject::NUMBER_OF_ATTRIBUTE_TYPES];
+  struct AttributeMetadata
+  {
+    std::string Name;
+    vtkTypeInt64 NumberOfElements;
+    vtkSmartPointer<vtkPVDataSetAttributesInformation> Information;
+  };
+  std::map<int, AttributeMetadata> AttributeMetadata;
   vtkNew<vtkPVArrayInformation> PointArrayInformation;
 
   vtkNew<vtkDataAssembly> Hierarchy;

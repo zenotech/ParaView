@@ -11,7 +11,9 @@ set(classes
   pqAboutDialogReaction
   pqAddToFavoritesReaction
   pqAlwaysConnectedBehavior
+  pqANARIHidingDecorator
   pqAnglePropertyWidget
+  pqAnimatedExportReaction
   pqAnimationShortcutDecorator
   pqAnimationShortcutWidget
   pqAnimationTimeToolbar
@@ -165,7 +167,6 @@ set(classes
   pqRescaleScalarRangeReaction
   pqResetDefaultSettingsReaction
   pqSaveAnimationGeometryReaction
-  pqAnimatedExportReaction
   pqSaveAnimationReaction
   pqSaveDataReaction
   pqSaveExtractsReaction

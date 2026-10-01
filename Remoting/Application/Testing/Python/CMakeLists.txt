@@ -69,6 +69,7 @@ set(PY_TESTS
   SliceBackwardsCompatibilityTest.py,NO_VALID
   StateWithHiddenRepresentations.py,NO_VALID
   TestFetchData.py,NO_VALID
+  TestPythonEnvs.py,NO_VALID
   TestSAVGReader.py
   TestVTKSeriesWithMeta.py
   ThresholdBackwardsCompatibilityTest.py,NO_VALID
@@ -124,15 +125,15 @@ set(PVBATCH_TESTS
   ParallelSerialWriter.py
   ParallelSerialWriterWithIOSS.py
   PotentialMismatchedDataDelivery.py,NO_VALID
+  PythonCalculator.py,NO_VALID
   SaveAnimation.py
   SaveScreenshot.py,NO_VALID
   Simple.py
-  RescaleTransferFunctionToDataRange.py,NO_VALID
   TestFetchData.py,NO_VALID
   UserTransformOnRepresentation.py
   )
 
-if (numpy_found AND PARAVIEW_USE_MPI)
+if (numpy_found AND PARAVIEW_USE_MPI AND NOT VTK_ENABLE_VISKORES_OVERRIDES)
   list(APPEND PVBATCH_TESTS
     D3CellsWithNegativeVolumes.py,NO_VALID)
 endif()
@@ -330,6 +331,14 @@ if (NOT PARAVIEW_SERIAL_TESTS_USE_MPIEXEC)
           --
           -m paraview.tests.fetch_composite
           TEST_NAME "fetch_composite")
+
+  paraview_add_test(
+          PREFIX "ParaView::RemotingApplicationPython::Module::pvpython::paraview.tests"
+          ARGS   "$<TARGET_FILE:ParaView::pvpython>"
+          --dr
+          --
+          -m paraview.tests.autocomplete
+          TEST_NAME "autocomplete")
 
 endif()
 

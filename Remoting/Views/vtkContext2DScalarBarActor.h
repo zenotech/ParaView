@@ -162,6 +162,15 @@ public:
 
   ///@{
   /**
+   * If this flag is on, the labels will be drawn vertically. Off by default.
+   */
+  vtkSetMacro(VerticalLabels, bool);
+  vtkGetMacro(VerticalLabels, bool);
+  vtkBooleanMacro(VerticalLabels, bool);
+  ///@}
+
+  ///@{
+  /**
    * Set/get whether to add range labels or not. These are labels that have
    * the minimum/maximum values of the scalar bar range.
    */
@@ -195,6 +204,15 @@ public:
    */
   vtkSetMacro(DrawTickMarks, bool);
   vtkGetMacro(DrawTickMarks, bool);
+  ///@}
+
+  ///@{
+  /**
+   * Set/get whether possibly overlapping labels should be drawn. Default is false.
+   */
+  vtkSetMacro(AllowOverlappingLabels, bool);
+  vtkGetMacro(AllowOverlappingLabels, bool);
+  vtkBooleanMacro(AllowOverlappingLabels, int);
   ///@}
 
   ///@{
@@ -355,11 +373,18 @@ private:
 
   int AutomaticLabelFormat;
 
+  bool VerticalLabels;
+
   int AddRangeLabels;
   int AutomaticAnnotations;
   int AddRangeAnnotations;
   char* RangeLabelFormat;
   char* DataRangeLabelFormat;
+
+  /**
+   * Flag that controls if labels are allowed to overlap.
+   */
+  bool AllowOverlappingLabels;
 
   /**
    * Flag that controls whether an outline is drawn around the scalar bar.

@@ -5,14 +5,24 @@
 #include "ui_pqLinePropertyWidget.h"
 
 #include "pqCoreUtilities.h"
+#include "pqPipelineSource.h"
 #include "pqPointPickingHelper.h"
 #include "vtkBoundingBox.h"
 #include "vtkCommand.h"
 #include "vtkMath.h"
+#include "vtkPVXMLElement.h"
+#include "vtkRenderWindow.h"
+#include "vtkRenderer.h"
 #include "vtkSMNewWidgetRepresentationProxy.h"
 #include "vtkSMProperty.h"
 #include "vtkSMPropertyGroup.h"
 #include "vtkSMPropertyHelper.h"
+#include "vtkSMRenderViewProxy.h"
+#include "vtkVector.h"
+
+#include <QToolButton>
+
+#include <vector>
 
 class pqLinePropertyWidget::pqInternals
 {
@@ -78,11 +88,28 @@ pqLinePropertyWidget::pqLinePropertyWidget(
   ui.show3DWidget->connect(this, SIGNAL(widgetVisibilityToggled(bool)), SLOT(setChecked(bool)));
   this->setWidgetVisible(ui.show3DWidget->isChecked());
 
+  // Internal toolbar
   this->connect(ui.xAxis, SIGNAL(clicked()), SLOT(useXAxis()));
   this->connect(ui.yAxis, SIGNAL(clicked()), SLOT(useYAxis()));
   this->connect(ui.zAxis, SIGNAL(clicked()), SLOT(useZAxis()));
 
   this->connect(ui.flipP2, SIGNAL(clicked()), SLOT(flipP2()));
+
+  ui.repositionToView->setVisible(false);
+  vtkPVXMLElement* hints = smproxy->GetHints();
+  if (hints)
+  {
+    for (unsigned int i = 0; i < hints->GetNumberOfNestedElements(); i++)
+    {
+      vtkPVXMLElement* hintsElement = hints->GetNestedElement(i);
+      if (strcmp(hintsElement->GetName(), "RepositionToView") == 0)
+      {
+        this->connect(ui.repositionToView, &QToolButton::clicked, this,
+          &pqLinePropertyWidget::onRepositionToViewClicked);
+        ui.repositionToView->setVisible(true);
+      }
+    }
+  }
 
   pqPointPickingHelper* pickHelper = new pqPointPickingHelper(QKeySequence(tr("P")), false, this);
   pickHelper->connect(this, SIGNAL(viewChanged(pqView*)), SLOT(setView(pqView*)));
@@ -130,6 +157,39 @@ pqLinePropertyWidget::pqLinePropertyWidget(
 
 //-----------------------------------------------------------------------------
 pqLinePropertyWidget::~pqLinePropertyWidget() = default;
+
+//-----------------------------------------------------------------------------
+void pqLinePropertyWidget::onRepositionToViewClicked()
+{
+  vtkRenderer* renderer = this->getRenderer();
+  if (!renderer)
+  {
+    return;
+  }
+
+  double viewportWidth = static_cast<double>(renderer->GetSize()[0]);
+  double viewportHeight = static_cast<double>(renderer->GetSize()[1]);
+  double focalPointDepth = this->getFocalPointDepth();
+
+  std::vector<vtkVector3d> displayCoordPoints;
+  // Point 1
+  displayCoordPoints.emplace_back(viewportWidth * 0.25, viewportHeight * 0.5, focalPointDepth);
+  // Point 2
+  displayCoordPoints.emplace_back(viewportWidth * 0.75, viewportHeight * 0.5, focalPointDepth);
+  std::vector<vtkVector3d> worldCoordPoints = this->displayToWorldCoordinates(displayCoordPoints);
+
+  std::vector<std::string> pointPropertyNames = { "Point1WorldPosition", "Point2WorldPosition" };
+  vtkSMNewWidgetRepresentationProxy* wdgProxy = this->widgetProxy();
+  for (std::size_t i = 0; i < pointPropertyNames.size(); i++)
+  {
+    vtkSMPropertyHelper(wdgProxy, pointPropertyNames[i].c_str())
+      .Set(worldCoordPoints[i].GetData(), 3);
+  }
+
+  wdgProxy->UpdateVTKObjects();
+  Q_EMIT this->changeAvailable();
+  this->render();
+}
 
 //-----------------------------------------------------------------------------
 void pqLinePropertyWidget::updateLengthLabel()

@@ -8,17 +8,14 @@
 #include "pqPointPickingHelper.h"
 
 #include "vtkMath.h"
-#include "vtkSMNewWidgetRepresentationProxy.h"
+#include "vtkPVXMLElement.h"
+#include "vtkRenderer.h"
 #include "vtkSMPropertyGroup.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkVector.h"
 
 #include <QHeaderView>
 #include <QPointer>
-
-#include <sstream>
-#include <utility>
-#include <vector>
 
 //-----------------------------------------------------------------------------
 struct pqAnglePropertyWidget::pqInternals
@@ -124,6 +121,24 @@ pqAnglePropertyWidget::pqAnglePropertyWidget(
   pqCoreUtilities::connect(
     this->widgetProxy(), vtkCommand::PropertyModifiedEvent, this, SLOT(updateLabels()));
 
+  // Internal toolbar
+  ui.repositionToView->setVisible(false);
+  ui.toolbarLineHorizontalLayout->setAlignment(Qt::AlignRight);
+  vtkPVXMLElement* hints = smproxy->GetHints();
+  if (hints)
+  {
+    for (unsigned int i = 0; i < hints->GetNumberOfNestedElements(); i++)
+    {
+      vtkPVXMLElement* hintsElement = hints->GetNestedElement(i);
+      if (strcmp(hintsElement->GetName(), "RepositionToView") == 0)
+      {
+        this->connect(ui.repositionToView, &QToolButton::clicked, this,
+          &pqAnglePropertyWidget::onRepositionToViewClicked);
+        ui.repositionToView->setVisible(true);
+      }
+    }
+  }
+
   Q_EMIT this->pointsChanged();
 }
 
@@ -160,6 +175,44 @@ void pqAnglePropertyWidget::updateLabels()
   const double angle =
     vtkMath::DegreesFromRadians(std::acos(vec1.Dot(vec2) / (vec1.Norm() * vec2.Norm())));
   ui.labelAngle->setText(QString("<b>%1</b> <i>%2</i> ").arg(tr("Angle: ")).arg(angle));
+}
+
+//-----------------------------------------------------------------------------
+void pqAnglePropertyWidget::onRepositionToViewClicked()
+{
+  vtkRenderer* renderer = this->getRenderer();
+  if (!renderer)
+  {
+    return;
+  }
+
+  double viewportWidth = static_cast<double>(renderer->GetSize()[0]);
+  double viewportHeight = static_cast<double>(renderer->GetSize()[1]);
+  double focalPointDepth = this->getFocalPointDepth();
+
+  std::vector<vtkVector3d> displayCoordPoints;
+  double vectorLength =
+    viewportWidth > viewportHeight ? viewportHeight * 0.25 : viewportWidth * 0.25;
+  // Point 1
+  displayCoordPoints.emplace_back(
+    viewportWidth * 0.5 + vectorLength, viewportHeight * 0.5, focalPointDepth);
+  // Center
+  displayCoordPoints.emplace_back(viewportWidth * 0.5, viewportHeight * 0.5, focalPointDepth);
+  // Point 2
+  displayCoordPoints.emplace_back(
+    viewportWidth * 0.5, viewportHeight * 0.5 + vectorLength, focalPointDepth);
+  std::vector<vtkVector3d> worldCoordPoints = this->displayToWorldCoordinates(displayCoordPoints);
+
+  // Convert result to understandable structure for this widget.
+  QList<QVariant> qWorldCoordPoints;
+  qWorldCoordPoints.reserve(worldCoordPoints.size() * 3);
+  for (std::size_t i = 0; i < displayCoordPoints.size(); i++)
+  {
+    qWorldCoordPoints.push_back(worldCoordPoints[i].GetX());
+    qWorldCoordPoints.push_back(worldCoordPoints[i].GetY());
+    qWorldCoordPoints.push_back(worldCoordPoints[i].GetZ());
+  }
+  this->setPoints(qWorldCoordPoints);
 }
 
 //-----------------------------------------------------------------------------

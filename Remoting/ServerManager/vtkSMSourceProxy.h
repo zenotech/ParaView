@@ -14,6 +14,16 @@
  * Each vtkSMSourceProxy creates a property called DataInformation.
  * This property is a composite property that provides information
  * about the output(s) of the VTK sources (obtained from the server)
+ *
+ * XML properties:
+ *  - `executive`: Set to the name of the executive to use, `vtkCompositeDataPipeline` by default.
+ *  - `multiprocess_support`: Type of multiprocess support, supports `multiple_processes` or
+ * `single_process`. Both by default.
+ *  - `mpi_required`: Set to `true` if MPI is required, default is false.
+ *  - `stream_reply`: Whether or not this source proxy waits from a reply from the server when
+ * calling ExecuteStream. Set to `false` when the proxy uses client server communication. Default is
+ * true.
+ *
  * @sa
  * vtkSMProxy vtkSMOutputPort vtkSMInputProperty
  */
@@ -217,7 +227,6 @@ public:
   int LoadXMLState(vtkPVXMLElement* element, vtkSMProxyLocator* locator) override;
   ///@}
 
-  ///@{
   /**
    * This returns information about whether the VTK algorithm supports
    * multiple processes or not. SINGLE_PROCESS means that this algorithm
@@ -228,16 +237,20 @@ public:
    * Instead use MPISupport for that.
    */
   vtkGetMacro(ProcessSupport, int);
-  ///@}
 
-  ///@{
   /**
    * This returns information about whether the VTK algorithm explicitly
    * needs MPI to be initialized. It still may only run with a single
    * process. An example of this is a reader that uses MPI IO routines.
    */
   vtkGetMacro(MPIRequired, bool);
-  ///@}
+
+  /**
+   * This returns information about whether this proxy will wait for a reply
+   * when executing a stream. true by default but should be disabled when
+   * a proxy uses client/server communication when executing streams.
+   */
+  vtkGetMacro(StreamReply, bool);
 
   /**
    * Returns the number of output ports provided by the algorithm.
@@ -277,12 +290,35 @@ public:
    */
   void MarkDirty(vtkSMProxy* modifiedProxy) override;
 
+  /**
+   * Enable AbortCheck on both remote and local progress handler for this proxy
+   */
+  void EnableAbortCheck();
+
+  /**
+   * Clear abort execute flags on remote vtk objects
+   */
+  void ClearAbortFlags();
+
+  /**
+   * Overidden to handle disabling abort check for the deleted objects
+   * Also calls superclass
+   */
+  void RecreateVTKObjects() override;
+
 protected:
   vtkSMSourceProxy();
   ~vtkSMSourceProxy() override;
 
   friend class vtkSMInputProperty;
   friend class vtkSMOutputPort;
+
+  /**
+   * Execute provided stream using the internal session with sendReply positioned to StreamReply
+   * value
+   */
+  void ExecuteStream(const vtkClientServerStream& msg, bool ignoreErrors = false,
+    vtkTypeUInt32 location = 0) override;
 
   int OutputPortsCreated;
 
@@ -347,6 +383,8 @@ private:
 
   vtkSMSourceProxy(const vtkSMSourceProxy&) = delete;
   void operator=(const vtkSMSourceProxy&) = delete;
+
+  bool StreamReply = true;
 };
 
 #endif

@@ -23,6 +23,7 @@ class vtkPVRepresentedArrayListSettings::vtkInternals
 {
 public:
   std::vector<std::string> FilterExpressions;
+  std::vector<std::string> AttributesToHideOnHover;
   std::vector<int> ArrayMagnitudeExceptions;
 
   std::vector<std::string> ChartsDefaultXAxis;
@@ -108,6 +109,55 @@ const char* vtkPVRepresentedArrayListSettings::GetFilterExpression(int i)
   }
 
   return nullptr;
+}
+
+//----------------------------------------------------------------------------
+void vtkPVRepresentedArrayListSettings::SetNumberOfAttributesToHideOnHover(int n)
+{
+  if (n != this->GetNumberOfAttributesToHideOnHover())
+  {
+    this->Internals->AttributesToHideOnHover.resize(n);
+    this->Modified();
+  }
+}
+
+//----------------------------------------------------------------------------
+int vtkPVRepresentedArrayListSettings::GetNumberOfAttributesToHideOnHover()
+{
+  return static_cast<int>(this->Internals->AttributesToHideOnHover.size());
+}
+
+//----------------------------------------------------------------------------
+void vtkPVRepresentedArrayListSettings::SetAttributeToHideOnHover(
+  int i, const std::string& expression)
+{
+  if (i >= 0 && i < this->GetNumberOfAttributesToHideOnHover())
+  {
+    if (this->Internals->AttributesToHideOnHover[i] != expression)
+    {
+      this->Internals->AttributesToHideOnHover[i] = expression;
+      this->Modified();
+    }
+  }
+  else
+  {
+    vtkErrorMacro("Index out of range: " << i);
+  }
+}
+
+//----------------------------------------------------------------------------
+std::string vtkPVRepresentedArrayListSettings::GetAttributeToHideOnHover(int i)
+{
+  if (i >= 0 && i < this->GetNumberOfAttributesToHideOnHover())
+  {
+    return this->Internals->AttributesToHideOnHover[i];
+  }
+  else
+  {
+    vtkErrorMacro("Index out of range: " << i);
+  }
+
+  return "";
 }
 
 //----------------------------------------------------------------------------

@@ -13,6 +13,7 @@
 #define vtkSMRenderViewProxy_h
 
 #include "vtkNew.h"                 // needed for vtkInteractorObserver.
+#include "vtkParaViewDeprecation.h" // For PARAVIEW_DEPRECATED_IN_6_2_0
 #include "vtkRemotingViewsModule.h" // needed for exports
 #include "vtkSMViewProxy.h"         // for base class
 #include "vtkTuple.h"               // for vtkTuple
@@ -53,6 +54,20 @@ public:
     bool selectBlocks = false);
   bool SelectPolygonCells(vtkIntArray* polygon, vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources, bool multiple_selections = false, int modifier = 0,
+    bool selectBlocks = false);
+  ///@}
+
+  ///@{
+  /**
+   * Makes a new selection source proxy using a value of a vtkIdTypeArray with fast selection.
+   */
+  bool SelectPointsByArrayValue(vtkCollection* selectedRepresentations,
+    vtkCollection* selectionSources, vtkSMRepresentationProxy* source, const char* arrayName,
+    vtkIdType idValue, bool multiple_selections = false, int modifier = 0,
+    bool selectBlocks = false);
+  bool SelectCellsByArrayValue(vtkCollection* selectedRepresentations,
+    vtkCollection* selectionSources, vtkSMRepresentationProxy* source, const char* arrayName,
+    vtkIdType idValue, bool multiple_selections = false, int modifier = 0,
     bool selectBlocks = false);
   ///@}
 
@@ -293,7 +308,9 @@ public:
   int GetNumberOfDisplays();
 
   /**
-   * @brief Get the remotely configured eye separation.
+   * @brief Get the remotely configured eye separation. This always returns the
+   * original value specified in the pvx file, even if a change on the client has
+   * caused the value to change on the servers.
    *
    * @return int
    */
@@ -370,7 +387,48 @@ public:
   /**
    * Set whether the window is currently resizing.
    */
+  PARAVIEW_DEPRECATED_IN_6_2_0("SetResizingWindow has been removed. Simply remove the function.")
   vtkSetMacro(ResizingWindow, bool);
+
+  /**
+   * @brief Get the optional name of the screen at the given index, or the
+   * empty string, if no name was set.
+   *
+   * @return const char*
+   */
+  const char* GetName(int index);
+
+  int GetStereoType(int index);
+  bool GetStereoEnabled(int index);
+
+  /**
+   * @brief Get the optional viewer id associated with the screen at the
+   * given index, or -1 if no viewer id was set.
+   *
+   * @return int
+   */
+  int GetViewerId(int index);
+
+  /**
+   * @brief Get the number of configured IndependentViewers in the pvx file.
+   *
+   * @return int
+   */
+  int GetNumberOfViewers();
+
+  /**
+   * @brief Get the id of the given indexed viewer.
+   *
+   * @return int
+   */
+  int GetId(int viewerIndex);
+
+  /**
+   * @brief Get the eye separation of the given indexed viewer.
+   *
+   * @return double
+   */
+  double GetEyeSeparation(int viewerIndex);
 
 protected:
   vtkSMRenderViewProxy();
@@ -443,6 +501,19 @@ private:
   bool SelectInternal(const vtkClientServerStream& cmd, vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources, bool multiple_selections, int modifier = /* replace */ 0,
     bool selectBlocks = false);
+
+  /**
+   * Internal method to update stereo properties
+   */
+  void UpdateStereoProperties();
+
+  /**
+   * Internal method to execute `cmd` on the rendering processes to do rendering
+   * for selection with a specified id.
+   */
+  bool SelectByArrayValue(vtkCollection* selectedRepresentations, vtkCollection* selectionSources,
+    vtkSMRepresentationProxy* repr, int fieldAssociation, const char* arrayName, vtkIdType idValue,
+    bool multiple_selections, int modifier = 0, bool select_blocks = false);
 
   vtkNew<vtkSMViewProxyInteractorHelper> InteractorHelper;
 

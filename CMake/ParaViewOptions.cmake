@@ -54,6 +54,10 @@ set_property(CACHE PARAVIEW_BUILD_EDITION
   PROPERTY
     STRINGS "CORE;RENDERING;CATALYST;CATALYST_RENDERING;CANONICAL")
 
+cmake_dependent_option(PARAVIEW_BUILD_EDITION_STRICT
+  "Restrict VTK modules to those strictly needed by the PARAVIEW_BUILD_EDITION" ON
+  "NOT PARAVIEW_USE_EXTERNAL_VTK" OFF)
+
 set(PARAVIEW_BUILD_CANONICAL OFF)
 set(PARAVIEW_ENABLE_RENDERING OFF)
 set(PARAVIEW_ENABLE_NONESSENTIAL OFF)
@@ -110,11 +114,6 @@ option(PARAVIEW_USE_VISKORES "Enable Viskores accelerated algorithms" "${default
 if (UNIX AND NOT APPLE)
   option(PARAVIEW_USE_MEMKIND  "Build support for extended memory" OFF)
 endif ()
-
-option(PARAVIEW_ENABLE_OPENVDB  "Enable the OpenVDB Writer" OFF)
-
-option(PARAVIEW_GENERATE_SPDX  "Generate SPDX file for each module." OFF)
-mark_as_advanced(PARAVIEW_GENERATE_SPDX)
 
 # Add option to disable Fortran
 if (NOT WIN32)
@@ -174,12 +173,15 @@ endif ()
 # Options that toggle features. These should begin with `PARAVIEW_ENABLE_`.
 #========================================================================
 
-vtk_deprecated_setting(raytracing_default PARAVIEW_ENABLE_RAYTRACING PARAVIEW_USE_RAYTRACING "OFF")
-option(PARAVIEW_ENABLE_RAYTRACING "Build ParaView with OSPray, ANARI and/or OptiX ray-tracing support" "${raytracing_default}")
+option(PARAVIEW_ENABLE_ANARI "Enable Anari Support" OFF)
 
-cmake_dependent_option(PARAVIEW_ENABLE_ANARI
-  "Enable Anari Support" OFF
-  "PARAVIEW_ENABLE_RAYTRACING" ON)
+vtk_deprecated_setting(raytracing_default PARAVIEW_ENABLE_RAYTRACING PARAVIEW_USE_RAYTRACING "OFF")
+option(PARAVIEW_ENABLE_RAYTRACING "Build ParaView with OSPray and/or OptiX ray-tracing support" ${raytracing_default})
+
+if (PARAVIEW_ENABLE_RAYTRACING AND NOT VTK_ENABLE_OSPRAY AND NOT VTK_ENABLE_VISRTX)
+  message(WARNING "Ray Tracing module is activated without any ray tracing implementation.
+  Please activate either VTK_ENABLE_OSPRAY and/or VTK_ENABLE_VISRTX in order to provide a raytracing implementation for ParaView.")
+endif ()
 
 set(paraview_web_default ON)
 if (PARAVIEW_USE_PYTHON AND WIN32)
@@ -202,6 +204,10 @@ if (PARAVIEW_ENABLE_NVPIPE)
     "https://gitlab.kitware.com/paraview/paraview/-/issues/23231 for progress")
   set(PARAVIEW_ENABLE_NVPIPE OFF)
 endif ()
+
+option(PARAVIEW_ENABLE_OPENVDB  "Enable the OpenVDB Writer" OFF)
+
+option(PARAVIEW_ENABLE_NANOVDB "Enable the NanoVDB Writer" OFF)
 
 option(PARAVIEW_ENABLE_ALEMBIC "Enable Alembic support." OFF)
 
@@ -240,6 +246,8 @@ option(PARAVIEW_ENABLE_FFMPEG "Enable FFMPEG Support." OFF)
 
 option(PARAVIEW_ENABLE_OCCT "Enable OCCT Support." OFF)
 
+option(PARAVIEW_ENABLE_IFC "Enable IFC Support." OFF)
+
 option(PARAVIEW_BUILD_TRANSLATIONS "Generate translation files" OFF)
 if (PARAVIEW_BUILD_TRANSLATIONS)
   set(PARAVIEW_TRANSLATIONS_DIRECTORY "${CMAKE_BINARY_DIR}/Translations" CACHE STRING
@@ -274,6 +282,8 @@ mark_as_advanced(PARAVIEW_INSTALL_DEVELOPMENT_FILES)
 option(PARAVIEW_RELOCATABLE_INSTALL "Do not embed hard-coded paths into the install" ON)
 mark_as_advanced(PARAVIEW_RELOCATABLE_INSTALL)
 
+option(PARAVIEW_GENERATE_SPDX  "Generate SPDX file for each module." OFF)
+mark_as_advanced(PARAVIEW_GENERATE_SPDX)
 
 cmake_dependent_option(PARAVIEW_INITIALIZE_MPI_ON_CLIENT
   "Initialize MPI on client-processes by default. Can be overridden using command line arguments" ON
@@ -405,7 +415,7 @@ paraview_require_module(
   EXCLUSIVE)
 
 paraview_require_module(
-  CONDITION PARAVIEW_ENABLE_RAYTRACING AND PARAVIEW_ENABLE_RENDERING AND PARAVIEW_ENABLE_ANARI
+  CONDITION PARAVIEW_ENABLE_RENDERING AND PARAVIEW_ENABLE_ANARI
   MODULES   VTK::RenderingAnari
   EXCLUSIVE)
 
@@ -496,6 +506,11 @@ paraview_require_module(
   EXCLUSIVE)
 
 paraview_require_module(
+  CONDITION PARAVIEW_ENABLE_NANOVDB
+  MODULES   VTK::IONanoVDB
+  EXCLUSIVE)
+
+paraview_require_module(
   CONDITION PARAVIEW_ENABLE_FFMPEG
   MODULES   VTK::IOFFMPEG
   EXCLUSIVE)
@@ -529,6 +544,11 @@ paraview_require_module(
 paraview_require_module(
   CONDITION PARAVIEW_ENABLE_OCCT
   MODULES   VTK::IOOCCT
+  EXCLUSIVE)
+
+paraview_require_module(
+  CONDITION PARAVIEW_ENABLE_IFC
+  MODULES   VTK::IOIFC
   EXCLUSIVE)
 
 paraview_require_module(
@@ -647,24 +667,39 @@ if (NOT PARAVIEW_ENABLE_NONESSENTIAL)
     VTK::xdmf2
     VTK::xdmf3)
 
-  # PARAVIEW_ENABLE_CGNS_* are the only options that can force the need for cgns and
-  # hdf5 TPLs when PARAVIEW_ENABLE_NONESSENTIAL is true.
+  # PARAVIEW_ENABLE_CGNS_* are the only options that can force the need for cgns
+  # TPL when PARAVIEW_ENABLE_NONESSENTIAL is true.
   if (NOT PARAVIEW_ENABLE_CGNS_READER AND NOT PARAVIEW_ENABLE_CGNS_WRITER)
     list(APPEND nonessential_modules
-      VTK::cgns
-      VTK::hdf5)
+      VTK::cgns)
+
+    # if testing is enabled, this is expected to have hdf5 TPL
+    # as VTK::IOHDF is a dependency of vtkTestingCore. But usual features should not
+    # depends on it.
+    if (PARAVIEW_BUILD_TESTING STREQUAL "OFF")
+      list(APPEND nonessential_modules
+        VTK::hdf5)
+    endif()
   endif()
 
-  list(APPEND paraview_rejected_modules
-    ${nonessential_modules})
+  if (PARAVIEW_BUILD_EDITION_STRICT)
+    # Reject non-essential modules if in strict mode
+    list(APPEND paraview_rejected_modules
+      ${nonessential_modules})
+  endif ()
   foreach (nonessential_module IN LISTS nonessential_modules)
     set("_vtk_module_reason_${nonessential_module}"
       "via `PARAVIEW_ENABLE_NONESSENTIAL` (via `PARAVIEW_BUILD_EDITION=${PARAVIEW_BUILD_EDITION}`)")
   endforeach ()
 
   function (_paraview_io_option_conflict option name)
+    set(_error_level FATAL_ERROR)
+    if (NOT PARAVIEW_BUILD_EDITION_STRICT)
+      # Demote fatal error to debug for diagnostic purposes only.
+      set(_error_level DEBUG)
+    endif ()
     if (${option})
-      message(FATAL_ERROR
+      message(${_error_level}
         "ParaView is configured without I/O support (via the "
         "${PARAVIEW_BUILD_EDITION} edition) which is incompatible with the "
         "request for ${name} support (via the `${option}` configure option)")
@@ -690,16 +725,24 @@ if (NOT PARAVIEW_ENABLE_RENDERING)
   # modules when PARAVIEW_ENABLE_RENDERING is OFF.
   set(rendering_modules
     VTK::glad)
-  list(APPEND paraview_rejected_modules
-    ${rendering_modules})
+  if (PARAVIEW_BUILD_EDITION_STRICT)
+    # Reject rendering modules if in strict mode
+    list(APPEND paraview_rejected_modules
+      ${rendering_modules})
+  endif ()
   foreach (rendering_module IN LISTS rendering_modules)
     set("_vtk_module_reason_${rendering_module}"
       "via `PARAVIEW_ENABLE_RENDERING` (via `PARAVIEW_BUILD_EDITION=${PARAVIEW_BUILD_EDITION}`)")
   endforeach ()
 
   function (_paraview_rendering_option_conflict option name)
+    set(_error_level FATAL_ERROR)
+    if (NOT PARAVIEW_BUILD_EDITION_STRICT)
+      # Demote fatal error to debug for diagnostic purposes only.
+      set(_error_level DEBUG)
+    endif ()
     if (${option})
-      message(FATAL_ERROR
+      message(${_error_level}
         "ParaView is configured without Rendering support (via the "
         "${PARAVIEW_BUILD_EDITION} edition) which is incompatible with the "
         "request for ${name} support (via the `${option}` configure option)")

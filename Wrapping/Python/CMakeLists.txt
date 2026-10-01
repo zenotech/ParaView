@@ -43,6 +43,7 @@ set(python_files
   paraview/detail/pythonalgorithm.py
   paraview/detail/python_selector.py
   paraview/detail/catalyst_export.py
+  paraview/envs.py
   paraview/incubator/__init__.py.in
   paraview/incubator/pythoninteractorbase.py
   paraview/info/__init__.py
@@ -59,6 +60,7 @@ set(python_files
   paraview/servermanager.py
   paraview/simple/__init__.py
   paraview/simple/animation.py
+  paraview/simple/autocomplete.py
   paraview/simple/camera.py
   paraview/simple/catalyst.py
   paraview/simple/color.py
@@ -88,6 +90,7 @@ set(python_files
   paraview/spatiotemporalparallelism.py
   paraview/tests/basic_rendering.py
   paraview/tests/__init__.py
+  paraview/tests/autocomplete.py
   paraview/tests/fetch_composite.py
   paraview/tests/internals.py
   paraview/tests/__main__.py

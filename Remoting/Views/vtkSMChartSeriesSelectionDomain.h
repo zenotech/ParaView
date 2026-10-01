@@ -29,7 +29,6 @@
 #ifndef vtkSMChartSeriesSelectionDomain_h
 #define vtkSMChartSeriesSelectionDomain_h
 
-#include "vtkParaViewDeprecation.h"
 #include "vtkRemotingViewsModule.h" // needed for exports
 #include "vtkSMStringListDomain.h"
 
@@ -74,17 +73,6 @@ public:
   vtkGetMacro(DefaultMode, int);
   ///@}
 
-  ///@{
-  /**
-   * Global flag to toggle between (a) the default behavior and
-   * (b) setting default visibility to off.
-   */
-  PARAVIEW_DEPRECATED_IN_6_0_0("Please use vtkPVGeneralSettings::SetLoadNoChartVariables() instead")
-  static void SetLoadNoChartVariables(bool choice);
-  PARAVIEW_DEPRECATED_IN_6_0_0("Please use vtkPVGeneralSettings::GetLoadNoChartVariables() instead")
-  static bool GetLoadNoChartVariables();
-  ///@}
-
   vtkSetStringMacro(DefaultValue);
 
 protected:
@@ -105,6 +93,11 @@ protected:
    * Returns the default visibility for a series given its name.
    */
   virtual bool GetDefaultSeriesVisibility(const char*);
+
+  /**
+   * Returns the default legend for a series given its name.
+   */
+  std::string GetDefaultSeriesLegend(const char*);
 
   /**
    * Get the default value that will be used for the series with the given name
@@ -137,6 +130,15 @@ protected:
    */
   virtual void SetDefaultVisibilityOverrides(
     const std::map<std::string, bool>& arrayNames, bool visibility);
+
+  /**
+   * Call this method in PopulateAvailableArrays() to override a specific array's
+   * default legend. Used when the array selection mode is at "Individual Block", to exclude
+   * the block name of the legend in the table. The block name is then added to the legend with
+   * another option.
+   */
+  virtual void SetDefaultLegendOverrides(
+    const std::vector<std::string>& arrayNames, const std::vector<std::string>& labels);
 
   int DefaultMode;
 

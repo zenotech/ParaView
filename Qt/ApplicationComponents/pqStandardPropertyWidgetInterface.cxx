@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #include "pqStandardPropertyWidgetInterface.h"
 
+#include "pqANARIHidingDecorator.h"
 #include "pqAnglePropertyWidget.h"
 #include "pqAnimationShortcutDecorator.h"
 #include "pqAnnulusPropertyWidget.h"
@@ -57,6 +58,7 @@
 #include "pqPauseLiveSourcePropertyWidget.h"
 #include "pqPropertyCollectionWidget.h"
 #include "pqProxyEditorPropertyWidget.h"
+#include "pqPythonCalculatorWidget.h"
 #include "pqReaderSelectionPropertyWidget.h"
 #include "pqSelectionListPropertyWidget.h"
 #include "pqSelectionQueryPropertyWidget.h"
@@ -136,6 +138,10 @@ pqPropertyWidget* pqStandardPropertyWidgetInterface::createWidgetForProperty(
   else if (name == "calculator")
   {
     return new pqCalculatorWidget(smProxy, smProperty, parentWidget);
+  }
+  else if (name == "python_calculator")
+  {
+    return new pqPythonCalculatorWidget(smProxy, smProperty, parentWidget);
   }
   else if (name == "command_button")
   {
@@ -419,6 +425,10 @@ pqPropertyWidgetDecorator* pqStandardPropertyWidgetInterface::createWidgetDecora
   if (type == "OSPRayHidingDecorator")
   {
     return new pqOSPRayHidingDecorator(config, widget);
+  }
+  if (type == "ANARIHidingDecorator")
+  {
+    return new pqANARIHidingDecorator(config, widget);
   }
   if (type == "MultiComponentsDecorator")
   {

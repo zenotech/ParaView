@@ -11,6 +11,7 @@
 #include "vtkExtractSelectedFrustum.h"
 #include "vtkFloatArray.h"
 #include "vtkIdTypeArray.h"
+#include "vtkIndependentViewerCollection.h"
 #include "vtkInformation.h"
 #include "vtkIntArray.h"
 #include "vtkLogger.h"
@@ -53,6 +54,7 @@
 #include "vtkSelectionNode.h"
 #include "vtkSmartPointer.h"
 #include "vtkTransform.h"
+#include <vtkPVCompositeRepresentation.h>
 
 #include <algorithm>
 #include <cassert>
@@ -62,6 +64,7 @@ namespace
 {
 // magic number used as elevation to achieve an isometric view direction.
 const double isometric_elev = vtkMath::DegreesFromRadians(std::asin(std::tan(vtkMath::Pi() / 6.0)));
+const int VTK_STEREOTYPE_REMOTELY_MANAGED = -1;
 
 void RotateElevation(vtkCamera* camera, double angle)
 {
@@ -103,6 +106,19 @@ void RotateElevation(vtkCamera* camera, double angle)
   temp = camera->GetPosition();
   camera->SetPosition(temp[0] * scale, temp[1] * scale, temp[2] * scale);
 }
+
+void CheckServerStereoTypes(const std::vector<int>& stereoTypes)
+{
+  int rendersPerFrame = vtkPVRenderView::GetNumberOfRendersPerFrame(stereoTypes[0]);
+  for (size_t i = 1; i < stereoTypes.size(); ++i)
+  {
+    if (vtkPVRenderView::GetNumberOfRendersPerFrame(stereoTypes[i]) != rendersPerFrame)
+    {
+      vtkErrorWithObjectMacro(nullptr, << "Stereo types for all server processes must use "
+                                       << "same number of renders per frame!");
+    }
+  }
+}
 }
 
 #define vtkCheckCAVEModeMacro(_obj, _err_result)                                                   \
@@ -119,6 +135,16 @@ void RotateElevation(vtkCamera* camera, double angle)
   {                                                                                                \
     vtkErrorWithObjectMacro(_obj, << "Display index " << _idx << " out of range, there are "       \
                                   << nDisplays << " displays.");                                   \
+    return _err_result;                                                                            \
+  }
+
+#define vtkCheckNumViewersMacro(_obj, _idx, _err_result)                                           \
+  int nViewers = _obj->GetNumberOfViewers();                                                       \
+                                                                                                   \
+  if (_idx < 0 || _idx >= nViewers)                                                                \
+  {                                                                                                \
+    vtkErrorWithObjectMacro(                                                                       \
+      _obj, << "Viewer index " << _idx << " out of range, there are " << nViewers << " viewers."); \
     return _err_result;                                                                            \
   }
 
@@ -244,6 +270,77 @@ public:
     return info->GetUpperRight(index);
   }
 
+  const char* GetName(vtkSMSession* session, int index)
+  {
+    vtkPVCAVEConfigInformation* info = GetOrCreateServerInfo(session);
+
+    vtkCheckCAVEModeMacro(info, "");
+    vtkCheckNumDisplaysMacro(info, index, "");
+
+    return info->GetName(index);
+  }
+
+  int GetStereoType(vtkSMSession* session, int index)
+  {
+    vtkPVCAVEConfigInformation* info = GetOrCreateServerInfo(session);
+
+    vtkCheckCAVEModeMacro(info, -1);
+    vtkCheckNumDisplaysMacro(info, index, -1);
+
+    return info->GetStereoType(index);
+  }
+
+  bool GetStereoEnabled(vtkSMSession* session, int index)
+  {
+    vtkPVCAVEConfigInformation* info = GetOrCreateServerInfo(session);
+
+    vtkCheckCAVEModeMacro(info, false);
+    vtkCheckNumDisplaysMacro(info, index, false);
+
+    return info->GetStereoEnabled(index);
+  }
+
+  int GetViewerId(vtkSMSession* session, int index)
+  {
+    vtkPVCAVEConfigInformation* info = GetOrCreateServerInfo(session);
+
+    vtkCheckCAVEModeMacro(info, -1);
+    vtkCheckNumDisplaysMacro(info, index, -1);
+
+    return info->GetViewerId(index);
+  }
+
+  int GetNumberOfViewers(vtkSMSession* session)
+  {
+    vtkPVCAVEConfigInformation* info = GetOrCreateServerInfo(session);
+
+    vtkCheckCAVEModeMacro(info, -1);
+
+    return info->GetNumberOfViewers();
+  }
+
+  int GetId(vtkSMSession* session, int viewerIndex)
+  {
+    vtkPVCAVEConfigInformation* info = GetOrCreateServerInfo(session);
+
+    vtkCheckCAVEModeMacro(info, -1);
+    vtkCheckNumViewersMacro(info, viewerIndex, -1);
+
+    return info->GetId(viewerIndex);
+  }
+
+  double GetEyeSeparation(vtkSMSession* session, int viewerIndex)
+  {
+    vtkPVCAVEConfigInformation* info = GetOrCreateServerInfo(session);
+
+    vtkCheckCAVEModeMacro(info, -1);
+    vtkCheckNumViewersMacro(info, viewerIndex, -1);
+
+    return info->GetEyeSeparation(viewerIndex);
+  }
+
+  std::vector<int> OriginalServerStereoTypes;
+
 private:
   vtkPVCAVEConfigInformation* GetOrCreateServerInfo(vtkSMSession* session)
   {
@@ -354,9 +451,7 @@ const char* vtkSMRenderViewProxy::IsSelectVisiblePointsAvailable()
 //-----------------------------------------------------------------------------
 void vtkSMRenderViewProxy::Update()
 {
-  // As resizing window updates the "ViewSize" property, we need to check whether or not we are in
-  // this case. If we are, we don"t need to compute the LOD again.
-  this->NeedsUpdateLOD |= this->NeedsUpdate && !this->ResizingWindow;
+  this->NeedsUpdateLOD |= this->NeedsUpdate;
   this->Superclass::Update();
 }
 
@@ -426,10 +521,10 @@ vtkTypeUInt32 vtkSMRenderViewProxy::PreRender(bool interactive)
 
   vtkPVRenderView* rv = vtkPVRenderView::SafeDownCast(this->GetClientSideObject());
   assert(rv != nullptr);
-  if (rv->GetUseLODForInteractiveRender())
+  if (interactive && rv->GetUseLODForInteractiveRender())
   {
-    // We trigger the update of the LOD data in non interactive render to catch the moment when the
-    // user updates the pipeline data.
+    // for interactive renders, we need to determine if we are going to use LOD.
+    // If so, we may need to update the LOD geometries.
     this->UpdateLOD();
   }
 
@@ -684,6 +779,33 @@ vtkRenderWindow* vtkSMRenderViewProxy::GetRenderWindow()
   return rv ? rv->GetRenderWindow() : nullptr;
 }
 
+void vtkSMRenderViewProxy::UpdateStereoProperties()
+{
+  if (this->GetIsInCAVE())
+  {
+    auto* propStereoType = vtkSMIntVectorProperty::SafeDownCast(this->GetProperty("StereoType"));
+    int StereoType = propStereoType->GetElement(0);
+    auto* propServerStereoType =
+      vtkSMIntVectorProperty::SafeDownCast(this->GetProperty("ServerStereoType"));
+    int ServerStereoType = propServerStereoType->GetElement(0);
+
+    if (ServerStereoType < 0)
+    {
+      // Server stereo type is remotely managed, if the requested client type isn't
+      // already compatible with the original server stereo types, we need to override
+      // with something compatible. We already warned if all server types weren't
+      // compatible with each other, so just pick any one.
+      int originalServerType = this->Internal->OriginalServerStereoTypes[0];
+
+      if (!vtkPVRenderView::AreStereoTypesCompatible(StereoType, originalServerType))
+      {
+        int newClientType = vtkPVRenderView::GetCompatibleStereoType(originalServerType);
+        vtkSMPropertyHelper(this, "StereoType").Set(newClientType);
+      }
+    }
+  }
+}
+
 //----------------------------------------------------------------------------
 void vtkSMRenderViewProxy::CreateVTKObjects()
 {
@@ -711,17 +833,62 @@ void vtkSMRenderViewProxy::CreateVTKObjects()
     vtkCamera::SafeDownCast(this->GetSubProxy("ActiveCamera")->GetClientSideObject());
   rv->SetActiveCamera(camera);
 
+  if (this->GetIsInCAVE())
+  {
+    // Update the local proxy property from the remote cave configuration
+    vtkSMPropertyHelper(this, "EyeSeparation").Set(this->GetEyeSeparation());
+  }
+
   vtkEventForwarderCommand* forwarder = vtkEventForwarderCommand::New();
   forwarder->SetTarget(this);
   rv->AddObserver(vtkCommand::SelectionChangedEvent, forwarder);
   rv->AddObserver(vtkCommand::ResetCameraEvent, forwarder);
   forwarder->Delete();
 
-  // We'll do this for now. But we need to not do this here. I am leaning
-  // towards not making stereo a command line option as mentioned by a very
-  // not-too-pleased user on the mailing list a while ago.
+  vtkIndependentViewerCollection* viewers = vtkIndependentViewerCollection::SafeDownCast(
+    this->GetSubProxy("IndependentViewers")->GetClientSideObject());
+  rv->SetIndependentViewers(viewers);
+
   auto config = vtkRemotingCoreConfiguration::GetInstance();
-  if (config->GetUseStereoRendering())
+
+  if (this->GetIsInCAVE())
+  {
+    // In CAVE mode, the default is to let stereo types on the server be remotely
+    // managed (specified per-process on cli or pvx file)
+    this->Internal->OriginalServerStereoTypes.clear();
+    bool enabledOnServer = false;
+
+    for (int i = 0; i < this->GetNumberOfDisplays(); ++i)
+    {
+      this->Internal->OriginalServerStereoTypes.push_back(this->GetStereoType(i));
+      if (this->GetStereoEnabled(i))
+      {
+        enabledOnServer = true;
+      }
+    }
+
+    CheckServerStereoTypes(this->Internal->OriginalServerStereoTypes);
+
+    int serverType = this->Internal->OriginalServerStereoTypes[0];
+    int clientType = config->GetStereoType();
+
+    if (!config->GetUseStereoRendering() ||
+      vtkPVRenderView::AreStereoTypesCompatible(clientType, serverType))
+    {
+      // If user didn't specify stereo on the client, or specified something that is
+      // incompatible with the server, pick something compatible for the client.
+      clientType = vtkPVRenderView::GetCompatibleStereoType(serverType);
+    }
+
+    if (enabledOnServer || config->GetUseStereoRendering())
+    {
+      vtkSMPropertyHelper(this, "StereoCapableWindow").Set(1);
+      vtkSMPropertyHelper(this, "StereoRender").Set(1);
+      vtkSMPropertyHelper(this, "StereoType").Set(clientType);
+      vtkSMPropertyHelper(this, "ServerStereoType").Set(VTK_STEREOTYPE_REMOTELY_MANAGED);
+    }
+  }
+  else if (config->GetUseStereoRendering())
   {
     vtkSMPropertyHelper(this, "StereoCapableWindow").Set(1);
     vtkSMPropertyHelper(this, "StereoRender").Set(1);
@@ -1159,6 +1326,7 @@ void vtkSMRenderViewProxy::UpdateVTKObjects()
       mlp->LoadDefaultMaterials();
     }
   }
+  this->UpdateStereoProperties();
   this->UpdateAnariProperties();
   this->Superclass::UpdateVTKObjects();
 }
@@ -1171,13 +1339,13 @@ void vtkSMRenderViewProxy::UpdateAnariProperties()
   auto itEnableANARI = this->Internals->Properties.find("EnableANARI");
   auto* propEnableANARI = vtkSMIntVectorProperty::SafeDownCast(this->GetProperty("EnableANARI"));
   auto itANARILibrary = this->Internals->Properties.find("ANARILibrary");
-  if (itEnableANARI->second.ModifiedFlag && propEnableANARI->GetElement(0) ||
+  if ((itEnableANARI->second.ModifiedFlag && propEnableANARI->GetElement(0)) ||
     itANARILibrary->second.ModifiedFlag)
   {
     updateANARIRendererNames = true;
   }
   auto itANARIRenderer = this->Internals->Properties.find("ANARIRenderer");
-  if (itEnableANARI->second.ModifiedFlag && propEnableANARI->GetElement(0) ||
+  if ((itEnableANARI->second.ModifiedFlag && propEnableANARI->GetElement(0)) ||
     itANARILibrary->second.ModifiedFlag || itANARIRenderer->second.ModifiedFlag)
   {
     updateANARIRendererParameters = true;
@@ -1383,6 +1551,56 @@ bool vtkSMRenderViewProxy::SelectSurfacePoints(const int region[4],
          << region[1] << region[2] << region[3] << arrayName << vtkClientServerStream::End;
   return this->SelectInternal(stream, selectedRepresentations, selectionSources,
     multiple_selections, modifier, select_blocks);
+}
+
+//----------------------------------------------------------------------------
+bool vtkSMRenderViewProxy::SelectPointsByArrayValue(vtkCollection* selectedRepresentations,
+  vtkCollection* selectionSources, vtkSMRepresentationProxy* repr, const char* arrayName,
+  vtkIdType idValue, bool multiple_selections, int modifier, bool select_blocks)
+{
+  return this->SelectByArrayValue(selectedRepresentations, selectionSources, repr,
+    vtkDataObject::FIELD_ASSOCIATION_POINTS, arrayName, idValue, multiple_selections, modifier,
+    select_blocks);
+}
+
+//----------------------------------------------------------------------------
+bool vtkSMRenderViewProxy::SelectCellsByArrayValue(vtkCollection* selectedRepresentations,
+  vtkCollection* selectionSources, vtkSMRepresentationProxy* repr, const char* arrayName,
+  vtkIdType idValue, bool multiple_selections, int modifier, bool select_blocks)
+{
+  return this->SelectByArrayValue(selectedRepresentations, selectionSources, repr,
+    vtkDataObject::FIELD_ASSOCIATION_CELLS, arrayName, idValue, multiple_selections, modifier,
+    select_blocks);
+}
+
+//----------------------------------------------------------------------------
+bool vtkSMRenderViewProxy::SelectByArrayValue(vtkCollection* selectedRepresentations,
+  vtkCollection* selectionSources, vtkSMRepresentationProxy* repr, int fieldAssociation,
+  const char* arrayName, vtkIdType idValue, bool multiple_selections, int modifier,
+  bool select_blocks)
+{
+  if (!this->IsSelectionAvailable())
+  {
+    return false;
+  }
+
+  vtkScopedMonitorProgress monitorProgress(this);
+
+  this->IsSelectionCached = true;
+  // Call PreRender since Select making will cause multiple renders on the
+  // render window. Calling PreRender ensures that the view is ready to render.
+  this->PreRender(/*interactive=*/false);
+
+  vtkDataRepresentation* dataRepr =
+    vtkPVCompositeRepresentation::SafeDownCast(repr->GetClientSideObject())
+      ->GetActiveRepresentation();
+  vtkPVRenderView* rv = vtkPVRenderView::SafeDownCast(this->GetClientSideObject());
+  rv->SelectByArrayValue(fieldAssociation, dataRepr, arrayName, idValue);
+
+  bool retVal = this->FetchLastSelection(
+    multiple_selections, selectedRepresentations, selectionSources, modifier, select_blocks);
+  this->PostRender(false);
+  return retVal;
 }
 
 //----------------------------------------------------------------------------
@@ -1805,4 +2023,46 @@ vtkTuple<double, 3> vtkSMRenderViewProxy::GetLowerRight(int index)
 vtkTuple<double, 3> vtkSMRenderViewProxy::GetUpperRight(int index)
 {
   return this->Internal->GetUpperRight(this->GetSession(), index);
+}
+
+//----------------------------------------------------------------------------
+const char* vtkSMRenderViewProxy::GetName(int index)
+{
+  return this->Internal->GetName(this->GetSession(), index);
+}
+
+//----------------------------------------------------------------------------
+int vtkSMRenderViewProxy::GetStereoType(int index)
+{
+  return this->Internal->GetStereoType(this->GetSession(), index);
+}
+
+//----------------------------------------------------------------------------
+bool vtkSMRenderViewProxy::GetStereoEnabled(int index)
+{
+  return this->Internal->GetStereoEnabled(this->GetSession(), index);
+}
+
+//----------------------------------------------------------------------------
+int vtkSMRenderViewProxy::GetViewerId(int index)
+{
+  return this->Internal->GetViewerId(this->GetSession(), index);
+}
+
+//----------------------------------------------------------------------------
+int vtkSMRenderViewProxy::GetNumberOfViewers()
+{
+  return this->Internal->GetNumberOfViewers(this->GetSession());
+}
+
+//----------------------------------------------------------------------------
+int vtkSMRenderViewProxy::GetId(int viewerIndex)
+{
+  return this->Internal->GetId(this->GetSession(), viewerIndex);
+}
+
+//----------------------------------------------------------------------------
+double vtkSMRenderViewProxy::GetEyeSeparation(int viewerIndex)
+{
+  return this->Internal->GetEyeSeparation(this->GetSession(), viewerIndex);
 }

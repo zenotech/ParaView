@@ -1,4 +1,4 @@
-# Tests that require python
+# Tests that require python
 
 list(APPEND TESTS_WITHOUT_BASELINES
   AllPropertiesSaveStatePython.xml
@@ -11,6 +11,8 @@ list(APPEND TESTS_WITHOUT_BASELINES
   PythonEditorTab.xml
   PythonResetSessionMacro.xml
   SpreadSheetNullArrayName.xml # needs programmable filter
+  PythonCameraLinkSaveState.xml
+  PythonTraceSaveState.xml
   # TestPopOutWidget.xml
   TestPythonConsole.xml
   TraceIntegrateVariables.xml
@@ -20,6 +22,7 @@ list(APPEND TESTS_WITHOUT_BASELINES
 if(NOT APPLE)
   list(APPEND TEST_WITHOUT_BASELINES_CLIENT_ONLY
     TooltipCopy.xml
+    TooltipHideInfo.xml
     TestHTGHoverOnCell.xml
     )
 endif()
@@ -36,6 +39,7 @@ endif ()
 list(APPEND TESTS_WITH_BASELINES
   AutoSaveState.xml
   ColorByComponentNames.xml # needs programmable filter
+  CopyPasteTrace.xml
   LiveProgrammableSource.xml
   LinkRenderViews.xml
   LinkViews.xml
@@ -93,6 +97,7 @@ if (numpy_found)
     ForceTimeDiamond.xml
     FreezeQueryMultiblock.xml
     IndexedLookupInitialization.xml # needs Python Calculator/numpy
+    PythonCalculatorNamedInputs.xml
     PlotOverLine_surface.xml # needs find data
     ProgrammableAnnotation.xml
     SelectionSaveStatePVSM.xml # find data needs python/numpy
@@ -107,6 +112,7 @@ if (numpy_found)
 
   # Test without baselines and could only run in built-in mode.
   list(APPEND TEST_WITHOUT_BASELINES_CLIENT_ONLY
+    BoundsDomainInitialization.xml # uses numpy wrapping in programmable filter
     HyperTreeGridGenerateFields.xml
     HTGPlotSelectionOverTime.xml
     MultipleNumberOfComponents.xml
@@ -126,6 +132,11 @@ if (numpy_found)
     PythonCalculatorFieldData.xml
     PythonCalculatorMultiline.xml
     SelectionAndAutoSaveState.xml
+    StaticMeshClip.xml # uses numpy in python calc
+    StaticMeshCompositeClip.xml # uses numpy in python calc
+    StaticMeshCompositeSlice.xml # uses numpy in python calc
+    StaticMeshSlice.xml # uses numpy in python calc
+    StaticMeshSliceWithPlane.xml # uses numpy in python calc
     )
 
   set(SpreadSheetSelectionTrace_DISABLE_CS TRUE)
@@ -177,9 +188,30 @@ set(paraview_python_verify_tests
   ExportSceneSpreadSheetView
 )
 
+if (numpy_found)
+  list(APPEND paraview_python_verify_tests
+    ExportAnimatedSpreadSheetView
+  )
+  set(ExportAnimatedSpreadSheetView_FORCE_SERIAL TRUE) # since this uses popup-menu
+endif()
+
+if (TARGET VTK::IOUSD)
+  list(APPEND paraview_python_verify_tests
+    ExportAnimatedUSD
+  )
+  set(ExportAnimatedUSD_FORCE_SERIAL TRUE) # since this uses popup-menu
+endif()
+
+if (TARGET VTK::IOAlembic)
+  list(APPEND paraview_python_verify_tests
+    ExportAnimatedAlembic
+  )
+  set(ExportAnimatedAlembic_FORCE_SERIAL TRUE) # since this uses popup-menu
+endif()
+
 if (PARAVIEW_ENABLE_WEB)
   list(APPEND paraview_python_verify_tests
-    AnimatedExportScene
+    ExportToVTKJSWithTimeSteps
   )
 endif()
 
@@ -198,5 +230,8 @@ if (PARAVIEW_USE_PYTHON)
       -P ${CMAKE_CURRENT_SOURCE_DIR}/PythonScriptTestDriver.cmake
     )
     set_tests_properties(${tname} PROPERTIES LABELS "paraview")
+    if ("${${test_name}_FORCE_SERIAL}")
+      set_tests_properties(${tname} PROPERTIES RUN_SERIAL ON)
+    endif ()
   endforeach()
 endif()

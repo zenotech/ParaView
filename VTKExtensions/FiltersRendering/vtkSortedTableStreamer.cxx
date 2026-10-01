@@ -3,10 +3,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 #include "vtkSortedTableStreamer.h"
 
+#include "vtkArrayDispatch.h"
 #include "vtkCellArray.h"
 #include "vtkCommunicator.h"
 #include "vtkCompositeDataSet.h"
+#include "vtkConstantArray.h"
 #include "vtkDataArray.h"
+#include "vtkDataArrayRange.h"
 #include "vtkDataSetAttributes.h"
 #include "vtkDataTabulator.h"
 #include "vtkDoubleArray.h"
@@ -82,7 +85,7 @@ public:
         dstArray = otherArray->NewInstance();
         dstArray->SetNumberOfComponents(otherArray->GetNumberOfComponents());
         dstArray->SetName(otherArray->GetName());
-        dstArray->Allocate(minSize * otherArray->GetNumberOfComponents());
+        dstArray->ReserveTuples(minSize);
         if (auto oinfo = otherArray->GetInformation())
         {
           dstArray->CopyInformation(oinfo);
@@ -501,9 +504,14 @@ public:
       }
     }
 
-    void Update(T* dataPtr, vtkIdType numTuples, int numComponents, int selectedComponent,
-      vtkIdType histogramSize, double* scalarRange, bool reverseOrder)
+    template <class TArray>
+    void operator()(TArray* dataArray, int selectedComponent, vtkIdType histogramSize,
+      double* scalarRange, bool reverseOrder)
     {
+      static_assert(std::is_same_v<vtk::GetAPIType<TArray, T>, T>);
+      vtkIdType numTuples = dataArray->GetNumberOfTuples();
+      int numComponents = dataArray->GetNumberOfComponents();
+      auto data = vtk::DataArrayTupleRange(dataArray);
       // Clear memory if needed
       this->Clear();
 
@@ -530,7 +538,7 @@ public:
           // Compute magnitude
           for (int k = 0; k < numComponents; k++)
           {
-            tmp = static_cast<double>(dataPtr[k + i * numComponents]);
+            tmp = static_cast<double>(data[i][k]);
             value += tmp * tmp;
           }
           value = sqrt(value) / sqrt(static_cast<double>(numComponents));
@@ -538,42 +546,9 @@ public:
         }
         else
         {
-          this->Array[i].Value = dataPtr[selectedComponent + i * numComponents];
+          this->Array[i].Value = data[i][selectedComponent];
           value = static_cast<double>(this->Array[i].Value);
         }
-        this->Histo->AddValue(value);
-      }
-
-      // Sort it
-      if (reverseOrder)
-      {
-        std::sort(this->Array, this->Array + this->ArraySize, SortableArrayItem::Ascendent);
-      }
-      else
-      {
-        std::sort(this->Array, this->Array + this->ArraySize, SortableArrayItem::Descendent);
-      }
-    }
-
-    void SortProcessId(vtkIdType* dataPtr, vtkIdType numTuples, vtkIdType histogramSize,
-      double* scalarRange, bool reverseOrder)
-    {
-      // Clear memory if needed
-      this->Clear();
-
-      // Allocate memory and fill the structure
-      this->Histo = new Histogram(histogramSize);
-      this->Histo->Inverted = reverseOrder;
-      this->Histo->SetScalarRange(scalarRange);
-      this->ArraySize = numTuples;
-      this->Array = new SortableArrayItem[this->ArraySize];
-
-      // Fill the sortable array
-      for (vtkIdType i = 0; i < this->ArraySize; ++i)
-      {
-        this->Array[i].OriginalIndex = i;
-        this->Array[i].Value = static_cast<T>(dataPtr[i]);
-        double value = static_cast<double>(this->Array[i].Value);
         this->Histo->AddValue(value);
       }
 
@@ -717,9 +692,13 @@ public:
       if (this->DataToSort)
       {
         // Sort and build local histogram
-        this->LocalSorter->Update(static_cast<T*>(this->DataToSort->GetVoidPointer(0)),
-          this->DataToSort->GetNumberOfTuples(), this->DataToSort->GetNumberOfComponents(),
-          this->SelectedComponent, HISTOGRAM_SIZE, this->CommonRange, invertOrder);
+        using Dispatcher = vtkArrayDispatch::DispatchByValueType<vtkTypeList::Create<T>>;
+        if (!Dispatcher::Execute(this->DataToSort, *this->LocalSorter, this->SelectedComponent,
+              HISTOGRAM_SIZE, this->CommonRange, invertOrder))
+        {
+          this->LocalSorter->operator()(this->DataToSort, this->SelectedComponent, HISTOGRAM_SIZE,
+            this->CommonRange, invertOrder);
+        }
       }
       else
       {
@@ -832,8 +811,7 @@ public:
       {
         vtkSmartPointer<vtkIdTypeArray> processIdArray = vtkSmartPointer<vtkIdTypeArray>::New();
         processIdArray->SetName("vtkOriginalProcessIds");
-        processIdArray->SetNumberOfComponents(1);
-        processIdArray->Allocate(blockSize);
+        processIdArray->ReserveValues(blockSize);
         vtkIdType processId = this->Me;
         for (vtkIdType idx = 0; idx < localResult->GetNumberOfRows(); idx++)
         {
@@ -863,8 +841,12 @@ public:
         this->CommonRange[0] = 0;
         this->CommonRange[1] = this->NumProcs;
         // ProcessId array is not the same type of T
-        sorter.SortProcessId(static_cast<vtkIdType*>(subsetArray->GetVoidPointer(0)),
-          subsetArray->GetNumberOfTuples(), HISTOGRAM_SIZE, this->CommonRange, revertOrder);
+        using Arrays = vtkTypeList::Create<vtkAOSDataArrayTemplate<T>, vtkConstantArray<T>>;
+        if (!vtkArrayDispatch::DispatchByArray<Arrays>::Execute(
+              subsetArray, sorter, 0, HISTOGRAM_SIZE, this->CommonRange, revertOrder))
+        {
+          sorter(subsetArray, 0, HISTOGRAM_SIZE, this->CommonRange, revertOrder);
+        }
 
         localResult.TakeReference(this->NewSubsetTable(
           localResult.GetPointer(), &sorter, 0, localResult->GetNumberOfRows()));
@@ -944,8 +926,7 @@ public:
     {
       vtkSmartPointer<vtkIdTypeArray> processIdArray = vtkSmartPointer<vtkIdTypeArray>::New();
       processIdArray->SetName("vtkOriginalProcessIds");
-      processIdArray->SetNumberOfComponents(1);
-      processIdArray->Allocate((blockSize < localSize) ? localSize : blockSize);
+      processIdArray->ReserveValues((blockSize < localSize) ? localSize : blockSize);
       for (vtkIdType idx = 0; idx < localSubset->GetNumberOfRows(); idx++)
       {
         processIdArray->InsertNextTuple1(mergePid);
@@ -992,9 +973,13 @@ public:
       }
 
       ArraySorter sorter;
-      sorter.Update(static_cast<T*>(subsetArray->GetVoidPointer(0)),
-        subsetArray->GetNumberOfTuples(), subsetArray->GetNumberOfComponents(),
-        this->SelectedComponent, HISTOGRAM_SIZE, this->CommonRange, revertOrder);
+      using Dispatcher = vtkArrayDispatch::DispatchByValueType<vtkTypeList::Create<T>>;
+      if (!Dispatcher::Execute(subsetArray, sorter, this->SelectedComponent, HISTOGRAM_SIZE,
+            this->CommonRange, revertOrder))
+      {
+        sorter(
+          subsetArray, this->SelectedComponent, HISTOGRAM_SIZE, this->CommonRange, revertOrder);
+      }
 
       // trim it (remove head and tail that don't belong to the result)
       localSubset.TakeReference(this->NewSubsetTable(
@@ -1097,7 +1082,7 @@ public:
       vtkAbstractArray* subArray = srcArray->NewInstance();
       subArray->SetNumberOfComponents(srcArray->GetNumberOfComponents());
       subArray->SetName(srcArray->GetName());
-      subArray->Allocate(size * srcArray->GetNumberOfComponents());
+      subArray->ReserveTuples(size);
       if (auto sinfo = srcArray->GetInformation())
       {
         subArray->CopyInformation(sinfo);
@@ -1171,7 +1156,7 @@ public:
       {
         vtkIdTypeArray* structuredIndices = vtkIdTypeArray::New();
         structuredIndices->SetNumberOfComponents(3);
-        structuredIndices->Allocate(output->GetNumberOfRows() * 3);
+        structuredIndices->ReserveTuples(output->GetNumberOfRows());
         structuredIndices->SetName("Structured Coordinates");
 
         vtkIdTypeArray* idsArray =
@@ -1206,10 +1191,10 @@ public:
     std::cout << "vtkSortedTableStreamer::TestInternalClasses()" << endl;
 
     vtkSmartPointer<vtkTable> input = vtkSmartPointer<vtkTable>::New();
-    vtkSmartPointer<vtkDoubleArray> dataA = vtkSmartPointer<vtkDoubleArray>::New();
+    vtkNew<vtkAOSDataArrayTemplate<T>> dataA;
     dataA->SetName("A");
     dataA->SetNumberOfComponents(1);
-    vtkSmartPointer<vtkDoubleArray> dataB = vtkSmartPointer<vtkDoubleArray>::New();
+    vtkNew<vtkAOSDataArrayTemplate<T>> dataB;
     dataB->SetName("B");
     dataB->SetNumberOfComponents(3);
 
@@ -1273,8 +1258,11 @@ public:
 
     // Try to sort array
     ArraySorter sortedArray;
-    sortedArray.Update(static_cast<T*>(dataA->GetVoidPointer(0)), dataA->GetNumberOfTuples(),
-      dataA->GetNumberOfComponents(), 0, 100, dataA->GetRange(), false);
+    using Dispatcher = vtkArrayDispatch::DispatchByValueType<vtkTypeList::Create<T>>;
+    if (!Dispatcher::Execute(dataA, sortedArray, 0, 100, dataA->GetRange(), false))
+    {
+      sortedArray(dataA.Get(), 0, 100, dataA->GetRange(), false);
+    }
 
     double min = dataA->GetRange()[0];
     double max = dataA->GetRange()[1];
@@ -1301,8 +1289,10 @@ public:
     }
 
     // Reserse order
-    sortedArray.Update(static_cast<T*>(dataA->GetVoidPointer(0)), dataA->GetNumberOfTuples(),
-      dataA->GetNumberOfComponents(), 0, 100, dataA->GetRange(), true);
+    if (!Dispatcher::Execute(dataA, sortedArray, 0, 100, dataA->GetRange(), true))
+    {
+      sortedArray(dataA.Get(), 0, 100, dataA->GetRange(), true);
+    }
 
     if (sortedArray.ArraySize != dataA->GetNumberOfTuples())
     {
@@ -1366,14 +1356,14 @@ private:
   bool NeedToBuildCache;
   bool Debug;
 
-  const static int VTK_TABLE_EXCHANGE_TAG = 50;
+  static constexpr int VTK_TABLE_EXCHANGE_TAG = 50;
   // HISTOGRAM_SIZE could be computed dynamically based on the type of the
   // array to sort but to make sure that unsigned char won't be distributed
   // correctly we set the histogram size to be their max number of element
   // type.
   // Maybe make some test on huge cluster to see which histogram size is
   // the best.
-  const static int HISTOGRAM_SIZE = 256;
+  static constexpr int HISTOGRAM_SIZE = 256;
 };
 //****************************************************************************
 vtkStandardNewMacro(vtkSortedTableStreamer);
@@ -1478,7 +1468,7 @@ vtkSmartPointer<vtkUnsignedIntArray> vtkSortedTableStreamer::GenerateCompositeIn
     if (compositeIndex->GetNumberOfTuples() == 0)
     {
       compositeIndex->SetNumberOfComponents(num_components);
-      compositeIndex->Allocate(num_components * maxSize);
+      compositeIndex->ReserveTuples(maxSize);
     }
     assert(num_components == compositeIndex->GetNumberOfComponents());
 
@@ -1521,7 +1511,7 @@ vtkSmartPointer<vtkStringArray> vtkSortedTableStreamer::GenerateBlockNameArray(
   }
   auto localBlockNames = vtkSmartPointer<vtkStringArray>::New();
   localBlockNames->SetName("vtkBlockNames");
-  localBlockNames->Allocate(static_cast<vtkIdType>(blockNamesSet.size()));
+  localBlockNames->ReserveValues(static_cast<vtkIdType>(blockNamesSet.size()));
   for (const auto& name : blockNamesSet)
   {
     localBlockNames->InsertNextValue(name);
@@ -1562,7 +1552,7 @@ vtkSmartPointer<vtkStringArray> vtkSortedTableStreamer::GenerateBlockNameArray(
       }
     }
     globalBlockNames->SetName("vtkBlockNames");
-    globalBlockNames->Allocate(static_cast<vtkIdType>(globalBlockNamesSet.size()));
+    globalBlockNames->ReserveValues(static_cast<vtkIdType>(globalBlockNamesSet.size()));
     for (const auto& name : globalBlockNamesSet)
     {
       globalBlockNames->InsertNextValue(name);
@@ -1584,7 +1574,7 @@ vtkSmartPointer<vtkIdTypeArray> vtkSortedTableStreamer::GenerateBlockIndicesArra
   }
 
   auto blockIndices = vtkSmartPointer<vtkIdTypeArray>::New();
-  blockIndices->Allocate(maxSize);
+  blockIndices->ReserveValues(maxSize);
   blockIndices->SetName("vtkBlockNameIndices");
   for (unsigned int cc = 0, max = ptd->GetNumberOfPartitions(); cc < max; ++cc)
   {

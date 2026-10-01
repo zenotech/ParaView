@@ -8,7 +8,7 @@
 // Pipeline & VTK
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
-#include "vtkMarchingCubesTriangleCases.h"
+#include "vtkMarchingCellsContourCases.h"
 #include "vtkMultiProcessController.h"
 #include "vtkObject.h"
 #include "vtkObjectFactory.h"
@@ -981,23 +981,6 @@ void vtkAMRDualContour::ProcessBlock(
   }
 }
 
-//----------------------------------------------------------------------------
-namespace
-{
-template <class T>
-void vtkDualGridContourCastCornerValues(T* ptr, vtkIdType offsets[8], double values[8])
-{
-  values[0] = (double)(ptr[offsets[0]]);
-  values[1] = (double)(ptr[offsets[1]]);
-  values[2] = (double)(ptr[offsets[2]]);
-  values[3] = (double)(ptr[offsets[3]]);
-  values[4] = (double)(ptr[offsets[4]]);
-  values[5] = (double)(ptr[offsets[5]]);
-  values[6] = (double)(ptr[offsets[6]]);
-  values[7] = (double)(ptr[offsets[7]]);
-}
-}
-
 // Generic table for clipping a square.
 // We can have two polygons.
 // Polygons are separated by -1, and terminated by -2.
@@ -1051,17 +1034,11 @@ void vtkAMRDualContour::ProcessDualCell(vtkAMRDualGridHelperBlock* block, int bl
     return;
   }
 
-  void* volumeFractionPtr = volumeFractionArray->GetVoidPointer(0);
-  int dataType = volumeFractionArray->GetDataType();
-  double cornerValues[8];
-  switch (dataType)
+  double cornerValues[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+  for (int i = 0; i < 8; ++i)
   {
-    vtkTemplateMacro(::vtkDualGridContourCastCornerValues(
-      (VTK_TT*)(volumeFractionPtr), cornerOffsets, cornerValues));
-    default:
-      vtkGenericWarningMacro("Execute: Unknown ScalarType");
+    cornerValues[i] = volumeFractionArray->GetComponent(cornerOffsets[i], 0);
   }
-
   unsigned char cubeCase = 0;
   if (cornerValues[0] > this->IsoValue)
   {
@@ -1109,10 +1086,7 @@ void vtkAMRDualContour::ProcessDualCell(vtkAMRDualGridHelperBlock* block, int bl
 
   int nx, ny, nz; // Neighbor index [3][3][3];
   vtkIdType pointIds[6];
-  vtkMarchingCubesTriangleCases *triCase, *triCases;
-  int* edge;
   double k, v0, v1;
-  triCases = vtkMarchingCubesTriangleCases::GetCases();
 
   // Compute the spacing for this level and one lower level;
   const double* tmp = this->Helper->GetRootSpacing();
@@ -1256,8 +1230,7 @@ void vtkAMRDualContour::ProcessDualCell(vtkAMRDualGridHelperBlock* block, int bl
 
   // We have the points, now contour the cell.
   // Get edges.
-  triCase = triCases + cubeCase;
-  edge = triCase->edges;
+  auto edge = vtkMarchingCellsContourCases::GetHexahedronCase(cubeCase);
   double pt[3];
 
   // Save the edge point ids in case we need to create a capping surface.

@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) Kitware Inc.
 // SPDX-License-Identifier: BSD-3-Clause
+#define PARAVIEW_DEPRECATION_LEVEL 0
+
 #include "vtkPVMergeTablesMultiBlock.h"
 
 #include "vtkCompositeDataIterator.h"
@@ -37,7 +39,7 @@ int vtkPVMergeTablesMultiBlock::FillInputPortInformation(int vtkNotUsed(port), v
 static vtkSmartPointer<vtkTable> vtkPVMergeTablesMultiBlockMerge(
   const std::vector<vtkTable*>& inputs)
 {
-  assert(inputs.size() > 0);
+  assert(!inputs.empty());
   if (inputs.size() == 1)
   {
     return inputs[0];
@@ -46,19 +48,6 @@ static vtkSmartPointer<vtkTable> vtkPVMergeTablesMultiBlockMerge(
   auto result = vtkSmartPointer<vtkTable>::New();
   auto resultRowData = result->GetRowData();
   result->DeepCopy(inputs[0]);
-
-  // resize the table to avoid resize over and over again.
-  vtkIdType numrows = 0;
-  for (vtkTable* table : inputs)
-  {
-    numrows += table->GetNumberOfRows();
-  }
-  for (int cc = 0, max = resultRowData->GetNumberOfArrays(); cc < max; cc++)
-  {
-    // note: this does not update MaxId i.e. resultRowData->GetNumberOfTuples()
-    // remains unchanged.
-    resultRowData->GetAbstractArray(cc)->Resize(numrows);
-  }
 
   for (size_t idx = 1; idx < inputs.size(); ++idx)
   {
@@ -69,7 +58,6 @@ static vtkSmartPointer<vtkTable> vtkPVMergeTablesMultiBlockMerge(
     auto tableRowData = table->GetRowData();
     auto tableCount = tableRowData->GetNumberOfTuples();
 
-    // note: won't cause any resizes, since we resized already.
     resultRowData->SetNumberOfTuples(resultCount + tableCount);
     for (vtkIdType cc = 0; cc < tableCount; ++cc)
     {

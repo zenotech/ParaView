@@ -139,8 +139,7 @@ int vtkPEnSightGoldReader::ReadGeometryFile(
     auto subLine = std::get<1>(resultSubLine0->values());
     if (subLine == "Binary")
     {
-      vtkErrorMacro("This is a binary data set. Try "
-        << "vtkEnSightGoldBinaryReader.");
+      vtkErrorMacro("This is a binary data set. Try vtkEnSightGoldBinaryReader.");
       return 0;
     }
   }
@@ -353,8 +352,7 @@ int vtkPEnSightGoldReader::ReadMeasuredGeometryFile(
     auto subLine = std::get<1>(resultSubLine->values());
     if (subLine == "Binary")
     {
-      vtkErrorMacro("This is a binary data set. Try "
-        << "vtkEnSight6BinaryReader.");
+      vtkErrorMacro("This is a binary data set. Try vtkEnSight6BinaryReader.");
       return 0;
     }
   }
@@ -436,7 +434,7 @@ int vtkPEnSightGoldReader::ReadMeasuredGeometryFile(
   geom = vtkPolyData::SafeDownCast(ds);
 
   newPoints = vtkPoints::New();
-  newPoints->Allocate(this->GetPointIds(partId)->GetLocalNumberOfIds());
+  newPoints->Reserve(this->GetPointIds(partId)->GetLocalNumberOfIds());
 
   for (i = 0; i < this->NumberOfMeasuredPoints; i++)
   {
@@ -1153,7 +1151,7 @@ int vtkPEnSightGoldReader::ReadScalarsPerElement(const char* fileName, const cha
           }
           lineRead = this->ReadNextDataLine(line);
         } // end while
-      }   // end else
+      } // end else
       if (component == 0)
       {
         scalars->SetName(description);
@@ -1325,7 +1323,7 @@ int vtkPEnSightGoldReader::ReadVectorsPerElement(const char* fileName, const cha
           }
           lineRead = this->ReadNextDataLine(line);
         } // end while
-      }   // end else
+      } // end else
       vectors->SetName(description);
       output->GetCellData()->AddArray(vectors);
       if (!output->GetCellData()->GetVectors())
@@ -1492,7 +1490,7 @@ int vtkPEnSightGoldReader::ReadTensorsPerElement(const char* fileName, const cha
           }
           lineRead = this->ReadNextDataLine(line);
         } // end while
-      }   // end else
+      } // end else
       tensors->SetName(description);
       output->GetCellData()->AddArray(tensors);
       tensors->Delete();
@@ -2685,7 +2683,7 @@ int vtkPEnSightGoldReader::CreateStructuredGridOutput(
   output->SetDimensions(newDimensions);
   //   output->SetWholeExtent(
   //                          0, newDimensions[0]-1, 0, newDimensions[1]-1, 0, newDimensions[2]-1);
-  points->Allocate(this->GetPointIds(partId)->GetLocalNumberOfIds());
+  points->Reserve(this->GetPointIds(partId)->GetLocalNumberOfIds());
 
   for (i = 0; i < numPts; i++)
   {
@@ -2817,9 +2815,9 @@ int vtkPEnSightGoldReader::CreateRectilinearGridOutput(
   output->SetDimensions(newDimensions);
   //   output->SetWholeExtent(
   //                          0, newDimensions[0]-1, 0, newDimensions[1]-1, 0, newDimensions[2]-1);
-  xCoords->Allocate(newDimensions[0]);
-  yCoords->Allocate(newDimensions[1]);
-  zCoords->Allocate(newDimensions[2]);
+  xCoords->ReserveValues(newDimensions[0]);
+  yCoords->ReserveValues(newDimensions[1]);
+  zCoords->ReserveValues(newDimensions[2]);
 
   int beginDimension[3];
 
@@ -3141,7 +3139,6 @@ int vtkPEnSightGoldReader::ReadOrSkipCoordinates(
     {
       // Inject really needed points
       int localNumberOfIds = this->GetPointIds(partId)->GetLocalNumberOfIds();
-      points->Allocate(localNumberOfIds);
       points->SetNumberOfPoints(localNumberOfIds);
 
       for (i = 0; i < numPts; i++)

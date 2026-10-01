@@ -206,7 +206,7 @@ bool vtkSMSessionClient::Connect(const char* url, int timeout, bool (*callback)(
   if (pvserver.find(url))
   {
     std::string hostname = pvserver.match(1);
-    int port;
+    int port = -1;
     VTK_FROM_CHARS_IF_ERROR_BREAK(pvserver.match(3), port);
     port = (port <= 0) ? 11111 : port;
 
@@ -217,7 +217,7 @@ bool vtkSMSessionClient::Connect(const char* url, int timeout, bool (*callback)(
   else if (pvserver_reverse.find(url))
   {
     // 0 ports are acceptable for reverse connections.
-    int port;
+    int port = -1;
     VTK_FROM_CHARS_IF_ERROR_BREAK(pvserver_reverse.match(3), port);
     port = (port < 0) ? 11111 : port;
     std::ostringstream stream;
@@ -227,7 +227,8 @@ bool vtkSMSessionClient::Connect(const char* url, int timeout, bool (*callback)(
   }
   else if (pvrenderserver.find(url))
   {
-    int dsport, rsport;
+    int dsport = -1;
+    int rsport = -1;
     std::string dataserverhost = pvrenderserver.match(1);
     VTK_FROM_CHARS_IF_ERROR_BREAK(pvrenderserver.match(2), dsport);
     dsport = (dsport <= 0) ? 11111 : dsport;
@@ -249,7 +250,8 @@ bool vtkSMSessionClient::Connect(const char* url, int timeout, bool (*callback)(
   else if (pvrenderserver_reverse.find(url))
   {
     // 0 ports are acceptable for reverse connections.
-    int dsport, rsport;
+    int dsport = -1;
+    int rsport = -1;
     VTK_FROM_CHARS_IF_ERROR_BREAK(pvrenderserver_reverse.match(4), dsport);
     dsport = (dsport < 0) ? 11111 : dsport;
     VTK_FROM_CHARS_IF_ERROR_BREAK(pvrenderserver_reverse.match(7), rsport);
@@ -712,7 +714,7 @@ void vtkSMSessionClient::PullState(vtkSMMessage* message)
 
 //----------------------------------------------------------------------------
 void vtkSMSessionClient::ExecuteStream(
-  vtkTypeUInt32 location, const vtkClientServerStream& cssstream, bool ignore_errors)
+  vtkTypeUInt32 location, const vtkClientServerStream& cssstream, bool ignoreErrors, bool sendReply)
 {
   // Prevent to push anything during the Quit process
   if (this->NoMoreDelete)
@@ -740,8 +742,8 @@ void vtkSMSessionClient::ExecuteStream(
     cssstream.GetData(&data, &size);
 
     vtkMultiProcessStream stream;
-    stream << static_cast<int>(vtkPVSessionServer::EXECUTE_STREAM)
-           << static_cast<int>(ignore_errors) << static_cast<int>(size);
+    stream << static_cast<int>(vtkPVSessionServer::EXECUTE_STREAM) << static_cast<int>(ignoreErrors)
+           << static_cast<int>(sendReply) << static_cast<int>(size);
     std::vector<unsigned char> raw_message;
     stream.GetRawData(raw_message);
 
@@ -751,12 +753,17 @@ void vtkSMSessionClient::ExecuteStream(
         static_cast<int>(raw_message.size()), vtkPVSessionServer::CLIENT_SERVER_MESSAGE_RMI);
       controllers[cc]->Send(
         data, static_cast<int>(size), 1, vtkPVSessionServer::EXECUTE_STREAM_TAG);
+      if (sendReply)
+      {
+        unsigned char dummy;
+        controllers[cc]->Receive(&dummy, 1, 1, vtkPVSessionServer::STREAM_EXECUTED);
+      }
     }
   }
 
   if ((location & vtkPVSession::CLIENT) != 0)
   {
-    this->Superclass::ExecuteStream(location, cssstream, ignore_errors);
+    this->Superclass::ExecuteStream(location, cssstream, ignoreErrors);
   }
 }
 

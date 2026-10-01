@@ -294,6 +294,10 @@ _paraview_remoting_application_optional_xml(
   FILES   Resources/readers_ioocct.xml)
 
 _paraview_remoting_application_optional_xml(
+  TARGETS VTK::IOIFC
+  FILES   Resources/readers_ioifc.xml)
+
+_paraview_remoting_application_optional_xml(
   TARGETS VTK::IOPLY
   FILES   Resources/readers_ioply.xml)
 
@@ -389,6 +393,10 @@ _paraview_remoting_application_optional_xml(
   TARGETS VTK::IOOpenVDB
   FILES   Resources/readers_ioopenvdb.xml
           Resources/writers_ioopenvdb.xml)
+
+_paraview_remoting_application_optional_xml(
+  TARGETS VTK::IONanoVDB
+  FILES   Resources/writers_ionanovdb.xml)
 
 _paraview_remoting_application_optional_xml(
   TARGETS VTK::IOCatalystConduit

@@ -63,7 +63,7 @@ public:
   /**
    * @brief Metadata constructor.
    */
-  vtkGenericIOMetaData(){};
+  vtkGenericIOMetaData() {};
 
   /**
    * @brief Destructor
@@ -686,22 +686,6 @@ void vtkPGenericIOReader::LoadCoordinates(
   grid->Squeeze();
 }
 
-namespace
-{
-template <typename T>
-void GetOnlyDataInHalo(
-  vtkDataArray* allData, vtkDataArray* haloData, std::set<vtkIdType> pointsInHalo)
-{
-  T* data = (T*)allData->GetVoidPointer(0);
-  T* filteredData = (T*)haloData->GetVoidPointer(0);
-  vtkIdType i = 0;
-  for (std::set<vtkIdType>::iterator itr = pointsInHalo.begin(); itr != pointsInHalo.end(); ++itr)
-  {
-    filteredData[i++] = data[*itr];
-  }
-}
-}
-
 //------------------------------------------------------------------------------
 void vtkPGenericIOReader::LoadData(
   vtkUnstructuredGrid* grid, const std::set<vtkIdType>& pointsInSelectedHalos)
@@ -732,17 +716,19 @@ void vtkPGenericIOReader::LoadData(
         onlyDataInHalo.TakeReference(dataArray->NewInstance());
         onlyDataInHalo->SetNumberOfTuples(grid->GetNumberOfPoints());
         onlyDataInHalo->SetName(dataArray->GetName());
-        switch (dataArray->GetDataType())
+        vtkNew<vtkIdList> pointsInHaloList;
+        pointsInHaloList->Allocate(pointsInSelectedHalos.size());
+        for (const auto& id : pointsInSelectedHalos)
         {
-          vtkTemplateMacro(
-            GetOnlyDataInHalo<VTK_TT>(dataArray, onlyDataInHalo, pointsInSelectedHalos));
+          pointsInHaloList->InsertNextId(id);
         }
+        onlyDataInHalo->InsertTuplesStartingAt(0, pointsInHaloList, dataArray);
         dataArray = onlyDataInHalo;
       }
 
       PD->AddArray(dataArray);
     } // END if the array is enabled
-  }   // END for all arrays
+  } // END for all arrays
   if (this->AppendBlockCoordinates && this->Reader->IsSpatiallyDecomposed())
   {
     vtkSmartPointer<vtkTypeUInt64Array> dataArray = vtkSmartPointer<vtkTypeUInt64Array>::New();

@@ -16,7 +16,9 @@
 #include "vtkProcessModule.h"
 #include "vtkTimerLog.h"
 
+#include <array>
 #include <map>
+#include <set>
 #include <string>
 
 // define this variable to disable progress all together. This may be useful to
@@ -80,8 +82,11 @@ public:
 class vtkPVProgressHandler::vtkInternals
 {
 public:
-  typedef std::map<void*, int> MapOfObjectToInt;
-  MapOfObjectToInt RegisteredObjects;
+  // abort related
+  std::map<vtkObject*, int> RegisteredObjects;
+  std::map<vtkObject*, std::array<unsigned long, 2>> RegisteredObserverTags;
+  std::set<int> AbortedObjectIds;
+  std::set<int> EnabledAbortCheckObjectIds;
 
   // Disables progress all together.
   bool DisableProgressHandling;
@@ -152,9 +157,32 @@ void vtkPVProgressHandler::RegisterProgressEvent(vtkObject* object, int id)
       object->IsA("vtkSMAnimationSceneWriter")))
   {
     this->Internals->RegisteredObjects[object] = id;
-    object->AddObserver(vtkCommand::ProgressEvent, this, &vtkPVProgressHandler::OnProgressEvent);
-    object->AddObserver(vtkCommand::MessageEvent, this, &vtkPVProgressHandler::OnMessageEvent);
+    std::array<unsigned long, 2> tags;
+    tags[0] =
+      object->AddObserver(vtkCommand::ProgressEvent, this, &vtkPVProgressHandler::OnProgressEvent);
+    tags[1] =
+      object->AddObserver(vtkCommand::MessageEvent, this, &vtkPVProgressHandler::OnMessageEvent);
+    this->Internals->RegisteredObserverTags[object] = tags;
   }
+}
+
+//----------------------------------------------------------------------------
+void vtkPVProgressHandler::UnregisterObject(vtkObject* object)
+{
+  auto mapIt = this->Internals->RegisteredObjects.find(object);
+  if (mapIt == this->Internals->RegisteredObjects.end())
+  {
+    return;
+  }
+  int id = mapIt->second;
+  this->Internals->RegisteredObjects.erase(mapIt);
+
+  auto tagIt = this->Internals->RegisteredObserverTags.at(object);
+  object->RemoveObserver(tagIt.at(0));
+  object->RemoveObserver(tagIt.at(1));
+
+  this->Internals->AbortedObjectIds.erase(id);
+  this->Internals->EnabledAbortCheckObjectIds.erase(id);
 }
 
 //----------------------------------------------------------------------------
@@ -348,6 +376,7 @@ void vtkPVProgressHandler::OnProgressEvent(vtkObject* caller, unsigned long even
   const auto id = this->Internals->GetIDFromObject(caller);
   std::string text = ::vtkGetProgressText(caller);
   this->RefreshProgress(text.c_str(), progress, id);
+  this->CheckAbort(id, caller, nullptr);
 }
 
 //----------------------------------------------------------------------------
@@ -369,7 +398,7 @@ void vtkPVProgressHandler::RefreshProgress(
 
     double le_progress = progress;
     vtkByteSwap::SwapLE(&progress);
-    memcpy(buffer.data(), &le_progress, sizeof(double));
+    memcpy(buffer.data() + sizeof(vtkTypeUInt32), &le_progress, sizeof(double));
 
     memcpy(
       buffer.data() + sizeof(vtkTypeUInt32) + sizeof(double), progress_text, progress_text_len);
@@ -411,7 +440,7 @@ void vtkPVProgressHandler::PrintSelf(ostream& os, vtkIndent indent)
 }
 
 //----------------------------------------------------------------------------
-bool vtkPVProgressHandler::OnWrongTagEvent(vtkObject*, unsigned long eventid, void* calldata)
+bool vtkPVProgressHandler::OnWrongTagEvent(vtkObject* caller, unsigned long eventid, void* calldata)
 {
   if (eventid != vtkCommand::WrongTagEvent)
   {
@@ -455,27 +484,108 @@ bool vtkPVProgressHandler::OnWrongTagEvent(vtkObject*, unsigned long eventid, vo
     memcpy(&len, ptr, sizeof(len));
     ptr += sizeof(len);
 
+    vtkTypeUInt32 id = VTK_TYPE_UINT32_MAX;
+    memcpy(&id, ptr, sizeof(vtkTypeUInt32));
+    ptr += sizeof(vtkTypeUInt32);
+
     double progress = 0.0;
     memcpy(&progress, ptr, sizeof(double));
     ptr += sizeof(progress);
 
-    vtkTypeUInt32 id = VTK_TYPE_UINT32_MAX;
-    memcpy(&id, ptr, sizeof(vtkTypeUInt32));
-    ptr += sizeof(vtkTypeUInt32);
 #ifdef VTK_WORDS_BIGENDIAN
     // Progress is sent in little-endian form. We need to convert it to  big
     // endian.
-    vtkByteSwap::SwapLE(&progress);
     vtkByteSwap::SwapLE(&id);
+    vtkByteSwap::SwapLE(&progress);
 #endif
 
     this->RefreshProgress(ptr, progress, id);
+    this->CheckAbort(id, nullptr, caller);
     return true;
   }
 
   // We won't handle this event, let the default handler take care of it.
   // Default handler is defined in vtkPVSession::OnWrongTagEvent().
   return false;
+}
+
+//----------------------------------------------------------------------------
+void vtkPVProgressHandler::Abort(vtkTypeUInt32 objectId)
+{
+  this->Internals->AbortedObjectIds.emplace(objectId);
+}
+
+//----------------------------------------------------------------------------
+std::set<int> vtkPVProgressHandler::GetAbortedObjectIds()
+{
+  return this->Internals->AbortedObjectIds;
+}
+
+//----------------------------------------------------------------------------
+void vtkPVProgressHandler::ClearAbortedObjectIds()
+{
+  this->Internals->AbortedObjectIds.clear();
+}
+
+//----------------------------------------------------------------------------
+void vtkPVProgressHandler::EnableAbortCheck(vtkTypeUInt32 objectId)
+{
+  this->Internals->EnabledAbortCheckObjectIds.emplace(objectId);
+}
+
+//----------------------------------------------------------------------------
+void vtkPVProgressHandler::DisableAbortCheck(vtkTypeUInt32 objectId)
+{
+  this->Internals->EnabledAbortCheckObjectIds.erase(objectId);
+}
+
+//----------------------------------------------------------------------------
+void vtkPVProgressHandler::CheckAbort(
+  vtkTypeUInt32 progressId, vtkObject* caller, vtkObject* communicator)
+{
+  // Ensure CheckAbort is enabled for this object
+  auto enabledIt = this->Internals->EnabledAbortCheckObjectIds.find(progressId);
+  if (enabledIt == this->Internals->EnabledAbortCheckObjectIds.end())
+  {
+    return;
+  }
+
+  // Check abort ids
+  char abort = 0;
+  auto abortIt = this->Internals->AbortedObjectIds.find(progressId);
+  if (abortIt != this->Internals->AbortedObjectIds.end())
+  {
+    abort = 1;
+  }
+
+  // Send/Receive abort flag as needed
+  vtkMultiProcessController* dsController =
+    this->Session->GetController(vtkPVSession::DATA_SERVER_ROOT);
+  vtkMultiProcessController* clientController = this->Session->GetController(vtkPVSession::CLIENT);
+  if (dsController && !caller && this->Session->HasProcessRole(vtkPVSession::CLIENT) &&
+    communicator == dsController->GetCommunicator())
+  {
+    // this runs only on the client
+    // If caller is not set, it means there is a server to send an abort to
+    dsController->Send(&abort, 1, 1, vtkPVProgressHandler::ABORT_TAG);
+  }
+  else if (clientController && this->Session->HasProcessRole(vtkPVSession::DATA_SERVER))
+  {
+    // this runs only on the (data) server
+    clientController->Receive(&abort, 1, 1, vtkPVProgressHandler::ABORT_TAG);
+  }
+
+  // Abort the local VTK object
+  if (abort == 1 && caller)
+  {
+    // This can be true with client-side objects
+    // This can be true with the server (rank 0 only in distributed)
+    vtkAlgorithm* algo = vtkAlgorithm::SafeDownCast(caller);
+    if (algo)
+    {
+      algo->SetAbortExecuteAndUpdateTime();
+    }
+  }
 }
 
 //----------------------------------------------------------------------------

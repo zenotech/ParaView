@@ -18,7 +18,7 @@
 #include "vtkInteractorStyleTrackballCamera.h"
 #include "vtkPVVTKExtensionsInteractionStyleModule.h" // needed for export macro
 
-class vtkCameraManipulator;
+class vtkPVCameraManipulator;
 class vtkCollection;
 
 class VTKPVVTKEXTENSIONSINTERACTIONSTYLE_EXPORT vtkPVInteractorStyle
@@ -62,7 +62,7 @@ public:
   /**
    * Access to adding or removing manipulators.
    */
-  void AddManipulator(vtkCameraManipulator* m);
+  void AddManipulator(vtkPVCameraManipulator* m);
 
   /**
    * Removes all manipulators.
@@ -87,20 +87,6 @@ public:
 
   ///@{
   /**
-   * Propagates the center to the manipulators.
-   * This simply sets an internal ivar.
-   * It is propagated to a manipulator before the event
-   * is sent to it.
-   * Also changing the CenterOfRotation during interaction
-   * i.e. after a button press but before a button up
-   * has no effect until the next button press.
-   */
-  vtkSetVector3Macro(CenterOfRotation, double);
-  vtkGetVector3Macro(CenterOfRotation, double);
-  ///@}
-
-  ///@{
-  /**
    * Propagates the rotation factor to the manipulators.
    * This simply sets an internal ivar.
    * It is propagated to a manipulator before the event
@@ -116,7 +102,7 @@ public:
   /**
    * Returns the chosen manipulator based on the modifiers.
    */
-  virtual vtkCameraManipulator* FindManipulator(int button, int shift, int control);
+  virtual vtkPVCameraManipulator* FindManipulator(int button, int shift, int control);
 
   /**
    * Dolly the renderer's camera to a specific point
@@ -136,9 +122,8 @@ protected:
 
   void Dolly(double factor) override;
 
-  vtkCameraManipulator* CurrentManipulator;
+  vtkPVCameraManipulator* CurrentManipulator;
   bool MouseWheelZoomsToCursor = false;
-  double CenterOfRotation[3];
   double RotationFactor;
 
   // The CameraInteractors also store there button and modifier.
